@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using StickAndPuck.Core;
+using StickAndPuck.Rules;
 
 namespace StickAndPuck.AI;
 
@@ -80,6 +81,17 @@ public static class Positioning
         plan.Request = target;
         plan.RequestSprint = sprint;
         plan.RequestTick = world.Tick;
+    }
+
+    /// <summary>
+    /// Gets whether the AI runs in this world: in a match under W7a's match flow, or under the
+    /// positioning scenes' stand-in. Test scenes that script their own skaters are left alone.
+    /// </summary>
+    /// <param name="world">The match.</param>
+    /// <returns>True when positioning and decisions drive the AI skaters.</returns>
+    public static bool Drives(World world)
+    {
+        return MatchFlow.IsRunning(world) || StandInPlay.Enabled;
     }
 
     internal static PositioningBoard Board(World world)

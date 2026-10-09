@@ -46,6 +46,7 @@ internal sealed class PositioningSystem : ISystem
         // the shootout (W7c, src/Rules/Overtime) skates its own shooter
         if (world.Match.Phase == MatchPhase.Shootout) return;
         StandInPlay.Before(world, dt);
+        if (!Positioning.Drives(world)) return;
         var board = Positioning.Board(world);
         AssignRoles(world, board);
         var step = Read(world, board);
@@ -115,7 +116,7 @@ internal sealed class PositioningSystem : ISystem
         if (plan.Job != Job.Shape) plan.Read = null;
     }
 
-    /// <summary>Writes the command that takes an AI skater to its target; the stand-in may add a shot or pass.</summary>
+    /// <summary>Writes the command that takes an AI skater to its target; decisions may add a shot, pass or check.</summary>
     static void Steer(World world, SkaterPlan plan, Player p)
     {
         var at = new Vector2(p.Position.X, p.Position.Z);
@@ -128,7 +129,6 @@ internal sealed class PositioningSystem : ISystem
             Job.Faceoff => Steering.Toward(p, plan.Target, 1.5f),
             _ => Steering.Toward(p, plan.Target, sprint: Vector2.Distance(plan.Target, at) > 12f),
         };
-        StandInPlay.Act(world, p, ref command);
         p.Command = command;
     }
 

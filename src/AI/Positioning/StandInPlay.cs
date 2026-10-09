@@ -19,10 +19,8 @@ namespace StickAndPuck.AI;
 /// </summary>
 internal static class StandInPlay
 {
-    static readonly Dictionary<int, int> Shooting = [];
     static Random dice = new(3);
-    static int carrier = -1;
-    static float gotAt, passAfter, goalAt = float.NaN, stillSince, faceoffAt = float.NegativeInfinity;
+    static float goalAt = float.NaN, stillSince, faceoffAt = float.NegativeInfinity;
     static Vector3 stillAt;
     static int dropIn;
 
@@ -41,9 +39,6 @@ internal static class StandInPlay
     /// <summary>Gets the goals per side, indexed by <see cref="Side"/>.</summary>
     public static int[] Goals { get; } = new int[2];
 
-    /// <summary>Gets the shots taken per side, indexed by <see cref="Side"/>.</summary>
-    public static int[] Shots { get; } = new int[2];
-
     /// <summary>Gets how many times a puck lay dead for long enough to need a faceoff.</summary>
     public static int DeadPucks { get; private set; }
 
@@ -56,12 +51,9 @@ internal static class StandInPlay
 #pragma warning disable S2245 // gameplay variation, not security
         dice = new Random(seed);
 #pragma warning restore S2245
-        Shooting.Clear();
-        carrier = -1;
         goalAt = float.NaN;
         Clock = world.Setup.PeriodSeconds;
         Array.Clear(Goals);
-        Array.Clear(Shots);
         DeadPucks = 0;
         Faceoff(world, RinkSpec.CentreDot);
     }
@@ -124,79 +116,6 @@ internal static class StandInPlay
         restart();
     }
 
-    /// <summary>Adds a carrier's shot or pass to the move positioning chose.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="p">An AI skater.</param>
-    /// <param name="command">The command so far.</param>
-    public static void Act(World world, Player p, ref PlayerCommand command)
-    {
-        if (!Enabled) return;
-        int end = PuckHandling.AttackEnd(world, p.Side);
-        var net = new Vector2(end * RinkSpec.GoalLineX, 0);
-        var at = new Vector2(p.Position.X, p.Position.Z);
-
-        // a shot under way: keep shoot held, then let go
-        if (Shooting.TryGetValue(p.Id, out int left))
-        {
-            if (left > 0) { Shooting[p.Id] = left - 1; command = command with { Move = Vector2.Normalize(net - at), Shoot = true }; }
-            else Shooting.Remove(p.Id);
-            return;
-        }
-
-        var pk = world.Puck;
-        if (pk.Carrier != p.Id || p.Action != PlayerAction.None) return;
-        if (carrier != p.Id) { carrier = p.Id; gotAt = world.Time; passAfter = 1.5f + dice.NextSingle() * 3f; }
-        float held = world.Time - gotAt, pa = end * p.Position.X;
-        bool pressed = world.Players.Any(o => o.OnIce && o.Side != p.Side && !o.IsGoalie && Vector3.Distance(o.Position, p.Position) < 2.5f);
-
-        bool shootingRange = pa > RinkSpec.GoalLineX - 15f && pa < RinkSpec.GoalLineX - 1f && MathF.Abs(p.Position.Z) < 9f;
-        if (held > 0.3f && shootingRange && (pa > RinkSpec.GoalLineX - 10f || dice.NextSingle() < 0.02f))
-        {
-            int hold = pa < RinkSpec.GoalLineX - 12f ? 40 : 1;   // a slap shot from the point, a wrist shot in close
-            Shooting[p.Id] = hold;
-            Shots[(int)p.Side]++;
-            command = command with { Move = Vector2.Normalize(net - at), Shoot = true };
-            return;
-        }
-
-        if (held > passAfter || (pressed && held > 0.5f))
-        {
-            var mate = OpenMate(world, p, end);
-            if (mate == null) { passAfter = held + 1f; return; }
-            var to = PuckHandling.Blade(mate) - PuckHandling.Blade(p);
-            command = command with { Move = Vector2.Normalize(new Vector2(to.X, to.Z)), Pass = true };
-        }
-    }
-
-    /// <summary>The best teammate to pass to: open, not too close or far, preferably further up ice.</summary>
-    static Player? OpenMate(World world, Player p, int end)
-    {
-        var from = PuckHandling.Blade(p);
-        Player? best = null;
-        float bestScore = float.MinValue;
-        foreach (var mate in world.OnIce(p.Side))
-        {
-            if (mate == p || mate.IsGoalie) continue;
-            var to = PuckHandling.Blade(mate);
-            float d = Vector3.Distance(from, to);
-            if (d is < 4f or > 25f) continue;
-            float open = world.Players.Where(o => o.OnIce && o.Side != p.Side && !o.IsGoalie)
-                .Select(o => LaneDistance(from, to, o.Position)).DefaultIfEmpty(99f).Min();
-            if (open < 1.5f) continue;
-            float score = end * (to.X - from.X) * 0.15f + Math.Min(open, 5f) - d * 0.05f + dice.NextSingle();
-            if (score > bestScore) { bestScore = score; best = mate; }
-        }
-        return best;
-    }
-
-    static float LaneDistance(Vector3 a, Vector3 b, Vector3 p)
-    {
-        var ab = new Vector2(b.X - a.X, b.Z - a.Z);
-        var ap = new Vector2(p.X - a.X, p.Z - a.Z);
-        float t = Math.Clamp(Vector2.Dot(ap, ab) / Math.Max(ab.LengthSquared(), 1e-6f), 0f, 1f);
-        return (ap - ab * t).Length();
-    }
-
     /// <summary>Puts the skaters in their faceoff spots around a dot and drops the puck after a moment.</summary>
     /// <param name="world">The match.</param>
     /// <param name="dot">The faceoff dot.</param>
@@ -215,7 +134,6 @@ internal static class StandInPlay
             p.Command = default;
             p.Begin(PlayerAction.None);
         }
-        Shooting.Clear();
         var pk = world.Puck;
         pk.Carrier = -1;
         pk.LastTouch = -1;
@@ -259,8 +177,14 @@ internal static class StandInPlay
         bool rules = MatchFlow.IsRunning(world);
         var goals = rules ? world.Match.Score : Goals;
         string clock = MatchFlow.ClockText(rules ? world.Match.Clock : Clock);
-        string text = $"{world.Setup.Home.ShortName} {goals[0]} - {goals[1]} {world.Setup.Away.ShortName}   {clock}   SHOTS {Shots[0]}-{Shots[1]}";
+        string text = $"{world.Setup.Home.ShortName} {goals[0]} - {goals[1]} {world.Setup.Away.ShortName}   {clock}   SHOTS {Decisions.Tally(world, Side.Home).Shots}-{Decisions.Tally(world, Side.Away).Shots}   PASSES {Pct(world, Side.Home)}-{Pct(world, Side.Away)}";
         DrawText(text, 6, 6, 10, new Color(0xef, 0xe0, 0xc2, 255));
+    }
+
+    static string Pct(World world, Side side)
+    {
+        var t = Decisions.Tally(world, side);
+        return $"{t.Completed}/{t.Passes}";
     }
 
     static Side Other(Side side)
