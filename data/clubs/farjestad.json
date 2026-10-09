@@ -1,0 +1,379 @@
+{
+  "id": "farjestad",
+  "name": "Färjestad BK",
+  "shortName": "FBK",
+  "home": {
+    "primary": "#008e52",
+    "secondary": "#ffffff",
+    "accent": "#e9b646",
+    "helmet": "#008e52"
+  },
+  "away": {
+    "primary": "#ffffff",
+    "secondary": "#008e52",
+    "accent": "#e9b646",
+    "helmet": "#008e52"
+  },
+  "roster": [
+    {
+      "number": 35,
+      "firstName": "Melker",
+      "lastName": "Thelin",
+      "position": "G",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 35,
+        "topSpeed": 35,
+        "shotAccuracy": 25,
+        "shotPower": 30,
+        "checking": 25,
+        "puckControl": 40,
+        "smartPasses": 40,
+        "smartPositioning": 78,
+        "goalieReflexes": 80
+      }
+    },
+    {
+      "number": 33,
+      "firstName": "Emil",
+      "lastName": "Larmi",
+      "position": "G",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 35,
+        "topSpeed": 35,
+        "shotAccuracy": 25,
+        "shotPower": 30,
+        "checking": 25,
+        "puckControl": 40,
+        "smartPasses": 40,
+        "smartPositioning": 71,
+        "goalieReflexes": 73
+      }
+    },
+    {
+      "number": 67,
+      "firstName": "Radim",
+      "lastName": "Zohorna",
+      "position": "C",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 59,
+        "topSpeed": 63,
+        "shotAccuracy": 75,
+        "shotPower": 80,
+        "checking": 70,
+        "puckControl": 82,
+        "smartPasses": 82,
+        "smartPositioning": 76,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 98,
+      "firstName": "Marian",
+      "lastName": "Studenič",
+      "position": "LW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 66,
+        "topSpeed": 68,
+        "shotAccuracy": 72,
+        "shotPower": 67,
+        "checking": 53,
+        "puckControl": 81,
+        "smartPasses": 82,
+        "smartPositioning": 72,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 71,
+      "firstName": "Viktor",
+      "lastName": "Lodin",
+      "position": "RW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 66,
+        "topSpeed": 68,
+        "shotAccuracy": 80,
+        "shotPower": 71,
+        "checking": 60,
+        "puckControl": 78,
+        "smartPasses": 73,
+        "smartPositioning": 71,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 73,
+      "firstName": "Adam",
+      "lastName": "Ollas Mattsson",
+      "position": "D",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 59,
+        "topSpeed": 63,
+        "shotAccuracy": 68,
+        "shotPower": 83,
+        "checking": 80,
+        "puckControl": 68,
+        "smartPasses": 68,
+        "smartPositioning": 76,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 32,
+      "firstName": "Magnus",
+      "lastName": "Nygren",
+      "position": "D",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 58,
+        "topSpeed": 60,
+        "shotAccuracy": 63,
+        "shotPower": 77,
+        "checking": 72,
+        "puckControl": 69,
+        "smartPasses": 73,
+        "smartPositioning": 79,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 59,
+      "firstName": "Linus",
+      "lastName": "Johansson",
+      "position": "C",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 50,
+        "topSpeed": 52,
+        "shotAccuracy": 60,
+        "shotPower": 63,
+        "checking": 59,
+        "puckControl": 64,
+        "smartPasses": 64,
+        "smartPositioning": 70,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 14,
+      "firstName": "Victor",
+      "lastName": "Ejdsell",
+      "position": "LW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 51,
+        "topSpeed": 55,
+        "shotAccuracy": 62,
+        "shotPower": 68,
+        "checking": 67,
+        "puckControl": 62,
+        "smartPasses": 60,
+        "smartPositioning": 66,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 29,
+      "firstName": "Oskar",
+      "lastName": "Steen",
+      "position": "RW",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 62,
+        "topSpeed": 62,
+        "shotAccuracy": 67,
+        "shotPower": 60,
+        "checking": 53,
+        "puckControl": 67,
+        "smartPasses": 62,
+        "smartPositioning": 64,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 7,
+      "firstName": "Axel",
+      "lastName": "Bergkvist",
+      "position": "D",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 62,
+        "topSpeed": 62,
+        "shotAccuracy": 56,
+        "shotPower": 71,
+        "checking": 66,
+        "puckControl": 63,
+        "smartPasses": 67,
+        "smartPositioning": 66,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 6,
+      "firstName": "Albert",
+      "lastName": "Wikman",
+      "position": "D",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 64,
+        "topSpeed": 66,
+        "shotAccuracy": 65,
+        "shotPower": 67,
+        "checking": 61,
+        "puckControl": 64,
+        "smartPasses": 62,
+        "smartPositioning": 63,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 15,
+      "firstName": "Jack",
+      "lastName": "Berglund",
+      "position": "C",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 57,
+        "topSpeed": 59,
+        "shotAccuracy": 60,
+        "shotPower": 59,
+        "checking": 65,
+        "puckControl": 65,
+        "smartPasses": 64,
+        "smartPositioning": 55,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 22,
+      "firstName": "Per",
+      "lastName": "Åslund",
+      "position": "LW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 43,
+        "topSpeed": 45,
+        "shotAccuracy": 63,
+        "shotPower": 52,
+        "checking": 49,
+        "puckControl": 61,
+        "smartPasses": 55,
+        "smartPositioning": 61,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 11,
+      "firstName": "Joakim",
+      "lastName": "Nygård",
+      "position": "RW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 43,
+        "topSpeed": 45,
+        "shotAccuracy": 53,
+        "shotPower": 52,
+        "checking": 55,
+        "puckControl": 57,
+        "smartPasses": 55,
+        "smartPositioning": 60,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 27,
+      "firstName": "Gabriel",
+      "lastName": "Carlsson",
+      "position": "D",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 51,
+        "shotAccuracy": 49,
+        "shotPower": 64,
+        "checking": 65,
+        "puckControl": 54,
+        "smartPasses": 58,
+        "smartPositioning": 61,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 48,
+      "firstName": "Filip",
+      "lastName": "Roos",
+      "position": "D",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 51,
+        "shotAccuracy": 47,
+        "shotPower": 59,
+        "checking": 62,
+        "puckControl": 54,
+        "smartPasses": 58,
+        "smartPositioning": 60,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 12,
+      "firstName": "Christoffer",
+      "lastName": "Jansson",
+      "position": "C",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 40,
+        "topSpeed": 44,
+        "shotAccuracy": 46,
+        "shotPower": 48,
+        "checking": 58,
+        "puckControl": 53,
+        "smartPasses": 55,
+        "smartPositioning": 53,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 16,
+      "firstName": "Sebastian",
+      "lastName": "Cederle",
+      "position": "LW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 44,
+        "topSpeed": 46,
+        "shotAccuracy": 47,
+        "shotPower": 46,
+        "checking": 50,
+        "puckControl": 50,
+        "smartPasses": 48,
+        "smartPositioning": 49,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 8,
+      "firstName": "Mikkel",
+      "lastName": "Øby-Olsen",
+      "position": "RW",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 48,
+        "topSpeed": 48,
+        "shotAccuracy": 50,
+        "shotPower": 42,
+        "checking": 45,
+        "puckControl": 50,
+        "smartPasses": 46,
+        "smartPositioning": 48,
+        "goalieReflexes": 10
+      }
+    }
+  ]
+}
