@@ -8,6 +8,7 @@ uniform sampler2D texture0;
 uniform sampler2D maskTex;
 uniform vec3 palette[64];
 uniform int paletteSize;
+uniform int kitStart;       // palette[kitStart..] are kit colours, used only on player pixels
 uniform vec3 outline;
 uniform vec2 texel;
 out vec4 finalColor;
@@ -32,7 +33,8 @@ void main() {
     if (edge) { finalColor = vec4(outline, 1.0); return; }
     vec3 c = texture(texture0, uv).rgb;
     vec3 best = palette[0]; float bd = 1e9;
-    for (int i = 0; i < paletteSize; i++) {
+    int n = here > 0.0 ? paletteSize : kitStart;
+    for (int i = 0; i < n; i++) {
         vec3 e = c - palette[i]; float dd = dot(e, e);
         if (dd < bd) { bd = dd; best = palette[i]; }
     }
