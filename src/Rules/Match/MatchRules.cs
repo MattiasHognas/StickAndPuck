@@ -1,3 +1,4 @@
+using StickAndPuck.Camera;
 using StickAndPuck.Core;
 using static Raylib_cs.Raylib;
 
@@ -36,7 +37,9 @@ internal sealed class MatchRules : ISystem
                 if (Wait(s, dt)) MatchFlow.SetUpFaceoff(world, s.Dot);
                 break;
             case MatchPhase.Goal:
-                if (Wait(s, dt)) MatchFlow.SetUpFaceoff(world, RinkSpec.CentreDot);
+                // W9's goal replay holds the restart; the faceoff follows a second after it ends
+                if (Replay.Playing) s.Timer = 1f;
+                else if (Wait(s, dt)) MatchFlow.SetUpFaceoff(world, RinkSpec.CentreDot);
                 break;
             case MatchPhase.Intermission:
                 if (Wait(s, dt)) MatchFlow.StartPeriod(world, m.Period + 1, world.Setup.PeriodSeconds);
