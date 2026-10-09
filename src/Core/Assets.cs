@@ -1,6 +1,6 @@
 namespace StickAndPuck.Core;
 
-/// <summary>Every asset path in one place. Paths are relative to the executable, where the build copies them.</summary>
+/// <summary>Every asset path in one place. Paths are relative to the asset folder that <see cref="AssetRoot"/> moves into.</summary>
 public static class Assets
 {
     /// <summary>The club data files.</summary>
