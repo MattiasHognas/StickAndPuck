@@ -4,6 +4,7 @@ using StickAndPuck.Camera;
 using StickAndPuck.Core;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
+using StickAndPuck.Rules;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.AI;
@@ -12,8 +13,9 @@ namespace StickAndPuck.AI;
 /// Only for the positioning scenes (SAP_SCENE=positioning and positioningtest): a crude stand-in
 /// for the parts of a match that other tasks own and are not in yet, so 5 on 5 can run a whole
 /// period. AI carriers shoot from the slot and pass when pressed or after a while (W6b replaces
-/// this), a goal or a dead puck restarts with a faceoff and a period clock runs (W7a), and the
-/// camera follows the puck (W9). It never runs in a normal match.
+/// this), a dead puck is whistled for a faceoff, and the camera follows the puck (W9). When W7a's
+/// match flow runs it keeps the clock, goals and faceoffs; without it the stand-in restarts after
+/// goals and runs its own clock. It never runs in a normal match.
 /// </summary>
 internal static class StandInPlay
 {
@@ -78,6 +80,8 @@ internal static class StandInPlay
     public static void Before(World world, float dt)
     {
         if (!Enabled) return;
+        if (FollowCamera) Follow(world);
+        if (MatchFlow.IsRunning(world)) { DeadPuck(world, () => MatchFlow.Whistle(world, MatchFlow.NearestDot(world.Puck.Position))); return; }
         var pk = world.Puck;
         if (world.Match.Phase == MatchPhase.Play) Clock = Math.Max(0, Clock - dt);
         if (Clock <= 0 && !FollowCamera) return;
@@ -93,18 +97,7 @@ internal static class StandInPlay
         }
         if (!float.IsNaN(goalAt) && world.Time - goalAt > 1.5f) Faceoff(world, RinkSpec.CentreDot);
 
-        // a loose puck nobody can get to, or one a goalie keeps, is dropped again at the nearest dot
-        bool goalieHolds = pk.Carrier >= 0 && world.Players[pk.Carrier].IsGoalie;
-        if ((pk.Carrier >= 0 && !goalieHolds) || Vector3.Distance(pk.Position, stillAt) > 0.5f)
-        {
-            stillAt = pk.Position;
-            stillSince = world.Time;
-        }
-        if (world.Time - stillSince > (goalieHolds ? 6f : 8f))
-        {
-            DeadPucks++;
-            Faceoff(world, RinkSpec.FaceoffDots.MinBy(d => Vector3.DistanceSquared(d, pk.Position with { Y = 0 })));
-        }
+        DeadPuck(world, () => Faceoff(world, MatchFlow.NearestDot(world.Puck.Position)));
 
         if (dropIn > 0 && --dropIn == 0)
         {
@@ -113,7 +106,22 @@ internal static class StandInPlay
             pk.Velocity = new Vector3(MathF.Cos(angle), 0, MathF.Sin(angle)) * (1.5f + dice.NextSingle() * 2f);
             pk.Live = true;
         }
-        if (FollowCamera) Follow(world);
+    }
+
+    /// <summary>A loose puck nobody gets to, or one a goalie keeps, is faced off again at the nearest dot.</summary>
+    static void DeadPuck(World world, Action restart)
+    {
+        var pk = world.Puck;
+        bool goalieHolds = pk.Carrier >= 0 && world.Players[pk.Carrier].IsGoalie;
+        if (!pk.Live || (pk.Carrier >= 0 && !goalieHolds) || Vector3.Distance(pk.Position, stillAt) > 0.5f)
+        {
+            stillAt = pk.Position;
+            stillSince = world.Time;
+        }
+        if (world.Time - stillSince <= (goalieHolds ? 6f : 8f)) return;
+        DeadPucks++;
+        stillSince = world.Time;
+        restart();
     }
 
     /// <summary>Adds a carrier's shot or pass to the move positioning chose.</summary>
@@ -248,8 +256,10 @@ internal static class StandInPlay
     public static void DrawHud(World world)
     {
         if (!Enabled) return;
-        int seconds = (int)MathF.Ceiling(Clock);
-        string text = $"{world.Setup.Home.ShortName} {Goals[0]} - {Goals[1]} {world.Setup.Away.ShortName}   {seconds / 60}:{seconds % 60:00}   SHOTS {Shots[0]}-{Shots[1]}";
+        bool rules = MatchFlow.IsRunning(world);
+        var goals = rules ? world.Match.Score : Goals;
+        string clock = MatchFlow.ClockText(rules ? world.Match.Clock : Clock);
+        string text = $"{world.Setup.Home.ShortName} {goals[0]} - {goals[1]} {world.Setup.Away.ShortName}   {clock}   SHOTS {Shots[0]}-{Shots[1]}";
         DrawText(text, 6, 6, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }
 

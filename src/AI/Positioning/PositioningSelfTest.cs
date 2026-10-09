@@ -3,12 +3,13 @@ using StickAndPuck.Core;
 using StickAndPuck.Goalie;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
+using StickAndPuck.Rules;
 
 namespace StickAndPuck.AI;
 
 /// <summary>
 /// SAP_SCENE=positioningtest: runs a full 5 on 5 period headless with positioning, skating, puck
-/// handling, the goalies and puck physics, prints one line per check and exits with 0 when all
+/// handling, the goalies, puck physics and W7a's match rules, prints one line per check and exits with 0 when all
 /// pass, 1 otherwise. Covers the W6a "done when": 5 on 5 holds shape through a period with no
 /// stuck players; plus that roles are one of each, that forwards stay onside, and that smart
 /// positioning makes a difference.
@@ -83,11 +84,12 @@ public sealed class PositioningSelfTest : IScene
     World Period(World world)
     {
         Scenes.AddStarters(world);
-        var systems = Systems(world, 7);
+        var systems = Systems(world, 7, new MatchRules());
         StandInPlay.Start(world, 7);
+        MatchFlow.Begin(world, log: false);
         var t = new PeriodTally();
-        int steps = (int)(world.Setup.PeriodSeconds / Game.Step);
-        for (int i = 0; i < steps; i++)
+        int steps = (int)((world.Setup.PeriodSeconds * 2 + 60) / Game.Step);
+        for (int i = 0; i < steps && world.Match.Phase != MatchPhase.Intermission; i++)
         {
             Step(world, systems);
             Watch(world, t);
@@ -176,8 +178,8 @@ public sealed class PositioningSelfTest : IScene
         float longestStill = t.LongestStill, stackSeconds = t.Stacked, pileSeconds = t.Piled, offsideSeconds = t.Offside;
         float meanAway = t.AwaySum / Math.Max(1, t.Shaped);
         float minutes = world.Setup.PeriodSeconds / 60f;
-        Console.WriteLine($"      period: {StandInPlay.Goals[0]}-{StandInPlay.Goals[1]}, shots {StandInPlay.Shots[0]}-{StandInPlay.Shots[1]}, {touches} touches by {touchers} skaters, {StandInPlay.DeadPucks} dead pucks, longest still {longestStill:F1} s, stacked {stackSeconds:F0} s, piled {pileSeconds:F0} s, mean {meanAway:F1} m off the ideal spot, offside shape {offsideSeconds:F0} s");
-        Check(world.Time >= world.Setup.PeriodSeconds - 1f, $"a {minutes:F0} minute period runs through");
+        Console.WriteLine($"      period: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {StandInPlay.Shots[0]}-{StandInPlay.Shots[1]}, {touches} touches by {touchers} skaters, {StandInPlay.DeadPucks} dead pucks, longest still {longestStill:F1} s, stacked {stackSeconds:F0} s, piled {pileSeconds:F0} s, mean {meanAway:F1} m off the ideal spot, offside shape {offsideSeconds:F0} s");
+        Check(world.Match.Phase == MatchPhase.Intermission, $"a {minutes:F0} minute period runs through to the intermission under the match rules");
         Check(outsideCount == 0, "no skater leaves the rink or loses its position");
         Check(longestStill < 20f, $"nobody stands idle: longest without moving a metre is {longestStill:F1} s");
         Check(t.LongestStuck < 1.5f, $"no skater is stuck: longest pushing without moving is {t.LongestStuck:F2} s");
@@ -226,10 +228,10 @@ public sealed class PositioningSelfTest : IScene
         Check(smart < poor * 0.8f, "smarter positioning holds the shape tighter");
     }
 
-    static ISystem[] Systems(World world, int seed)
+    static ISystem[] Systems(World world, int seed, params ISystem[] more)
     {
 #pragma warning disable S2245 // fixed seeds so the checks repeat
-        ISystem[] systems = [new PositioningSystem(new Random(seed)), new SkatingSystem(), new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics()];
+        ISystem[] systems = [new PositioningSystem(new Random(seed)), new SkatingSystem(), new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), .. more];
 #pragma warning restore S2245
         foreach (var s in systems) if (s is not (PuckPhysics or GoalieSystem)) s.Start(world);
         return systems;
