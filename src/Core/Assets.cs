@@ -30,6 +30,9 @@ public static class Assets
     /// <summary>The palette every frame snaps to.</summary>
     public const string Palette = "art/palette/stickandpuck_dusk.gpl";
 
+    /// <summary>The HUD layout from A3: font, scorebug slots, panels, icons and crests, each naming its PNG under art/ui/.</summary>
+    public const string UiLayout = "art/ui/ui.json";
+
     /// <summary>The shader folder.</summary>
     public const string Shaders = "shaders";
 
