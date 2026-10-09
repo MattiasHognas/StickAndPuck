@@ -14,9 +14,9 @@ namespace StickAndPuck.Camera;
 /// </summary>
 /// <remarks>
 /// While a replay plays, it writes the recorded players and puck into the world each step, after
-/// every gameplay system has run, so the scene draws the replay. Rules should hold the match in
-/// <see cref="MatchPhase.Goal"/> (puck dead) until <see cref="Playing"/> is false again before
-/// they set up the next faceoff, or the replay ends by putting the players back where the goal left them.
+/// every gameplay system has run, so the scene draws the replay. MatchRules holds the match in
+/// <see cref="MatchPhase.Goal"/> (puck dead) while <see cref="Playing"/> is true, so the replay
+/// ends by putting the players back where the goal left them and the centre faceoff follows.
 /// </remarks>
 public sealed class Replay
 {
@@ -45,7 +45,7 @@ public sealed class Replay
     readonly ReplayBuffer buffer = new((int)(BufferSeconds / Game.Step));
     readonly ReplayBuffer.Frame live = new();
     readonly float testGoalAt = TestGoalTime();
-    float goalTime = float.NaN, playhead, shown;
+    float goalTime = float.NaN, playSince, playhead, shown;
     int endIndex, end = 1;
     bool waiting;
     Vector3 camPos, camTarget;
@@ -71,6 +71,7 @@ public sealed class Replay
             goalTime = world.Time;
             end = x < 0 ? -1 : 1;
         }
+        if (!waiting && world.Match.Phase != MatchPhase.Play) playSince = world.Time;   // a replay never reaches back past the last puck drop
         if (waiting && world.Time - goalTime >= CelebrateSeconds) Begin(world);
         return false;
     }
@@ -99,7 +100,7 @@ public sealed class Replay
         waiting = false;
         Playing = true;
         ReplayBuffer.Capture(world, live);
-        int startIndex = buffer.IndexAt(goalTime - LeadInSeconds);
+        int startIndex = buffer.IndexAt(Math.Max(goalTime - LeadInSeconds, playSince));
         endIndex = buffer.IndexAt(goalTime + TailSeconds);
         playhead = startIndex;
         shown = 0;
