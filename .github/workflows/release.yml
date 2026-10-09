@@ -1,0 +1,76 @@
+# Builds every pull request. On each merge to main it publishes one self-contained executable per
+# platform (tools/publish.sh), tags the commit and creates a GitHub Release with the executables.
+# Versioning: a merge bumps the patch (v0.0.1 -> v0.0.2). A milestone bumps the minor (v0.0.5 -> v0.1.0):
+# put [milestone] in the squash-commit message or give the PR the label "milestone".
+name: Build and release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version part to bump
+        type: choice
+        options: [patch, minor]
+        default: patch
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'release' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pick version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          INPUT_BUMP: ${{ inputs.bump }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          bump=patch
+          if [ "$EVENT" = workflow_dispatch ]; then
+            bump="$INPUT_BUMP"
+          elif [ "$EVENT" = push ]; then
+            labels=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[].labels[].name' || true)
+            if grep -qi '\[milestone\]' <<< "$MESSAGE" || grep -qix milestone <<< "$labels"; then
+              bump=minor
+            fi
+          fi
+          tag=$(tools/next_version.sh "$bump")
+          echo "Bump $bump -> $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        env:
+          VERSION: ${{ steps.version.outputs.number }}
+        run: tools/publish.sh linux-x64 win-x64
+
+      - name: Create release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          mkdir release
+          cp publish/linux-x64/StickAndPuck "release/StickAndPuck-$TAG-linux-x64"
+          cp publish/win-x64/StickAndPuck.exe "release/StickAndPuck-$TAG-win-x64.exe"
+          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title "StickAndPuck $TAG" --generate-notes

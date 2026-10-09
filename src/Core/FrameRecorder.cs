@@ -27,7 +27,7 @@ internal sealed class FrameRecorder
         if (!float.TryParse(Environment.GetEnvironmentVariable("SAP_RECORD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds) || seconds <= 0)
             return null;
         string folder = Environment.GetEnvironmentVariable("SAP_FRAMES") is { Length: > 0 } f ? f : "frames";
-        return new FrameRecorder(seconds, folder);
+        return new FrameRecorder(seconds, AssetRoot.Output(folder));
     }
 
     /// <summary>Saves the frame just drawn.</summary>

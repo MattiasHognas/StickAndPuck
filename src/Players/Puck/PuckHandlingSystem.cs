@@ -101,6 +101,7 @@ internal sealed class PuckHandlingSystem : ISystem
                 charge.Remove(p.Id);
                 var kind = PuckHandling.KindOf(held);
                 float speed = kind == ShotKind.Slap ? PuckHandling.SlapSpeed(p.Data.Traits, held) : PuckHandling.WristSpeed(p.Data.Traits);
+                speed *= Lines.LinesTuning.ShotFactor(p.Energy);   // W13: tired skaters shoot softer
                 pendingShot = (p.Id, kind, speed);
                 p.Begin(PlayerAction.Shoot);
             }

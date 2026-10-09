@@ -57,10 +57,10 @@ public static class Game
             if (recorder?.Save(world) == true) break;
 
             // F12 saves a frame; SAP_SCREENSHOT=1 saves one after a second and quits (headless checks)
-            if (IsKeyPressed(KeyboardKey.F12)) TakeScreenshot("screenshot.png");
+            if (IsKeyPressed(KeyboardKey.F12)) AssetRoot.SaveScreen("screenshot.png");
             if (headless && world.Time >= 1f)
             {
-                TakeScreenshot("screenshot.png");
+                AssetRoot.SaveScreen("screenshot.png");
                 Console.WriteLine($"SAP: {world.Tick} steps of {systems.Count} systems, {world.Players.Count} players, screenshot.png saved");
                 break;
             }

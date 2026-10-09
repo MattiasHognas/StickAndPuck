@@ -20,6 +20,17 @@ PB = rig.pose.bones; B = rig.data.bones
 
 # ---------------- 1. one skinned mesh ----------------
 parts = [o for o in scene.objects if o.type == 'MESH' and o.parent == rig and o.parent_type == 'BONE']
+if parts and NAME == 'skater':
+    # the skater's stick gets its own bone under the top hand, so fight clips can drop it: scaled to
+    # nothing at the grip, it vanishes into the glove
+    with bpy.context.temp_override(active_object=rig, object=rig, selected_objects=[rig], selected_editable_objects=[rig]):
+        bpy.ops.object.mode_set(mode='EDIT')
+        eb = rig.data.edit_bones; h = eb['hand.R']
+        sb = eb.new('stick'); sb.head = h.tail; sb.tail = h.tail + (h.tail - h.head).normalized() * 0.1; sb.parent = h
+        bpy.ops.object.mode_set(mode='OBJECT')
+    for o in parts:
+        if o.name.split('.')[0] in ('Shaft', 'Knob', 'Blade'):
+            mw = o.matrix_world.copy(); o.parent_bone = 'stick'; bpy.context.view_layer.update(); o.matrix_world = mw
 if parts:
     for o in parts:
         vg = o.vertex_groups.new(name=o.parent_bone); vg.add(range(len(o.data.vertices)), 1.0, 'REPLACE')
@@ -37,7 +48,7 @@ body = next(o for o in scene.objects if o.type == 'MESH' and o.parent == rig)
 def upd(): bpy.context.view_layer.update()
 def reset():
     for p in PB:
-        p.rotation_mode = 'QUATERNION'; p.rotation_quaternion = (1, 0, 0, 0); p.location = (0, 0, 0)
+        p.rotation_mode = 'QUATERNION'; p.rotation_quaternion = (1, 0, 0, 0); p.location = (0, 0, 0); p.scale = (1, 1, 1)
     upd()
 def turn(name, x=0.0, y=0.0, z=0.0):
     """rotate a bone and everything below it about its head, by armature-space angles"""
@@ -69,10 +80,11 @@ def leg(s, ankle, pole=None, toe=0.0):
 def plant(spread=0.0, **kw):
     for s in 'LR': leg(s, ANKLE[s] + V(((1 if s == 'L' else -1) * spread, 0, 0)), **kw)
 
-gi = body.vertex_groups['hand.R'].index if 'hand.R' in body.vertex_groups else -1
+SB = 'stick' if 'stick' in body.vertex_groups else 'hand.R'      # the bone that carries the stick
+gi = body.vertex_groups[SB].index if SB in body.vertex_groups else -1
 STICK = [v.co.copy() for v in body.data.vertices if any(g.group == gi for g in v.groups)] if NAME != 'referee' else []
 def stick_low():
-    m = PB['hand.R'].matrix @ B['hand.R'].matrix_local.inverted()
+    m = PB[SB].matrix @ B[SB].matrix_local.inverted()
     return min((m @ c).z for c in STICK)
 def lift(bones, z=0.0):
     """swing the stick arm(s) about X until the blade's lowest point sits at height z"""
@@ -155,10 +167,175 @@ def ref_idle(i):
     for s in 'LR': turn('upperarm.' + s, z=-(1 if s == 'L' else -1) * 0.06)
     turn('head', z=[0, 0.25, 0.25, -0.15][i])
 
+def arm(s, upper, fore, hand=None):
+    """point one arm: upper arm, forearm and hand along armature-space directions given for the
+    character's left side (x is mirrored for the right)"""
+    sx = 1 if s == 'L' else -1; m = lambda d: (sx * d[0], d[1], d[2])
+    aim('upperarm.' + s, m(upper)); aim('forearm.' + s, m(fore)); aim('hand.' + s, m(hand or fore))
+
+def skater_pass(i):                         # a short sweep of the stick across the body, low follow-through
+    spin = [0.35, 0.55, 0.0, -0.4, -0.15][i]
+    shift(z=-0.07); turn('pelvis', x=0.16, z=spin * 0.25)
+    plant(spread=0.04, pole=(0, -1, 0))
+    turn('spine', x=0.16, z=spin * 0.4); turn('chest', z=spin * 0.4)
+    turn('neck', x=-0.2); turn('head', z=-spin * 0.5)
+    lift(ARMS, [0.0, 0.04, 0.0, 0.12, 0.03][i])
+
+def skater_check(i):                        # load low, drive the left shoulder through, recover
+    twist = [0.0, -0.45, -0.7, -0.3][i]; lean = [0.30, 0.36, 0.42, 0.24][i]
+    shift(y=[0, -0.04, -0.10, -0.03][i], z=[-0.14, -0.10, -0.08, -0.08][i]); turn('pelvis', x=lean * 0.6, z=twist * 0.4)
+    leg('L', ANKLE['L'] + V((0.04, [0, -0.06, -0.10, -0.03][i], 0)), pole=(0.3, -1, 0))
+    leg('R', ANKLE['R'] + V((-0.04, [0, 0.16, 0.26, 0.08][i], [0, 0.02, 0.06, 0.0][i])), pole=(-0.3, -1, 0))
+    turn('spine', x=lean * 0.5, z=twist * 0.5); turn('chest', z=twist * 0.4)
+    turn('neck', x=-0.3); turn('head', z=-twist * 0.6)
+    lift(ARMS, [0.0, 0.08, 0.15, 0.04][i])
+    if i in (1, 2): turn('upperarm.L', z=0.25, y=-0.2)      # elbow tucked in, shoulder leads
+
+def skater_celebrate(i):                    # stick thrown up over the head, pumping, one knee up on the glide
+    shift(z=[-0.02, 0.02, -0.02, 0.0][i]); turn('pelvis', x=-0.04)
+    leg('L', ANKLE['L'] + V((0, [0, -0.14, 0, -0.06][i], [0, 0.26, 0, 0.12][i])), pole=(0.3, -1, 0))
+    leg('R', ANKLE['R'], pole=(0, -1, 0))
+    turn('spine', x=-0.10); turn('neck', x=0.10); turn('head', x=0.18)
+    for c in ARMS: turn(c, x=[-2.3, -2.8, -2.4, -2.7][i])
+
+FIGHT_GUARD = ((0.30, -0.45, -0.75), (-0.10, -0.55, 0.85))     # elbow low and out, fist up by the chin
+
+def fight_base(crouch=0.06, lean=0.10, drop=True):
+    """gloves off: the stick shrinks into the top glove, feet wide, knees bent, fists up"""
+    if drop: PB['stick'].scale = (1e-3, 1e-3, 1e-3); upd()
+    shift(z=-crouch); turn('pelvis', x=lean)
+    plant(spread=0.07, pole=(0, -1, 0))
+    turn('spine', x=lean * 0.6); turn('neck', x=-0.12)
+
+def skater_punch(i):                        # right hand: guard, wind back, full extension, pull back, guard
+    twist = [0.0, -0.35, 0.45, 0.2, 0.0][i]
+    fight_base(lean=[0.10, 0.06, 0.20, 0.14, 0.10][i])
+    turn('spine', z=twist * 0.5); turn('chest', z=twist * 0.5); turn('head', z=-twist * 0.4)
+    arm('L', *FIGHT_GUARD)
+    if i == 1: arm('R', (0.35, 0.35, -0.75), (-0.15, -0.35, 0.9))
+    elif i == 2: arm('R', (-0.12, -1.0, 0.05), (-0.08, -1.0, 0.08))
+    elif i == 3: arm('R', (0.15, -0.7, -0.45), (-0.05, -0.8, 0.5))
+    else: arm('R', *FIGHT_GUARD)
+
+def skater_block(i):                        # forearms come up crossed over the face, head tucked, lean away
+    fight_base(lean=[0.10, 0.02, -0.04][i])
+    turn('neck', x=[0.0, 0.18, 0.28][i])
+    if i == 0:
+        arm('L', *FIGHT_GUARD); arm('R', *FIGHT_GUARD)
+    else:
+        up = [0, 0.6, 0.85][i]
+        arm('L', (0.30, -0.55, -0.55 + up * 0.5), (-0.75, -0.45, 0.45 + up * 0.3))
+        arm('R', (0.30, -0.65, -0.55 + up * 0.5), (-0.75, -0.40, 0.40 + up * 0.3))
+
+def skater_grab(i):                         # left hand holds the other sweater and tugs, right hand cocked
+    tug = [0.0, 1.0, 0.4, 1.0][i]
+    fight_base(lean=0.12 - 0.05 * tug)
+    shift(y=0.03 * tug); turn('chest', z=0.15 + 0.08 * tug)
+    arm('L', (0.10, -0.95 + 0.5 * tug, -0.2 - 0.3 * tug), (0.02, -1.0, 0.05 + 0.15 * tug), (0.0, -1.0, -0.3))
+    arm('R', (0.35, 0.30, -0.70), (-0.10, -0.25, 0.95))
+
+def ground():
+    """drop or raise the whole body so its lowest deformed point rests on the ice"""
+    ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get()); me = ev.to_mesh()
+    lo = min((body.matrix_world @ v.co).z for v in me.vertices); ev.to_mesh_clear()
+    PB['pelvis'].location += B['pelvis'].matrix_local.to_3x3().inverted() @ V((0, 0, -lo)); upd()
+
+def skater_fall(i):                         # rocked back, legs go, down flat on the back on the ice
+    back = [-0.30, -0.85, -1.60, -1.80][i]; drop = [-0.02, -0.25, -0.70, -0.76][i]
+    if i == 0: fight_base(lean=0.0, drop=False)
+    shift(y=[0.05, 0.12, 0.18, 0.20][i], z=drop); turn('pelvis', x=back)
+    if i == 0:
+        plant(spread=0.07, pole=(0, -1, 0))
+    else:
+        for s in 'LR':
+            sx = 1 if s == 'L' else -1
+            turn('thigh.' + s, x=[0, -0.6, 0.0, 0.15][i], y=sx * 0.12); turn('shin.' + s, x=[0, 0.9, 0.25, 0.1][i])
+    turn('neck', x=[0.2, 0.3, 0.45, 0.35][i])
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        turn('upperarm.' + s, y=sx * [0.3, 0.7, 1.1, 1.2][i], x=[-0.4, -0.9, -0.2, 0.0][i])
+    PB['stick'].scale = (1e-3, 1e-3, 1e-3); upd()
+    ground()
+
+def goalie_glove(i):                        # catcher flashes up and out to the left, snaps shut, shows the catch
+    reach = [0.0, 1.0, 0.85, 0.5][i]
+    shift(x=0.06 * reach, z=-0.04 * reach); turn('pelvis', y=0.10 * reach)
+    leg('L', ANKLE['L'] + V((0.10 * reach, 0, 0)), pole=(0, -1, 0))
+    leg('R', ANKLE['R'] + V((0.02 * reach, 0, 0.0)), pole=(0, -1, 0))
+    turn('chest', z=0.15 * reach); turn('head', z=0.35 * reach)
+    if i == 0: turn('upperarm.L', z=0.04)
+    elif i == 1: arm('L', (0.85, -0.35, 0.40), (0.45, -0.35, 0.82))
+    elif i == 2: arm('L', (0.75, -0.40, 0.30), (0.20, -0.55, 0.80))
+    else: arm('L', (0.55, -0.35, -0.10), (0.05, -0.55, 0.83))
+    lift(['hand.R'], 0.0)
+
+def goalie_blocker(i):                      # blocker punches out to the right and down, deflects, comes back
+    reach = [0.0, 1.0, 0.7][i]
+    shift(x=-0.05 * reach, z=-0.05 * reach); turn('pelvis', y=-0.08 * reach)
+    leg('R', ANKLE['R'] + V((-0.08 * reach, 0, 0)), pole=(0, -1, 0)); leg('L', ANKLE['L'], pole=(0, -1, 0))
+    turn('chest', z=-0.15 * reach); turn('head', z=-0.30 * reach)
+    turn('upperarm.L', z=0.04)
+    if i: arm('R', [None, (0.85, -0.35, -0.25), (0.6, -0.5, -0.45)][i], [None, (0.75, -0.45, 0.35), (0.35, -0.75, 0.2)][i])
+    else: lift(['hand.R'], 0.0)
+
+def goalie_shuffle(i):                      # a side step in the stance: lead pad pushes out, trail pad closes
+    out = [0.0, 0.16, 0.06, 0.0][i]
+    shift(x=0.05 * [0, 1, 1.5, 0.5][i], z=-0.02 - 0.015 * (i % 2))
+    leg('L', ANKLE['L'] + V((out, 0, 0.03 if i == 1 else 0)), pole=(0, -1, 0))
+    leg('R', ANKLE['R'] + V((0.05 * [0, 0, 1, 0.5][i], 0, 0.03 if i == 2 else 0)), pole=(0, -1, 0))
+    turn('upperarm.L', z=0.04)
+    lift(['hand.R'], 0.0)
+
+def ref_stand():
+    shift(z=-0.01); plant(pole=(0, -1, 0))
+    for s in 'LR': turn('upperarm.' + s, z=-(1 if s == 'L' else -1) * 0.06)
+
+REF_UP = ((0.08, -0.05, 1.0), (0.02, -0.05, 1.0))
+def ref_armup(i):                           # delayed penalty: right arm straight up, held while play goes on
+    ref_stand(); arm('R', *REF_UP); turn('head', z=[0, 0.2][i])
+
+def ref_whistle(i):                         # whistle to the mouth, arm up
+    ref_stand(); arm('R', *REF_UP)
+    arm('L', (0.25, -0.55, -0.55), (-0.45, -0.55, 0.70))
+    turn('neck', x=[0, -0.08][i])
+
+def ref_tripping(i):                        # right hand sweeps across below the knee, body bends
+    ref_stand(); turn('spine', x=[0.2, 0.45][i]); turn('chest', x=0.1)
+    arm('R', (0.2, -0.55, -0.8), ((0.9, -0.3, -0.35) if i else (-0.3, -0.5, -0.8)))
+
+def ref_hooking(i):                         # both hands pull back toward the stomach, as if pulling on a stick
+    ref_stand(); turn('spine', x=0.08)
+    k = [0.0, 1.0][i]
+    for s in 'LR': arm(s, (0.15, -0.9 + 0.8 * k, -0.4 - 0.2 * k), (-0.3 * k, -1.0, 0.1 + 0.4 * k))
+
+def ref_slashing(i):                        # right hand chops down across the left forearm
+    ref_stand()
+    arm('L', (0.25, -0.75, -0.6), (-0.6, -0.8, 0.0))
+    arm('R', (0.25, -0.7, -0.2 + 0.7 * (1 - i)), (0.55, -0.8, 0.6 - 0.9 * i))
+
+def ref_goal(i):                            # points into the net with the right arm, held
+    ref_stand(); turn('chest', z=-0.15 * i)
+    arm('R', ((-0.4, -0.85, -0.2) if i else (0.2, -0.45, -0.85)), ((-0.5, -0.85, 0.0) if i else (-0.2, -0.6, -0.75)))
+
+def ref_drop(i):                            # puck held out over the dot, bent forward, then thrown down
+    bend = [0.25, 0.55, 0.55, 0.35][i]
+    shift(z=-0.04 - 0.08 * (bend > 0.4)); plant(spread=0.05, pole=(0, -1, 0)); turn('pelvis', x=bend * 0.4)
+    turn('spine', x=bend * 0.6); turn('neck', x=-bend * 0.4)
+    turn('upperarm.L', z=0.06)
+    arm('R', [(0.05, -0.75, -0.45), (0.0, -0.85, -0.40), (0.0, -0.55, -0.85), (0.1, -0.35, -0.9)][i],
+        [(-0.1, -0.85, 0.05), (-0.05, -0.95, -0.15), (-0.05, -0.30, -0.95), (0.0, 0.0, -1.0)][i])
+
 # name: (poses, frames each pose is held at 24 fps, loops?)
-CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4, 6, True), 'shoot': (skater_shoot, 6, 3, False)},
-         'goalie': {'ready': (goalie_ready, 4, 5, True), 'butterfly': (goalie_butterfly, 5, 3, False)},
-         'referee': {'skate': (ref_skate, 8, 3, True), 'idle': (ref_idle, 4, 8, True)}}[NAME]
+CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4, 6, True), 'shoot': (skater_shoot, 6, 3, False),
+                    'pass': (skater_pass, 5, 2, False), 'check': (skater_check, 4, 3, False), 'celebrate': (skater_celebrate, 4, 5, True),
+                    'punch': (skater_punch, 5, 3, False), 'block': (skater_block, 3, 3, False), 'grab': (skater_grab, 4, 5, True),
+                    'fall': (skater_fall, 4, 4, False)},
+         'goalie': {'ready': (goalie_ready, 4, 5, True), 'butterfly': (goalie_butterfly, 5, 3, False),
+                    'glove': (goalie_glove, 4, 3, False), 'blocker': (goalie_blocker, 3, 3, False), 'shuffle': (goalie_shuffle, 4, 3, True)},
+         'referee': {'skate': (ref_skate, 8, 3, True), 'idle': (ref_idle, 4, 8, True),
+                     'armup': (ref_armup, 2, 12, True), 'whistle': (ref_whistle, 2, 6, False), 'tripping': (ref_tripping, 2, 6, True),
+                     'hooking': (ref_hooking, 2, 6, True), 'slashing': (ref_slashing, 2, 6, True), 'goal': (ref_goal, 2, 6, False),
+                     'drop': (ref_drop, 4, 4, False)}}[NAME]
 
 # ---------------- 2. key the clips, stepped ----------------
 def fcurves(act):
@@ -177,6 +354,7 @@ for cname, (fn, n, hold, loop) in CLIPS.items():
         for p in PB:
             p.keyframe_insert('rotation_quaternion', frame=f, group=p.name)
             p.keyframe_insert('location', frame=f, group=p.name)
+            p.keyframe_insert('scale', frame=f, group=p.name)
     for fc in fcurves(act):
         for k in fc.keyframe_points: k.interpolation = 'CONSTANT'
     tr = ad.nla_tracks.new(); tr.name = cname; tr.strips.new(cname, 0, act); tr.mute = True
