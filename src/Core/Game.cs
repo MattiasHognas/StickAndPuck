@@ -18,7 +18,7 @@ public static class Game
 
     /// <summary>
     /// Runs the game. SAP_SCENE picks the scene; SAP_SCREENSHOT=1 saves screenshot.png after one
-    /// second of game time and quits, for headless checks.
+    /// second of game time and quits, for headless checks. SAP_RECORD saves every frame for a movie.
     /// </summary>
     public static void Run()
     {
@@ -26,6 +26,7 @@ public static class Game
         Console.WriteLine($"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}");
         var world = Scenes.CreateFromEnvironment(clubs, new Settings());
         bool headless = string.Equals(Environment.GetEnvironmentVariable("SAP_SCREENSHOT"), "1", StringComparison.Ordinal);
+        var recorder = FrameRecorder.FromEnvironment();
 
         SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint);
         InitWindow(Width * 3, Height * 3, "Stick & Puck");
@@ -42,7 +43,7 @@ public static class Game
         {
             // fixed 60 Hz steps; a slow frame runs a few steps, never more than a quarter second's worth
             pending += Math.Min(GetFrameTime(), 0.25f);
-            if (headless) pending = Step;     // headless runs exactly one step per frame, so captures repeat
+            if (headless || recorder != null) pending = Step;     // headless runs exactly one step per frame, so captures repeat
             while (pending >= Step)
             {
                 world.Events.Clear();
@@ -52,7 +53,8 @@ public static class Game
                 pending -= Step;
             }
 
-            Draw(world, systems, pixel, render);
+            Draw(world, systems, pixel, render, showFps: recorder == null);
+            if (recorder?.Save(world) == true) break;
 
             // F12 saves a frame; SAP_SCREENSHOT=1 saves one after a second and quits (headless checks)
             if (IsKeyPressed(KeyboardKey.F12)) TakeScreenshot("screenshot.png");
@@ -70,7 +72,7 @@ public static class Game
         CloseWindow();
     }
 
-    static void Draw(World world, IReadOnlyList<ISystem> systems, PixelFrame pixel, RenderContext render)
+    static void Draw(World world, IReadOnlyList<ISystem> systems, PixelFrame pixel, RenderContext render, bool showFps)
     {
         // 1. the scene, lit with three flat tones
         pixel.BeginScene();
@@ -95,7 +97,7 @@ public static class Game
         BeginDrawing();
         ClearBackground(new Color(24, 19, 31, 255));
         pixel.Present();
-        DrawText($"{GetFPS()} fps  arrows: skate  space: shoot  tab: kit", 8, 8, 10, new Color(239, 224, 194, 255));
+        if (showFps) DrawText($"{GetFPS()} fps  arrows: skate  space: shoot  tab: kit", 8, 8, 10, new Color(239, 224, 194, 255));
         EndDrawing();
     }
 }
