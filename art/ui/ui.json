@@ -1,0 +1,271 @@
+{
+  "font": {
+    "file": "art/ui/font.fnt",
+    "image": "art/ui/font.png",
+    "lineHeight": 12,
+    "capHeight": 7,
+    "note": "White ink: LoadFont(font.fnt), DrawTextEx at size 12, spacing 0, tinted with a palette colour. Text y is the top of the accent rows; capitals start 2 px lower."
+  },
+  "scorebug": {
+    "file": "art/ui/scorebug.png",
+    "size": [
+      166,
+      18
+    ],
+    "position": [
+      8,
+      8
+    ],
+    "slots": {
+      "home_crest": [
+        2,
+        1,
+        16,
+        16
+      ],
+      "home_name": [
+        21,
+        4,
+        17,
+        7
+      ],
+      "home_stripe": [
+        21,
+        13,
+        17,
+        2
+      ],
+      "home_score": [
+        44,
+        6,
+        11,
+        7
+      ],
+      "away_crest": [
+        60,
+        1,
+        16,
+        16
+      ],
+      "away_name": [
+        79,
+        4,
+        17,
+        7
+      ],
+      "away_stripe": [
+        79,
+        13,
+        17,
+        2
+      ],
+      "away_score": [
+        102,
+        6,
+        11,
+        7
+      ],
+      "period": [
+        120,
+        6,
+        11,
+        7
+      ],
+      "clock": [
+        137,
+        6,
+        25,
+        7
+      ]
+    },
+    "note": "Text slots are the 7 px capital box: draw text at slot y - 2.",
+    "textColour": "#efe0c2",
+    "scoreColour": "#f2c14e"
+  },
+  "panels": {
+    "panel": {
+      "file": "art/ui/panel.png",
+      "border": [
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    "panel_gold": {
+      "file": "art/ui/panel_gold.png",
+      "border": [
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    "panel_red": {
+      "file": "art/ui/panel_red.png",
+      "border": [
+        3,
+        3,
+        3,
+        3
+      ]
+    }
+  },
+  "icons": {
+    "file": "art/ui/icons.png",
+    "cells": {
+      "puck": [
+        0,
+        0,
+        8,
+        8
+      ],
+      "arrow_right": [
+        8,
+        0,
+        8,
+        8
+      ],
+      "arrow_left": [
+        16,
+        0,
+        8,
+        8
+      ],
+      "check": [
+        24,
+        0,
+        8,
+        8
+      ],
+      "cross": [
+        32,
+        0,
+        8,
+        8
+      ],
+      "star": [
+        40,
+        0,
+        8,
+        8
+      ],
+      "whistle": [
+        48,
+        0,
+        8,
+        8
+      ],
+      "stick": [
+        56,
+        0,
+        8,
+        8
+      ]
+    }
+  },
+  "crests": {
+    "file": "art/ui/crests.png",
+    "cells": {
+      "brynas": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "djurgarden": [
+        16,
+        0,
+        16,
+        16
+      ],
+      "farjestad": [
+        32,
+        0,
+        16,
+        16
+      ],
+      "frolunda": [
+        48,
+        0,
+        16,
+        16
+      ],
+      "hv71": [
+        64,
+        0,
+        16,
+        16
+      ],
+      "linkoping": [
+        80,
+        0,
+        16,
+        16
+      ],
+      "lulea": [
+        96,
+        0,
+        16,
+        16
+      ],
+      "malmo": [
+        112,
+        0,
+        16,
+        16
+      ],
+      "orebro": [
+        128,
+        0,
+        16,
+        16
+      ],
+      "rogle": [
+        144,
+        0,
+        16,
+        16
+      ],
+      "skelleftea": [
+        160,
+        0,
+        16,
+        16
+      ],
+      "timra": [
+        176,
+        0,
+        16,
+        16
+      ],
+      "vaxjo": [
+        192,
+        0,
+        16,
+        16
+      ],
+      "bjorkloven": [
+        208,
+        0,
+        16,
+        16
+      ],
+      "generic": [
+        224,
+        0,
+        16,
+        16
+      ]
+    },
+    "fallback": "generic",
+    "note": "Keys are club ids from data/clubs; unknown ids use the fallback."
+  },
+  "title": {
+    "file": "art/ui/title.png",
+    "size": [
+      199,
+      41
+    ]
+  }
+}
