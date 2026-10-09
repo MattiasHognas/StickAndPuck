@@ -24,8 +24,8 @@ namespace StickAndPuck.AI;
 /// </summary>
 internal sealed class DecisionSystem : ISystem
 {
-    static float DbgMin = 99, DbgRel;
     const float CheckFrom = 3.2f;   // distance at which a presser decides whether to hit
+    const float ShootFrom = 0.6f;   // a shot worth less than this is not taken: only good chances, about 1 a minute
 
     readonly Random rng;
 
@@ -60,7 +60,7 @@ internal sealed class DecisionSystem : ISystem
         {
             if (!p.OnIce || p.IsGoalie || p.Slot >= 0 || p.Action is PlayerAction.Fallen or PlayerAction.Fight) continue;
             var brain = board.For(p.Id);
-            if (brain.ShootSteps > 0) { HoldShot(world, p, brain); continue; }
+            if (brain.ShootSteps > 0 || (p.Action == PlayerAction.Shoot && pk.Carrier == p.Id)) { HoldShot(world, p, brain); continue; }
             if (pk.Carrier == p.Id) { Carry(world, board, p, brain); continue; }
             if (MeetPass(world, board, p)) continue;
             if (Positioning.JobOf(world, p) == Job.Chase && pk.Carrier < 0) { Pounce(world, p); continue; }
@@ -103,13 +103,11 @@ internal sealed class DecisionSystem : ISystem
         board.LastCarrier = pk.Carrier;
 
         if (board.Pass is not { } pass) return;
-        if (pass.Receiver >= 0) { var rcv = world.Players[pass.Receiver]; float dd = Vector3.Distance(PuckHandling.Blade(rcv), pk.Position); DbgMin = Math.Min(DbgMin, dd); DbgRel = (pk.Velocity - rcv.Velocity).Length(); }
         if (pk.Carrier >= 0 && pk.Carrier < world.Players.Count)
         {
             var tally = board.Tally[(int)pass.Side];
             if (world.Players[pk.Carrier].Side == pass.Side) tally.Completed++;
-            else { tally.Intercepted++; if (string.Equals(Environment.GetEnvironmentVariable("DBG"), "1", StringComparison.Ordinal)) Console.WriteLine($"DBG icpt recv {pass.Receiver} min {DbgMin:F2} rel {DbgRel:F1} t {world.Time - pass.At:F2} by {pk.Carrier} goalie {world.Players[pk.Carrier].IsGoalie} passer-dist {Vector3.Distance(world.Players[pass.Passer].Position, world.Players[pk.Carrier].Position):F1}"); }
-            DbgMin = 99;
+            else tally.Intercepted++;
             board.Pass = null;
         }
         else if (!pk.Live || world.Time - pass.At > 3f || world.Match.Phase is not (MatchPhase.Play or MatchPhase.Overtime))
@@ -118,12 +116,13 @@ internal sealed class DecisionSystem : ISystem
         }
     }
 
-    /// <summary>Keeps shoot held through a slap shot's wind-up, then lets go.</summary>
+    /// <summary>Keeps shoot held through a slap shot's wind-up, then lets go, with the stick on the aim until the puck leaves.</summary>
     static void HoldShot(World world, Player p, Brain brain)
     {
         if (world.Puck.Carrier != p.Id) { brain.ShootSteps = 0; return; }
-        brain.ShootSteps--;
-        p.Command = p.Command with { Move = brain.ShootAim, Shoot = true, Sprint = false };
+        bool hold = brain.ShootSteps > 0;
+        if (hold) brain.ShootSteps--;
+        p.Command = p.Command with { Move = brain.ShootAim, Shoot = hold, Sprint = false };
     }
 
     /// <summary>The carrier's look at the play: carry on, shoot or pass, whichever is worth most.</summary>
@@ -140,18 +139,29 @@ internal sealed class DecisionSystem : ISystem
         float nearest = seen.Where(d => d.Speed > 5f).Select(d => Vector2.Distance(d.At, Flat(p.Position))).DefaultIfEmpty(99f).Min();
         bool pressed = nearest < 2.6f;
         float held = world.Time - brain.GotAt;
+        bool camping = held > 3f && p.Speed < 1.2f;   // stood still with the puck: time to let it go
 
-        float carry = Choices.SpotValue(end, at) * (pressed ? 0.55f : 1f) * (1f - Math.Min(0.35f, held / 12f));
+        float carry = Choices.SpotValue(end, at) * (1f - Math.Min(0.35f, held / 12f)) * (camping ? 0.5f : 1f);
         float accuracy = Traits.Unit(p.Data.Traits.ShotAccuracy);
         var blockers = world.Players.Where(o => o.OnIce && o.Side != p.Side && !o.IsGoalie).Select(o => Flat(o.Position));
-        float shoot = Choices.ShotQuality(end, at) * (0.75f + 0.5f * accuracy) * Choices.ShotLane(end, at, blockers);
+        float lane = Choices.ShotLane(end, at, blockers);
+        float shoot = Choices.ShotQuality(end, at) * (0.75f + 0.5f * accuracy) * lane * (pressed ? 0.7f : 1f);
         shoot += wobble * PuckHandling.Gauss(rng);
 
         var pass = BestPass(world, p, end, at, seen, smart);
         float passValue = pass?.Value + wobble * PuckHandling.Gauss(rng) ?? float.MinValue;
 
-        if (shoot > carry && shoot > passValue && shoot > 0.06f) Shoot(world, p, brain, end, at, pressed);
-        else if (pass is { } best && passValue > carry * 1.05f + 0.01f) Pass(p, brain, best, at);
+        if (shoot > carry && shoot > passValue && shoot > (camping ? ShootFrom * 0.6f : ShootFrom)) Shoot(world, p, brain, end, at, pressed);
+        else if (PointShot(end, at, lane, pressed, held) && passValue < carry) Shoot(world, p, brain, end, at, pressed);
+        else if (pass is { } best && (passValue > carry * 1.05f + 0.01f || (camping && held > 6f))) Pass(p, brain, best, at);
+        else if (camping && held > 6f && Choices.ShotQuality(end, at) > 0f) Shoot(world, p, brain, end, at, pressed);   // pinned too long: get rid of it
+    }
+
+    /// <summary>Now and then, a skater at the point with a clear lane and time winds up from distance, for a deflection or a rebound.</summary>
+    bool PointShot(int end, Vector2 at, float lane, bool pressed, float held)
+    {
+        float distance = RinkSpec.GoalLineX - end * at.X;
+        return !pressed && held > 1.2f && lane > 0.9f && distance is > 12f and < 20f && MathF.Abs(at.Y) < 8f && rng.NextSingle() < 0.15f;
     }
 
     /// <summary>The opponents' sticks as this carrier sees them: misread by up to a few metres for a poor passer, re-read every look.</summary>
@@ -190,7 +200,7 @@ internal sealed class DecisionSystem : ISystem
             if (!picked) continue;
 
             float success = Choices.LaneSuccess(at, target, speed, seen, smart);
-            float value = success * Choices.SpotValue(end, target) * (0.5f + 0.5f * Choices.Room(target, seen)) - (1f - success) * 0.15f;
+            float value = success * Choices.SpotValue(end, target) * (0.5f + 0.5f * Choices.Room(target, seen)) - (1f - success) * 0.08f;
             if (best == null || value > best.Value.Value) best = new PassOption(mate, target, success, value);
         }
         return best;
@@ -203,11 +213,13 @@ internal sealed class DecisionSystem : ISystem
         var goalie = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).FirstOrDefault(o => o.IsGoalie);
         int side = Choices.ShotSide(at, goalie?.Position.Z);
 
-        // the stick points to the side of the net to aim for, as long as it still points at the net
-        var aim = Vector2.Normalize(new Vector2(end * 0.8f, side * 0.6f));
-        if (Vector2.Dot(aim, Vector2.Normalize(toNet)) < MathF.Cos(70f * MathF.PI / 180f)) aim = Vector2.Normalize(toNet);
-
+        // an accurate shooter points the stick at the side of the net to beat the goalie; anyone
+        // else, and any slap shot, just aims at the net and lets the shot find the far side
         bool slap = distance > 13f && !pressed && rng.NextSingle() < 0.75f;
+        var aim = Vector2.Normalize(new Vector2(end * 0.8f, side * 0.6f));
+        bool picksCorner = !slap && Traits.Unit(p.Data.Traits.ShotAccuracy) >= 0.75f;
+        if (!picksCorner || Vector2.Dot(aim, Vector2.Normalize(toNet)) < MathF.Cos(70f * MathF.PI / 180f)) aim = Vector2.Normalize(toNet);
+
         brain.ShootSteps = slap ? 28 + rng.Next(22) : 0;
         brain.ShootAim = aim;
         p.Command = p.Command with { Move = aim, Shoot = true, Sprint = false };
@@ -278,8 +290,8 @@ internal sealed class DecisionSystem : ISystem
         if (world.Time >= brain.CheckReady && d < CheckFrom)
         {
             float checking = Traits.Unit(p.Data.Traits.Checking);
-            brain.HitUntil = rng.NextSingle() < 0.25f + 0.6f * checking ? world.Time + 0.9f : float.NegativeInfinity;
-            brain.CheckReady = world.Time + 2.5f;
+            brain.HitUntil = rng.NextSingle() < 0.04f + 0.15f * checking ? world.Time + 0.9f : float.NegativeInfinity;
+            brain.CheckReady = world.Time + 4f;
         }
         if (world.Time > brain.HitUntil) return;
 

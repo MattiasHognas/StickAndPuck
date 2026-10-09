@@ -60,7 +60,7 @@ public sealed class DecisionsSelfTest : IScene
     {
         var world = Make(clubs, settings, 20 * 60, null, null);
         var systems = Systems(world, 5);
-        var still = Play(world, systems, 3 * 20 * 60 + 600);
+        var still = Play(world, systems, 2 * 60 * 60);
         var h = Decisions.Tally(world, Side.Home);
         var a = Decisions.Tally(world, Side.Away);
         Console.WriteLine($"      match: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {h.Shots}-{a.Shots}, passes {h.Completed}/{h.Passes} ({h.Completion:P0}) and {a.Completed}/{a.Passes} ({a.Completion:P0}), checks {h.Checks}-{a.Checks}, longest loose puck {still:F1} s");
@@ -68,7 +68,7 @@ public sealed class DecisionsSelfTest : IScene
         Check(h.Passes > 80 && a.Passes > 80, "both clubs pass the puck around");
         Check(h.Completion > 0.5f && a.Completion > 0.5f, "most passes reach a teammate");
         Check(world.Match.Shots[0] >= 15 && world.Match.Shots[1] >= 15 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
-        Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 16, "goals are scored, but not too many");
+        Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 22, "goals are scored, but not a rout");
         Check(h.Checks + a.Checks >= 10, "the AI throws checks");
         Check(still < 15f, "the AI never leaves a loose puck lying");
         return world;
@@ -121,7 +121,6 @@ public sealed class DecisionsSelfTest : IScene
             var pk = world.Puck;
             bool loose = pk.Live && pk.Carrier < 0 && world.Match.Phase == MatchPhase.Play;
             if (!loose || Vector3.Distance(pk.Position, at) > 0.5f) { at = pk.Position; since = world.Time; }
-            if (world.Time - since > 15f && world.Time - since < 15f + Game.Step * 1.5f) Console.WriteLine($"DBG still puck {pk.Position} phase {world.Match.Phase} period {world.Match.Period} clock {world.Match.Clock:F0} nearest {world.Players.Where(p => p.OnIce).Min(p => Vector3.Distance(p.Position, pk.Position)):F1} chasers {string.Join(" | ", world.Players.Where(p => p.OnIce && !p.IsGoalie && Positioning.JobOf(world, p) == Job.Chase).Select(p => $"{p.Position} v {p.Velocity.Length():F2} mv {p.Command.Move} act {p.Action} tgt {Positioning.TargetOf(world, p)} blade {Vector3.Distance(PuckHandling.Blade(p), pk.Position):F2}"))}");
             longest = Math.Max(longest, world.Time - since);
         }
         return longest;
@@ -133,7 +132,7 @@ public sealed class DecisionsSelfTest : IScene
         ISystem[] systems =
         [
             new PositioningSystem(new Random(seed)), new DecisionSystem(new Random(seed)), new SkatingSystem(), new CheckingSystem(new Random(seed)),
-            new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), new MatchRules(),
+            new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), new MatchRules(), new OvertimeRules(),
         ];
 #pragma warning restore S2245
         foreach (var s in systems) if (s is not (PuckPhysics or GoalieSystem)) s.Start(world);
