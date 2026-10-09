@@ -3,4 +3,4 @@ art/scene/renders/
 
 bin/
 obj/
-docs/
+docs/*.blend1
