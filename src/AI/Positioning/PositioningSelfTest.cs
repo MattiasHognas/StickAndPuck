@@ -178,7 +178,7 @@ public sealed class PositioningSelfTest : IScene
         float longestStill = t.LongestStill, stackSeconds = t.Stacked, pileSeconds = t.Piled, offsideSeconds = t.Offside;
         float meanAway = t.AwaySum / Math.Max(1, t.Shaped);
         float minutes = world.Setup.PeriodSeconds / 60f;
-        Console.WriteLine($"      period: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {StandInPlay.Shots[0]}-{StandInPlay.Shots[1]}, {touches} touches by {touchers} skaters, {StandInPlay.DeadPucks} dead pucks, longest still {longestStill:F1} s, stacked {stackSeconds:F0} s, piled {pileSeconds:F0} s, mean {meanAway:F1} m off the ideal spot, offside shape {offsideSeconds:F0} s");
+        Console.WriteLine($"      period: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {Decisions.Tally(world, Side.Home).Shots}-{Decisions.Tally(world, Side.Away).Shots}, {touches} touches by {touchers} skaters, {StandInPlay.DeadPucks} dead pucks, longest still {longestStill:F1} s, stacked {stackSeconds:F0} s, piled {pileSeconds:F0} s, mean {meanAway:F1} m off the ideal spot, offside shape {offsideSeconds:F0} s");
         Check(world.Match.Phase == MatchPhase.Intermission, $"a {minutes:F0} minute period runs through to the intermission under the match rules");
         Check(outsideCount == 0, "no skater leaves the rink or loses its position");
         Check(longestStill < 20f, $"nobody stands idle: longest without moving a metre is {longestStill:F1} s");
@@ -189,7 +189,7 @@ public sealed class PositioningSelfTest : IScene
         Check(meanAway < 4.5f, $"skaters hold shape: mean {meanAway:F1} m from their ideal spot");
         Check(offsideSeconds < 0.05f * minutes * 60 * 2, $"attacking forwards wait for the puck at the blue line ({offsideSeconds:F0} s over it early)");
         Check(StandInPlay.DeadPucks < minutes, $"play keeps going ({StandInPlay.DeadPucks} dead pucks in {minutes:F0} minutes)");
-        Check(StandInPlay.Shots[0] + StandInPlay.Shots[1] > 10, $"both sides get shots away ({StandInPlay.Shots[0]}-{StandInPlay.Shots[1]})");
+        Check(Decisions.Tally(world, Side.Home).Shots + Decisions.Tally(world, Side.Away).Shots > 10, $"both sides get shots away ({Decisions.Tally(world, Side.Home).Shots}-{Decisions.Tally(world, Side.Away).Shots})");
     }
 
     /// <summary>Smart skaters sit nearer their ideal spots than poor ones, over the same five minutes.</summary>
@@ -231,7 +231,7 @@ public sealed class PositioningSelfTest : IScene
     static ISystem[] Systems(World world, int seed, params ISystem[] more)
     {
 #pragma warning disable S2245 // fixed seeds so the checks repeat
-        ISystem[] systems = [new PositioningSystem(new Random(seed)), new SkatingSystem(), new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), .. more];
+        ISystem[] systems = [new PositioningSystem(new Random(seed)), new DecisionSystem(new Random(seed)), new SkatingSystem(), new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), .. more];
 #pragma warning restore S2245
         foreach (var s in systems) if (s is not (PuckPhysics or GoalieSystem)) s.Start(world);
         return systems;
