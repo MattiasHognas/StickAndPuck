@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Numerics;
-using StickAndPuck.Camera;
 using StickAndPuck.Core;
 
 namespace StickAndPuck.Rules;
@@ -40,33 +38,11 @@ public sealed class OvertimeScene : IScene
         }
 
         MatchRules.ShowLine = true;
-        OvertimeDemo.Enabled = true;
         return world;
     }
 
     static float Seconds(string variable, float fallback)
     {
         return float.TryParse(Environment.GetEnvironmentVariable(variable), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : fallback;
-    }
-}
-
-/// <summary>The camera for <see cref="OvertimeScene"/> until W9's camera follows play: pans with the puck along the rink.</summary>
-internal static class OvertimeDemo
-{
-    static float cameraX;
-
-    /// <summary>Gets or sets a value indicating whether the demo camera runs.</summary>
-    public static bool Enabled { get; set; }
-
-    /// <summary>Pans the camera toward the puck in quarter metres.</summary>
-    /// <param name="world">The match state.</param>
-    public static void Update(World world)
-    {
-        if (!Enabled) return;
-        float goal = Math.Clamp(world.Puck.Position.X, -20f, 20f);
-        cameraX += (goal - cameraX) * 0.06f;
-        float x = MathF.Round(cameraX * 4) / 4;
-        var cam = BroadcastCamera.Straight();
-        world.Camera = cam with { Position = cam.Position + new Vector3(x, 0, 0), Target = cam.Target + new Vector3(x, 0, 0) };
     }
 }

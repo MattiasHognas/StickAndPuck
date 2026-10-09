@@ -59,7 +59,6 @@ internal sealed class OvertimeRules : ISystem
         var s = States.GetOrCreateValue(world);
         if (world.Match.Phase == MatchPhase.Overtime) Overtime(world, s, dt);
         else if (world.Match.Phase == MatchPhase.Shootout) ShootoutStep(world, s, dt);
-        OvertimeDemo.Update(world);
     }
 
     public void DrawHud(World world, RenderContext render)
