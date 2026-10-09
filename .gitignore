@@ -3,4 +3,6 @@ art/scene/renders/
 
 bin/
 obj/
-docs/*.blend1
+docs/
+publish/
+*.blend1
