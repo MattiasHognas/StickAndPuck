@@ -61,7 +61,7 @@ internal sealed class DecisionSystem : ISystem
             if (!p.OnIce || p.IsGoalie || p.Slot >= 0 || p.Action is PlayerAction.Fallen or PlayerAction.Fight) continue;
             var brain = board.For(p.Id);
             if (brain.ShootSteps > 0 || (p.Action == PlayerAction.Shoot && pk.Carrier == p.Id)) { HoldShot(world, p, brain); continue; }
-            if (pk.Carrier == p.Id) { Carry(world, board, p, brain); continue; }
+            if (pk.Carrier == p.Id) { Carry(world, p, brain); continue; }
             if (MeetPass(world, board, p)) continue;
             if (Positioning.JobOf(world, p) == Job.Chase && pk.Carrier < 0) { Pounce(world, p); continue; }
             if (p.Id == crasher) { CrashNet(world, p); continue; }
@@ -92,7 +92,9 @@ internal sealed class DecisionSystem : ISystem
             if (p.Action == PlayerAction.Pass)
             {
                 tally.Passes++;
-                board.Pass = new InFlight(p.Id, board.For(p.Id).PassTo, p.Side, world.Time);
+                var passer = board.For(p.Id);
+                board.Pass = new InFlight(p.Id, passer.PassTo, p.Side, world.Time);
+                passer.PassTo = -1;   // a human's pass later has no receiver in mind
             }
             else if (p.Action == PlayerAction.Shoot)
             {
@@ -126,7 +128,7 @@ internal sealed class DecisionSystem : ISystem
     }
 
     /// <summary>The carrier's look at the play: carry on, shoot or pass, whichever is worth most.</summary>
-    void Carry(World world, DecisionBoard board, Player p, Brain brain)
+    void Carry(World world, Player p, Brain brain)
     {
         if (p.Action != PlayerAction.None || world.Time < brain.NextThink) return;
         int smart = p.Data.Traits.SmartPasses;
