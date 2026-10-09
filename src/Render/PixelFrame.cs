@@ -53,6 +53,7 @@ public sealed class PixelFrame : IDisposable
         var palette = Palette.Current;
         SetShaderValueV(Post, GetShaderLocation(Post, "palette"), palette.ToArray(), ShaderUniformDataType.Vec3, palette.Count);
         SetShaderValue(Post, GetShaderLocation(Post, "paletteSize"), palette.Count, ShaderUniformDataType.Int);
+        SetShaderValue(Post, GetShaderLocation(Post, "kitStart"), Palette.KitStart, ShaderUniformDataType.Int);
         SetShaderValue(Post, GetShaderLocation(Post, "outline"), Palette.Outline, ShaderUniformDataType.Vec3);
         SetShaderValue(Post, GetShaderLocation(Post, "texel"), new Vector2(1f / width, 1f / height), ShaderUniformDataType.Vec2);
     }
