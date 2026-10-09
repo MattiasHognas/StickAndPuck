@@ -43,6 +43,8 @@ internal sealed class PositioningSystem : ISystem
 
     public void Update(World world, float dt)
     {
+        // the shootout (W7c, src/Rules/Overtime) skates its own shooter
+        if (world.Match.Phase == MatchPhase.Shootout) return;
         StandInPlay.Before(world, dt);
         var board = Positioning.Board(world);
         AssignRoles(world, board);
