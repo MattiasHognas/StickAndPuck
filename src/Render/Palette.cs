@@ -18,6 +18,32 @@ public static class Palette
     /// <summary>Gets the palette from <see cref="Assets.Palette"/>, loaded on first use.</summary>
     public static IReadOnlyList<Vector3> Current => current ??= Load(Assets.Palette);
 
+    /// <summary>
+    /// Gets the index of the first reserved kit colour: colours from here on are written by
+    /// art/scripts/make_kits.py below its marker line, and only player pixels may snap to them,
+    /// so adding club colours never changes how the arena and crowd look. Equals the palette
+    /// size when the file has no kit block.
+    /// </summary>
+    public static int KitStart => kitStart ??= FindKitStart(Assets.Palette);
+
+    static int? kitStart;
+
+    /// <summary>The comment line make_kits.py writes above the kit colours.</summary>
+    const string KitMarker = "# kit colours:";
+
+    static int FindKitStart(string path)
+    {
+        int count = 0;
+        foreach (string raw in File.ReadLines(path))
+        {
+            string line = raw.Trim();
+            if (line.StartsWith(KitMarker, StringComparison.Ordinal)) return count;
+            var parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            if (line.Length > 0 && char.IsDigit(line[0]) && parts.Length >= 3) count++;
+        }
+        return count;
+    }
+
     /// <summary>Gets the outline colour: the darkest palette colour (dark plum in the dusk palette).</summary>
     public static Vector3 Outline => Current.MinBy(c => c.X * 0.299f + c.Y * 0.587f + c.Z * 0.114f);
 
