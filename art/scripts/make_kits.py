@@ -36,7 +36,8 @@ TONES = [(1.0, 1.0, 1.0), (0.70, 0.68, 0.72), (0.42, 0.40, 0.48)]
 # A club colour that fits none of these well gets a warning: add a base here, then rerun palette.
 KIT_BASES = {
     'cream': '#efe0c2', 'gold': '#f2c14e', 'slate blue': '#2f5f8f', 'green': '#2c6e4a', 'black': '#2a2c36',
-    'kit red': '#b8323c', 'kit royal blue': '#2e6db0', 'kit navy': '#2b3d6b',
+    'orange': '#e07a3a',
+    'kit red': '#b8323c', 'kit bright red': '#d42a22', 'kit royal blue': '#2e6db0', 'kit navy': '#2b3d6b',
     'kit bright green': '#2f8a4e', 'kit yellow': '#f4d63e',
 }
 RESERVED = [k for k in KIT_BASES if k.startswith('kit ')]
