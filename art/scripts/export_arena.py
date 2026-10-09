@@ -5,7 +5,7 @@ loads them, since a Raylib Model keeps no mesh or material names.
    at 480x270 and reruns ads_pixel.py with FIT and EMIT, so the ad strip is sized to the far
    boards' pixel footprint for the camera the game actually uses (rewrites art/ads/),
 2. drops players, puck, lights and cameras, flattens the ice to its base colour (the game draws
-   the light bands, W2 / W18), turns the S&P logo into a mesh,
+   the light bands, W2 / W18), turns any text objects into meshes (the SHL centre mark is already a mesh, see centre_logo.py),
 3. joins the scenery into one object per part, each part one named mesh: Ice, Floor, Markings,
    Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Fans, Lanterns. Glass is its own mesh so the game can
    set its tone from the lighting; AdBoards is the only mesh with the ad_pixel material, which
