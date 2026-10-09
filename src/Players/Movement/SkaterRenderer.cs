@@ -90,7 +90,8 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
                 model.Materials[i].Shader = render.Toon;
                 SetMaterialTexture(ref model.Materials[i], MaterialMapIndex.Albedo, kit);
             }
-            DrawModelEx(model, p.Position, Vector3.UnitY, p.Heading * 180f / MathF.PI, new Vector3(Scale), Color.White);
+            var (axis, degrees) = CheckingModel.BodyRotation(p);
+            DrawModelEx(model, p.Position, axis, degrees, new Vector3(Scale), Color.White);
         }
     }
 
@@ -103,7 +104,8 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
             for (int i = 0; i < model.MaterialCount; i++) model.Materials[i].Shader = render.Mask;
             int id = p.MaskId;
             var c = new Color((byte)(40 + id * 37 % 200), (byte)(90 + id * 59 % 160), (byte)(200 - id * 23 % 150), (byte)255);
-            DrawModelEx(model, p.Position, Vector3.UnitY, p.Heading * 180f / MathF.PI, new Vector3(Scale), c);
+            var (axis, degrees) = CheckingModel.BodyRotation(p);
+            DrawModelEx(model, p.Position, axis, degrees, new Vector3(Scale), c);
         }
     }
 

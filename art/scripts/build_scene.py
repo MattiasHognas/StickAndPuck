@@ -121,8 +121,8 @@ for sx in (-1, 1):
         disc(bm, sx * 6.1, sy * 6.7, 0.3, 0, 0.006)
 mesh_obj('Markings', bm, [M['red_line'], M['blue_line'], M['crease']], C_RINK)
 # centre ice mark
-cu = bpy.data.curves.new('logo', 'FONT'); cu.body = 'S&P'; cu.size = 2.2; cu.align_x = 'CENTER'; cu.align_y = 'CENTER'
-logo = bpy.data.objects.new('Logo', cu); logo.location = (0, 0, 0.006); C_RINK.objects.link(logo); cu.materials.append(M['blue_line'])
+sys.path.insert(0, ART + '/scripts'); from centre_logo import build_logo
+build_logo(C_RINK, M['blue_line'])
 
 # ---------------- boards, ads, glass, posts ----------------
 bm = bmesh.new(); ring(bm, 0.0, 0.2, 0.0, 0.22, 1); ring(bm, 0.0, 0.2, 0.22, 1.07, 0); ring(bm, -0.02, 0.26, 1.07, 1.15, 2)
