@@ -15,7 +15,7 @@
 
   <!-- the game reads its assets next to the executable: shaders, models, kit atlases, ad strips, palette, club data -->
   <ItemGroup>
-    <None Include="shaders/**;art/player/*.glb;art/player/*_64.png;art/ads/*.png;art/kits/*.png;art/scene/*.glb;art/scene/arena_meshes.json;art/palette/*.gpl;art/audio/*.wav;data/**/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="shaders/**;art/player/*.glb;art/player/*_64.png;art/ads/*.png;art/kits/*.png;art/scene/*.glb;art/scene/arena_meshes.json;art/palette/*.gpl;art/ui/*.png;art/ui/font.fnt;art/ui/ui.json;art/audio/*.wav;data/**/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
