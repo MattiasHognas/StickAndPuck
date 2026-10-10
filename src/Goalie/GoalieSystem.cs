@@ -69,10 +69,15 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         if (!GoalieModel.IsShot(end, pk.Position, pk.Velocity))
         {
             state.SeenAt = float.NaN;
+            state.ShotFrom = float.NaN;
             if (!state.Down) state.ReactZ = float.NaN;
             return;
         }
-        if (float.IsNaN(state.SeenAt)) state.SeenAt = world.Time;
+        if (float.IsNaN(state.SeenAt))
+        {
+            state.SeenAt = world.Time;
+            state.ShotFrom = new Vector2(pk.Position.X - end * RinkSpec.GoalLineX, pk.Position.Z).Length();
+        }
         if (world.Time - state.SeenAt < GoalieModel.ReactionTime(g.Data.Traits)) return;
         var at = GoalieModel.Cross(pk.Position, pk.Velocity, g.Position.X);
         if (float.IsInfinity(at.Offset)) return;
@@ -89,7 +94,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         if (from < plane && to >= plane)
         {
             var at = GoalieModel.Cross(pk.Position, pk.Velocity, g.Position.X);
-            float cover = GoalieModel.Coverage(at.Offset - g.Position.Z, at.Height, state.Down);
+            float cover = GoalieModel.Coverage(at.Offset - g.Position.Z, at.Height, state.Down) / GoalieModel.CloseRead(state.ShotFrom);
             if (cover <= 1f && Dice.NextSingle() < CleanChance(g, pk.Velocity.Length(), cover))
                 Save(world, g, state, end, new Vector3(g.Position.X, at.Height, at.Offset));
             return;
@@ -215,6 +220,9 @@ internal sealed class GoalieState
 {
     /// <summary>Gets or sets when the current shot was first seen, or NaN.</summary>
     public float SeenAt { get; set; } = float.NaN;
+
+    /// <summary>Gets or sets how far from the net the current shot was first seen, or NaN.</summary>
+    public float ShotFrom { get; set; } = float.NaN;
 
     /// <summary>Gets or sets the z the goalie pushes to for the current shot, or NaN.</summary>
     public float ReactZ { get; set; } = float.NaN;
