@@ -21,7 +21,10 @@ internal sealed unsafe class RefereeRenderer : IDisposable
     Texture2D kit;
     ModelAnimation[] clips = [];
     bool loaded;
-    int idle = -1, skate = -1, clip = -1;
+    /// <summary>How long a called penalty's signal shows.</summary>
+    const float SignalSeconds = 2.5f;
+
+    int idle = -1, skate = -1, armUp = -1, clip = -1;
     float frame;
 
     public void Load()
@@ -30,6 +33,7 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         clips = LoadModelAnimations(Assets.Referee).ToArray();
         idle = Find("idle");
         skate = Find("skate");
+        armUp = Find("armup");
         kit = LoadTexture(Assets.RefereeKit);
         SetTextureFilter(kit, TextureFilter.Point);
         loaded = true;
@@ -40,10 +44,13 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         return Array.FindIndex(clips, a => string.Equals(Marshal.PtrToStringUTF8((IntPtr)a.Name), $"referee_{name}", StringComparison.OrdinalIgnoreCase));
     }
 
-    public void Animate(Referee r, float dt)
+    public void Animate(Referee r, float dt, float time)
     {
         if (!loaded) return;
         int want = r.Speed > 0.6f && skate >= 0 ? skate : idle;
+        // W14: the call's signal for a moment after the whistle, the raised arm while a call is delayed
+        if (r.Announced is { } called && time - called.Time < SignalSeconds && Find(called.Infraction) is >= 0 and var signal) want = signal;
+        else if (r.Call != null && armUp >= 0) want = armUp;
         if (want != clip) { clip = want; frame = 0; }
         frame += dt * ClipFps;
     }

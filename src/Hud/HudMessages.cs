@@ -1,4 +1,5 @@
 using StickAndPuck.Core;
+using StickAndPuck.Rules;
 
 namespace StickAndPuck.Hud;
 
@@ -71,6 +72,11 @@ internal sealed class HudMessages
                 return new("panel", "OFFSIDE", "", null, e.Time + CallSeconds, "whistle");
             case MatchEventKind.Icing:
                 return new("panel", "ICING", "", null, e.Time + CallSeconds, "whistle");
+            case MatchEventKind.Penalty when e.Side is { } offender && e.PlayerId >= 0 && e.PlayerId < world.Players.Count:
+                // W14: the infraction and minutes, then the player
+                var called = m.Penalties.FindLast(p => p.PlayerId == e.PlayerId);
+                var who = world.Players[e.PlayerId].Data;
+                return new("panel_red", $"{called?.Infraction ?? "penalty"} {MatchFlow.ClockText(e.Strength)}", $"#{who.Number} {who.LastName}", world.Setup.Club(offender).Id, e.Time + CallSeconds + 1);
             default:
                 return null;
         }
