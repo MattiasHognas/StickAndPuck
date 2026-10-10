@@ -36,9 +36,6 @@ public static class PenaltyTuning
     /// <summary>Hooking calls per second while a defender trails a carrier inside <see cref="HookReach"/>.</summary>
     public const float HookRate = 0.003f;
 
-    /// <summary>How long the referee shows the call's signal after the whistle, in seconds.</summary>
-    public const float SignalSeconds = 2.5f;
-
     /// <summary>How far the box door is from the near boards, on the ice.</summary>
     public const float BoxDoorInset = 0.9f;
 
