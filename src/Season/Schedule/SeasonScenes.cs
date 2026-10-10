@@ -11,6 +11,7 @@ namespace StickAndPuck.Season;
 /// SAP_SEASON=new starts a new season over the save, SAP_CLUB=id picks the human's club for a new
 /// season (default SAP_HOME, else the first club), SAP_SEED fixes the schedule, SAP_SAVE moves the
 /// save file, SAP_PERIOD and SAP_OT shorten periods and overtime, SAP_HUMAN=0 lets the AI play both sides.
+/// Once the regular season is over it plays the human's next playoff game instead (W16b).
 /// </summary>
 public sealed class SeasonScene : IScene
 {
@@ -23,11 +24,7 @@ public sealed class SeasonScene : IScene
         var season = SeasonScenes.Open(clubs);
         bool human = !string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "0", StringComparison.Ordinal);
         var setup = SeasonSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None);
-        if (setup == null)
-        {
-            Console.WriteLine("SAP: the season is over; showing the final table (W16b starts the playoffs from here)");
-            return SeasonScenes.TableWorld(clubs, settings);
-        }
+        if (setup == null) return PlayoffScenes.Play(clubs, settings, human);
 
         var game = SeasonSession.Playing!;
         Console.WriteLine($"SAP: season game {game.Number + 1} of {season.Games.Count}, round {game.Round + 1} of {season.Rounds}: {setup.Home.Name} vs {setup.Away.Name}");
