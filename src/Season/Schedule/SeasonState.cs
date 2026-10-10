@@ -35,6 +35,9 @@ public sealed class SeasonState
     /// <summary>Gets or sets when the season was last saved (UTC).</summary>
     public DateTime Saved { get; set; }
 
+    /// <summary>Gets or sets the playoffs (W16b), null until the regular season is over and they start.</summary>
+    public PlayoffState? Playoffs { get; set; }
+
     /// <summary>Gets the number of rounds.</summary>
     public int Rounds => Games.Count == 0 ? 0 : Games.Max(g => g.Round) + 1;
 
