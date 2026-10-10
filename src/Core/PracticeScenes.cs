@@ -6,7 +6,7 @@ namespace StickAndPuck.Core;
 public sealed class PracticeScene : IScene
 {
     /// <inheritdoc/>
-    public string Name => Scenes.Default;
+    public string Name => "practice";
 
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)

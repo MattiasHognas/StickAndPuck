@@ -1,5 +1,6 @@
 using Raylib_cs;
 using StickAndPuck.Render;
+using StickAndPuck.Screens;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Core;
@@ -34,12 +35,11 @@ public static class Game
 
         var pixel = new PixelFrame(Width, Height);
         var render = new RenderContext { Toon = pixel.Toon, Mask = pixel.Mask };
-        var systems = Systems.Create();
-        foreach (var s in systems) s.Start(world);
+        var systems = Restart(world, []);
         Console.WriteLine($"SAP: {systems.Count} systems: {string.Join(", ", systems.Select(s => s.GetType().Name))}");
 
         float pending = 0;
-        while (!WindowShouldClose())
+        while (!WindowShouldClose() && !ScreenFlow.QuitRequested)
         {
             // fixed 60 Hz steps; a slow frame runs a few steps, never more than a quarter second's worth
             pending += Math.Min(GetFrameTime(), 0.25f);
@@ -52,6 +52,9 @@ public static class Game
                 world.Time += Step; world.Tick++;
                 pending -= Step;
             }
+
+            // W11: a screen started a match or went back to the menus; the new world gets fresh systems
+            if (ScreenFlow.TakeNextWorld() is { } next) (world, systems) = (next, Restart(next, systems));
 
             Draw(world, systems, pixel, render, showFps: recorder == null);
             if (recorder?.Save(world) == true) break;
@@ -70,6 +73,15 @@ public static class Game
         pixel.Dispose();
         // GPU resources go before the window, or the context is already gone
         CloseWindow();
+    }
+
+    /// <summary>Disposes the old systems and starts a fresh set on the world.</summary>
+    static IReadOnlyList<ISystem> Restart(World world, IReadOnlyList<ISystem> old)
+    {
+        foreach (var s in old.OfType<IDisposable>()) s.Dispose();
+        var systems = Systems.Create();
+        foreach (var s in systems) s.Start(world);
+        return systems;
     }
 
     static void Draw(World world, IReadOnlyList<ISystem> systems, PixelFrame pixel, RenderContext render, bool showFps)

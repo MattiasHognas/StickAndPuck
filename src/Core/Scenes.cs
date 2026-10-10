@@ -24,7 +24,7 @@ public interface IScene
 public static class Scenes
 {
     /// <summary>The scene used when SAP_SCENE is not set.</summary>
-    public const string Default = "practice";
+    public const string Default = "start";
 
     /// <summary>Gets every scene in the game, by name.</summary>
     /// <returns>The scenes.</returns>
