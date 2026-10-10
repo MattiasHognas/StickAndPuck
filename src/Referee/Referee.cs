@@ -75,6 +75,18 @@ public sealed class Referee
         r.Call ??= new RefereeCall(infraction, playerId, world.Time);
     }
 
+    /// <summary>Gets the penalty the referee last called at a stoppage; the renderer shows its signal for a moment (W14).</summary>
+    public RefereeCall? Announced { get; private set; }
+
+    /// <summary>W14's hook: the referee calls a penalty at the stoppage and shows its signal.</summary>
+    /// <param name="world">The match state.</param>
+    /// <param name="infraction">What is called: tripping, hooking or slashing.</param>
+    /// <param name="playerId">The penalised player.</param>
+    public static void Announce(World world, string infraction, int playerId)
+    {
+        Of(world).Announced = new RefereeCall(infraction, playerId, world.Time);
+    }
+
     /// <summary>Clears the signalled call once play has stopped.</summary>
     internal void ClearCall()
     {

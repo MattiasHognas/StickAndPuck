@@ -27,7 +27,7 @@ internal sealed class RefereeSystem : ISystem, IDisposable
         var r = Referee.Of(world);
         if (world.Events.Of(MatchEventKind.Whistle).Any()) r.ClearCall();
         Step(world, r, dt);
-        renderer.Animate(r, dt);
+        renderer.Animate(r, dt, world.Time);
     }
 
     /// <summary>Moves the referee one step and drops the puck when it is set at the dot.</summary>

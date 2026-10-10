@@ -214,9 +214,10 @@ internal sealed class LinesSystem : ISystem
     {
         var leaving = Bench.OnIce(world, side, group).ToList();
         if (leaving.Count == 0) return null;
-        var coming = unit.Members.Where(p => !p.OnIce).ToList();
+        // a skater in the penalty box (W14) never comes on
+        var coming = unit.Members.Where(p => !p.OnIce && !Penalties.InBox(world, p.Id)).ToList();
         var spares = world.Players
-            .Where(p => p.Side == side && !p.OnIce && !p.IsGoalie && Squad.GroupOf(p) == group && !coming.Contains(p))
+            .Where(p => p.Side == side && !p.OnIce && !p.IsGoalie && Squad.GroupOf(p) == group && !coming.Contains(p) && !Penalties.InBox(world, p.Id))
             .OrderByDescending(p => p.Energy)
             .ToList();
 
