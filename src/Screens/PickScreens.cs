@@ -39,7 +39,7 @@ internal sealed class ModeScreen : MenuScreen
                 return;
             }
             int index = picks.Count;
-            string heading = index == 0 ? "PICK YOUR CLUB" : "PICK THE OPPONENT";
+            string heading = mode.PickHeading(index);
             ScreenFlow.Push(new TeamSelectScreen(heading, index > 0 ? picks[0] : null, club =>
             {
                 picks.RemoveRange(index, picks.Count - index);    // back from a later pick and pick again
