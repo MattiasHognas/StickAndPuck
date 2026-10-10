@@ -45,6 +45,14 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
         foreach (var p in Skaters(world))
         {
             var (clip, frame) = poses.GetValueOrDefault(p.Id, (-1, 0f));
+            if (p.Action == PlayerAction.Fight && Fights.Fighting.Pose(world, p) is { } fight && Find(fight.Clip) is >= 0 and var fc)
+            {
+                // W15: fight clips come from the fight; loops wrap here, one-shots hold their last frame in Pose
+                frame = fight.Seconds * ClipFps;
+                if (fight.Loop) frame %= clips[fc].KeyFrameCount;
+                poses[p.Id] = (fc, frame);
+                continue;
+            }
             int want = p.Action == PlayerAction.Shoot ? Find("shoot") : p.Speed > 0.4f ? Find("skate") : Find("idle");
             if (want != clip) { clip = want; frame = 0; }
             if (p.Action == PlayerAction.Shoot) frame = p.ActionTime * ClipFps;
