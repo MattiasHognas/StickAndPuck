@@ -104,6 +104,19 @@ public static class GoalieModel
     }
 
     /// <summary>
+    /// How much more of the net a goalie fills against a shot from close in: a skater walking in
+    /// gives the goalie time to square up and fill the angle, so up close the reach grows, from 1
+    /// at <see cref="GoalieTuning.CloseRange"/> up to 1 + <see cref="GoalieTuning.CloseBonus"/> on the doorstep.
+    /// </summary>
+    /// <param name="shotFrom">Metres from the middle of the goal line where the shot was first seen, or NaN.</param>
+    /// <returns>The factor the reach is multiplied by.</returns>
+    public static float CloseRead(float shotFrom)
+    {
+        if (float.IsNaN(shotFrom)) return 1f;
+        return 1f + GoalieTuning.CloseBonus * Math.Clamp((GoalieTuning.CloseRange - shotFrom) / (GoalieTuning.CloseRange - 2.5f), 0f, 1f);
+    }
+
+    /// <summary>
     /// How well a stance covers a point on the goalie's plane: 0 means dead centre, 1 the very edge
     /// of the body, pads or hands, and anything above 1 is open net past the goalie.
     /// </summary>
