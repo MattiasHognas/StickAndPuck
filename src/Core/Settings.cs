@@ -32,8 +32,8 @@ public sealed record Settings
     /// <summary>Gets how lines change.</summary>
     public LineChanges Lines { get; init; } = LineChanges.Automatic;
 
-    /// <summary>Gets a value indicating whether the gameplay camera zooms with speed (on trial, may be removed).</summary>
-    public bool CameraZoom { get; init; } = true;
+    /// <summary>Gets a value indicating whether the gameplay camera zooms with speed. Off by default: zooming softens the ad board text.</summary>
+    public bool CameraZoom { get; init; }
 
     /// <summary>Gets a value indicating whether fights can start.</summary>
     public bool Fights { get; init; } = true;
