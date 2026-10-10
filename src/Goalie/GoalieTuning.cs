@@ -75,6 +75,12 @@ public static class GoalieTuning
     /// <summary>Seconds after a save or release during which the goalie ignores the puck.</summary>
     public const float IgnoreAfterSave = 0.35f;
 
+    /// <summary>Shots from closer than this, in metres, find a goalie who has squared up and fills more of the net.</summary>
+    public const float CloseRange = 8f;
+
+    /// <summary>How much further a goalie reaches against a shot from the doorstep (see <see cref="GoalieModel.CloseRead"/>).</summary>
+    public const float CloseBonus = 0.3f;
+
     /// <summary>Seconds a goalie stays down in the butterfly after dropping.</summary>
     public const float ButterflySeconds = 0.8f;
 }
