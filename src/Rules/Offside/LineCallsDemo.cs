@@ -5,9 +5,9 @@ using StickAndPuck.Core;
 namespace StickAndPuck.Rules;
 
 /// <summary>
-/// SAP_SCENE=offsidedemo: the match flow with a scripted play after each faceoff, in turn a pass
-/// to a winger standing offside, a clean carry-in, an icing dump from the home end, and a dump the
-/// home winger wins the race for (icing waved off). The score and clock line and the call labels are on.
+/// SAP_SCENE=offsidedemo: the match flow with a scripted play a second after each faceoff, in turn
+/// a pass to a winger standing offside, a clean carry-in, and an icing dump from the home end.
+/// W10's HUD shows the calls; the hybrid race and tag-ups are covered by SAP_SCENE=offsidetest.
 /// </summary>
 public sealed class LineCallsDemoScene : IScene
 {
@@ -19,7 +19,6 @@ public sealed class LineCallsDemoScene : IScene
     {
         var world = MatchScenes.Exhibition(clubs, settings, 120);
         LineCallsDemo.Enabled = true;
-        MatchRules.ShowLine = true;
         return world;
     }
 }
@@ -35,7 +34,7 @@ internal static class LineCallsDemo
     /// <summary>Gets or sets a value indicating whether the script runs.</summary>
     public static bool Enabled { get; set; }
 
-    /// <summary>Sets up the next play when the puck drops, sends the puck a second later, and pans the camera to the puck.</summary>
+    /// <summary>A second after the puck drops, places the players and sends the puck; pans the camera to the puck.</summary>
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
@@ -49,14 +48,15 @@ internal static class LineCallsDemo
         if (float.IsNegativeInfinity(playFrom))
         {
             playFrom = world.Time;
-            play = (play + 1) % 4;
+            play = (play + 1) % 3;
             sent = false;
-            Stage(world);
         }
         float since = world.Time - playFrom;
         if (!sent && since > 1f)
         {
+            // staged in the same step as the puck is sent, so the AI has not moved anyone yet
             sent = true;
+            Stage(world);
             Send(world);
         }
         if (play == 1 && sent) Carry(world);
@@ -93,19 +93,15 @@ internal static class LineCallsDemo
         switch (play)
         {
             case 0:
-                rw.Position = new Vector3(e * 13, 0, 4);
+                rw.Position = new Vector3(e * 10.5f, 0, 4);
                 break;
             case 1:
                 rw.Position = new Vector3(e * 3, 0, -6);
                 c.Position = new Vector3(e * 2, 0, 2);
                 break;
-            case 2:
+            default:
                 awayD.Position = new Vector3(e * 22, 0, 9);
                 rw.Position = new Vector3(e * 2, 0, -9);
-                break;
-            default:
-                rw.Position = new Vector3(e * 20, 0, 9);
-                awayD.Position = new Vector3(e * 8, 0, -9);
                 break;
         }
     }
@@ -137,7 +133,7 @@ internal static class LineCallsDemo
         switch (play)
         {
             case 0:
-                Loose(pk, d, new Vector3(e * 2.5f, 0, 4), new Vector3(e * 16, 0, 0));
+                Loose(pk, d, new Vector3(e * 6.6f, 0, 4), new Vector3(e * 14, 0, 0));
                 break;
             case 1:
                 pk.Carrier = c.Id;

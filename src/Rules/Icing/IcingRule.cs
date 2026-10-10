@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using StickAndPuck.Core;
-using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Rules;
 
@@ -34,7 +33,6 @@ internal sealed class IcingRule : ISystem
     public void Update(World world, float dt)
     {
         var s = States.GetOrCreateValue(world);
-        s.Shown = Math.Max(0, s.Shown - dt);
         var pk = world.Puck;
         if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live)
         {
@@ -68,16 +66,8 @@ internal sealed class IcingRule : ISystem
         var call = new MatchEvent(MatchEventKind.Icing, world.Time, offender, s.Touch, pk.Position);
         world.Events.Publish(call);
         LineCallsDemo.Log(call, dot);
-        s.Shown = MatchTuning.StoppageSeconds;
     }
 
-    public void DrawHud(World world, RenderContext render)
-    {
-        // a plain label until W10's HUD messages; shown with the debug line
-        if (!MatchRules.ShowLine || !States.TryGetValue(world, out var s) || s.Shown <= 0) return;
-        DrawRectangle(4, 236, MeasureText("ICING", 10) + 8, 14, new Raylib_cs.Color(24, 19, 31, 255));
-        DrawText("ICING", 8, 238, 10, new Raylib_cs.Color(239, 224, 194, 255));
-    }
 
     /// <summary>Gets a value indicating whether a club has fewer skaters by penalty, so it may ice the puck.</summary>
     static bool ShortHanded(MatchState match, Side side)
@@ -111,6 +101,4 @@ internal sealed class IcingState
     /// <summary>Gets or sets a value indicating whether the puck was past a goal line last step.</summary>
     public bool Over { get; set; }
 
-    /// <summary>Gets or sets the real seconds the call label stays up.</summary>
-    public float Shown { get; set; }
 }

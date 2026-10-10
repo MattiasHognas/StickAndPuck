@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using StickAndPuck.Core;
-using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Rules;
 
@@ -67,7 +66,6 @@ internal sealed class OffsideRule : ISystem
     {
         LineCallsDemo.Update(world);
         var s = States.GetOrCreateValue(world);
-        s.Shown = Math.Max(0, s.Shown - dt);
         var pk = world.Puck;
         if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live)
         {
@@ -84,15 +82,6 @@ internal sealed class OffsideRule : ISystem
         if (s.PendingEnd != 0) Watch(world, s);
     }
 
-    public void DrawHud(World world, RenderContext render)
-    {
-        // a plain label until W10's HUD messages; shown with the debug line
-        if (!MatchRules.ShowLine || !States.TryGetValue(world, out var s)) return;
-        string? text = s.Shown > 0 ? "OFFSIDE" : s.PendingEnd != 0 ? "offside pending" : null;
-        if (text == null) return;
-        DrawRectangle(4, 236, MeasureText(text, 10) + 8, 14, new Raylib_cs.Color(24, 19, 31, 255));
-        DrawText(text, 8, 238, 10, new Raylib_cs.Color(239, 224, 194, 255));
-    }
 
     /// <summary>The puck wholly crossed into the zone at <paramref name="end"/>.</summary>
     static void Entered(World world, OffsideState s, int end)
@@ -135,7 +124,6 @@ internal sealed class OffsideRule : ISystem
         var call = new MatchEvent(MatchEventKind.Offside, world.Time, attacker, pk.LastTouch, at);
         world.Events.Publish(call);
         LineCallsDemo.Log(call, dot);
-        s.Shown = MatchTuning.StoppageSeconds;
     }
 
     /// <summary>Gets a value indicating whether any attacker but the carrier is wholly inside the zone.</summary>
@@ -186,6 +174,4 @@ internal sealed class OffsideState
     /// <summary>Gets or sets the last touch when the puck entered, so a new attacking touch can be told apart.</summary>
     public int EntryTouch { get; set; } = -1;
 
-    /// <summary>Gets or sets the real seconds the call label stays up.</summary>
-    public float Shown { get; set; }
 }
