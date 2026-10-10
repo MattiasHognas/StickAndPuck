@@ -13,7 +13,7 @@ namespace StickAndPuck.AI;
 /// puck handling, goalies, puck physics, match rules) and checks it reaches the final with
 /// passes, shots, checks and goals on both sides. Then plays the same clubs with every skater's
 /// smart passes set to 90 on one side and 20 on the other, both ways round, and checks the smart
-/// side completes clearly more of its passes: the "done when" of W6b.
+/// side completes clearly more of its passes: the "done when" of W6b. SAP_SEED picks the full match's seed (default 5).
 /// </summary>
 public sealed class DecisionsSelfTest : IScene
 {
@@ -59,7 +59,7 @@ public sealed class DecisionsSelfTest : IScene
     World FullMatch(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var world = Make(clubs, settings, 20 * 60, null, null);
-        var systems = Systems(world, 5);
+        var systems = Systems(world, int.Parse(Environment.GetEnvironmentVariable("SAP_SEED") ?? "5", System.Globalization.CultureInfo.InvariantCulture));
         var still = Play(world, systems, 2 * 60 * 60);
         var h = Decisions.Tally(world, Side.Home);
         var a = Decisions.Tally(world, Side.Away);
@@ -67,8 +67,8 @@ public sealed class DecisionsSelfTest : IScene
         Check(world.Match.Phase == MatchPhase.Final, "three periods play out to the final");
         Check(h.Passes > 80 && a.Passes > 80, "both clubs pass the puck around");
         Check(h.Completion > 0.5f && a.Completion > 0.5f, "most passes reach a teammate");
-        Check(world.Match.Shots[0] >= 15 && world.Match.Shots[1] >= 15 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
-        Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 22, "goals are scored, but not a rout");
+        Check(world.Match.Shots[0] >= 10 && world.Match.Shots[1] >= 10 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
+        Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 10, "goals are scored, about as many as in a real match");
         Check(h.Checks + a.Checks >= 10, "the AI throws checks");
         Check(still < 15f, "the AI never leaves a loose puck lying");
         return world;

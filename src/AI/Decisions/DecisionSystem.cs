@@ -25,7 +25,7 @@ namespace StickAndPuck.AI;
 internal sealed class DecisionSystem : ISystem
 {
     const float CheckFrom = 3.2f;   // distance at which a presser decides whether to hit
-    const float ShootFrom = 0.6f;   // a shot worth less than this is not taken: only good chances, about 1 a minute
+    const float ShootFrom = 0.64f;  // a shot worth less than this is not taken, unless the carrier has stood still with the puck
 
     readonly Random rng;
 
