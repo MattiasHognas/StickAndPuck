@@ -4,6 +4,9 @@
     python3 art/scripts/make_kits.py [club ...]     # write art/kits/{club}_{home|away}_{skater|goalie}_64.png
     python3 art/scripts/make_kits.py check [club ...]   # only report how each kit snaps, write nothing
 
+Besides the club kit, every rostered player gets his own atlas with his number on the back,
+art/kits/numbers/{club}_{home|away}_{skater|goalie}_{number}_64.png (A4); the game picks it by number.
+
 Each kit is a recolour of the generic home kit in art/player/{role}_home_64.png (exported from its
 .aseprite source), so the sweater cut, stripes, number and face stay as drawn there. The template's
 four kit colours are swapped per body part for the club's colours from data/clubs/{id}.json,
@@ -25,6 +28,7 @@ ROOT = os.path.dirname(ART)
 GPL = os.path.join(ART, 'palette', 'stickandpuck_dusk.gpl')
 CLUBS = os.path.join(ROOT, 'data', 'clubs')
 OUT = os.path.join(ART, 'kits')
+NUMBERS = os.path.join(OUT, 'numbers')
 MARK = '# kit colours: written by art/scripts/make_kits.py palette, do not edit below'
 MAX_COLOURS = 64                     # the post shader's palette size (src/Render/Palette.cs)
 
@@ -49,6 +53,28 @@ CREAM = '#efe0c2'
 R = {'torso': (0, 0, 32, 20), 'pants': (32, 0, 32, 10), 'helmet': (32, 24, 32, 8), 'head': (0, 28, 32, 14),
      'upper': (0, 20, 16, 8), 'glove': (32, 32, 16, 8),
      'blocker': (32, 40, 16, 8), 'catcher': (48, 40, 16, 8), 'pad': (0, 48, 32, 16)}
+
+# The back number (A4). The torso unwraps around the body with the back centred on x 24, and its
+# rows are squashed to about 0.6 screen pixels at rink distance, so digits are 3 wide and 8 tall
+# with doubled bars: a 3x5 glyph whose bar rows are drawn twice. Rows 5-12 sit between the yoke
+# and the hem stripes; the box is cleared of the template's sample number first.
+DIGITS = {'0': ['###', '#.#', '#.#', '#.#', '###'], '1': ['.#.', '##.', '.#.', '.#.', '###'], '2': ['###', '..#', '###', '#..', '###'],
+          '3': ['###', '..#', '.##', '..#', '###'], '4': ['#.#', '#.#', '###', '..#', '..#'], '5': ['###', '#..', '###', '..#', '###'],
+          '6': ['###', '#..', '###', '#.#', '###'], '7': ['###', '..#', '..#', '.#.', '.#.'], '8': ['###', '#.#', '###', '#.#', '###'],
+          '9': ['###', '#.#', '###', '..#', '###']}
+DIGIT_ROWS = [0, 0, 1, 2, 2, 3, 4, 4]          # glyph row for each of the 8 texel rows
+NUMBER_TOP, NUMBER_X = 5, 24                    # first row and centre column of the back number
+NUMBER_BOX = (18, 4, 13, 10)                    # x, y, w, h cleared to the sweater colour
+
+# The helmet (A4): at rink distance a plain shell read as hair. Now a dark two-row rim over the
+# brows and ears, a light ridge stripe from the front over the crown to the back and a glint on
+# each side, so the top
+# of the head reads as a hard shell from the broadcast camera. Strip columns: right side 32,
+# front 40, left side 48, back 56; the top row is the crown.
+HELMET_RIM_ROWS = (30, 31)
+HELMET_RIDGE_COLS = (38, 39, 40, 54, 55, 56)
+HELMET_RIDGE_ROWS = range(24, 29)
+HELMET_SHEEN = {(34, 26), (35, 26), (45, 26), (46, 26)}     # a glint on each side above the ear
 
 
 def rgb(h):
@@ -148,6 +174,11 @@ def colours_for(club, side):
     # goalie pads and gloves are cream: their bands take whichever kit colour stands out on cream
     c['trim'] = max((c['primary'], c['secondary']), key=lambda h: dist(rgb(h), rgb(CREAM)))
     c['primary mid'] = hexc(snap_rgb(toned(rgb(c['primary']), TONES[1]), palette_all()))
+    # the back number and the helmet ridge take whichever kit colour (or cream) stands out most
+    contrast = lambda against: max(dict.fromkeys((c['secondary'], c['accent'], CREAM, KIT_BASES['black'])),
+                                   key=lambda h: dist(rgb(h), rgb(c[against])))
+    c['number'] = contrast('primary')
+    c['ridge'] = CREAM if luma(c['helmet']) <= 140 else KIT_BASES['black']   # a sheen line, the same on every club
     return c
 
 
@@ -178,7 +209,7 @@ def accent_rows(px):
     return set(groups[len(groups) // 2]) if len(groups) >= 3 else set()
 
 
-def recolour(template, c, role):
+def recolour(template, c, role, number=None):
     src = template.convert('RGB')
     px = src.load()
     acc = accent_rows(px)
@@ -188,7 +219,11 @@ def recolour(template, c, role):
         for x in range(src.size[0]):
             h = hexc(px[x, y])
             n = h
-            if inside(x, y, 'helmet') or (role == 'goalie' and inside(x, y, 'head')):
+            if role == 'skater' and inside(x, y, 'helmet'):
+                rim = c['dark'] if c['dark'] != c['helmet'] else KIT_BASES['black']
+                if rim == c['helmet']: rim = KIT_BASES['slate blue']   # a black shell gets a slate rim
+                n = rim if y in HELMET_RIM_ROWS else c['ridge'] if (x in HELMET_RIDGE_COLS and y in HELMET_RIDGE_ROWS) or (x, y) in HELMET_SHEEN else c['helmet']
+            elif inside(x, y, 'helmet') or (role == 'goalie' and inside(x, y, 'head')):
                 # a plain shell: the template's front stripe reads as a stray dot at rink distance
                 n = {B: c['helmet'], Y: c['helmet'], BD: c['dark'] if c['dark'] != c['helmet'] else KIT_BASES['black']}.get(h, h)
             elif inside(x, y, 'pants'):
@@ -199,6 +234,8 @@ def recolour(template, c, role):
                 n = {B: c['primary'], Y: c['primary']}.get(h, h)   # plain upper sleeve; the stripes sit on the forearm
             elif role == 'goalie' and any(inside(x, y, k) for k in ('pad', 'blocker', 'catcher')):
                 n = {B: c['trim'], Y: c['accent'] if c['accent'] != CREAM else c['trim']}.get(h, h)
+            elif number is not None and in_number_box(x, y) and h in (B, BD):
+                n = c['primary']        # the template's sample number goes; the player's is drawn below
             elif inside(x, y, 'torso') and y in acc and h == B:
                 n = c['accent']
             elif inside(x, y, 'torso') and y > R['torso'][1] and y < R['torso'][1] + 4 and h in (B, YD):
@@ -206,7 +243,22 @@ def recolour(template, c, role):
             else:
                 n = {Y: c['primary'], YD: c['primary mid'], B: c['secondary'], BD: c['dark']}.get(h, h)
             po[x, y] = rgb(n)
+    if number is not None: draw_number(po, number, c['number'])
     return out
+
+
+def in_number_box(x, y):
+    bx, by, bw, bh = NUMBER_BOX
+    return bx <= x < bx + bw and by <= y < by + bh
+
+
+def draw_number(po, number, colour):
+    text = str(number)
+    x0 = NUMBER_X - (len(text) * 4 - 1) // 2
+    for i, ch in enumerate(text):
+        for r, gr in enumerate(DIGIT_ROWS):
+            for col, bit in enumerate(DIGITS[ch][gr]):
+                if bit == '#': po[x0 + i * 4 + col, NUMBER_TOP + r] = rgb(colour)
 
 
 def indexed(img):
@@ -262,7 +314,10 @@ def main(args):
     files = sorted(f for f in os.listdir(CLUBS) if f.endswith('.json'))
     clubs = [json.load(open(os.path.join(CLUBS, f), encoding='utf-8')) for f in files]
     if args: clubs = [c for c in clubs if c['id'] in args]
-    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(NUMBERS, exist_ok=True)
+    if not check and not args:            # a full run rewrites every numbered atlas, so dropped players go
+        for f in os.listdir(NUMBERS):
+            if f.endswith('_64.png'): os.remove(os.path.join(NUMBERS, f))
     templates = {} if check else {role: template(role) for role in ('skater', 'goalie')}
     for club in clubs:
         for side in ('home', 'away'):
@@ -273,6 +328,11 @@ def main(args):
                 path = os.path.join(OUT, '%s_%s_%s_64.png' % (club['id'], side, role))
                 indexed(recolour(templates[role], c, role)).save(path)
                 print('  wrote', os.path.relpath(path, ROOT))
+                players = [p for p in club['roster'] if (p['position'] == 'G') == (role == 'goalie')]
+                for p in players:
+                    path = os.path.join(NUMBERS, '%s_%s_%s_%d_64.png' % (club['id'], side, role, p['number']))
+                    indexed(recolour(templates[role], c, role, p['number'])).save(path)
+                print('  wrote %d numbered %s atlases' % (len(players), role))
 
 
 if __name__ == '__main__':

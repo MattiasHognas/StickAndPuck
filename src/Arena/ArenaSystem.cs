@@ -54,6 +54,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
         }
         maskMaterial = LoadMaterialDefault();
         IceBands.Build();
+        IceScratches.Load();
     }
 
     static Color ToSrgb(Color c)
@@ -77,10 +78,11 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
     public void DrawScene(World world, RenderContext render)
     {
         var shaderDefault = maskMaterial.Shader;   // Raylib's default shader: texture times colour, no light
-        // the ice first, then the bands flat on it without a depth test (millimetres apart z-fight
+        // the ice first, then the bands and skate scratches flat on it without a depth test (millimetres apart z-fight
         // at rink distance), then the markings and everything else over both
         DrawPass(render, shaderDefault, ice: true);
         IceBands.Draw(ArenaLook.IceBand);
+        IceScratches.Draw(ArenaLook.IceBand);
         DrawPass(render, shaderDefault, ice: false);
 
         // glass last and without depth, so players behind it still draw; flat colour over the crowd
@@ -119,6 +121,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
 
     public void Dispose()
     {
+        IceScratches.Unload();
         UnloadMaterial(maskMaterial);
         UnloadModel(model);
     }

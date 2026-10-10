@@ -66,7 +66,7 @@ internal sealed unsafe class GoalieRenderer : IDisposable
 
     Texture2D Kit(World world, Player g)
     {
-        string path = Assets.KitAtlas(world.Setup.Club(g.Side).Id, g.Side, "goalie");
+        string path = Assets.KitAtlas(world.Setup.Club(g.Side).Id, g.Side, "goalie", g.Data.Number);
         if (!kits.TryGetValue(path, out var tex))
         {
             tex = LoadTexture(path);
