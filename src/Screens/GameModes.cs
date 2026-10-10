@@ -28,6 +28,11 @@ public interface IGameMode
     /// <summary>Gets a line for the results screen about where the mode stands (lives left, the next opponent), or null.</summary>
     string? Status => null;
 
+    /// <summary>Gets the team select heading for the given pick (W17 names the player picking).</summary>
+    /// <param name="index">0 for the first pick, 1 for the second.</param>
+    /// <returns>The heading, in capitals.</returns>
+    string PickHeading(int index) => index == 0 ? "PICK YOUR CLUB" : "PICK THE OPPONENT";
+
     /// <summary>Builds the next match. Called when the mode starts, and again for each next game.</summary>
     /// <param name="start">The clubs, the player's picks and input device.</param>
     /// <returns>The setup, or null when the mode has nothing more to play (the screens go back to the start screen).</returns>
