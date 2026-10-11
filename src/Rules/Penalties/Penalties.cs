@@ -34,7 +34,11 @@ public readonly record struct DelayedPenalty(Side Side, int PlayerId, string Inf
 /// skater short. The clock of a penalty runs only while the game clock runs. A goal by the club
 /// with more skaters ends the shortest penalty of the other club; a goal against the offending club
 /// while a call is delayed cancels the call. Penalties carry over between periods and end with
-/// regulation (no calls in 3 on 3 overtime or the shootout).
+/// regulation; none are called in the shootout.
+/// W23: calls happen in overtime too. The strength each club plays at comes from the skaters
+/// on the ice when the period started (<see cref="TargetSkaters"/>): at 5 on 5 the penalised
+/// club loses a skater, at 3 on 3 it keeps three and the other club adds one (4 on 3, then 5 on 3).
+/// A club that has pulled its goalie (<see cref="Lines.GoaliePull"/>) has one skater more.
 /// </summary>
 public static class Penalties
 {
@@ -77,6 +81,33 @@ public static class Penalties
         return home < away ? Side.Home : away < home ? Side.Away : null;
     }
 
+    /// <summary>Gets the skaters each club plays at full strength this period: 5 in regulation, 3 (or 5) in overtime, read off the ice when the period started.</summary>
+    /// <param name="world">The match.</param>
+    /// <returns>Skaters a side, 3 to 5.</returns>
+    public static int BaseSkaters(World world)
+    {
+        return Book(world).BaseSkaters;
+    }
+
+    /// <summary>
+    /// Gets how many skaters a club should have on the ice now, its goalie aside: the short-handed
+    /// club plays <see cref="BaseSkaters"/> less its penalties but never under three, the club with
+    /// fewer penalties plays that count plus its advantage, never over five. An extra attacker for
+    /// a pulled goalie adds one.
+    /// </summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The club.</param>
+    /// <returns>The skater count.</returns>
+    public static int TargetSkaters(World world, Side side)
+    {
+        var other = side == Side.Home ? Side.Away : Side.Home;
+        int mine = Serving(world, side), theirs = Serving(world, other), full = BaseSkaters(world);
+        int skaters = mine < theirs
+            ? Math.Min(PenaltyTuning.MaxSkaters, Math.Max(PenaltyTuning.MinSkaters, full - theirs) + theirs - mine)
+            : Math.Max(PenaltyTuning.MinSkaters, full - mine);
+        return skaters + (Lines.GoaliePull.IsPulled(world, side) ? 1 : 0);
+    }
+
     /// <summary>Gets whether a player is in the penalty box.</summary>
     /// <param name="world">The match.</param>
     /// <param name="playerId">The player.</param>
@@ -89,7 +120,7 @@ public static class Penalties
     /// <summary>
     /// The referee sees an infraction: the arm goes up (<see cref="Referee.Referee.Signal"/>) and the call
     /// waits for the offending club to touch the puck. Waved off when penalties are off in the settings,
-    /// outside regulation, for a goalie, for a skater already called, or when it would put the club three short.
+    /// outside play (the shootout included), for a goalie, for a skater already called, or when the club already serves two.
     /// </summary>
     /// <param name="world">The match.</param>
     /// <param name="playerId">The offending skater.</param>
@@ -100,7 +131,7 @@ public static class Penalties
         if (!world.Settings.Penalties || !MatchFlow.IsRunning(world)) return false;
         if (playerId < 0 || playerId >= world.Players.Count) return false;
         var m = world.Match;
-        if (m.Period > world.Setup.Periods || m.Phase != MatchPhase.Play) return false;
+        if (m.Phase != MatchPhase.Play) return false;
         var p = world.Players[playerId];
         var book = Book(world);
         if (p.IsGoalie || InBox(world, playerId) || book.Delayed.Exists(d => d.PlayerId == playerId)) return false;
@@ -226,6 +257,14 @@ internal sealed class PenaltyBook
     public float LastClock { get; set; } = float.NaN;
 
     public int LastPeriod { get; set; }
+
+    /// <summary>Gets or sets the skaters a side at full strength this period (W23), read at the first faceoff of a period with nobody in the box.</summary>
+    public int BaseSkaters { get; set; } = 5;
+
+    /// <summary>Gets or sets the period whose first faceoff set <see cref="BaseSkaters"/>.</summary>
+    public int BasePeriod { get; set; }
+
+    public MatchPhase LastPhase { get; set; } = MatchPhase.Intro;
 
     /// <summary>Gets or sets the dice; scenes and tests seed it.</summary>
 #pragma warning disable S2245 // gameplay dice, not security

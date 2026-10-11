@@ -9,7 +9,8 @@ namespace StickAndPuck.Lines;
 /// <summary>
 /// SAP_SCENE=linestest: checks fatigue, line changes and the goalie swap with no window, prints
 /// one line per check and exits with 0 when all pass, 1 otherwise. Covers the W13 "done when":
-/// tired lines slow down and change, and the backup goalie comes in after the trigger.
+/// tired lines slow down and change, and the backup goalie comes in after the trigger; and W23's
+/// pulled goalie: the extra attacker comes on and the goalie is back at the next stoppage.
 /// </summary>
 public sealed class LinesSelfTest : IScene
 {
@@ -44,6 +45,7 @@ public sealed class LinesSelfTest : IScene
         NoSwapForSpreadGoals(Make());
         NewPeriodFirstLine(Make());
         OvertimeThreeOnThree(Make());
+        PulledGoalie(Make(human: true));
 
         Console.WriteLine(failures == 0 ? "LINESTEST: all checks passed" : $"LINESTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
@@ -325,5 +327,32 @@ public sealed class LinesSelfTest : IScene
         SetEnergy(w.Players, 0.2f);
         var events = Run(w, 3);
         Check(!events.Exists(e => e.Kind == MatchEventKind.LineChange) && w.Players.Where(p => p.OnIce).SequenceEqual(before), "no changes in a shootout");
+    }
+
+    void PulledGoalie(World w)
+    {
+        Phase(w, MatchPhase.Play);
+        var goalie = w.OnIce(Side.Home).First(p => p.IsGoalie);
+        var benchForward = w.Players.Where(p => p.Side == Side.Home && !p.OnIce && Squad.GroupOf(p) == Group.Forwards).ToList();
+        bool pulled = GoaliePull.Pull(w, Side.Home);
+        var extra = GoaliePull.ExtraAttacker(w, Side.Home);
+        Check(pulled && !goalie.OnIce && extra != null && benchForward.Contains(extra) && extra.OnIce && w.OnIce(Side.Home).Count(p => !p.IsGoalie) == 6,
+            "pulling the goalie: he goes to the bench and a forward from the bench comes on, six skaters");
+        Check(Vector2.Distance(new Vector2(extra!.Position.X, extra.Position.Z), Squad.Door(Side.Home)) < 1f, "the extra attacker steps out of the bench door");
+        Check(!GoaliePull.Pull(w, Side.Home), "a second pull does nothing");
+        PuckUpIce(w, Side.Home);
+        SetEnergy(w.OnIce(Side.Home).Where(p => !p.IsGoalie), 0.3f);
+        bool alwaysSix = true;
+        Run(w, 12, world =>
+        {
+            PuckUpIce(world, Side.Home);
+            alwaysSix &= world.OnIce(Side.Home).Count(p => !p.IsGoalie) == 6 && !goalie.OnIce;
+        });
+        Check(alwaysSix, "line changes on the fly keep six out and the net empty");
+        Phase(w, MatchPhase.Stopped);
+        Run(w, 0.1f);
+        Check(!GoaliePull.IsPulled(w, Side.Home) && goalie.OnIce && w.OnIce(Side.Home).Count(p => !p.IsGoalie) == 5,
+            "at the whistle the goalie is back and the extra attacker is off: five skaters");
+        Check(w.Controlled(0) is { OnIce: true, Side: Side.Home }, "the human still controls a skater on the ice");
     }
 }
