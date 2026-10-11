@@ -52,23 +52,30 @@ public static class PuckMotion
     /// <summary>Advances a loose puck by <paramref name="dt"/>, in sub-steps short enough that a fast shot cannot skip a post.</summary>
     /// <param name="position">The puck position, changed in place.</param>
     /// <param name="velocity">The puck velocity, changed in place.</param>
+    /// <param name="inNet">
+    /// The end (-1, +1) whose net holds the puck because it came in through the mouth, or 0. Changed in
+    /// place: set when the puck crosses the goal line between the posts and under the crossbar, cleared
+    /// when it leaves again. While 0 the whole cage is solid, so a puck that is found inside without having
+    /// come through the mouth is pushed back out through the nearest wall.
+    /// </param>
     /// <param name="dt">The step length in seconds.</param>
     /// <param name="bodies">Bodies on the ice.</param>
     /// <param name="impacts">Receives every impact.</param>
-    public static void Step(ref Vector3 position, ref Vector3 velocity, float dt, ReadOnlySpan<PuckBody> bodies, List<PuckImpact> impacts)
+    public static void Step(ref Vector3 position, ref Vector3 velocity, ref int inNet, float dt, ReadOnlySpan<PuckBody> bodies, List<PuckImpact> impacts)
     {
         float move = velocity.Length() * dt;
         int steps = Math.Clamp((int)MathF.Ceiling(move / PuckTuning.MaxSubstepMove), 1, 64);
         float h = dt / steps;
-        for (int i = 0; i < steps; i++) SubStep(ref position, ref velocity, h, bodies, impacts);
+        for (int i = 0; i < steps; i++) SubStep(ref position, ref velocity, ref inNet, h, bodies, impacts);
         if (!float.IsFinite(position.X) || !float.IsFinite(position.Y) || !float.IsFinite(position.Z))
         {
             position = Vector3.Zero;
             velocity = Vector3.Zero;
+            inNet = 0;
         }
     }
 
-    static void SubStep(ref Vector3 p, ref Vector3 v, float h, ReadOnlySpan<PuckBody> bodies, List<PuckImpact> impacts)
+    static void SubStep(ref Vector3 p, ref Vector3 v, ref int inNet, float h, ReadOnlySpan<PuckBody> bodies, List<PuckImpact> impacts)
     {
         var prev = p;
 
@@ -104,7 +111,7 @@ public static class PuckMotion
         Boards(ref p, ref v, impacts);
         for (int end = -1; end <= 1; end += 2)
         {
-            Net(end, prev, ref p, ref v, h, impacts);
+            Net(end, prev, ref p, ref v, ref inNet, h, impacts);
             Posts(end, ref p, ref v, impacts);
         }
         foreach (var b in bodies) Body(b, ref p, ref v, impacts);
@@ -141,50 +148,111 @@ public static class PuckMotion
     }
 
     /// <summary>
-    /// The net behind one goal line: a box open at the mouth. A puck inside stays inside (the mesh
-    /// swallows it); a puck outside bounces off the back, sides and top.
+    /// The net behind one goal line: a cage open only at the mouth. The puck is inside only when it came
+    /// in through the mouth (<paramref name="inNet"/> says so); then the mesh swallows it and it bounces
+    /// softly off the back, sides and top from within. Any other puck that overlaps the cage, whether it
+    /// flew in from behind, from a side or from above, or was carried through the mesh on a stick and let
+    /// go there, is pushed back out through the nearest wall and bounces off it.
     /// </summary>
-    static void Net(int end, Vector3 prev, ref Vector3 p, ref Vector3 v, float h, List<PuckImpact> impacts)
+    static void Net(int end, Vector3 prev, ref Vector3 p, ref Vector3 v, ref int inNet, float h, List<PuckImpact> impacts)
     {
         float r = RinkSpec.PuckRadius, w = RinkSpec.NetWidth / 2, d = RinkSpec.NetDepth, top = RinkSpec.NetHeight;
-        // u: depth behind the goal line toward the back of the net
-        float U(Vector3 q) => end * q.X - RinkSpec.GoalLineX;
-        float u = U(p), pu = U(prev);
-        bool wasIn = pu > 0 && pu < d && MathF.Abs(prev.Z) < w && prev.Y < top;
-        if (wasIn)
+        float u = Depth(p, end), pu = Depth(prev, end);
+        if (inNet == end) { Inside(end, ref p, ref v, ref inNet, h, impacts); return; }
+        if (inNet != 0) return;
+
+        // from outside: the cage is the box grown by the puck's radius, minus the mouth
+        bool overlaps = u > 0 && u < d + r && MathF.Abs(p.Z) < w + r && p.Y < top;
+        if (!overlaps) return;
+        if (pu <= 1e-4f && MathF.Abs(prev.Z) < w + r && prev.Y < top)
         {
-            float keep = Math.Max(0, 1 - PuckTuning.NetDrag * h);
-            v.X *= keep; v.Z *= keep;
-            if (u > d - r) { SetU(ref p, end, d - r); Mesh(ref v, new Vector2(end, 0), p, impacts); }
-            if (MathF.Abs(p.Z) > w - r) { p.Z = MathF.Sign(p.Z) * (w - r); Mesh(ref v, new Vector2(0, MathF.Sign(p.Z)), p, impacts); }
-            if (p.Y + 2 * HalfThickness > top && U(p) > 0)
-            {
-                p.Y = top - 2 * HalfThickness;
-                if (v.Y > 0) { impacts.Add(new PuckImpact(PuckHit.Net, p, v.Y)); v.Y = -v.Y * PuckTuning.MeshBounce; }
-            }
+            // it crossed the goal line at the mouth: between the posts and under the crossbar it is in,
+            // otherwise the posts and crossbar, which run after this, ring it out
+            if (ThroughMouth(p, end)) inNet = end;
             return;
         }
 
-        // from outside: the frame is the box grown by the puck's radius, minus the mouth
-        bool overlaps = u > 0 && u < d + r && MathF.Abs(p.Z) < w + r && p.Y < top;
-        if (!overlaps) return;
-        if (pu >= d + r - 1e-4f)
+        // it came through a wall: push it back out through the nearest one
+        float back = d + r - u, side = w + r - MathF.Abs(p.Z), over = top - p.Y;
+        if (back <= side && back <= over)
         {
             SetU(ref p, end, d + r);
             Reflect(ref v, new Vector2(-end, 0), PuckTuning.NetOutsideBounce, PuckTuning.WallGrip, PuckHit.Net, p, impacts);
         }
-        else if (MathF.Abs(prev.Z) >= w + r - 1e-4f || (pu > 0 && MathF.Abs(prev.Z) >= w))
+        else if (side <= over)
         {
-            float s = MathF.Sign(prev.Z);
+            float s = prev.Z != 0 ? MathF.Sign(prev.Z) : p.Z != 0 ? MathF.Sign(p.Z) : 1;
             p.Z = s * (w + r);
             Reflect(ref v, new Vector2(0, -s), PuckTuning.NetOutsideBounce, PuckTuning.WallGrip, PuckHit.Net, p, impacts);
         }
-        else if (prev.Y >= top)
+        else
         {
             p.Y = top;
-            if (v.Y < 0) { impacts.Add(new PuckImpact(PuckHit.Net, p, -v.Y)); v.Y = -v.Y * PuckTuning.NetOutsideBounce; }
+            if (v.Y < 0)
+            {
+                if (-v.Y > PuckTuning.EventSpeed) impacts.Add(new PuckImpact(PuckHit.Net, p, -v.Y));
+                v.Y = -v.Y * PuckTuning.NetOutsideBounce;
+            }
         }
-        // otherwise it came in through the mouth: the posts and crossbar already had their say
+    }
+
+    /// <summary>A puck that came in through the mouth: the mesh drags it, and it bounces softly off the back, sides and top from within.</summary>
+    static void Inside(int end, ref Vector3 p, ref Vector3 v, ref int inNet, float h, List<PuckImpact> impacts)
+    {
+        float r = RinkSpec.PuckRadius, w = RinkSpec.NetWidth / 2, d = RinkSpec.NetDepth, top = RinkSpec.NetHeight;
+        float u = Depth(p, end);
+        // back out through the mouth, or lifted clear over the top (the crossbar can do that)
+        if (u <= 0 || p.Y >= top) { inNet = 0; return; }
+        float keep = Math.Max(0, 1 - PuckTuning.NetDrag * h);
+        v.X *= keep; v.Z *= keep;
+        if (u > d - r) { SetU(ref p, end, d - r); Mesh(ref v, new Vector2(end, 0), p, impacts); }
+        if (MathF.Abs(p.Z) > w - r) { p.Z = MathF.Sign(p.Z) * (w - r); Mesh(ref v, new Vector2(0, MathF.Sign(p.Z)), p, impacts); }
+        if (p.Y + 2 * HalfThickness > top)
+        {
+            p.Y = top - 2 * HalfThickness;
+            if (v.Y > 0) { impacts.Add(new PuckImpact(PuckHit.Net, p, v.Y)); v.Y = -v.Y * PuckTuning.MeshBounce; }
+        }
+    }
+
+    /// <summary>How far a point is behind the goal line at one end, toward the back of the net (negative in front of it).</summary>
+    /// <param name="p">The point.</param>
+    /// <param name="end">-1 for the net at -x, +1 for the net at +x.</param>
+    /// <returns>Metres past the goal line.</returns>
+    public static float Depth(Vector3 p, int end)
+    {
+        return end * p.X - RinkSpec.GoalLineX;
+    }
+
+    /// <summary>Whether a puck centre lies in the net's opening: past the goal line, between the posts and wholly under the crossbar.</summary>
+    static bool ThroughMouth(Vector3 p, int end)
+    {
+        return Depth(p, end) > 0 && MathF.Abs(p.Z) < RinkSpec.NetWidth / 2 && p.Y + 2 * HalfThickness < RinkSpec.NetHeight;
+    }
+
+    /// <summary>
+    /// Whether a puck that was at <paramref name="from"/> and is now at <paramref name="to"/> went into the
+    /// net at <paramref name="end"/> through its mouth: from in front of the goal line to inside the cage,
+    /// between the posts and under the crossbar. For pucks moved by something other than physics, such as
+    /// a carrier's stick, where the sub-steps cannot watch the crossing.
+    /// </summary>
+    /// <param name="from">Where the puck was.</param>
+    /// <param name="to">Where it is now.</param>
+    /// <param name="end">-1 for the net at -x, +1 for the net at +x.</param>
+    /// <returns>True when the move entered the net the proper way.</returns>
+    public static bool EnteredThroughMouth(Vector3 from, Vector3 to, int end)
+    {
+        float r = RinkSpec.PuckRadius, w = RinkSpec.NetWidth / 2;
+        return Depth(from, end) <= 1e-4f && MathF.Abs(from.Z) < w + r && from.Y < RinkSpec.NetHeight && InsideNet(to, end);
+    }
+
+    /// <summary>Whether a puck centre is inside the cage at one end: past the goal line, in front of the back, between the sides, under the top.</summary>
+    /// <param name="p">The puck position.</param>
+    /// <param name="end">-1 for the net at -x, +1 for the net at +x.</param>
+    /// <returns>True inside the cage.</returns>
+    public static bool InsideNet(Vector3 p, int end)
+    {
+        float u = Depth(p, end);
+        return u > 0 && u < RinkSpec.NetDepth && MathF.Abs(p.Z) < RinkSpec.NetWidth / 2 && p.Y < RinkSpec.NetHeight;
     }
 
     static void SetU(ref Vector3 p, int end, float u)
@@ -282,9 +350,7 @@ public static class PuckMotion
     /// <returns>Whether a goal would count, by position alone.</returns>
     public static bool FullyOverGoalLine(Vector3 position, int end)
     {
-        float u = end * position.X - RinkSpec.GoalLineX;
-        return u > RinkSpec.PuckRadius + GoalLineHalfWidth && u < RinkSpec.NetDepth
-            && MathF.Abs(position.Z) < RinkSpec.NetWidth / 2 && position.Y < RinkSpec.NetHeight;
+        return InsideNet(position, end) && Depth(position, end) > RinkSpec.PuckRadius + GoalLineHalfWidth;
     }
 
     /// <summary>Half the width of the painted goal line (50 mm line); the puck must clear all of it.</summary>
