@@ -1,4 +1,5 @@
 using Raylib_cs;
+using StickAndPuck.Core;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Players;
@@ -58,6 +59,23 @@ public static class Gamepads
     {
         int slot = Slot(index);
         return slot < 0 ? null : SlotName(slot);
+    }
+
+    /// <summary>
+    /// Gets how a device reads on a screen: KEYBOARD, OFF, the pad's name cut to fit, or
+    /// "NO GAMEPAD 1" while that pad is not connected.
+    /// </summary>
+    /// <param name="device">The device.</param>
+    /// <returns>The label, in capitals.</returns>
+    public static string Label(InputDevice device)
+    {
+        const int MaxName = 16;
+        int index = device switch { InputDevice.Gamepad1 => 0, InputDevice.Gamepad2 => 1, _ => -1 };
+        if (index < 0) return device == InputDevice.KeyboardMouse ? "KEYBOARD" : "OFF";
+        if (Name(index) is not { } name) return $"NO GAMEPAD {index + 1}";
+        name = new string([.. name.ToUpperInvariant().Where(c => c is (>= 'A' and <= 'Z') or (>= '0' and <= '9') or ' ')]).Trim();
+        if (name.Length == 0) return $"GAMEPAD {index + 1}";
+        return name.Length <= MaxName ? name : name[..MaxName].TrimEnd();
     }
 
     /// <summary>Gets the name Raylib reports for a slot.</summary>

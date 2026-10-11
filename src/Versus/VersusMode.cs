@@ -24,7 +24,9 @@ public sealed class VersusMode : IGameMode
     /// <inheritdoc/>
     public string PickHeading(int index)
     {
-        return index == 0 ? "PLAYER 1: PICK YOUR CLUB" : "PLAYER 2: PICK YOUR CLUB";
+        // W38: each player sees the device they play with, the pad by name
+        var device = index == 0 ? Screens.ScreenFlow.Prefs.Controls : SecondDevice(Screens.ScreenFlow.Prefs.Controls);
+        return $"PLAYER {index + 1} ({Players.Gamepads.Label(device)}): PICK YOUR CLUB";
     }
 
     /// <inheritdoc/>
