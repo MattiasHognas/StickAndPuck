@@ -23,7 +23,7 @@ internal sealed unsafe class GoalieRenderer : IDisposable
     Model model;
     ModelAnimation[] clips = [];
     bool loaded;
-    int ready = -1, butterfly = -1;
+    int ready = -1, butterfly = -1, glove = -1, blocker = -1;
 
     public void Load()
     {
@@ -31,6 +31,8 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         clips = LoadModelAnimations(Assets.Goalie).ToArray();
         ready = Find("ready");
         butterfly = Find("butterfly");
+        glove = Find("glove");
+        blocker = Find("blocker");
         loaded = true;
     }
 
@@ -39,15 +41,19 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         return Array.FindIndex(clips, a => string.Equals(Marshal.PtrToStringUTF8((IntPtr)a.Name), $"goalie_{name}", StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>Picks and advances the clip: butterfly from its first frame when the goalie drops, then held on its last pose.</summary>
-    public void Animate(Player g, GoalieState state, float dt)
+    /// <summary>
+    /// Picks and advances the clip: glove or blocker for a moment after a save with that hand,
+    /// butterfly from its first frame when the goalie drops, then held on its last pose.
+    /// </summary>
+    public void Animate(Player g, GoalieState state, float now, float dt)
     {
         if (!loaded) return;
         var (clip, frame) = poses.GetValueOrDefault(g.Id, (-1, 0f));
-        int want = state.Down && butterfly >= 0 ? butterfly : ready;
+        int hand = now < state.HandPoseUntil ? (state.HandPose > 0 ? glove : state.HandPose < 0 ? blocker : -1) : -1;
+        int want = hand >= 0 ? hand : state.Down && butterfly >= 0 ? butterfly : ready;
         if (want != clip) { clip = want; frame = 0; }
         frame += dt * ClipFps;
-        if (clip >= 0 && clip == butterfly) frame = MathF.Min(frame, clips[clip].KeyFrameCount - 1);
+        if (clip >= 0 && (clip == butterfly || clip == glove || clip == blocker)) frame = MathF.Min(frame, clips[clip].KeyFrameCount - 1);
         poses[g.Id] = (clip, frame);
     }
 
