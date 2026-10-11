@@ -5,6 +5,7 @@ using StickAndPuck.Camera;
 using StickAndPuck.Fights;
 using StickAndPuck.Goalie;
 using StickAndPuck.Hud;
+using StickAndPuck.Intermission;
 using StickAndPuck.Lighting;
 using StickAndPuck.Lines;
 using StickAndPuck.Physics;
@@ -52,6 +53,7 @@ public static class Systems
             new PlayoffSystem(),         // W16b
             new ArcadeSystem(),          // W16c
             new CameraSystem(),          // W9 gameplay and replay camera
+            new IntermissionSystem(),    // W31 the Zamboni between periods
             new LightingSystem(),        // W18 time of day, light cues
             new AudioSystem(),           // W12 8-bit effects
             new ArenaSystem(),           // W2 ice, boards, glass, nets, ads, crowd
