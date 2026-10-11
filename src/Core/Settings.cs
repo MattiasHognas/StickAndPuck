@@ -107,6 +107,9 @@ public sealed record Settings
     /// <summary>Gets the sound effect volume, 0 to 1.</summary>
     public float Volume { get; init; } = 0.8f;
 
+    /// <summary>Gets the rebound keys and gamepad buttons (W39); an action missing here keeps its default. Read them with <see cref="KeyBindings.Of"/>.</summary>
+    public IReadOnlyDictionary<GameAction, KeyBinding> Keys { get; init; } = new Dictionary<GameAction, KeyBinding>();
+
     /// <summary>
     /// Lays the SAP_* overrides over these settings: SAP_DIFFICULTY, SAP_CAMERA_ZOOM, SAP_LIGHTING,
     /// SAP_CONTROL_MARKER, SAP_SIM_GAME, SAP_AUTO_DEKE, SAP_ONE_TIMERS, SAP_SWAP_KITS, SAP_FPS,

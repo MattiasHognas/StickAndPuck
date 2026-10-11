@@ -41,7 +41,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
 
     public void Update(World world, float dt)
     {
-        if (IsKeyPressed(KeyboardKey.Tab)) world.Settings = world.Settings with { SwapKits = !world.Settings.SwapKits };
+        if (KeyInput.Pressed(world.Settings, GameAction.Kit)) world.Settings = world.Settings with { SwapKits = !world.Settings.SwapKits };
         swapKits = world.Settings.SwapKits;    // W20: the setting, which Tab flips in play
         foreach (var p in Skaters(world))
         {
