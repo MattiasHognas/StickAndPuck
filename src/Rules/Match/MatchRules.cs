@@ -116,15 +116,14 @@ internal sealed class MatchRules : ISystem
             m.Phase = MatchPhase.Intermission;
             s.Timer = MatchTuning.IntermissionSeconds;
         }
-        else if (!tied || world.Setup.Overtime == OvertimeRule.None)
+        else if (tied && OvertimeFormat.Of(world.Setup).AfterTie(m.Period - world.Setup.Periods) is { } next)
         {
-            EndMatch(world, s);
+            // a tie: W7c sets up the overtime skaters and calls StartPeriod, or runs the shootout, as the mode's format says
+            m.Phase = next;
         }
         else
         {
-            // a tie after regulation: W7c sets up 3 on 3 and calls StartPeriod, or runs the shootout
-            bool overtimeNext = m.Period == world.Setup.Periods && world.Setup.Overtime == OvertimeRule.Shl;
-            m.Phase = overtimeNext ? MatchPhase.Overtime : MatchPhase.Shootout;
+            EndMatch(world, s);
         }
     }
 

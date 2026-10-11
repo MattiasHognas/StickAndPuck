@@ -7,12 +7,14 @@ using static Raylib_cs.Raylib;
 namespace StickAndPuck.Rules;
 
 /// <summary>
-/// W7c: a tie after regulation goes to SHL 3 on 3 overtime, then a shootout, as <see cref="MatchSetup.Overtime"/> says.
+/// W7c: a tie after regulation goes to overtime and then a shootout as the mode's <see cref="OvertimeFormat"/>
+/// says (W19): SHL 3 on 3 then a shootout in the season, 5 on 5 until a goal in the playoffs.
 /// <list type="bullet">
-/// <item>Overtime: when W7a hands over (<see cref="MatchPhase.Overtime"/>), each club keeps three
-/// skaters (centre and two defence where it can), the rest go to the bench, and after a short break
-/// <see cref="MatchFlow.StartPeriod"/> starts a sudden death period of <see cref="PeriodSeconds"/>.
-/// A goal ends the match there (W7a); a scoreless period hands over to the shootout.</item>
+/// <item>Overtime: when W7a hands over (<see cref="MatchPhase.Overtime"/>), each club keeps the
+/// format's skaters (centre and two defence where it can, for 3 on 3), the rest go to the bench, and
+/// after a short break <see cref="MatchFlow.StartPeriod"/> starts a sudden death period of
+/// <see cref="PeriodLength"/>. A goal ends the match there (W7a); a scoreless period hands over to
+/// the shootout, or to another overtime period when the format plays on until a goal.</item>
 /// <item>Shootout: every skater leaves the ice and each goalie stays in their own net. Clubs take turns,
 /// home first, each shooter alone from centre with the puck against the other club's goalie;
 /// <see cref="OvertimeTuning.Rounds"/> shooters each, then sudden death rounds. An attempt ends on a goal,
@@ -42,8 +44,16 @@ internal sealed class OvertimeRules : ISystem
         this.rng = rng;
     }
 
-    /// <summary>Gets or sets the length of the overtime period in game seconds; scenes shorten it.</summary>
+    /// <summary>Gets or sets the length of an overtime period in game seconds for formats that give none (the SHL 3 on 3); scenes shorten it.</summary>
     public static float PeriodSeconds { get; set; } = MatchTuning.OvertimeSeconds;
+
+    /// <summary>Gets the length of an overtime period in this match: the format's own, or <see cref="PeriodSeconds"/>.</summary>
+    /// <param name="world">The match.</param>
+    /// <returns>Game seconds.</returns>
+    public static float PeriodLength(World world)
+    {
+        return OvertimeFormat.Of(world.Setup).PeriodSeconds ?? PeriodSeconds;
+    }
 
     /// <summary>Gets the shootout of a match, or null before it starts.</summary>
     /// <param name="world">The match.</param>
@@ -71,7 +81,7 @@ internal sealed class OvertimeRules : ISystem
         DrawText(text, 8, 238, 10, new Raylib_cs.Color(239, 224, 194, 255));
     }
 
-    /// <summary>The break after a tied regulation: three skaters each, then the overtime faceoff.</summary>
+    /// <summary>The break after a tied period: the format's skaters each, then the overtime faceoff of the next period.</summary>
     static void Overtime(World world, OvertimeState s, float dt)
     {
         if (!s.InBreak)
@@ -79,26 +89,35 @@ internal sealed class OvertimeRules : ISystem
             s.InBreak = true;
             s.Timer = OvertimeTuning.BreakSeconds;
             world.Puck.Live = false;
-            ThreeOnThree(world);
-            Log(world, "overtime, 3 on 3");
+            int skaters = OvertimeFormat.Of(world.Setup).Skaters;
+            KeepSkaters(world, skaters);
+            int number = world.Match.Period - world.Setup.Periods + 1;
+            Log(world, $"overtime{(number > 1 ? $" {number}" : "")}, {skaters} on {skaters}");
         }
 
         s.Timer -= dt;
         if (s.Timer > 0) return;
         s.InBreak = false;
-        MatchFlow.StartPeriod(world, world.Setup.Periods + 1, PeriodSeconds);
+        MatchFlow.StartPeriod(world, world.Match.Period + 1, PeriodLength(world));
     }
 
     /// <summary>Sends all but <see cref="OvertimeTuning.OvertimeSkaters"/> skaters of each club to the bench, keeping a human's control on the ice.</summary>
     internal static void ThreeOnThree(World world)
     {
+        KeepSkaters(world, OvertimeTuning.OvertimeSkaters);
+    }
+
+    /// <summary>Sends all but <paramref name="count"/> skaters of each club to the bench (centre and defence stay first), keeping a human's control on the ice.</summary>
+    internal static void KeepSkaters(World world, int count)
+    {
         foreach (var side in new[] { Side.Home, Side.Away })
         {
             var skaters = world.OnIce(side).Where(p => !p.IsGoalie).ToList();
+            if (skaters.Count <= count) continue;
             var keep = new List<Player>();
             foreach (var pos in new[] { PlayingPosition.C, PlayingPosition.D, PlayingPosition.D })
-                if (skaters.Find(p => p.Data.Position == pos && !keep.Contains(p)) is { } found) keep.Add(found);
-            keep.AddRange(skaters.Where(p => !keep.Contains(p)).Take(OvertimeTuning.OvertimeSkaters - keep.Count));
+                if (keep.Count < count && skaters.Find(p => p.Data.Position == pos && !keep.Contains(p)) is { } found) keep.Add(found);
+            keep.AddRange(skaters.Where(p => !keep.Contains(p)).Take(count - keep.Count));
 
             foreach (var p in skaters.Where(p => !keep.Contains(p)))
             {
@@ -126,7 +145,7 @@ internal sealed class OvertimeRules : ISystem
                 break;
             case ShootoutStage.Result:
                 if (!Wait(s, dt)) break;
-                if (so.Decided(OvertimeTuning.Rounds) is { } winner) End(world, s, winner);
+                if (so.Decided(OvertimeFormat.Of(world.Setup).ShootoutRounds) is { } winner) End(world, s, winner);
                 else NextShooter(world, s);
                 break;
             default:
