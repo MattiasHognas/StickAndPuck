@@ -29,7 +29,7 @@ internal sealed class CameraSystem : ISystem
     public void Update(World world, float dt)
     {
         if (world.Match.Paused) return;   // the frame holds while a screen is up
-        if (IsKeyPressed(KeyboardKey.F6)) world.Settings = world.Settings with { CameraZoom = !world.Settings.CameraZoom };
+        if (Players.KeyInput.Pressed(world.Settings, GameAction.Zoom)) world.Settings = world.Settings with { CameraZoom = !world.Settings.CameraZoom };
 
         if (replay.Update(world, dt)) follow.Cut(world);
         if (Replay.Playing)

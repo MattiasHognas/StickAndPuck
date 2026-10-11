@@ -142,7 +142,7 @@ internal sealed class MenuInput
         Add(MenuButton.Right, IsKeyDown(KeyboardKey.Right) || IsKeyDown(KeyboardKey.D));
         Add(MenuButton.Accept, IsKeyDown(KeyboardKey.Enter) || IsKeyDown(KeyboardKey.KpEnter) || IsKeyDown(KeyboardKey.Space));
         Add(MenuButton.Back, IsKeyDown(KeyboardKey.Escape) || IsKeyDown(KeyboardKey.Backspace));
-        Add(MenuButton.Pause, IsKeyDown(KeyboardKey.Escape) || IsKeyDown(KeyboardKey.P));
+        Add(MenuButton.Pause, IsKeyDown(KeyboardKey.Escape) || Players.KeyInput.KeyDown(ScreenFlow.Settings, GameAction.Pause));
         for (int pad = 0; pad < 2; pad++)
         {
             if (!IsGamepadAvailable(pad)) continue;
@@ -153,7 +153,7 @@ internal sealed class MenuInput
             Add(MenuButton.Right, IsGamepadButtonDown(pad, GamepadButton.LeftFaceRight) || x > StickDeadZone);
             Add(MenuButton.Accept, IsGamepadButtonDown(pad, GamepadButton.RightFaceDown));
             Add(MenuButton.Back, IsGamepadButtonDown(pad, GamepadButton.RightFaceRight));
-            Add(MenuButton.Pause, IsGamepadButtonDown(pad, GamepadButton.MiddleRight));
+            Add(MenuButton.Pause, Players.KeyInput.PadDown(ScreenFlow.Settings, GameAction.Pause, pad));
         }
         return held;
     }
