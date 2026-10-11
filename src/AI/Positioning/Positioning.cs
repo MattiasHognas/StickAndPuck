@@ -39,7 +39,7 @@ public static class Positioning
         return Board(world).Get(p.Id)?.Job ?? Job.Idle;
     }
 
-    /// <summary>Gets where a skater is heading this step, after smart positioning and spacing.</summary>
+    /// <summary>Gets where a skater is heading this step, after the hockey IQ read and spacing.</summary>
     /// <param name="world">The match.</param>
     /// <param name="p">The skater.</param>
     /// <returns>The target on the ice (x, z).</returns>
@@ -48,7 +48,7 @@ public static class Positioning
         return Board(world).Get(p.Id)?.Target ?? new Vector2(p.Position.X, p.Position.Z);
     }
 
-    /// <summary>Gets the ideal spot for a skater's role this step, from where the puck is now, before smart positioning reads or blurs it.</summary>
+    /// <summary>Gets the ideal spot for a skater's role this step, from where the puck is now, before hockey IQ reads or blurs it.</summary>
     /// <param name="world">The match.</param>
     /// <param name="p">The skater.</param>
     /// <returns>The spot on the ice (x, z).</returns>

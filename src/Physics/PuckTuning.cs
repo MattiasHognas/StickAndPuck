@@ -62,4 +62,7 @@ public static class PuckTuning
 
     /// <summary>Longest move in one sub-step, so a fast shot cannot pass through a post.</summary>
     public const float MaxSubstepMove = 0.025f;
+
+    /// <summary>A puck moved further than this between two steps by something other than physics was placed, not played, and is trusted where it lands.</summary>
+    public const float TeleportDistance = 1.5f;
 }

@@ -62,7 +62,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `SAP_SEED`: integer; fixes the season schedule or the arcade opponent order. Default: random.
 - `SAP_SAVE`, `SAP_ARCADE_SAVE`: paths for the season and arcade save files. Default: `season.json` and `arcade.json` in the settings folder above.
 - `SAP_VERSUS_P2`: `keyboard`, `pad1` or `pad2`, player two's device in `versus`. Default: the settings screen's player 2 controls (the first gamepad), or the keyboard when player one holds that device; OFF hands the visitors to the AI. Both players never get the same device.
-- `SAP_SMART_HOME`, `SAP_SMART_AWAY`: 0 to 100, sets every skater's smart passes trait for that club in `aimatch`. Default: each player's own value.
+- `SAP_IQ_HOME`, `SAP_IQ_AWAY`: 0 to 100, sets every skater's hockey IQ for that club in `aimatch`. Default: each player's own value.
 - `SAP_GOALIE_REFLEXES`: 0 to 100, overrides the goalie's reflexes in the `goalie` scene. Default: the goalie's own value.
 - `SAP_FATIGUE`: how many times faster than normal skaters tire and rest. Default 1 (6 in `lines` and `goalieswap`).
 - `SAP_PENALTY_STRICT`: scales how often the referee calls penalties in the `penalty` scene. Default 1.

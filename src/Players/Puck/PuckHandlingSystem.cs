@@ -120,7 +120,7 @@ internal sealed class PuckHandlingSystem : ISystem
         var pk = world.Puck;
         var from = pk.Position;
         var receiver = PuckHandling.PickReceiver(world, passer);
-        int smart = passer.Data.Traits.SmartPasses;
+        int smart = passer.Data.Traits.HockeyIq;
         Vector3 velocity;
         if (receiver != null)
         {

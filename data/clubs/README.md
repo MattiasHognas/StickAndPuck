@@ -6,7 +6,7 @@ One JSON file per club. The game loads every `*.json` here; `SAP_HOME` and `SAP_
 - `name`, `shortName`: full name and the club's SHL code for the scorebug (three letters, four for HV71 and SAIK).
 - `home`, `away`: kit colours as hex (`primary` jersey, `secondary` stripes and numbers, `accent` trim, `helmet`). The visiting club wears `away`. These are the club's real colours; the kit script snaps them to the palette.
 - `roster`: the match squad in line order: two goalies (starter first), then four forward lines and three defence pairs as C, LW, RW, D, D per line (line 4 has no D). The first player of each position starts.
-- `traits`: 0 to 100, 50 is an average SHL player: `acceleration`, `topSpeed`, `shotAccuracy`, `shotPower`, `checking`, `puckControl`, `smartPasses`, `smartPositioning`, `goalieReflexes`.
+- `traits`: 0 to 100, 50 is an average SHL player: `acceleration`, `topSpeed`, `shotAccuracy`, `shotPower`, `checking`, `puckControl`, `hockeyIq`, `goalieReflexes`. `hockeyIq` is how well the player reads the play and feeds every AI read (vision, passing lanes, re-think interval, positioning, getting open); it sets the odds, and the AI's skill-scaled randomness rolls against them. A trait name the game does not know fails the load.
 
 ## Sources
 
@@ -31,4 +31,4 @@ The other twelve (D1b) follow the same rules: squads are each club's SHL lineup 
 | Växjö | navy `#002f60`, orange `#ec732b`, gold `#be9e55` |
 | Björklöven | green `#0b5640`, yellow `#ffd000`, white |
 
-Traits are seeded, not official: line (1st line higher), position, age, size and 2026-27 per-game goals, assists, shots and hits so far, clamped to 25..92. Goalies are seeded from save percentage. Edit any value by hand; nothing in code overrides these files.
+Traits are seeded, not official: line (1st line higher), position, age, size and 2026-27 per-game goals, assists, shots and hits so far, clamped to 25..92. Goalies are seeded from save percentage. `hockeyIq` folds the earlier `smartPasses` and `smartPositioning` (2026-10-10): the rounded average for skaters, the positioning value for goalies. Edit any value by hand; nothing in code overrides these files.

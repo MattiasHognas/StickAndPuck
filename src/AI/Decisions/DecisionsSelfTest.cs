@@ -12,8 +12,8 @@ namespace StickAndPuck.AI;
 /// Plays a full three-period match with every skater AI (positioning, decisions, skating, checks,
 /// puck handling, goalies, puck physics, match rules) and checks it reaches the final with
 /// passes, shots, checks and goals on both sides. Then plays the same clubs with every skater's
-/// smart passes set to 90 on one side and 20 on the other, both ways round, and checks the smart
-/// side completes clearly more of its passes: the "done when" of W6b. SAP_SEED picks the full match's seed (default 5).
+/// hockey IQ set to 90 on one side and 20 on the other, both ways round, and checks the smart
+/// side completes clearly more of its passes: the "done when" of W6b. SAP_SEED picks the full match's seed (default 1).
 /// </summary>
 public sealed class DecisionsSelfTest : IScene
 {
@@ -27,7 +27,7 @@ public sealed class DecisionsSelfTest : IScene
     {
         ChoicesMaths();
         var match = FullMatch(clubs, settings);
-        SmartPasses(clubs, settings);
+        HockeyIq(clubs, settings);
         Console.WriteLine(failures == 0 ? "AIMATCHTEST: all checks passed" : $"AIMATCHTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
         return match;
@@ -59,7 +59,7 @@ public sealed class DecisionsSelfTest : IScene
     World FullMatch(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var world = Make(clubs, settings, 20 * 60, null, null);
-        var systems = Systems(world, int.Parse(Environment.GetEnvironmentVariable("SAP_SEED") ?? "5", System.Globalization.CultureInfo.InvariantCulture));
+        var systems = Systems(world, int.Parse(Environment.GetEnvironmentVariable("SAP_SEED") ?? "1", System.Globalization.CultureInfo.InvariantCulture));
         var still = Play(world, systems, 2 * 60 * 60);
         var h = Decisions.Tally(world, Side.Home);
         var a = Decisions.Tally(world, Side.Away);
@@ -74,10 +74,10 @@ public sealed class DecisionsSelfTest : IScene
         return world;
     }
 
-    /// <summary>The same clubs with smart passes 90 against 20, both ways round, over two periods each.</summary>
-    void SmartPasses(IReadOnlyList<ClubData> clubs, Settings settings)
+    /// <summary>The same clubs with hockey IQ 90 against 20, both ways round, over two periods each.</summary>
+    void HockeyIq(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        int smartPasses = 0, smartDone = 0, poorPasses = 0, poorDone = 0, smartLost = 0, poorLost = 0;
+        int smartTotal = 0, smartDone = 0, poorPasses = 0, poorDone = 0, smartLost = 0, poorLost = 0;
         foreach (var smartSide in new[] { Side.Home, Side.Away })
         {
             var poorSide = smartSide == Side.Home ? Side.Away : Side.Home;
@@ -85,13 +85,13 @@ public sealed class DecisionsSelfTest : IScene
             Play(world, Systems(world, smartSide == Side.Home ? 21 : 22), 2 * 15 * 60 + 300, stopAfter: 3);
             var s = Decisions.Tally(world, smartSide);
             var p = Decisions.Tally(world, poorSide);
-            smartPasses += s.Passes; smartDone += s.Completed; smartLost += s.Intercepted;
+            smartTotal += s.Passes; smartDone += s.Completed; smartLost += s.Intercepted;
             poorPasses += p.Passes; poorDone += p.Completed; poorLost += p.Intercepted;
         }
-        float smart = (float)smartDone / Math.Max(1, smartPasses), poor = (float)poorDone / Math.Max(1, poorPasses);
-        Console.WriteLine($"      smart passes 90: {smartDone}/{smartPasses} completed ({smart:P0}), {smartLost} picked off; smart passes 20: {poorDone}/{poorPasses} completed ({poor:P0}), {poorLost} picked off");
+        float smart = (float)smartDone / Math.Max(1, smartTotal), poor = (float)poorDone / Math.Max(1, poorPasses);
+        Console.WriteLine($"      hockey IQ 90: {smartDone}/{smartTotal} completed ({smart:P0}), {smartLost} picked off; hockey IQ 20: {poorDone}/{poorPasses} completed ({poor:P0}), {poorLost} picked off");
         Check(smart > poor + 0.1f, "the smarter club completes clearly more of its passes");
-        float smartLostShare = (float)smartLost / Math.Max(1, smartPasses), poorLostShare = (float)poorLost / Math.Max(1, poorPasses);
+        float smartLostShare = (float)smartLost / Math.Max(1, smartTotal), poorLostShare = (float)poorLost / Math.Max(1, poorPasses);
         Check(smartLostShare < poorLostShare * 0.75f, "the smarter club's passes are picked off less often");
     }
 
@@ -100,8 +100,8 @@ public sealed class DecisionsSelfTest : IScene
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
         var world = new World(setup, settings);
         Scenes.AddStarters(world);
-        DecisionScenes.SetSmartPasses(world, Side.Home, smartHome);
-        DecisionScenes.SetSmartPasses(world, Side.Away, smartAway);
+        DecisionScenes.SetHockeyIq(world, Side.Home, smartHome);
+        DecisionScenes.SetHockeyIq(world, Side.Away, smartAway);
         MatchFlow.Begin(world, log: false);
         return world;
     }
