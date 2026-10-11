@@ -6,7 +6,7 @@ namespace StickAndPuck.Screens;
 /// <summary>
 /// Settings: every switch in one place (W20). Game: control switching, line changes, difficulty,
 /// period length, sim game, auto deke, one-timers, penalties, fights. Controls: player one's and
-/// player two's devices, the control marker. Display and sound: camera zoom, lighting mood, swap
+/// player two's devices, the key mapping page (W39), the control marker. Display and sound: camera zoom, lighting mood, swap
 /// kits, volume. Debug: the fps line, the match line, the lines panel. Left and right change a
 /// value; it applies to the world on show at once (so a paused match plays on with it) and every
 /// later match, and is saved on leaving. The list scrolls when it is taller than the frame. A
@@ -51,6 +51,7 @@ internal sealed class SettingsScreen : MenuScreen
             new MenuItem("FIGHTS", Value: OnOff(s.Fights), Change: _ => Set(s with { Fights = !s.Fights })),
             new MenuItem("CONTROLS", Value: Device(Prefs.Controls), Change: Controls),
             new MenuItem("PLAYER 2 CONTROLS", Value: Device(Prefs.Player2), Change: Player2),
+            new MenuItem("KEY MAPPING", () => ScreenFlow.Push(new KeyMappingScreen())),
             new MenuItem("CONTROL MARKER", Value: OnOff(s.ControlMarker), Change: _ => Set(s with { ControlMarker = !s.ControlMarker })),
             new MenuItem("CAMERA ZOOM", Value: OnOff(s.CameraZoom), Change: _ => Set(s with { CameraZoom = !s.CameraZoom })),
             new MenuItem("LIGHTING", Value: s.Lighting.ToString().ToUpperInvariant(), Change: d => Set(s with { Lighting = Cycle(s.Lighting, d) })),
