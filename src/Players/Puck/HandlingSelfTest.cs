@@ -30,7 +30,7 @@ public sealed class HandlingSelfTest : IScene
         PickUpLoose(Make);
         ControlFollowsPass(Make);
         Interception(Make());
-        SmartPassesLead(Make);
+        HockeyIqLead(Make);
         ShotKinds(Make);
         AccuracyMatters(Make);
         NoPickupInNet(Make());
@@ -189,7 +189,7 @@ public sealed class HandlingSelfTest : IScene
         Check(w.Puck.Carrier == thief.Id, "an opponent in the passing lane intercepts");
     }
 
-    void SmartPassesLead(Func<World> make)
+    void HockeyIqLead(Func<World> make)
     {
         // a receiver skating across the ice: a smart passer leads them, a poor one passes behind
         int Completed(int smart)
