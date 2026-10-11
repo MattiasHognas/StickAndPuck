@@ -8,6 +8,7 @@ namespace StickAndPuck.Lighting;
 /// SAP_SCENE=lightingtest: runs the match flow with the light cues, no window, prints one line
 /// per check and exits with 0 when all pass, 1 otherwise. Covers the W18 "done when": the
 /// presets differ, the intro is dim, the lights come back at the faceoff and a goal flashes.
+/// W21: the ice is a cold grey in every preset and the scratches are faint and a shade off it.
 /// </summary>
 public sealed class LightingSelfTest : IScene
 {
@@ -36,6 +37,7 @@ public sealed class LightingSelfTest : IScene
         Check(LightPresets.Early.Full.Y > LightPresets.Late.Full.Y + 0.15f
             && LightPresets.Early.Shadow.Y > LightPresets.Late.Shadow.Y + 0.3f, "early is brighter than late");
         Check(!LightPresets.Early.IceBand.Equals(LightPresets.Late.IceBand), "early and late bands differ");
+        CheckIce(LightPresets.Early); CheckIce(LightPresets.Afternoon); CheckIce(LightPresets.Late);
 
         Step();
         Check(cues.Intro && cues.Current().Tone == LightCues.IntroDim && !cues.Current().Bands, "intro plays with the lights down");
@@ -57,6 +59,15 @@ public sealed class LightingSelfTest : IScene
         Console.WriteLine(failures == 0 ? "LIGHTINGTEST: all checks passed" : $"LIGHTINGTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
         return world;
+    }
+
+    /// <summary>W21: the preset's ice is a cold, light grey and its scratches are faint and a shade off it.</summary>
+    void CheckIce(LightPreset preset)
+    {
+        var ice = preset.Ice; var scratch = preset.Scratch;
+        Check(ice.B >= ice.R && ice.B >= ice.G && ice.R >= 0xb0, $"{preset.Time} ice is a cold, light grey");
+        Check(scratch.A is >= 96 and <= 192 && Math.Abs(scratch.R - ice.R) + Math.Abs(scratch.G - ice.G) + Math.Abs(scratch.B - ice.B) <= 60,
+            $"{preset.Time} scratches are faint and a shade off the ice");
     }
 
     void Check(bool ok, string what)

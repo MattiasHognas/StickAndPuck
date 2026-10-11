@@ -9,7 +9,9 @@ namespace StickAndPuck.Lighting;
 /// W18: the match start time (early, afternoon, late) picks a lighting preset; intros dim and
 /// goals flash. Each match draws a random start time; SAP_LIGHTING=early|afternoon|late fixes
 /// it. The preset and cues set the toon shader's three tones and light direction, and the
-/// ice band and glass tones in <see cref="ArenaLook"/>, so the arena and every player follow.
+/// ice, scratch, ice band and glass tones in <see cref="ArenaLook"/>, so the arena and every
+/// player follow. The ice sheet and its scratches are flat palette greys per preset (W21), so
+/// the ice stays cold under the warm evening key light; only the cues dim or brighten them.
 /// </summary>
 internal sealed class LightingSystem : ISystem
 {
@@ -55,6 +57,15 @@ internal sealed class LightingSystem : ISystem
         var cue = cues.Current();
         ArenaLook.IceBand = cue.Flash ? FlashBand : cue.Bands ? Preset.IceBand : Preset.IceBand with { A = 0 };
         ArenaLook.Glass = cue.Flash ? FlashGlass : Preset.Glass;
+        ArenaLook.Ice = Dimmed(Preset.Ice, cue.Tone);
+        ArenaLook.Scratch = Dimmed(Preset.Scratch, cue.Tone);
+    }
+
+    /// <summary>A flat tone times the cue's light level, so the ice goes down with the intro and up with a flash; alpha is kept.</summary>
+    static Color Dimmed(Color c, System.Numerics.Vector3 tone)
+    {
+        static byte Mul(byte v, float t) => (byte)Math.Clamp(MathF.Round(v * t), 0, 255);
+        return new Color(Mul(c.R, tone.X), Mul(c.G, tone.Y), Mul(c.B, tone.Z), c.A);
     }
 
     /// <summary>Sets the toon shader's tones; runs before the arena and skaters draw.</summary>
