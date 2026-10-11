@@ -309,7 +309,7 @@ public sealed class FightSelfTest : IScene
                 if (string.Equals(w.Match.Penalties.FindLast(p => p.PlayerId == e.PlayerId)?.Infraction, FightTuning.Infraction, StringComparison.Ordinal)) boxed++;
             if (w.Match.Phase is MatchPhase.Final or MatchPhase.Overtime or MatchPhase.Shootout) continue;
             foreach (var side in new[] { Side.Home, Side.Away })
-                if (w.OnIce(side).Count(p => !p.IsGoalie) != 5 - Penalties.Serving(w, side)) broken++;
+                if (w.OnIce(side).Count(p => !p.IsGoalie) != Penalties.TargetSkaters(w, side)) broken++;
         }
         return (Fighting.Started(w), boxed, broken, Fighting.Current(w) != null ? 1 : 0);
     }

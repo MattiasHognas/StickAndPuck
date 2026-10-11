@@ -26,6 +26,9 @@ namespace StickAndPuck.Lines;
 /// button, which works in both modes. AI clubs always change by themselves.</item>
 /// <item>The goalie stays in unless he lets in <see cref="LinesTuning.GoalieGoals"/> in a short
 /// spell; then the backup comes in before the next faceoff.</item>
+/// <item>W23: a club pulls its goalie for an extra attacker on a delayed call against the other
+/// club, and when trailing late in regulation (AI by itself, a human on the button); he comes
+/// back at the next whistle. See <see cref="GoaliePull"/>.</item>
 /// <item>Each new period starts with line 1 and pair 1, everyone rested.</item>
 /// </list>
 /// Each change publishes one <see cref="MatchEventKind.LineChange"/> (the first player on).
@@ -54,6 +57,7 @@ internal sealed class LinesSystem : ISystem
 
         Tire(world, m.Phase == MatchPhase.Play, dt);
         CountGoals(world, b);
+        GoaliePull.Update(world);
         Buttons(world, b);
         if (m.Phase == MatchPhase.Intermission && b.LastPhase != MatchPhase.Intermission) Rest(world, b);
         if (m.Phase == MatchPhase.Faceoff && b.LastPhase != MatchPhase.Faceoff) AtFaceoff(world, b);

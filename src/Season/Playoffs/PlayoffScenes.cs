@@ -53,6 +53,9 @@ internal static class PlayoffScenes
     /// </summary>
     public static World Play(IReadOnlyList<ClubData> clubs, Settings settings, bool human)
     {
+        // SAP_OT shortens the playoff overtime periods too, for watching one; the setup below carries it
+        if (SeasonScenes.Seconds("SAP_OT") is { } overtime)
+            PlayoffSession.Rules = PlayoffSession.Rules with { Overtime = PlayoffSession.Rules.Overtime with { PeriodSeconds = overtime } };
         var playoffs = PlayoffSession.Open();
         var setup = PlayoffSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None);
         if (playoffs == null || setup == null)

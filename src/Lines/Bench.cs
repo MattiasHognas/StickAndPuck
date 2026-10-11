@@ -72,6 +72,78 @@ public static class Bench
         if (Boards.TryGetValue(world, out var b)) b.Requested[(int)side] = true;
     }
 
+    /// <summary>
+    /// Sends a skater on from the bench, W23's extra attacker or the skater a club adds for a 4 on 3
+    /// power play in overtime: the freshest of the group who is not in the penalty box, from the
+    /// other group when that one is empty. On the fly he steps out of the bench door; at a stoppage
+    /// he waits at the door for the faceoff to place him.
+    /// </summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The club.</param>
+    /// <param name="group">The group wanted first.</param>
+    /// <param name="onTheFly">True in play, false while play is stopped.</param>
+    /// <returns>The skater, or null with nobody left on the bench.</returns>
+    public static Player? SendOn(World world, Side side, Group group, bool onTheFly)
+    {
+        var on = world.Players
+            .Where(p => p.Side == side && !p.OnIce && !p.IsGoalie && !Rules.Penalties.InBox(world, p.Id))
+            .OrderByDescending(p => Squad.GroupOf(p) == group)
+            .ThenByDescending(p => p.Energy)
+            .FirstOrDefault();
+        if (on == null) return null;
+        var door = Squad.Door(side);
+        on.OnIce = true;
+        on.Position = new Vector3(door.X, 0, door.Y + (onTheFly ? 0.4f : 1.5f));
+        on.Velocity = onTheFly ? new Vector3(0, 0, 1.5f) : Vector3.Zero;
+        on.Heading = 0f;
+        on.Command = default;
+        on.Begin(PlayerAction.None);
+        return on;
+    }
+
+    /// <summary>Sends a player on the ice to the bench, handing a human's control to the teammate nearest the puck.</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="p">The player.</param>
+    public static void SendOff(World world, Player p)
+    {
+        if (!p.OnIce) return;
+        if (p.Slot >= 0)
+        {
+            var to = world.OnIce(p.Side).Where(o => o != p && !o.IsGoalie && o.Slot < 0).MinBy(o => Vector3.DistanceSquared(o.Position, world.Puck.Position));
+            if (to != null) to.Slot = p.Slot;
+            p.Slot = -1;
+        }
+        var door = Squad.Door(p.Side);
+        p.OnIce = false;
+        p.Position = new Vector3(door.X, 0, door.Y - 1.5f);
+        p.Velocity = Vector3.Zero;
+        p.Command = default;
+        p.Begin(PlayerAction.None);
+        if (world.Puck.Carrier == p.Id) world.Puck.Carrier = -1;
+        if (Boards.TryGetValue(world, out var b) && b.Changing[(int)p.Side] is { } change)
+            foreach (var s in change.Swaps.Where(s => s.Out == p || s.In == p)) s.Done = true;
+    }
+
+    /// <summary>
+    /// Gets the skater a club can spare when it has more on the ice than it should: the extra
+    /// attacker (W23) if he is out there, else the most tired of the group with more than its
+    /// share (one forward at three a side, two defence at four or more), a human's skater last.
+    /// </summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The club.</param>
+    /// <param name="target">The skaters the club should have.</param>
+    /// <returns>The skater, or null with nobody on the ice.</returns>
+    public static Player? Surplus(World world, Side side, int target)
+    {
+        if (GoaliePull.ExtraAttacker(world, side) is { } extra) return extra;
+        var skaters = world.OnIce(side).Where(p => !p.IsGoalie).ToList();
+        int defenceWanted = target >= 4 ? 2 : Math.Max(0, target - 1);
+        int defence = skaters.Count(p => Squad.GroupOf(p) == Group.Defence);
+        var group = defence > defenceWanted ? Group.Defence : Group.Forwards;
+        return skaters.Where(p => Squad.GroupOf(p) == group).OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault()
+            ?? skaters.OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault();
+    }
+
     internal static IEnumerable<Player> OnIce(World world, Side side, Group group)
     {
         return world.OnIce(side).Where(p => !p.IsGoalie && Squad.GroupOf(p) == group);
@@ -99,6 +171,15 @@ internal sealed class LinesBoard
 
     /// <summary>Gets the clubs whose backup goalie comes in at the next faceoff.</summary>
     public bool[] GoalieSwap { get; } = new bool[2];
+
+    /// <summary>Gets each club's pulled goalie (W23), or null while he is in the net.</summary>
+    public Player?[] PulledGoalie { get; } = new Player?[2];
+
+    /// <summary>Gets the id of the extra attacker who came on for each club's goalie, or -1.</summary>
+    public int[] ExtraAttacker { get; } = [-1, -1];
+
+    /// <summary>Gets whether each human slot held the pull goalie button last step.</summary>
+    public bool[] PullHeld { get; } = new bool[MatchSetup.Slots];
 
     /// <summary>Gets the button presses not yet acted on, per side.</summary>
     public bool[] Requested { get; } = new bool[2];
