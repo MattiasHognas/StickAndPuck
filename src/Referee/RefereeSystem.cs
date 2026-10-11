@@ -10,10 +10,33 @@ namespace StickAndPuck.Referee;
 /// along the far boards, trailing the puck on the centre-ice side and keeping clear of players.
 /// Puck physics and checks never see the referee, so it cannot touch the play. Runs only in a world
 /// that runs the match flow. Penalty calls are W14's: see <see cref="Referee.Signal"/>.
+/// W27: once set at the dot the referee holds the puck a random moment, rolled per faceoff from
+/// its dice, so a faceoff cannot be timed by habit.
 /// </summary>
 internal sealed class RefereeSystem : ISystem, IDisposable
 {
     readonly RefereeRenderer renderer = new();
+    readonly Random dice;
+
+    /// <summary>Initializes the system with its own dice: seeded by SAP_SEED when that is set, so a run repeats, otherwise unseeded.</summary>
+    public RefereeSystem()
+        : this(SeededDice())
+    {
+    }
+
+#pragma warning disable S2245 // gameplay variation, not security
+    static Random SeededDice()
+    {
+        return int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int seed) ? new Random(seed) : new Random();
+    }
+#pragma warning restore S2245
+
+    /// <summary>Initializes the system with the given dice (the self test seeds them).</summary>
+    /// <param name="dice">Rolls the hold before each drop.</param>
+    public RefereeSystem(Random dice)
+    {
+        this.dice = dice;
+    }
 
     public void Start(World world)
     {
@@ -26,12 +49,12 @@ internal sealed class RefereeSystem : ISystem, IDisposable
         MatchFlow.SetRefereeDrops(world, true);
         var r = Referee.Of(world);
         if (world.Events.Of(MatchEventKind.Whistle).Any()) r.ClearCall();
-        Step(world, r, dt);
+        Step(world, r, dice, dt);
         renderer.Animate(r, dt, world.Time);
     }
 
-    /// <summary>Moves the referee one step and drops the puck when it is set at the dot.</summary>
-    internal static void Step(World world, Referee r, float dt)
+    /// <summary>Moves the referee one step and drops the puck when it has stood set at the dot for this faceoff's hold.</summary>
+    internal static void Step(World world, Referee r, Random dice, float dt)
     {
         var m = world.Match;
         bool faceoff = m.Phase == MatchPhase.Faceoff;
@@ -46,21 +69,37 @@ internal sealed class RefereeSystem : ISystem, IDisposable
         {
             r.SetTime = 0;
             r.Waited = 0;
+            r.Hold = 0;
             return;
         }
+        // one roll per faceoff, made as it begins, so the hold is the same whether the referee is already there or still skating in
+        if (r.Hold <= 0) r.Hold = RollHold(r.LastHold, dice);
         r.Waited += dt;
         bool set = Flat(target - r.Position).Length() <= RefereeTuning.Arrived && r.Speed < 0.3f;
         r.SetTime = set ? r.SetTime + dt : 0;
         bool late = r.Waited >= RefereeTuning.MaxWaitSeconds;
-        if ((r.SetTime >= RefereeTuning.SetSeconds || late) && MatchFlow.Drop(world))
+        if ((r.SetTime >= r.Hold || late) && MatchFlow.Drop(world))
         {
-            if (late && r.SetTime < RefereeTuning.SetSeconds) r.LateDrops++;
+            if (late && r.SetTime < r.Hold) r.LateDrops++;
+            r.LastHold = r.SetTime;
             r.ClearCall();
             r.DroppedAt = world.Time;
             r.DropPoint = r.Position;
             r.SetTime = 0;
             r.Waited = 0;
         }
+    }
+
+    /// <summary>Rolls how long the referee holds the puck once set: uniform over the span, but never within <see cref="RefereeTuning.MinHoldChange"/> of the last hold.</summary>
+    static float RollHold(float last, Random dice)
+    {
+        float hold = 0;
+        for (int tries = 0; tries < 8; tries++)
+        {
+            hold = RefereeTuning.SetSeconds + (RefereeTuning.MaxSetSeconds - RefereeTuning.SetSeconds) * dice.NextSingle();
+            if (MathF.Abs(hold - last) >= RefereeTuning.MinHoldChange) break;
+        }
+        return hold;
     }
 
     /// <summary>Where the referee wants to be: the coming faceoff's drop spot during a stoppage, otherwise trailing the play.</summary>
