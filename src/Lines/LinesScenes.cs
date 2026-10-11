@@ -61,6 +61,36 @@ public sealed class GoalieSwapScene : IScene
     }
 }
 
+/// <summary>
+/// SAP_SCENE=goaliepull (W23): an all-AI exhibition that starts late in the third period with the
+/// home club a goal down, so it pulls its goalie for a sixth skater inside the last two minutes.
+/// SAP_PERIOD=seconds sets the period length (default 5:00, the pull window shortens with it);
+/// SAP_AI_HUMAN=1 puts the keyboard on the home centre, where G pulls and returns the goalie
+/// instead of the AI doing it; SAP_PENALTY_SKIP=seconds plays that long off screen first.
+/// </summary>
+public sealed class GoaliePullScene : IScene
+{
+    /// <inheritdoc/>
+    public string Name => "goaliepull";
+
+    /// <inheritdoc/>
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    {
+        var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = LinesScene.Period(300) }, settings);
+        Scenes.AddStarters(world);
+        if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
+            && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
+            centre.Slot = 0;
+        MatchFlow.Begin(world);
+        world.Match.Score[1] = 1;
+        MatchFlow.StartPeriod(world, world.Setup.Periods, GoaliePull.PullSeconds(world) + 8f);
+        LinesSystem.ShowPanel = true;
+        if (float.TryParse(Environment.GetEnvironmentVariable("SAP_PENALTY_SKIP"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float skip) && skip > 0)
+            PenaltyScenes.FastForward(world, skip);
+        return world;
+    }
+}
+
 /// <summary>Shared setup for the lines scenes.</summary>
 internal static class LinesScenes
 {

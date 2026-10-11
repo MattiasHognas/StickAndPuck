@@ -42,6 +42,12 @@ public static class LinesTuning
     /// <summary>The spell, as a share of the period length: 0.3 of a 20 minute period is 6 game minutes.</summary>
     public const float GoalieSpell = 0.3f;
 
+    /// <summary>W23: an AI club trailing pulls its goalie inside the last two minutes of regulation at full 20 minute periods; shorter periods shorten it in proportion.</summary>
+    public const float PullSeconds = 2 * 60;
+
+    /// <summary>W23: the biggest deficit a club pulls its goalie for.</summary>
+    public const int PullMaxDeficit = 2;
+
     /// <summary>How much less likely each later unit is picked, so lines 1 to 3 play most and line 4 least.</summary>
     public static readonly float[] ForwardBias = [0f, 0.03f, 0.06f, 0.15f];
 
