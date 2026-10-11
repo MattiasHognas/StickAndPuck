@@ -161,6 +161,27 @@ internal static class ScreenFlow
         Start(setup, new MatchPlan(null, []));
     }
 
+    /// <summary>
+    /// W26: settles the human's next season or playoff game on paper instead of playing it
+    /// (<see cref="SeasonSession.SimCurrentGame"/>), then shows the table or bracket again.
+    /// </summary>
+    public static void SimSeasonGame()
+    {
+        ArcadeSession.End();
+        if (SeasonSession.Current == null) SeasonSession.Continue(Clubs);
+        var simmed = SeasonSession.SimCurrentGame();
+        if (simmed != null) Console.WriteLine($"SAP: screens: simmed {simmed.Home} {simmed.Result.HomeGoals}-{simmed.Result.AwayGoals} {simmed.Away} ({simmed.Stage})");
+        var overview = Overview();
+        if (Top?.GetType() != overview.GetType()) Replace(overview);    // the table draws live; only swap to the bracket when the playoffs start
+    }
+
+    /// <summary>Gets a value indicating whether the season screens offer "Sim this game" (the SimGame setting, on by default).</summary>
+    /// <returns>True when the entry shows.</returns>
+    public static bool CanSimGame()
+    {
+        return Settings.SimGame && SeasonHasNextGame();
+    }
+
     /// <summary>Gets a value indicating whether the human's club has a season or playoff game left.</summary>
     /// <returns>True when there is a next game, or the playoffs have yet to start.</returns>
     public static bool SeasonHasNextGame()

@@ -81,7 +81,8 @@ internal sealed class ResultsScreen(MatchResult result) : MenuScreen
         var items = Items();
         int goals = Math.Min(result.Goals.Count, MaxGoals);
         string? status = result.Plan.Mode?.Status;
-        int h = 5 + ScreenArt.Row + 2 + 24 + 14 + 6 + (goals * 11) + 6 + (status != null ? 14 : 0) + (items.Count * ScreenArt.Row) + 6;
+        var star = MatchStats.Last is { PlayerOfGame: { } p } last && string.Equals(last.Home, result.Setup.Home.Id, StringComparison.Ordinal) && string.Equals(last.Away, result.Setup.Away.Id, StringComparison.Ordinal) ? p : null;
+        int h = 5 + ScreenArt.Row + 2 + 24 + 14 + 6 + (goals * 11) + 6 + (star != null ? 14 : 0) + (status != null ? 14 : 0) + (items.Count * ScreenArt.Row) + 6;
         string heading = result.Decided.Length > 0 ? $"FINAL - {result.Decided}" : "FINAL";
         var (x, top) = art.Panel(heading, PanelW, h, Math.Max(4, (Game.Height - h - 16) / 2));
         int cx = Game.Width / 2;
@@ -108,6 +109,11 @@ internal sealed class ResultsScreen(MatchResult result) : MenuScreen
         }
         if (result.Goals.Count > MaxGoals) art.Centred($"+{N(result.Goals.Count - MaxGoals)} MORE", cx, top - 11, ScreenArt.Muted);
         top += 6;
+        if (star != null)
+        {
+            art.Centred($"PLAYER OF THE GAME  {star.Label}  {(star.IsGoalie ? $"{N(star.Saves)} SAVES" : $"{N(star.Goals)}G {N(star.Assists)}A")}", cx, top, art.Gold);
+            top += 14;
+        }
         if (status != null)
         {
             art.Centred(status, cx, top, art.Gold);
@@ -142,7 +148,9 @@ internal sealed class StandingsScreen : MenuScreen
         var season = SeasonSession.Current;
         string play = season is { IsOver: true, Playoffs: null } ? "START PLAYOFFS" : "PLAY NEXT GAME";
         List<MenuItem> items = [new MenuItem(play, ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame())];
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem("SIM THIS GAME", ScreenFlow.SimSeasonGame, Enabled: ScreenFlow.CanSimGame()));
         if (season?.Playoffs != null) items.Add(new MenuItem("PLAYOFFS", () => ScreenFlow.Replace(new BracketScreen())));
+        items.Add(new MenuItem("LEADERS", () => ScreenFlow.Replace(new LeadersScreen())));
         items.Add(new MenuItem("MAIN MENU", Back));
         return items;
     }

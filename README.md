@@ -68,7 +68,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `SAP_PENALTY_STRICT`: scales how often the referee calls penalties in the `penalty` scene. Default 1.
 - `SAP_FIGHT_CHANCE`: 0 to 1, the chance a hard check drops the gloves in the `fight` scene. Default 0.4.
 - `SAP_HUD_MESSAGE`: the banner in the `hud` scene: `goal` (default), `period`, `final`, `tie`, `offside`, `icing`, `intro` or `none`.
-- `SAP_SCREEN`: opens one screen straight away in the `start` scene: `settings`, `modes`, `teams`, `pause`, `results`, `standings` or `bracket`. Default: the start screen.
+- `SAP_SCREEN`: opens one screen straight away in the `start` scene: `settings`, `modes`, `teams`, `pause`, `results`, `standings`, `leaders` (the season's scoring leaders and player of the game; an unplayed season gets ten rounds settled on paper first) or `bracket`. Default: the start screen.
 - `SAP_REPLAY_AT`: seconds; fakes a goal at that time so the replay plays (used with the `camera` scene). Default off.
 
 ### Visuals and sound
@@ -114,7 +114,7 @@ In one-player scenes the keyboard and the first gamepad both control your player
 - `SAP_SCREEN_KEYS="down enter ..."`: presses scripted menu buttons in the screens (`up down left right enter back pause`, `wait`, and `shot:name` saves name.png). Default: real input.
 - `SAP_RECORD=seconds`: saves every frame for that many seconds as numbered PNGs, then quits. `SAP_FRAMES` sets the folder (default `frames/`).
 - `tools/record.sh out.mp4 seconds [input.sh]`: records an mp4 headless (needs xvfb-run and ffmpeg; xdotool for input.sh). `SAP_AUDIO=1` records in real time with sound.
-- Test scenes run with no window, print one line per check and exit 0 when all pass, 1 otherwise: `pucktest`, `handlingtest`, `checkstest`, `goalietest`, `matchtest`, `offsidetest`, `overtimetest`, `refereetest`, `positioningtest`, `aimatchtest`, `linestest`, `lightingtest`, `hudtest`, `penaltytest`, `fighttest`, `seasontest`, `playofftest`, `arcadetest`, `versustest`. Example: `SAP_SCENE=matchtest dotnet run`.
+- Test scenes run with no window, print one line per check and exit 0 when all pass, 1 otherwise: `pucktest`, `handlingtest`, `checkstest`, `goalietest`, `matchtest`, `offsidetest`, `overtimetest`, `refereetest`, `positioningtest`, `aimatchtest`, `linestest`, `lightingtest`, `hudtest`, `penaltytest`, `fighttest`, `seasontest`, `playofftest`, `arcadetest`, `statstest`, `versustest`. Example: `SAP_SCENE=matchtest dotnet run`.
 
 ### Building a release
 
