@@ -24,6 +24,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `versussetup`: the start screen flow opened on player vs player's team select.
 - `match`: full exhibition, 3 x 20 minute periods, intro and clock, you on the home centre.
 - `aimatch`: full exhibition with every skater played by the AI.
+- `warmup`: full exhibition opened with the pre-game warm-up: both squads skate round their own ends until space, enter or a pad's A or start is pressed, then the opening faceoff.
 - `lineup`: both clubs' starters at the opening faceoff, you on the home centre.
 - `practice`: one home skater with the puck on an empty rink.
 - `overtime`: a match that ends 0-0, then 3 on 3 overtime and a shootout; `SAP_PLAYOFF=1` plays the SHL playoff format instead (5 on 5 periods until a goal, no shootout).
@@ -69,6 +70,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `SAP_FIGHT_CHANCE`: 0 to 1, the chance a hard check drops the gloves in the `fight` scene. Default 0.4.
 - `SAP_HUD_MESSAGE`: the banner in the `hud` scene: `goal` (default), `period`, `final`, `tie`, `offside`, `icing`, `intro` or `none`.
 - `SAP_SCREEN`: opens one screen straight away in the `start` scene: `settings`, `modes`, `teams`, `pause`, `results`, `standings`, `leaders` (the season's scoring leaders and player of the game; an unplayed season gets ten rounds settled on paper first) or `bracket`. Default: the start screen.
+- `SAP_WARMUP`: `0` skips the pre-game warm-up in every match you play; a number of seconds starts the game by itself after that long. Default: warm up until start is pressed.
 - `SAP_REPLAY_AT`: seconds; fakes a goal at that time so the replay plays (used with the `camera` scene). Default off.
 
 ### Visuals and sound
@@ -114,7 +116,7 @@ In one-player scenes the keyboard and the first gamepad both control your player
 - `SAP_SCREEN_KEYS="down enter ..."`: presses scripted menu buttons in the screens (`up down left right enter back pause`, `wait`, and `shot:name` saves name.png). Default: real input.
 - `SAP_RECORD=seconds`: saves every frame for that many seconds as numbered PNGs, then quits. `SAP_FRAMES` sets the folder (default `frames/`).
 - `tools/record.sh out.mp4 seconds [input.sh]`: records an mp4 headless (needs xvfb-run and ffmpeg; xdotool for input.sh). `SAP_AUDIO=1` records in real time with sound.
-- Test scenes run with no window, print one line per check and exit 0 when all pass, 1 otherwise: `pucktest`, `handlingtest`, `checkstest`, `goalietest`, `matchtest`, `offsidetest`, `overtimetest`, `refereetest`, `positioningtest`, `aimatchtest`, `linestest`, `lightingtest`, `hudtest`, `penaltytest`, `fighttest`, `seasontest`, `playofftest`, `arcadetest`, `statstest`, `versustest`. Example: `SAP_SCENE=matchtest dotnet run`.
+- Test scenes run with no window, print one line per check and exit 0 when all pass, 1 otherwise: `pucktest`, `handlingtest`, `checkstest`, `goalietest`, `matchtest`, `offsidetest`, `overtimetest`, `refereetest`, `positioningtest`, `aimatchtest`, `linestest`, `lightingtest`, `hudtest`, `penaltytest`, `fighttest`, `seasontest`, `playofftest`, `arcadetest`, `statstest`, `versustest`, `warmuptest`. Example: `SAP_SCENE=matchtest dotnet run`.
 
 ### Building a release
 
