@@ -131,7 +131,7 @@ internal sealed class DecisionSystem : ISystem
     void Carry(World world, Player p, Brain brain)
     {
         if (p.Action != PlayerAction.None || world.Time < brain.NextThink) return;
-        int smart = p.Data.Traits.SmartPasses;
+        int smart = p.Data.Traits.HockeyIq;
         brain.NextThink = world.Time + Choices.ThinkEvery(smart) * (0.8f + 0.4f * rng.NextSingle());
 
         int end = PuckHandling.AttackEnd(world, p.Side);
