@@ -41,6 +41,9 @@ public sealed record Settings
     /// <summary>Gets a value indicating whether the referee calls penalties.</summary>
     public bool Penalties { get; init; } = true;
 
+    /// <summary>Gets a value indicating whether the season screens offer "Sim this game" next to "Play next game" (W26). On by default.</summary>
+    public bool SimGame { get; init; } = true;
+
     /// <summary>Gets the sound effect volume, 0 to 1.</summary>
     public float Volume { get; init; } = 0.8f;
 }

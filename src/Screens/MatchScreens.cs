@@ -142,6 +142,7 @@ internal sealed class StandingsScreen : MenuScreen
         var season = SeasonSession.Current;
         string play = season is { IsOver: true, Playoffs: null } ? "START PLAYOFFS" : "PLAY NEXT GAME";
         List<MenuItem> items = [new MenuItem(play, ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame())];
+        if (ScreenFlow.Prefs.Settings.SimGame) items.Add(new MenuItem("SIM THIS GAME", ScreenFlow.SimSeasonGame, Enabled: ScreenFlow.CanSimGame()));
         if (season?.Playoffs != null) items.Add(new MenuItem("PLAYOFFS", () => ScreenFlow.Replace(new BracketScreen())));
         items.Add(new MenuItem("MAIN MENU", Back));
         return items;
