@@ -9,8 +9,9 @@ namespace StickAndPuck.Arena;
 /// <summary>
 /// W2: the arena from arena.glb: ice, markings, boards, glass, nets, ad boards, stands and crowd.
 /// arena_meshes.json says which part and material each mesh is, since Raylib keeps no names.
-/// Lit parts use the toon shader; ad boards, lanterns and LEDs are unlit; the glass is a flat
-/// translucent tint from <see cref="ArenaLook"/> so its tone can follow the lighting.
+/// Lit parts use the toon shader; ad boards, lanterns and LEDs are unlit; the ice sheet is a
+/// flat cold grey and the glass a flat translucent tint, both from <see cref="ArenaLook"/> so
+/// their tones can follow the lighting without taking its warmth.
 /// </summary>
 internal sealed unsafe class ArenaSystem : ISystem, IDisposable
 {
@@ -86,7 +87,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
         Rlgl.DisableDepthMask();
         DrawPass(render, shaderDefault, ice: true, sheet: true);
         IceBands.Draw(ArenaLook.IceBand);
-        IceScratches.Draw(ArenaLook.IceBand);
+        IceScratches.Draw(ArenaLook.Scratch);
         Rlgl.EnableDepthMask();
         Rlgl.ColorMask(false, false, false, false);
         DrawPass(render, shaderDefault, ice: true, sheet: true);
@@ -118,7 +119,9 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
         {
             if (kind == Kind.Glass || isIce != ice || (ice && isSheet != sheet)) continue;
             var mat = MaterialOf(mesh);
-            mat.Shader = kind == Kind.Lit ? render.Toon : unlit;
+            // the ice sheet is flat in the lighting's cold grey (W21); the toon ramp would warm it under the evening light
+            mat.Shader = kind == Kind.Lit && !isSheet ? render.Toon : unlit;
+            if (isSheet) mat.Maps[(int)MaterialMapIndex.Albedo].Color = ArenaLook.Ice;
             DrawMesh(model.Meshes[mesh], mat, Matrix4x4.Identity);
         }
     }

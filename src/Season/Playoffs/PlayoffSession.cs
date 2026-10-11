@@ -16,6 +16,9 @@ public static class PlayoffSession
     /// <summary>Gets the series whose next game the current match is, or null when the match is not a playoff game.</summary>
     public static PlayoffSeries? Playing { get; private set; }
 
+    /// <summary>Gets or sets the rules playoff games follow (W19): the SHL's unless a mode sets its own.</summary>
+    public static PlayoffRules Rules { get; set; } = PlayoffRules.Shl;
+
     /// <summary>
     /// Starts the playoffs once the regular season is over and settles every game up to the human's
     /// next one; continues saved playoffs as they are. Null while the season is still running.
@@ -33,8 +36,9 @@ public static class PlayoffSession
     }
 
     /// <summary>
-    /// The setup for the human's next playoff game, and marks it as the game being played, so its
-    /// result is recorded when the match ends. Null when the human's club is out or there is a champion.
+    /// The setup for the human's next playoff game, with the overtime rules of <see cref="Rules"/>, and
+    /// marks it as the game being played, so its result is recorded when the match ends. Null when the
+    /// human's club is out or there is a champion.
     /// </summary>
     /// <param name="device">The human's input device.</param>
     /// <returns>The setup, or null.</returns>
@@ -44,7 +48,7 @@ public static class PlayoffSession
         Playing = playoffs?.UserSeries;
         if (Playing == null) return null;
         var game = new Fixture(-1, -1, Playing.NextHome, Playing.NextAway);
-        return SeasonSession.Current!.SetupFor(game, SeasonSession.Clubs, device);
+        return SeasonSession.Current!.SetupFor(game, SeasonSession.Clubs, device) with { OvertimeFormat = Rules.Overtime };
     }
 
     /// <summary>
@@ -62,9 +66,10 @@ public static class PlayoffSession
         return true;
     }
 
-    /// <summary>Forgets the game being played, for leaving season mode.</summary>
+    /// <summary>Forgets the game being played, for leaving season mode; the SHL rules come back.</summary>
     public static void End()
     {
         Playing = null;
+        Rules = PlayoffRules.Shl;
     }
 }

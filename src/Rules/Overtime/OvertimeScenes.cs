@@ -8,7 +8,8 @@ namespace StickAndPuck.Rules;
 /// (SAP_PERIOD, default 5 seconds a period) and nobody shoots, so it ends 0-0; then the 3 on 3
 /// overtime (SAP_OT seconds, default 15) and the shootout with AI shooters. SAP_HUMAN=1 puts
 /// keyboard and mouse on the home club, so you take the home shots yourself. SAP_START=overtime or
-/// shootout skips regulation (and overtime) to start right there. The score line is on.
+/// shootout skips regulation (and overtime) to start right there. SAP_PLAYOFF=1 plays the SHL
+/// playoff format instead: 5 on 5 overtime periods until a goal and no shootout. The score line is on.
 /// </summary>
 public sealed class OvertimeScene : IScene
 {
@@ -21,7 +22,9 @@ public sealed class OvertimeScene : IScene
         float period = Seconds("SAP_PERIOD", 5);
         OvertimeRules.PeriodSeconds = Seconds("SAP_OT", 15);
         bool human = string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "1", StringComparison.Ordinal);
+        bool playoff = string.Equals(Environment.GetEnvironmentVariable("SAP_PLAYOFF"), "1", StringComparison.Ordinal);
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Overtime = OvertimeRule.Shl };
+        if (playoff) setup = setup with { OvertimeFormat = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = OvertimeRules.PeriodSeconds } };
         if (!human) setup = setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
         var world = new World(setup, settings);
         Scenes.AddStarters(world);
