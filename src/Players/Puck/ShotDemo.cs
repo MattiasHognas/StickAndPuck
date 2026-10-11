@@ -1,5 +1,4 @@
 using System.Numerics;
-using StickAndPuck.Camera;
 using StickAndPuck.Core;
 
 namespace StickAndPuck.Players;
@@ -7,7 +6,7 @@ namespace StickAndPuck.Players;
 /// <summary>
 /// SAP_SCENE=shotdemo: a skater in the slot shoots at the away net over and over, a tap, then a
 /// half hold, then a full wind-up, so the shot height and the airborne puck's shadow can be seen
-/// and recorded. The camera sits on the away end.
+/// and recorded. The puck is dead, so goals do not count and no replay cuts in.
 /// </summary>
 public sealed class ShotDemoScene : IScene
 {
@@ -63,21 +62,18 @@ internal static class ShotDemo
         pk.Carrier = p.Id;
         pk.Position = PuckHandling.Blade(p);
         pk.Velocity = Vector3.Zero;
-        pk.Live = true;
+        pk.Live = false;   // a dead puck scores no goal, so no replay cuts in between shots
         start = world.Time;
     }
 
-    /// <summary>Writes this step's commands and holds the camera on the away end.</summary>
+    /// <summary>Writes this step's commands.</summary>
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         if (!Enabled) return;
         int step = (int)MathF.Round((world.Time - start) / Game.Step);
         const int press = 30;
-        shooter!.Command = new PlayerCommand { Move = new Vector2(1, shooter.Position.Z > 0 ? -0.4f : 0.4f), Shoot = step >= press && step < press + Hold };
+        shooter!.Command = new PlayerCommand { Shoot = step >= press && step < press + Hold };   // standing still, shooting the way they face
         if (step > press + Hold + 120) Reset(world);
-        var cam = BroadcastCamera.Straight();
-        var shift = new Vector3(17f, 0, 0);
-        world.Camera = cam with { Position = cam.Position + shift, Target = cam.Target + shift };
     }
 }
