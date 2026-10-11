@@ -38,6 +38,9 @@ public sealed class SeasonState
     /// <summary>Gets or sets the playoffs (W16b), null until the regular season is over and they start.</summary>
     public PlayoffState? Playoffs { get; set; }
 
+    /// <summary>Gets or sets the player stats and records (W25), filled as games are played or settled.</summary>
+    public SeasonStats Stats { get; set; } = new();
+
     /// <summary>Gets the number of rounds.</summary>
     public int Rounds => Games.Count == 0 ? 0 : Games.Max(g => g.Round) + 1;
 

@@ -46,6 +46,7 @@ public static class Systems
             new PenaltyRules(),          // W14 calls, box, power play
             new FightSystem(),           // W15
             new RefereeSystem(),         // W8 skates, drops the puck, signals
+            new StatsSystem(),           // W25 player stats, player of the game
             new ScheduleSystem(),        // W16a season schedule and standings
             new AutosaveSystem(),        // W16a autosave after each match
             new PlayoffSystem(),         // W16b

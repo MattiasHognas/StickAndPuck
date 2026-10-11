@@ -44,8 +44,11 @@ internal static class ScreenFlow
     /// <summary>Gets every club.</summary>
     public static IReadOnlyList<ClubData> Clubs { get; private set; } = [];
 
-    /// <summary>Gets or sets the player's settings.</summary>
+    /// <summary>Gets or sets the player's settings as saved; <see cref="Settings"/> is what runs.</summary>
     public static ScreenPrefs Prefs { get; set; } = new();
+
+    /// <summary>Gets the settings to run with: the saved ones under the SAP_* overrides, which never get saved.</summary>
+    public static Settings Settings => Core.Settings.FromEnvironment(Prefs.Settings);
 
     /// <summary>Gets the match being played, or null on the menus.</summary>
     public static MatchPlan? Playing { get; private set; }
@@ -158,6 +161,27 @@ internal static class ScreenFlow
         Start(setup, new MatchPlan(null, []));
     }
 
+    /// <summary>
+    /// W26: settles the human's next season or playoff game on paper instead of playing it
+    /// (<see cref="SeasonSession.SimCurrentGame"/>), then shows the table or bracket again.
+    /// </summary>
+    public static void SimSeasonGame()
+    {
+        ArcadeSession.End();
+        if (SeasonSession.Current == null) SeasonSession.Continue(Clubs);
+        var simmed = SeasonSession.SimCurrentGame();
+        if (simmed != null) Console.WriteLine($"SAP: screens: simmed {simmed.Home} {simmed.Result.HomeGoals}-{simmed.Result.AwayGoals} {simmed.Away} ({simmed.Stage})");
+        var overview = Overview();
+        if (Top?.GetType() != overview.GetType()) Replace(overview);    // the table draws live; only swap to the bracket when the playoffs start
+    }
+
+    /// <summary>Gets a value indicating whether the season screens offer "Sim this game" (the SimGame setting, on by default).</summary>
+    /// <returns>True when the entry shows.</returns>
+    public static bool CanSimGame()
+    {
+        return Settings.SimGame && SeasonHasNextGame();
+    }
+
     /// <summary>Gets a value indicating whether the human's club has a season or playoff game left.</summary>
     /// <returns>True when there is a next game, or the playoffs have yet to start.</returns>
     public static bool SeasonHasNextGame()
@@ -193,14 +217,29 @@ internal static class ScreenFlow
     /// <param name="world">The world.</param>
     public static void ApplySettings(World world)
     {
-        world.Settings = Prefs.Settings;
+        Apply(world, Settings);
         ScreenPrefsFile.Write(Prefs);
+    }
+
+    /// <summary>
+    /// Gives the world its settings and points the debug switches that live as statics in their
+    /// systems (W7's match line, W13's energy panel) at them, so a change on the settings screen
+    /// shows at once, in the paused match too.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="settings">The settings.</param>
+    public static void Apply(World world, Settings settings)
+    {
+        world.Settings = settings;
+        MatchRules.ShowLine = settings.MatchDebug;
+        Lines.LinesSystem.ShowPanel = settings.LinesDebug;
     }
 
     /// <summary>The menu backdrop: both starting lineups standing at centre ice, paused.</summary>
     static World MenuWorld()
     {
-        var world = new World(Backdrop ?? Scenes.DefaultSetup(Clubs), Prefs.Settings);
+        var world = new World(Backdrop ?? Scenes.DefaultSetup(Clubs), Settings);
+        Apply(world, world.Settings);
         Scenes.AddStarters(world);
         world.Match.Paused = true;
         return world;
@@ -209,7 +248,8 @@ internal static class ScreenFlow
     static void Start(MatchSetup setup, MatchPlan plan)
     {
         setup = setup with { PeriodSeconds = PeriodSeconds() };
-        var world = new World(setup, Prefs.Settings);
+        var world = new World(setup, Settings);
+        Apply(world, world.Settings);
         Scenes.AddStarters(world);
         for (int slot = 0; slot < setup.Inputs.Count; slot++)
         {

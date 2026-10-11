@@ -8,7 +8,11 @@ namespace StickAndPuck.Rules;
 /// after physics, the match rules, offside and icing, so it sees this step's checks, goals and
 /// whistles. See <see cref="Penalties"/> for the rules it keeps. Line changes stay W13's: a skater
 /// in the box is never sent on, so a club changes lines a skater short until he comes back.
-/// Draws the penalty box under the scorebug: each penalty's number and time left, and a delayed call.
+/// Draws the penalty box under the scorebug: each penalty's number and time left, a delayed call,
+/// and a club's extra attacker while its goalie is pulled (W23).
+/// W23: at every faceoff the skaters on the ice are balanced to <see cref="Penalties.TargetSkaters"/>,
+/// which gives 4 on 3 after a penalty in 3 on 3 overtime and sends an extra attacker off once the
+/// goalie is back; a skater let out of the box in overtime plays on until that next whistle.
 /// </summary>
 internal sealed class PenaltyRules : ISystem, IDisposable
 {
@@ -26,13 +30,16 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         if (!MatchFlow.IsRunning(world)) return;
         var book = Penalties.Book(world);
         var m = world.Match;
-        if (m.Period > world.Setup.Periods || m.Phase is MatchPhase.Overtime or MatchPhase.Shootout or MatchPhase.Final)
+        if (m.Phase is MatchPhase.Overtime or MatchPhase.Shootout or MatchPhase.Final)
         {
             EndOfRegulation(world, book);
+            book.LastPhase = m.Phase;
             return;
         }
 
         if (float.IsNaN(book.FirstDrop) && m.Phase == MatchPhase.Play) book.FirstDrop = world.Time;     // the referee drops the puck after this system runs
+        if (m.Phase == MatchPhase.Faceoff && book.LastPhase != MatchPhase.Faceoff) AtFaceoff(world, book);
+        book.LastPhase = m.Phase;
         RunClocks(world, book);
         if (m.Phase == MatchPhase.Goal) Goals(world, book);
 
@@ -52,6 +59,43 @@ internal sealed class PenaltyRules : ISystem, IDisposable
             if (m.Phase == MatchPhase.Stopped) MatchFlow.State(world).Dot = Penalties.FaceoffDot(world, book.Delayed[0].Side);
             Penalties.CallDelayed(world, book);
         }
+    }
+
+    /// <summary>
+    /// The faceoff is set up: the first one of a period with an empty box reads the full strength
+    /// off the ice (5 in regulation, 3 or 5 in overtime); then each club's skaters are brought to
+    /// <see cref="Penalties.TargetSkaters"/>, one on from the bench or one off to it, and placed again.
+    /// </summary>
+    static void AtFaceoff(World world, PenaltyBook book)
+    {
+        var m = world.Match;
+        if (book.BasePeriod != m.Period && m.Penalties.Count == 0 && !Lines.GoaliePull.IsPulled(world, Side.Home) && !Lines.GoaliePull.IsPulled(world, Side.Away))
+        {
+            int most = BothSides.Max(side => world.OnIce(side).Count(p => !p.IsGoalie));
+            book.BaseSkaters = Math.Clamp(most, PenaltyTuning.MinSkaters, PenaltyTuning.MaxSkaters);
+            book.BasePeriod = m.Period;
+        }
+
+        bool changed = false;
+        foreach (var side in BothSides)
+        {
+            int target = Penalties.TargetSkaters(world, side);
+            int on = world.OnIce(side).Count(p => !p.IsGoalie);
+            for (; on < target; on++)
+            {
+                if (Lines.Bench.SendOn(world, side, Lines.Group.Forwards, onTheFly: false) is not { } added) break;
+                changed = true;
+                book.Log(world, $"{Penalties.Name(world, added)} comes on, {target} skaters");
+            }
+            for (; on > target; on--)
+            {
+                if (Lines.Bench.Surplus(world, side, target) is not { } off) break;
+                Lines.Bench.SendOff(world, off);
+                changed = true;
+                book.Log(world, $"{Penalties.Name(world, off)} goes off, {target} skaters");
+            }
+        }
+        if (changed) FaceoffFormation.Place(world, MatchFlow.FaceoffDot(world));
     }
 
     /// <summary>Runs each penalty's clock by exactly what the game clock ran this step, and lets out whoever has served his time.</summary>
@@ -124,7 +168,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         if (offender != null) Penalties.Signal(world, offender.Id, Infraction.Tripping);
     }
 
-    /// <summary>Penalties end with regulation: skaters in the box go to the bench and delayed calls are dropped.</summary>
+    /// <summary>Penalties end with regulation (the overtime break) and before the shootout: skaters in the box go to the bench and delayed calls are dropped.</summary>
     static void EndOfRegulation(World world, PenaltyBook book)
     {
         book.Delayed.Clear();
@@ -161,6 +205,11 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         foreach (var d in Penalties.Delayed(world))
         {
             Row(art, world.Setup.Club(d.Side).Id, "DELAYED", "panel", x, y, h, pad, crest, gap);
+            y += h + 1;
+        }
+        foreach (var side in BothSides.Where(side => Lines.GoaliePull.IsPulled(world, side)))
+        {
+            Row(art, world.Setup.Club(side).Id, "EXTRA ATTACKER", "panel_gold", x, y, h, pad, crest, gap);
             y += h + 1;
         }
     }

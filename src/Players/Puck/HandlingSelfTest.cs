@@ -30,7 +30,7 @@ public sealed class HandlingSelfTest : IScene
         PickUpLoose(Make);
         ControlFollowsPass(Make);
         Interception(Make());
-        SmartPassesLead(Make);
+        HockeyIqLead(Make);
         ShotKinds(Make);
         AccuracyMatters(Make);
         NoPickupInNet(Make());
@@ -189,7 +189,7 @@ public sealed class HandlingSelfTest : IScene
         Check(w.Puck.Carrier == thief.Id, "an opponent in the passing lane intercepts");
     }
 
-    void SmartPassesLead(Func<World> make)
+    void HockeyIqLead(Func<World> make)
     {
         // a receiver skating across the ice: a smart passer leads them, a poor one passes behind
         int Completed(int smart)
@@ -198,7 +198,7 @@ public sealed class HandlingSelfTest : IScene
             for (int n = 0; n < 20; n++)
             {
                 var w = make();
-                var a = Add(w, Side.Home, new Vector3(-10, 0, -4 + n * 0.3f), traits: new Traits { SmartPasses = smart });
+                var a = Add(w, Side.Home, new Vector3(-10, 0, -4 + n * 0.3f), traits: new Traits { HockeyIq = smart });
                 var b = Add(w, Side.Home, new Vector3(8, 0, -8), 0);
                 b.Velocity = new Vector3(0, 0, SkatingModel.TopSpeed(b.Data.Traits) * 1.15f);   // already flat out
                 b.Command = new PlayerCommand { Move = Vector2.UnitY, Sprint = true };

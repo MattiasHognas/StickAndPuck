@@ -9,8 +9,9 @@ namespace StickAndPuck.Arena;
 /// <summary>
 /// W2: the arena from arena.glb: ice, markings, boards, glass, nets, ad boards, stands and crowd.
 /// arena_meshes.json says which part and material each mesh is, since Raylib keeps no names.
-/// Lit parts use the toon shader; ad boards, lanterns and LEDs are unlit; the glass is a flat
-/// translucent tint from <see cref="ArenaLook"/> so its tone can follow the lighting.
+/// Lit parts use the toon shader; ad boards, lanterns and LEDs are unlit; the ice sheet is a
+/// flat cold grey and the glass a flat translucent tint, both from <see cref="ArenaLook"/> so
+/// their tones can follow the lighting without taking its warmth.
 /// </summary>
 internal sealed unsafe class ArenaSystem : ISystem, IDisposable
 {
@@ -19,7 +20,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
     // parts in front of the ice that hide a player behind them, so the outline pass hides him too
     static readonly HashSet<string> Occluders = new(StringComparer.Ordinal) { "Boards", "AdBoards", "Nets", "Posts" };
 
-    readonly List<(int Mesh, Kind Kind, bool Occludes, bool Ice)> meshes = [];
+    readonly List<(int Mesh, Kind Kind, bool Occludes, bool Ice, bool Sheet)> meshes = [];
     Model model;
     Material maskMaterial;
 
@@ -41,7 +42,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
                 "Lanterns" when string.Equals(name, "lantern", StringComparison.Ordinal) => Kind.Unlit,   // the glowing shade, not cap or cable
                 _ => unlit ? Kind.Unlit : Kind.Lit,
             };
-            meshes.Add((index, kind, Occluders.Contains(part), part is "Ice" or "Floor"));
+            meshes.Add((index, kind, Occluders.Contains(part), part is "Ice" or "Floor", string.Equals(part, "Ice", StringComparison.Ordinal)));
         }
 
         // glTF colours are linear and Raylib uses them raw, which reads darker than the Blender
@@ -78,16 +79,25 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
     public void DrawScene(World world, RenderContext render)
     {
         var shaderDefault = maskMaterial.Shader;   // Raylib's default shader: texture times colour, no light
-        // the ice first, then the bands and skate scratches flat on it without a depth test (millimetres apart z-fight
-        // at rink distance), then the markings and everything else over both
-        DrawPass(render, shaderDefault, ice: true);
+        // The goalie, referee and puck are drawn before the arena, so the ice sheet and the bands and
+        // skate scratches on it all keep the depth test to stay behind them. The sheet writes no depth
+        // while the overlays go down, since millimetres apart they z-fight at rink distance; a depth-only
+        // pass of the sheet afterwards puts the ice depth back for the markings and everything else.
+        DrawPass(render, shaderDefault, ice: true, sheet: false);
+        Rlgl.DisableDepthMask();
+        DrawPass(render, shaderDefault, ice: true, sheet: true);
         IceBands.Draw(ArenaLook.IceBand);
-        IceScratches.Draw(ArenaLook.IceBand);
-        DrawPass(render, shaderDefault, ice: false);
+        IceScratches.Draw(ArenaLook.Scratch);
+        Rlgl.EnableDepthMask();
+        Rlgl.ColorMask(false, false, false, false);
+        DrawPass(render, shaderDefault, ice: true, sheet: true);
+        Rlgl.DrawRenderBatchActive();
+        Rlgl.ColorMask(true, true, true, true);
+        DrawPass(render, shaderDefault, ice: false, sheet: false);
 
         // glass last and without depth, so players behind it still draw; flat colour over the crowd
         Rlgl.DisableDepthMask();
-        foreach (var (mesh, kind, _, _) in meshes)
+        foreach (var (mesh, kind, _, _, _) in meshes)
         {
             if (kind != Kind.Glass) continue;
             var mat = MaterialOf(mesh);
@@ -98,13 +108,20 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
         Rlgl.EnableDepthMask();
     }
 
-    void DrawPass(RenderContext render, Shader unlit, bool ice)
+    /// <summary>Draws one group of meshes with the current depth and colour state.</summary>
+    /// <param name="render">The scene's shaders.</param>
+    /// <param name="unlit">The shader for unlit parts.</param>
+    /// <param name="ice">Whether to draw the ice group (the sheet and the floor) or everything else.</param>
+    /// <param name="sheet">Within the ice group, whether to draw the sheet itself or the rest of it.</param>
+    void DrawPass(RenderContext render, Shader unlit, bool ice, bool sheet)
     {
-        foreach (var (mesh, kind, _, isIce) in meshes)
+        foreach (var (mesh, kind, _, isIce, isSheet) in meshes)
         {
-            if (kind == Kind.Glass || isIce != ice) continue;
+            if (kind == Kind.Glass || isIce != ice || (ice && isSheet != sheet)) continue;
             var mat = MaterialOf(mesh);
-            mat.Shader = kind == Kind.Lit ? render.Toon : unlit;
+            // the ice sheet is flat in the lighting's cold grey (W21); the toon ramp would warm it under the evening light
+            mat.Shader = kind == Kind.Lit && !isSheet ? render.Toon : unlit;
+            if (isSheet) mat.Maps[(int)MaterialMapIndex.Albedo].Color = ArenaLook.Ice;
             DrawMesh(model.Meshes[mesh], mat, Matrix4x4.Identity);
         }
     }
@@ -114,7 +131,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
     {
         Rlgl.DrawRenderBatchActive();
         Rlgl.ColorMask(false, false, false, false);
-        foreach (var (mesh, _, occludes, _) in meshes)
+        foreach (var (mesh, _, occludes, _, _) in meshes)
             if (occludes) DrawMesh(model.Meshes[mesh], maskMaterial, Matrix4x4.Identity);
         Rlgl.ColorMask(true, true, true, true);
     }

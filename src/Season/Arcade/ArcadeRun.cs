@@ -64,6 +64,19 @@ public sealed class ArcadeRun
     /// <summary>Gets or sets when the run was last saved (UTC).</summary>
     public DateTime Saved { get; set; }
 
+    /// <summary>Gets or sets every player's totals over this run (W25).</summary>
+    public StatTable Stats { get; set; } = new();
+
+    /// <summary>Gets or sets the player of each game of this run, oldest first (W25).</summary>
+    public List<PlayerOfGameAward> Awards { get; set; } = [];
+
+    /// <summary>Gets or sets the best runs so far, best first, carried from save to save (W25).</summary>
+    public List<ArcadeRecord> Records { get; set; } = [];
+
+    /// <summary>Gets this run's place on <see cref="Records"/>, from 1, or 0 while it is not on the board.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int Place { get; set; }
+
     /// <summary>Gets the lives the run starts with: 1 in sudden death, 3 with three lives.</summary>
     public int StartLives => Rule == ArcadeRule.SuddenDeath ? 1 : 3;
 
@@ -117,9 +130,17 @@ public sealed class ArcadeRun
     public static double Strength(ClubData club)
     {
         var skaters = club.Roster.Where(p => p.Position != PlayingPosition.G).Select(p => p.Traits).ToList();
-        double s = skaters.Count == 0 ? 50 : skaters.Average(t => (t.Acceleration + t.TopSpeed + t.ShotAccuracy + t.ShotPower + t.Checking + t.PuckControl + t.SmartPasses + t.SmartPositioning) / 8.0);
+        double s = skaters.Count == 0 ? 50 : skaters.Average(t => (t.Acceleration + t.TopSpeed + t.ShotAccuracy + t.ShotPower + t.Checking + t.PuckControl + t.HockeyIq) / 7.0);
         double g = club.Roster.Where(p => p.Position == PlayingPosition.G).Select(p => (double)p.Traits.GoalieReflexes).DefaultIfEmpty(50).Max();
         return ((s * 5) + g) / 6;
+    }
+
+    /// <summary>Credits a played game's lines and its player of the game to this run's stats.</summary>
+    /// <param name="sheet">The match sheet.</param>
+    public void Credit(MatchStatSheet sheet)
+    {
+        Stats.Add(sheet);
+        if (sheet.Award($"a{Games.Count}") is { } award) Awards.Add(award);
     }
 
     /// <summary>Records the next game's result.</summary>
