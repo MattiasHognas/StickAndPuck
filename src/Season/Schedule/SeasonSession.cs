@@ -120,7 +120,7 @@ public static class SeasonSession
         int round = playoffs.Rounds.Count - 1, index = playoffs.Current.Series.IndexOf(series), gameNo = series.Games.Count;
         string stage = playoffs.Current.Name;    // read before Finish, which may draw the next round
         var r = QuickSim.Play(setup.Home, setup.Away, playoffs.GameSeed(round, index, gameNo));
-        if (r.Kind == ResultKind.Shootout) r = r with { Kind = ResultKind.Overtime };    // playoff overtime is sudden death
+        if (r.Kind == ResultKind.Shootout && !PlayoffSession.Rules.Overtime.HasShootout) r = r with { Kind = ResultKind.Overtime };    // W19: the mode's overtime rules, SHL playoffs have no shootout
         if (!PlayoffSession.Finish(r)) return null;
         Save();
         Console.WriteLine($"SAP: simmed playoff game {gameNo + 1} of {stage}: {setup.Home.Id} {r.HomeGoals}-{r.AwayGoals} {setup.Away.Id} ({r.Kind})");
