@@ -41,6 +41,12 @@ public sealed class Referee
     /// <summary>Gets or sets how long the current faceoff has waited.</summary>
     public float Waited { get; set; }
 
+    /// <summary>Gets or sets how long the referee holds the puck once set for the coming faceoff, rolled by <see cref="RefereeSystem"/> between <see cref="RefereeTuning.SetSeconds"/> and <see cref="RefereeTuning.MaxSetSeconds"/>; 0 until rolled.</summary>
+    public float Hold { get; set; }
+
+    /// <summary>Gets or sets how long the referee stood set before the last drop (the self test checks the spread).</summary>
+    public float LastHold { get; set; }
+
     /// <summary>Gets or sets when the referee last dropped the puck.</summary>
     public float DroppedAt { get; set; } = float.NegativeInfinity;
 
