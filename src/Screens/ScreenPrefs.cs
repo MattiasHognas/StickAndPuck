@@ -6,7 +6,7 @@ namespace StickAndPuck.Screens;
 
 /// <summary>
 /// What the settings screen changes: the <see cref="Core.Settings"/> every match runs with, plus
-/// the period length and the human's input device, which go into each <see cref="MatchSetup"/>.
+/// the period length and the humans' input devices, which go into each <see cref="MatchSetup"/>.
 /// </summary>
 internal sealed record ScreenPrefs
 {
@@ -21,6 +21,13 @@ internal sealed record ScreenPrefs
 
     /// <summary>Gets the device the human plays with.</summary>
     public InputDevice Controls { get; init; } = InputDevice.KeyboardMouse;
+
+    /// <summary>
+    /// Gets player two's device in versus: <see cref="InputDevice.None"/> turns player two off
+    /// (the AI plays the visitors). When it is the same as <see cref="Controls"/>, versus falls
+    /// back to the other device as before. SAP_VERSUS_P2 overrides it.
+    /// </summary>
+    public InputDevice Player2 { get; init; } = InputDevice.Gamepad1;
 }
 
 /// <summary>
