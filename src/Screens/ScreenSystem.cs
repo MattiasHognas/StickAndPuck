@@ -111,7 +111,7 @@ internal sealed class ScreenSystem : ISystem, IDisposable
             int touch = world.Puck.LastTouch;
             if (touch >= 0 && touch < world.Players.Count && world.Players[touch] is { } p && p.Side == side)
                 scorer = $"#{p.Data.Number} {p.Data.LastName}";
-            float elapsed = (m.Period > world.Setup.Periods ? OvertimeRules.PeriodSeconds : world.Setup.PeriodSeconds) - m.Clock;
+            float elapsed = (m.Period > world.Setup.Periods ? OvertimeRules.PeriodLength(world) : world.Setup.PeriodSeconds) - m.Clock;
             goals.Add(new GoalLine(side, HudSystem.PeriodText(world), MatchFlow.ClockText(Math.Max(0, elapsed)), scorer));
         }
     }

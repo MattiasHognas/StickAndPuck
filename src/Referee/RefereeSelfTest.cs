@@ -9,7 +9,8 @@ namespace StickAndPuck.Referee;
 /// SAP_SCENE=refereetest: plays a whole match with puck physics, the match rules and the referee, no
 /// window, with the match demo's shots so goals, saves and frozen pucks bring faceoffs all over the
 /// ice. Prints one line per check and exits with 0 when all pass, 1 otherwise. Covers the W8
-/// "done when": the referee drops every faceoff and stays out of the play.
+/// "done when": the referee drops every faceoff and stays out of the play, and W27's: ten faceoffs
+/// in a row drop at visibly different moments within the hold span, the same again for the same seed.
 /// </summary>
 public sealed class RefereeSelfTest : IScene
 {
@@ -32,6 +33,7 @@ public sealed class RefereeSelfTest : IScene
 
         WaitsForReferee(Make());
         FarDot(Make());
+        DropSpread(Make, 11);
         WholeMatch(Make());
 
         Console.WriteLine(failures == 0 ? "REFEREETEST: all checks passed" : $"REFEREETEST: {failures} check(s) failed");
@@ -46,9 +48,9 @@ public sealed class RefereeSelfTest : IScene
     }
 
     /// <summary>Runs physics, rules and the referee step by step until <paramref name="until"/> or the limit; <paramref name="each"/> sees every step after it ran.</summary>
-    static void Run(World world, Func<World, bool> until, float limit, Action<World>? each = null)
+    static void Run(World world, Func<World, bool> until, float limit, Action<World>? each = null, RefereeSystem? referee = null)
     {
-        var systems = new ISystem[] { new PuckPhysics(), new MatchRules(), new RefereeSystem() };
+        var systems = new ISystem[] { new PuckPhysics(), new MatchRules(), referee ?? new RefereeSystem() };
         for (int i = 0; i < limit / Game.Step && !until(world); i++)
         {
             world.Events.Clear();
@@ -86,6 +88,40 @@ public sealed class RefereeSelfTest : IScene
         Check(w.Match.Phase == MatchPhase.Play && Distance(w.Puck.Position, dot) < 0.5f, "a whistle in the far end is followed by a drop at that dot");
         Check(Distance(r.Position, Referee.DropSpot(dot)) <= RefereeTuning.Arrived, "the referee skated the length of the rink to that dot");
         Check(dropAt - start < 7, $"and got there in good time ({dropAt - start:0.0} s after the whistle)");
+    }
+
+    /// <summary>Ten faceoffs in a row at centre ice with seeded dice: every hold lies inside the span, they differ visibly, and the same seed repeats them.</summary>
+    void DropSpread(Func<World> make, int seed)
+    {
+        List<float> Holds(World w)
+        {
+#pragma warning disable S2245 // a fixed seed so the check repeats
+            var referee = new RefereeSystem(new Random(seed));
+#pragma warning restore S2245
+            var r = Referee.Of(w);
+            var holds = new List<float>();
+            void Record(World x)
+            {
+                if (x.Events.Of(MatchEventKind.Faceoff).Any()) holds.Add(r.LastHold);
+            }
+            Run(w, x => x.Match.Phase == MatchPhase.Play, 20, Record, referee);
+            for (int i = 1; i < 10; i++)
+            {
+                MatchFlow.Whistle(w, RinkSpec.CentreDot);
+                Run(w, x => x.Match.Phase == MatchPhase.Play, 20, Record, referee);
+            }
+            return holds;
+        }
+
+        var first = Holds(make());
+        var again = Holds(make());
+        float min = first.Min(), max = first.Max();
+        float smallestChange = first.Zip(first.Skip(1), (a, b) => MathF.Abs(a - b)).Min();
+        string list = string.Join(" ", first.Select(h => h.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)));
+        Check(first.Count == 10, $"ten faceoffs in a row were dropped ({first.Count})");
+        Check(min >= RefereeTuning.SetSeconds - Game.Step && max <= RefereeTuning.MaxSetSeconds + Game.Step, $"every hold lies within {RefereeTuning.SetSeconds:0.0} to {RefereeTuning.MaxSetSeconds:0.0} s (holds {list})");
+        Check(smallestChange >= RefereeTuning.MinHoldChange - 2 * Game.Step && max - min >= 0.6f, $"each drop comes at a visibly different moment from the one before (smallest change {smallestChange:0.00} s, spread {max - min:0.00} s)");
+        Check(first.SequenceEqual(again), "the same seed drops at the same moments again");
     }
 
     void WholeMatch(World w)
