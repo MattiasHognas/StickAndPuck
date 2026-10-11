@@ -11,7 +11,7 @@ namespace StickAndPuck.AI;
 /// SAP_SCENE=positioningtest: runs a full 5 on 5 period headless with positioning, skating, puck
 /// handling, the goalies, puck physics and W7a's match rules, prints one line per check and exits with 0 when all
 /// pass, 1 otherwise. Covers the W6a "done when": 5 on 5 holds shape through a period with no
-/// stuck players; plus that roles are one of each, that forwards stay onside, and that smart
+/// stuck players; plus that roles are one of each, that forwards stay onside, and that high
 /// positioning makes a difference.
 /// </summary>
 public sealed class PositioningSelfTest : IScene
@@ -30,7 +30,7 @@ public sealed class PositioningSelfTest : IScene
         RolesOneEach();
         ShapeSpotsInside();
         var period = Period(Make());
-        SmartPositioning(Make);
+        HockeyIq(Make);
 
         StandInPlay.Stop();
         Console.WriteLine(failures == 0 ? "POSITIONINGTEST: all checks passed" : $"POSITIONINGTEST: {failures} check(s) failed");
@@ -193,7 +193,7 @@ public sealed class PositioningSelfTest : IScene
     }
 
     /// <summary>Smart skaters sit nearer their ideal spots than poor ones, over the same five minutes.</summary>
-    void SmartPositioning(Func<World> make)
+    void HockeyIq(Func<World> make)
     {
         float Run(int smart)
         {
@@ -202,7 +202,7 @@ public sealed class PositioningSelfTest : IScene
             foreach (var p in world.Players.ToList())
             {
                 if (p.IsGoalie) continue;
-                var data = p.Data with { Traits = p.Data.Traits with { SmartPositioning = smart } };
+                var data = p.Data with { Traits = p.Data.Traits with { HockeyIq = smart } };
                 world.Players[p.Id] = new Player { Id = p.Id, Side = p.Side, Data = data, Position = p.Position, Heading = p.Heading };
             }
             var systems = Systems(world, 11);
@@ -224,7 +224,7 @@ public sealed class PositioningSelfTest : IScene
         }
 
         float poor = Run(15), smart = Run(85);
-        Console.WriteLine($"      mean distance from the ideal spot while holding shape: smart positioning 15 -> {poor:F2} m, 85 -> {smart:F2} m");
+        Console.WriteLine($"      mean distance from the ideal spot while holding shape: hockey IQ 15 -> {poor:F2} m, 85 -> {smart:F2} m");
         Check(smart < poor * 0.8f, "smarter positioning holds the shape tighter");
     }
 
