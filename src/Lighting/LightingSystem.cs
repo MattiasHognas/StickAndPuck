@@ -36,6 +36,7 @@ internal sealed class LightingSystem : ISystem
         var time = Environment.GetEnvironmentVariable("SAP_LIGHTING") is { Length: > 0 } name
             ? Enum.TryParse<TimeOfDay>(name, ignoreCase: true, out var t) ? t
                 : throw new InvalidOperationException($"SAP_LIGHTING={name}: use early, afternoon or late")
+            : Enum.TryParse<TimeOfDay>(world.Settings.Lighting.ToString(), out var chosen) ? chosen    // W20: the settings screen's mood
             : (TimeOfDay)dice.Next(3);
         Preset = LightPresets.For(time);
         StartTime = Preset.StartTimes[dice.Next(Preset.StartTimes.Length)];

@@ -44,8 +44,11 @@ internal static class ScreenFlow
     /// <summary>Gets every club.</summary>
     public static IReadOnlyList<ClubData> Clubs { get; private set; } = [];
 
-    /// <summary>Gets or sets the player's settings.</summary>
+    /// <summary>Gets or sets the player's settings as saved; <see cref="Settings"/> is what runs.</summary>
     public static ScreenPrefs Prefs { get; set; } = new();
+
+    /// <summary>Gets the settings to run with: the saved ones under the SAP_* overrides, which never get saved.</summary>
+    public static Settings Settings => Core.Settings.FromEnvironment(Prefs.Settings);
 
     /// <summary>Gets the match being played, or null on the menus.</summary>
     public static MatchPlan? Playing { get; private set; }
@@ -193,14 +196,29 @@ internal static class ScreenFlow
     /// <param name="world">The world.</param>
     public static void ApplySettings(World world)
     {
-        world.Settings = Prefs.Settings;
+        Apply(world, Settings);
         ScreenPrefsFile.Write(Prefs);
+    }
+
+    /// <summary>
+    /// Gives the world its settings and points the debug switches that live as statics in their
+    /// systems (W7's match line, W13's energy panel) at them, so a change on the settings screen
+    /// shows at once, in the paused match too.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="settings">The settings.</param>
+    public static void Apply(World world, Settings settings)
+    {
+        world.Settings = settings;
+        MatchRules.ShowLine = settings.MatchDebug;
+        Lines.LinesSystem.ShowPanel = settings.LinesDebug;
     }
 
     /// <summary>The menu backdrop: both starting lineups standing at centre ice, paused.</summary>
     static World MenuWorld()
     {
-        var world = new World(Backdrop ?? Scenes.DefaultSetup(Clubs), Prefs.Settings);
+        var world = new World(Backdrop ?? Scenes.DefaultSetup(Clubs), Settings);
+        Apply(world, world.Settings);
         Scenes.AddStarters(world);
         world.Match.Paused = true;
         return world;
@@ -209,7 +227,8 @@ internal static class ScreenFlow
     static void Start(MatchSetup setup, MatchPlan plan)
     {
         setup = setup with { PeriodSeconds = PeriodSeconds() };
-        var world = new World(setup, Prefs.Settings);
+        var world = new World(setup, Settings);
+        Apply(world, world.Settings);
         Scenes.AddStarters(world);
         for (int slot = 0; slot < setup.Inputs.Count; slot++)
         {
