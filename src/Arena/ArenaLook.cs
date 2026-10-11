@@ -20,4 +20,13 @@ public static class ArenaLook
 
     /// <summary>Gets or sets the ice band tone. Alpha 0 hides the bands.</summary>
     public static Color IceBand { get; set; } = DuskIceBand;
+
+    /// <summary>The ice sheet at dusk: the pale cold grey the arena's ice snaps to (#ccc9d2).</summary>
+    public static readonly Color DuskIce = new(0xcc, 0xc9, 0xd2, 255);
+
+    /// <summary>Gets or sets the ice sheet tone. The ice is drawn flat (unlit) in this colour, so it never takes the key light's warmth (W21).</summary>
+    public static Color Ice { get; set; } = DuskIce;
+
+    /// <summary>Gets or sets the skate scratch tone; alpha is how faint the scratches are (W21).</summary>
+    public static Color Scratch { get; set; } = new(0xe3, 0xd8, 0xc6, 150);
 }

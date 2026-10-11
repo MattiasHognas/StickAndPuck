@@ -11,8 +11,9 @@ namespace StickAndPuck.Rules;
 /// <summary>
 /// SAP_SCENE=penaltytest: scripted calls under the match rules, the bench and the referee, then a
 /// full AI match, no window; prints one line per check and exits with 0 when all pass, 1 otherwise.
-/// Covers the W14 "done when": calls happen, the penalised club plays short, time is served correctly.
-/// In period 1 home defends -x.
+/// Covers the W14 "done when": calls happen, the penalised club plays short, time is served correctly,
+/// and W23's: a penalty in 3 on 3 overtime gives 4 on 3, the goalie is pulled on a delayed call
+/// and when trailing late. In period 1 home defends -x.
 /// </summary>
 public sealed class PenaltySelfTest : IScene
 {
@@ -46,10 +47,16 @@ public sealed class PenaltySelfTest : IScene
         FourOnFour(Make());
         CarriesOverIntermission(Make());
         EndsWithRegulation(Make(3));
-        NoCallsWhenOffOrInOvertime(Make(), Make(4));
+        NoCallsWhenOff(Make());
         HumanHandOff(Make());
         ChangedOffDuringDelay(Make());
         Judgement(Make());
+        OvertimeFourOnThree(Overtime(setup, settings));
+        OvertimeFiveOnThree(Overtime(setup, settings));
+        OvertimeFiveOnFive(Make(4));
+        DelayedCallPullsGoalie(Make());
+        TrailingLatePullsGoalie(Make(3));
+        HumanPullsGoalie(Make(3));
         FullMatch(setup, settings);
 
         Console.WriteLine(failures == 0 ? "PENALTYTEST: all checks passed" : $"PENALTYTEST: {failures} check(s) failed");
@@ -100,8 +107,7 @@ public sealed class PenaltySelfTest : IScene
     static PenaltyState Penalise(World w, Player p, string infraction = Infraction.Tripping)
     {
         Penalties.Signal(w, p.Id, infraction);
-        w.Puck.Carrier = p.Side == Side.Home ? Skater(w, Side.Home, PlayingPosition.C).Id : Skater(w, Side.Away, PlayingPosition.C).Id;
-        if (w.Puck.Carrier == p.Id) w.Puck.Carrier = w.OnIce(p.Side).First(o => !o.IsGoalie && o != p).Id;
+        w.Puck.Carrier = (w.OnIce(p.Side).FirstOrDefault(o => o.Data.Position == PlayingPosition.C && o != p) ?? w.OnIce(p.Side).First(o => !o.IsGoalie && o != p)).Id;
         Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
         w.Puck.Carrier = -1;
         return w.Match.Penalties.Last(x => x.PlayerId == p.Id);
@@ -251,12 +257,125 @@ public sealed class PenaltySelfTest : IScene
         Check(w.Match.Phase == MatchPhase.Overtime && w.Match.Penalties.Count == 0 && !lw.OnIce, "penalties end with regulation (he waits on the bench)");
     }
 
-    void NoCallsWhenOffOrInOvertime(World off, World overtime)
+    void NoCallsWhenOff(World off)
     {
         off.Settings = off.Settings with { Penalties = false };
         bool a = Penalties.Signal(off, Skater(off, Side.Home, PlayingPosition.C).Id, Infraction.Tripping);
-        bool b = Penalties.Signal(overtime, Skater(overtime, Side.Home, PlayingPosition.C).Id, Infraction.Tripping);
-        Check(!a && !b, "no calls with penalties off in the settings, or in overtime");
+        Check(!a, "no calls with penalties off in the settings");
+    }
+
+    /// <summary>A match in its 3 on 3 overtime period, play running.</summary>
+    static World Overtime(MatchSetup setup, Settings settings)
+    {
+        var w = new World(setup, settings);
+        Scenes.AddStarters(w);
+        MatchFlow.Begin(w, log: false);
+        new LinesSystem().Start(w);
+        OvertimeRules.ThreeOnThree(w);
+        MatchFlow.StartPeriod(w, 4, 300);
+        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+        return w;
+    }
+
+    void OvertimeFourOnThree(World w)
+    {
+        Check(Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 3 && Penalties.BaseSkaters(w) == 3, "overtime starts 3 on 3, and that is the full strength now");
+        var d = w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.D);
+        var penalty = Penalise(w, d, Infraction.Hooking);
+        ToPlay(w);
+        Check(Penalties.InBox(w, d.Id) && !d.OnIce && Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 4 && Penalties.PowerPlay(w) == Side.Away,
+            "a penalty in overtime: home keeps three, away adds a skater, 4 on 3");
+        Check(w.OnIce(Side.Away).Count(p => !p.IsGoalie && Squad.GroupOf(p) == Group.Forwards) == 2, "the skater away adds is a forward");
+        bool steady = true;
+        int changes = 0;
+        Run(w, x => !Penalties.InBox(x, d.Id), x =>
+        {
+            steady &= Skaters(x, Side.Home) == 3 && Skaters(x, Side.Away) == 4;
+            if (x.Tick % 180 == 0) { Bench.RequestChange(x, Side.Away); changes++; }
+        }, 120);
+        Check(steady && changes > 3 && d.OnIce && Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 4,
+            "4 on 3 through the kill and its line changes; when he comes out it is 4 on 4 until the whistle");
+        MatchFlow.Whistle(w, RinkSpec.CentreDot);
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 3 && w.Match.Penalties.Count == 0, "back to 3 on 3 at the next faceoff");
+    }
+
+    void OvertimeFiveOnThree(World w)
+    {
+        var skaters = w.OnIce(Side.Home).Where(p => !p.IsGoalie).ToList();
+        Penalise(w, skaters[0]);
+        ToPlay(w);
+        Penalise(w, skaters[1]);
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 5 && Penalties.Serving(w, Side.Home) == 2, "two overtime penalties: 5 on 3");
+        Penalise(w, w.OnIce(Side.Away).First(p => !p.IsGoalie));
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 4, "one back the other way: 4 on 3");
+    }
+
+    void OvertimeFiveOnFive(World w)
+    {
+        Check(Penalties.BaseSkaters(w) == 5, "an overtime played 5 on 5 (playoffs) keeps five as the full strength");
+        Penalise(w, Skater(w, Side.Home, PlayingPosition.LW));
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 5, "a penalty there gives 5 on 4, keyed off the skater count");
+    }
+
+    void DelayedCallPullsGoalie(World w)
+    {
+        var lw = Skater(w, Side.Home, PlayingPosition.LW);
+        var goalie = w.OnIce(Side.Away).First(p => p.IsGoalie);
+        w.Puck.Carrier = Skater(w, Side.Away, PlayingPosition.C).Id;
+        w.Puck.Position = new Vector3(-10, 0, 3);
+        Penalties.Signal(w, lw.Id, Infraction.Tripping);
+        Run(w, _ => false, null, 0.5f);
+        Check(GoaliePull.IsPulled(w, Side.Away) && !goalie.OnIce && Skaters(w, Side.Away) == 6 && GoaliePull.ExtraAttacker(w, Side.Away) is { Data.Position: not PlayingPosition.D },
+            "a delayed call against home: away pulls its goalie for a sixth skater at once");
+        w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.C).Id;
+        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        w.Puck.Carrier = -1;
+        Run(w, _ => false, null, 0.1f);
+        Check(!GoaliePull.IsPulled(w, Side.Away) && goalie.OnIce && Math.Abs(goalie.Position.X - (RinkSpec.GoalLineX - 1)) < 0.01f,
+            "the goalie is back in his crease at the whistle");
+        ToPlay(w);
+        Check(Skaters(w, Side.Away) == 5 && Skaters(w, Side.Home) == 4, "the extra attacker goes off: 5 on 4 for the power play");
+    }
+
+    void TrailingLatePullsGoalie(World w)
+    {
+        var goalie = w.OnIce(Side.Home).First(p => p.IsGoalie);
+        w.Match.Score[1] = 1;
+        w.Match.Clock = GoaliePull.PullSeconds(w) + 5;
+        w.Puck.Position = new Vector3(5, 0, 0);
+        Run(w, _ => false, null, 1);
+        Check(!GoaliePull.IsPulled(w, Side.Home) && goalie.OnIce, "a goal down with more than the window left: the goalie stays in");
+        Run(w, x => GoaliePull.IsPulled(x, Side.Home), null, 10);
+        Check(GoaliePull.IsPulled(w, Side.Home) && !goalie.OnIce && Skaters(w, Side.Home) == 6 && w.Match.Clock <= GoaliePull.PullSeconds(w),
+            $"inside the last {MatchFlow.ClockText(GoaliePull.PullSeconds(w))} the AI pulls the goalie for a sixth skater");
+        PublishGoal(w, Side.Home);
+        Run(w, _ => false, null, 0.1f);
+        Check(!GoaliePull.IsPulled(w, Side.Home) && goalie.OnIce, "the equaliser: the goalie is back for the faceoff");
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 5 && !GoaliePull.IsPulled(w, Side.Home), "tied now, so five skaters and no pull");
+        w.Match.Score[1] = 4;
+        Run(w, _ => false, null, 1);
+        Check(!GoaliePull.IsPulled(w, Side.Home), "three down the AI leaves the goalie in");
+    }
+
+    void HumanPullsGoalie(World w)
+    {
+        Skater(w, Side.Home, PlayingPosition.C).Slot = 0;
+        var goalie = w.OnIce(Side.Home).First(p => p.IsGoalie);
+        w.Match.Score[1] = 1;
+        w.Match.Clock = 10;
+        w.Puck.Position = new Vector3(5, 0, 0);
+        Run(w, _ => false, null, 2);
+        Check(goalie.OnIce && !GoaliePull.IsPulled(w, Side.Home), "a human's club does not pull by itself when trailing");
+        bool pulled = GoaliePull.Pull(w, Side.Home);
+        Run(w, _ => false, null, 0.5f);
+        Check(pulled && !goalie.OnIce && Skaters(w, Side.Home) == 6, "the button pulls it: six skaters");
+        bool back = GoaliePull.Return(w, Side.Home);
+        Check(back && goalie.OnIce && Skaters(w, Side.Home) == 5, "the button again brings him back and the extra attacker off");
     }
 
     void HumanHandOff(World w)
@@ -323,7 +442,7 @@ public sealed class PenaltySelfTest : IScene
     void FullMatch(MatchSetup setup, Settings settings)
     {
         var (calls, broken, served) = Match(setup with { PeriodSeconds = 240 }, settings, 8f, 1);
-        Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club short by exactly its penalties at every step");
+        Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step");
         int normal = 0, broken2 = 0;
         foreach (int seed in Seeds)
         {
@@ -370,7 +489,7 @@ public sealed class PenaltySelfTest : IScene
             // penalties end with regulation, leaving the box empty for overtime
             foreach (var side in w.Match.Phase is MatchPhase.Final or MatchPhase.Overtime or MatchPhase.Shootout ? [] : new[] { Side.Home, Side.Away })
             {
-                if (Skaters(w, side) != 5 - Penalties.Serving(w, side))
+                if (Skaters(w, side) != Penalties.TargetSkaters(w, side))
                     broken++;
                 if (w.Match.Penalties.Exists(p => w.Players[p.PlayerId].OnIce)) broken++;
             }

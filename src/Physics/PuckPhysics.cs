@@ -13,6 +13,9 @@ namespace StickAndPuck.Physics;
 /// and <see cref="MatchEventKind.Goal"/> once when the whole puck is over the goal line of a net
 /// while the puck is live: Side is the scoring club, PlayerId the last touch. Rules (W7a) keep the
 /// score and restart play; they move the puck out of the net for the faceoff.
+/// A goal needs the puck to have come in through the mouth: the cage is solid from behind, from the
+/// sides and from above, and a puck carried through the mesh on a stick and let go inside is pushed
+/// back out instead of counting.
 /// A body the puck bounces off becomes its last touch, so a deflection counts for the deflector.
 /// Goalies are left to W5, which runs before this system.
 /// </summary>
@@ -26,7 +29,9 @@ internal sealed class PuckPhysics : ISystem, IDisposable
     int lastCarrier = -1;
     int releasedBy = -1;
     float releasedAt = float.NegativeInfinity;
-    int inNet;          // the end whose net holds the puck past the line (-1, +1), or 0
+    int scored;         // the end whose net the current goal was published for (-1, +1), or 0
+    int inNet;          // the end whose net holds the puck because it came in through the mouth, or 0
+    Vector3? lastPosition;
 
     public void Start(World world)
     {
@@ -44,6 +49,7 @@ internal sealed class PuckPhysics : ISystem, IDisposable
             releasedAt = world.Time;
         }
         lastCarrier = pk.Carrier;
+        Track(pk);
 
         if (pk.Carrier < 0)
         {
@@ -59,14 +65,43 @@ internal sealed class PuckPhysics : ISystem, IDisposable
             impacts.Clear();
             var position = pk.Position;
             var velocity = pk.Velocity;
-            PuckMotion.Step(ref position, ref velocity, dt, System.Runtime.InteropServices.CollectionsMarshal.AsSpan(bodies), impacts);
+            PuckMotion.Step(ref position, ref velocity, ref inNet, dt, System.Runtime.InteropServices.CollectionsMarshal.AsSpan(bodies), impacts);
             pk.Position = position;
             pk.Velocity = velocity;
             Publish(world, impacts);
         }
 
+        lastPosition = pk.Position;
         GoalLine(world);
     }
+
+    /// <summary>
+    /// Follows a puck that something other than physics moved since the last step: a carrier's stick, a
+    /// goalie, a faceoff. Only a move from in front of the goal line into the net counts as going in; a
+    /// puck pushed through the mesh from behind or the side is not in the net and is ejected once it is
+    /// loose. A puck placed with no history, or moved further than anything on the ice can move it in one
+    /// step, is taken at its word.
+    /// </summary>
+    void Track(Puck pk)
+    {
+        var p = pk.Position;
+        if (lastPosition is not { } last || Vector3.Distance(last, p) > PuckTuning.TeleportDistance)
+        {
+            inNet = PuckMotion.InsideNet(p, 1) ? 1 : PuckMotion.InsideNet(p, -1) ? -1 : 0;
+            return;
+        }
+        if (last == p) return;
+        if (inNet != 0)
+        {
+            if (!PuckMotion.InsideNet(p, inNet)) inNet = 0;
+            return;
+        }
+        for (int end = -1; end <= 1; end += 2)
+            if (PuckMotion.EnteredThroughMouth(last, p, end)) inNet = end;
+    }
+
+    /// <summary>Gets the end (-1, +1) whose net holds the puck after coming in through the mouth, or 0.</summary>
+    public int InNet => inNet;
 
     /// <summary>Publishes the hardest board and post hit of the step, and makes a body hit the last touch.</summary>
     static void Publish(World world, List<PuckImpact> impacts)
@@ -91,14 +126,14 @@ internal sealed class PuckPhysics : ISystem, IDisposable
         if (post is { } p) world.Events.Publish(new MatchEvent(MatchEventKind.PuckPost, world.Time, Position: p.Position, Strength: p.Speed));
     }
 
-    /// <summary>A goal counts once, when the whole puck is over the line, inside the net, while the puck is live.</summary>
+    /// <summary>A goal counts once, when the whole puck is over the line, inside a net it came into through the mouth, while the puck is live.</summary>
     void GoalLine(World world)
     {
         var pk = world.Puck;
-        int end = PuckMotion.FullyOverGoalLine(pk.Position, 1) ? 1 : PuckMotion.FullyOverGoalLine(pk.Position, -1) ? -1 : 0;
-        if (end == 0) { inNet = 0; return; }
-        if (end == inNet || !pk.Live) { inNet = end; return; }
-        inNet = end;
+        int end = inNet != 0 && PuckMotion.FullyOverGoalLine(pk.Position, inNet) ? inNet : 0;
+        if (end == 0) { scored = 0; return; }
+        if (end == scored || !pk.Live) { scored = end; return; }
+        scored = end;
         // the net at -x belongs to the club defending the left end; the other club scores there
         var defender = end < 0 ? world.Match.DefendsLeft : Other(world.Match.DefendsLeft);
         world.Events.Publish(new MatchEvent(MatchEventKind.Goal, world.Time, Other(defender), pk.LastTouch, pk.Position, pk.Velocity.Length()));

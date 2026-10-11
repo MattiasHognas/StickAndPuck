@@ -5,7 +5,7 @@ using StickAndPuck.Players;
 namespace StickAndPuck.AI;
 
 /// <summary>
-/// W6a: where each AI skater skates, by role, in attack and defence, from smart positioning.
+/// W6a: where each AI skater skates, by role, in attack and defence, from hockey IQ.
 /// Writes Move and Sprint into the <see cref="Player.Command"/> of every skater with no human
 /// slot (the other buttons are cleared for decisions to fill); goalies are W5's.
 /// <list type="bullet">
@@ -90,7 +90,7 @@ internal sealed class PositioningSystem : ISystem
     {
         var pk = world.Puck;
         int end = PuckHandling.AttackEnd(world, p.Side);
-        float smart = Traits.Unit(p.Data.Traits.SmartPositioning);
+        float smart = Traits.Unit(p.Data.Traits.HockeyIq);
         var teamPhase = Positioning.Board(world).Phase[(int)p.Side];
         plan.Ideal = TeamShape.Spot(plan.Role, teamPhase, end, new Vector2(pk.Position.X, pk.Position.Z));
 
@@ -260,7 +260,7 @@ internal sealed class PositioningSystem : ISystem
         return TeamShape.Inside(new Vector2(end * spot.X, spot.Y));
     }
 
-    /// <summary>The role's spot as this skater reads it: trailing the ideal spot and a little off it, by smart positioning.</summary>
+    /// <summary>The role's spot as this skater reads it: trailing the ideal spot and a little off it, by hockey IQ.</summary>
     Vector2 ShapeTarget(World world, SkaterPlan plan, Player p, Vector2 spot, float smart, float dt)
     {
         if (world.Time >= plan.ErrorUntil)

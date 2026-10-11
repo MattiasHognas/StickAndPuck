@@ -10,7 +10,8 @@ namespace StickAndPuck.Rules;
 /// <summary>
 /// SAP_SCENE=overtimetest: plays tied matches with skating, puck handling, the goalies, puck physics
 /// and the match rules, no window, prints one line per check and exits with 0 when all pass, 1
-/// otherwise. Covers the W7c "done when": a tied match goes to 3 on 3 and then to a shootout.
+/// otherwise. Covers the W7c "done when": a tied match goes to 3 on 3 and then to a shootout, and
+/// W19's: under the playoff format a tie goes to 5 on 5 and ends on the first goal, with no shootout.
 /// </summary>
 public sealed class OvertimeSelfTest : IScene
 {
@@ -25,9 +26,9 @@ public sealed class OvertimeSelfTest : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period, Inputs = NoHumans };
-        World Make(OvertimeRule rule = OvertimeRule.Shl, IReadOnlyList<InputSlot>? inputs = null)
+        World Make(OvertimeRule rule = OvertimeRule.Shl, IReadOnlyList<InputSlot>? inputs = null, OvertimeFormat? format = null)
         {
-            var w = new World(setup with { Overtime = rule, Inputs = inputs ?? NoHumans }, settings);
+            var w = new World(setup with { Overtime = rule, Inputs = inputs ?? NoHumans, OvertimeFormat = format }, settings);
             Scenes.AddStarters(w);
             MatchFlow.Begin(w, log: false);
             return w;
@@ -40,6 +41,10 @@ public sealed class OvertimeSelfTest : IScene
         Shootouts(rule => Make(rule));
         ShootoutOnly(Make(OvertimeRule.ShootoutOnly));
         HumanShooter(Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]));
+        Formats(setup);
+        var playoffs = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = Period };
+        PlayoffOvertime(Make(format: playoffs, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]));
+        PlayoffGoal(Make(format: playoffs));
         OvertimeRules.PeriodSeconds = MatchTuning.OvertimeSeconds;
 
         Console.WriteLine(failures == 0 ? "OVERTIMETEST: all checks passed" : $"OVERTIMETEST: {failures} check(s) failed");
@@ -187,6 +192,60 @@ public sealed class OvertimeSelfTest : IScene
         var ev = Run(w, x => x.Match.Phase == MatchPhase.Final);
         Check(w.Match.Period == 3 && OvertimeRules.Shootout(w) is { Winner: not null }, "shootout only: no overtime period, the shootout decides it");
         Check(ev.Count(e => e.Kind == MatchEventKind.MatchEnd) == 1, "one MatchEnd");
+    }
+
+    /// <summary>The per-mode formats: what each one plays after a tie.</summary>
+    void Formats(MatchSetup setup)
+    {
+        var shl = OvertimeFormat.Shl;
+        var po = OvertimeFormat.ShlPlayoffs;
+        Check(shl.AfterTie(0) == MatchPhase.Overtime && shl.AfterTie(1) == MatchPhase.Shootout, "SHL: one overtime period, then the shootout");
+        Check(po.AfterTie(0) == MatchPhase.Overtime && po.AfterTie(1) == MatchPhase.Overtime && po.AfterTie(5) == MatchPhase.Overtime, "SHL playoffs: overtime periods until a goal");
+        Check(po is { Skaters: 5, HasShootout: false, PeriodSeconds: 20 * 60 }, "SHL playoffs: 5 on 5, 20-minute periods, no shootout");
+        Check(OvertimeFormat.None.AfterTie(0) == null && OvertimeFormat.ShootoutOnly.AfterTie(0) == MatchPhase.Shootout, "none keeps the tie; shootout only skips the overtime");
+        Check(OvertimeFormat.Of(setup with { Overtime = OvertimeRule.Shl }) == shl && OvertimeFormat.Of(setup with { Overtime = OvertimeRule.None }) == OvertimeFormat.None, "a setup without a format plays the one its rule names");
+        Check(OvertimeFormat.Of(setup with { Overtime = OvertimeRule.Shl, OvertimeFormat = po }) == po, "a setup's own format wins over its rule");
+        var own = shl with { Name = "4 on 4", Skaters = 4 };
+        Check(own.Skaters == 4 && own.HasShootout && own.AfterTie(0) == MatchPhase.Overtime, "a league makes its own format from a preset");
+    }
+
+    /// <summary>The playoff format: a tie keeps 5 on 5, a scoreless period goes to another, never to a shootout.</summary>
+    void PlayoffOvertime(World w)
+    {
+        w.Players.First(p => p.Side == Side.Home && p.Data.Position == PlayingPosition.LW).Slot = 0;
+        Run(w, x => x.Match.Phase == MatchPhase.Overtime);
+        Run(w, _ => false, limit: Game.Step);
+        int Skaters(Side side) => w.OnIce(side).Count(p => !p.IsGoalie);
+        Check(w.Match.Phase == MatchPhase.Overtime && Skaters(Side.Home) == 5 && Skaters(Side.Away) == 5, "playoffs: a tie after regulation keeps five skaters a side");
+        Check(w.Controlled(0) is { OnIce: true, Data.Position: PlayingPosition.LW }, "the human keeps the wing");
+        Run(w, x => x.Match.Phase == MatchPhase.Play, limit: 10);
+        Check(w.Match.Period == 4 && w.Puck.Live && Skaters(Side.Home) == 5 && Skaters(Side.Away) == 5, "period 4 drops 5 on 5");
+        Check(MathF.Abs(OvertimeRules.PeriodLength(w) - Period) < 1e-3f, "the overtime period has the format's length");
+
+        // nobody shoots: the period runs out scoreless
+        Run(w, x => x.Match.Phase != MatchPhase.Play && x.Match.Phase != MatchPhase.Faceoff && x.Match.Phase != MatchPhase.Stopped && x.Match.Phase != MatchPhase.Goal);
+        Check(w.Match.Phase == MatchPhase.Overtime && w.Match.Period == 4, "a scoreless overtime goes to another overtime, not a shootout");
+        Run(w, x => x.Match.Phase == MatchPhase.Play, limit: 10);
+        Check(w.Match.Period == 5 && Skaters(Side.Home) == 5 && Skaters(Side.Away) == 5, "period 5 drops 5 on 5 as well");
+        Check(OvertimeRules.Shootout(w) == null && w.Match.Score[0] == 0 && w.Match.Score[1] == 0, "no shootout and no score");
+    }
+
+    /// <summary>The first goal in a playoff overtime ends it.</summary>
+    void PlayoffGoal(World w)
+    {
+        Run(w, x => x.Match.Phase == MatchPhase.Play && x.Match.Period == 5);
+        int end = PuckHandling.AttackEnd(w, Side.Away);
+        var pk = w.Puck;
+        pk.Carrier = -1;
+        // a puck the goalie cannot reach: it is already in the net, over the line at the far post
+        pk.Position = new Vector3(end * (RinkSpec.GoalLineX + 0.4f), 0, 0.8f);
+        pk.Velocity = new Vector3(end * 5, 0, 0);
+        pk.LastTouch = w.OnIce(Side.Away).First(p => !p.IsGoalie).Id;
+        var ev = Run(w, x => x.Match.Phase == MatchPhase.Final, limit: 3);
+        var final = ev.Where(e => e.Kind == MatchEventKind.MatchEnd).ToList();
+        Check(final.Count == 1 && final[0].Side == Side.Away && w.Match.Score[0] == 0 && w.Match.Score[1] == 1, $"the first goal in the second overtime ends it 0-1 (score {w.Match.Score[0]}-{w.Match.Score[1]})");
+        Check(w.Match.Phase == MatchPhase.Final && w.Match.Period == 5, "the match is final in period 5");
+        Check(OvertimeRules.Shootout(w) == null, "no shootout in the playoffs");
     }
 
     /// <summary>A human slot takes its club's shots; a human who does nothing runs out of time.</summary>

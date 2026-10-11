@@ -12,6 +12,12 @@ public static class PenaltyTuning
     /// <summary>Most penalties a club serves at once; a call that would put it three short is waved off.</summary>
     public const int MaxServing = 2;
 
+    /// <summary>W23: a club never plays fewer skaters than this, whatever it serves (3 on 3 overtime stays 3 a side).</summary>
+    public const int MinSkaters = 3;
+
+    /// <summary>W23: the most skaters a power play adds up to, at 5 on 3 in overtime.</summary>
+    public const int MaxSkaters = 5;
+
     /// <summary>A knockdown of a skater without the puck, or from behind: tripping.</summary>
     public const float TripChance = 0.1f;
 

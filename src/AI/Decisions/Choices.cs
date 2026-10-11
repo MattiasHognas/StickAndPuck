@@ -58,35 +58,35 @@ public static class Choices
     }
 
     /// <summary>Gets how far a passer looks for teammates, in metres.</summary>
-    /// <param name="smartPasses">The trait.</param>
+    /// <param name="hockeyIq">The hockey IQ trait.</param>
     /// <returns>Metres.</returns>
-    public static float Vision(int smartPasses)
+    public static float Vision(int hockeyIq)
     {
-        return 14f + 26f * Traits.Unit(smartPasses);
+        return 14f + 26f * Traits.Unit(hockeyIq);
     }
 
     /// <summary>Gets how long a carrier takes between looks at the play, in seconds.</summary>
-    /// <param name="smartPasses">The trait.</param>
+    /// <param name="hockeyIq">The hockey IQ trait.</param>
     /// <returns>Seconds.</returns>
-    public static float ThinkEvery(int smartPasses)
+    public static float ThinkEvery(int hockeyIq)
     {
-        return 0.1f + 0.35f * (1f - Traits.Unit(smartPasses));
+        return 0.1f + 0.35f * (1f - Traits.Unit(hockeyIq));
     }
 
     /// <summary>Gets how many metres off a passer reads where each defender is.</summary>
-    /// <param name="smartPasses">The trait.</param>
+    /// <param name="hockeyIq">The hockey IQ trait.</param>
     /// <returns>Metres.</returns>
-    public static float Misread(int smartPasses)
+    public static float Misread(int hockeyIq)
     {
-        return 2.5f * (1f - Traits.Unit(smartPasses));
+        return 2.5f * (1f - Traits.Unit(hockeyIq));
     }
 
     /// <summary>Gets how much a carrier's opinion of each option wobbles.</summary>
-    /// <param name="smartPasses">The trait.</param>
+    /// <param name="hockeyIq">The hockey IQ trait.</param>
     /// <returns>Spread of the noise added to values.</returns>
-    public static float Wobble(int smartPasses)
+    public static float Wobble(int hockeyIq)
     {
-        return 0.1f * (1f - Traits.Unit(smartPasses));
+        return 0.1f * (1f - Traits.Unit(hockeyIq));
     }
 
     /// <summary>
@@ -98,12 +98,12 @@ public static class Choices
     /// <param name="to">The aim point (x, z).</param>
     /// <param name="speed">The pass speed.</param>
     /// <param name="defenders">Where the passer thinks each defender's stick is, with their top speed.</param>
-    /// <param name="smartPasses">The passer's trait.</param>
+    /// <param name="hockeyIq">The passer's hockey IQ.</param>
     /// <returns>0 to 1.</returns>
-    public static float LaneSuccess(Vector2 from, Vector2 to, float speed, IReadOnlyList<(Vector2 At, float Speed)> defenders, int smartPasses)
+    public static float LaneSuccess(Vector2 from, Vector2 to, float speed, IReadOnlyList<(Vector2 At, float Speed)> defenders, int hockeyIq)
     {
         float length = Vector2.Distance(from, to);
-        float react = Reaction + 0.5f * (1f - Traits.Unit(smartPasses));
+        float react = Reaction + 0.5f * (1f - Traits.Unit(hockeyIq));
         float success = 1f;
         foreach (var (at, top) in defenders)
         {

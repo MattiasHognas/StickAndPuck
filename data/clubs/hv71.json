@@ -28,8 +28,7 @@
         "shotPower": 30,
         "checking": 25,
         "puckControl": 40,
-        "smartPasses": 40,
-        "smartPositioning": 61,
+        "hockeyIq": 61,
         "goalieReflexes": 63
       }
     },
@@ -46,8 +45,7 @@
         "shotPower": 30,
         "checking": 25,
         "puckControl": 40,
-        "smartPasses": 40,
-        "smartPositioning": 50,
+        "hockeyIq": 50,
         "goalieReflexes": 52
       }
     },
@@ -64,8 +62,7 @@
         "shotPower": 66,
         "checking": 50,
         "puckControl": 80,
-        "smartPasses": 82,
-        "smartPositioning": 78,
+        "hockeyIq": 80,
         "goalieReflexes": 10
       }
     },
@@ -82,8 +79,7 @@
         "shotPower": 78,
         "checking": 67,
         "puckControl": 81,
-        "smartPasses": 78,
-        "smartPositioning": 71,
+        "hockeyIq": 74,
         "goalieReflexes": 10
       }
     },
@@ -100,8 +96,7 @@
         "shotPower": 55,
         "checking": 38,
         "puckControl": 74,
-        "smartPasses": 74,
-        "smartPositioning": 72,
+        "hockeyIq": 73,
         "goalieReflexes": 10
       }
     },
@@ -118,8 +113,7 @@
         "shotPower": 81,
         "checking": 76,
         "puckControl": 69,
-        "smartPasses": 70,
-        "smartPositioning": 77,
+        "hockeyIq": 74,
         "goalieReflexes": 10
       }
     },
@@ -136,8 +130,7 @@
         "shotPower": 74,
         "checking": 66,
         "puckControl": 66,
-        "smartPasses": 68,
-        "smartPositioning": 71,
+        "hockeyIq": 70,
         "goalieReflexes": 10
       }
     },
@@ -154,8 +147,7 @@
         "shotPower": 54,
         "checking": 45,
         "puckControl": 64,
-        "smartPasses": 64,
-        "smartPositioning": 67,
+        "hockeyIq": 66,
         "goalieReflexes": 10
       }
     },
@@ -172,8 +164,7 @@
         "shotPower": 62,
         "checking": 52,
         "puckControl": 65,
-        "smartPasses": 62,
-        "smartPositioning": 63,
+        "hockeyIq": 62,
         "goalieReflexes": 10
       }
     },
@@ -190,8 +181,7 @@
         "shotPower": 59,
         "checking": 50,
         "puckControl": 62,
-        "smartPasses": 60,
-        "smartPositioning": 64,
+        "hockeyIq": 62,
         "goalieReflexes": 10
       }
     },
@@ -208,8 +198,7 @@
         "shotPower": 67,
         "checking": 63,
         "puckControl": 58,
-        "smartPasses": 60,
-        "smartPositioning": 65,
+        "hockeyIq": 62,
         "goalieReflexes": 10
       }
     },
@@ -226,8 +215,7 @@
         "shotPower": 64,
         "checking": 59,
         "puckControl": 60,
-        "smartPasses": 62,
-        "smartPositioning": 68,
+        "hockeyIq": 65,
         "goalieReflexes": 10
       }
     },
@@ -244,8 +232,7 @@
         "shotPower": 54,
         "checking": 55,
         "puckControl": 65,
-        "smartPasses": 57,
-        "smartPositioning": 58,
+        "hockeyIq": 58,
         "goalieReflexes": 10
       }
     },
@@ -262,8 +249,7 @@
         "shotPower": 56,
         "checking": 56,
         "puckControl": 60,
-        "smartPasses": 55,
-        "smartPositioning": 56,
+        "hockeyIq": 56,
         "goalieReflexes": 10
       }
     },
@@ -280,8 +266,7 @@
         "shotPower": 46,
         "checking": 43,
         "puckControl": 58,
-        "smartPasses": 58,
-        "smartPositioning": 57,
+        "hockeyIq": 58,
         "goalieReflexes": 10
       }
     },
@@ -298,8 +283,7 @@
         "shotPower": 58,
         "checking": 57,
         "puckControl": 57,
-        "smartPasses": 63,
-        "smartPositioning": 56,
+        "hockeyIq": 60,
         "goalieReflexes": 10
       }
     },
@@ -316,8 +300,7 @@
         "shotPower": 59,
         "checking": 66,
         "puckControl": 54,
-        "smartPasses": 58,
-        "smartPositioning": 54,
+        "hockeyIq": 56,
         "goalieReflexes": 10
       }
     },
@@ -334,8 +317,7 @@
         "shotPower": 39,
         "checking": 45,
         "puckControl": 50,
-        "smartPasses": 50,
-        "smartPositioning": 54,
+        "hockeyIq": 52,
         "goalieReflexes": 10
       }
     },
@@ -352,8 +334,7 @@
         "shotPower": 51,
         "checking": 60,
         "puckControl": 50,
-        "smartPasses": 49,
-        "smartPositioning": 50,
+        "hockeyIq": 50,
         "goalieReflexes": 10
       }
     },
@@ -370,8 +351,7 @@
         "shotPower": 44,
         "checking": 49,
         "puckControl": 48,
-        "smartPasses": 46,
-        "smartPositioning": 50,
+        "hockeyIq": 48,
         "goalieReflexes": 10
       }
     }

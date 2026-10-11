@@ -181,11 +181,11 @@ public static class PuckHandling
     /// </summary>
     /// <param name="from">The puck.</param>
     /// <param name="receiver">The receiver.</param>
-    /// <param name="smartPasses">The passer's smart passes trait.</param>
+    /// <param name="hockeyIq">The passer's hockey IQ.</param>
     /// <returns>The aim point on the ice and the pass speed.</returns>
-    public static (Vector3 Target, float Speed) Lead(Vector3 from, Player receiver, int smartPasses)
+    public static (Vector3 Target, float Speed) Lead(Vector3 from, Player receiver, int hockeyIq)
     {
-        float lead = 0.4f + 0.6f * Traits.Unit(smartPasses);
+        float lead = 0.4f + 0.6f * Traits.Unit(hockeyIq);
         var blade = Blade(receiver);
         var target = blade;
         float speed = PassSpeed(Vector3.Distance(from, blade));
@@ -222,12 +222,12 @@ public static class PuckHandling
     /// <param name="from">The puck.</param>
     /// <param name="target">The aim point.</param>
     /// <param name="speed">The planned speed.</param>
-    /// <param name="smartPasses">The passer's smart passes trait.</param>
+    /// <param name="hockeyIq">The passer's hockey IQ.</param>
     /// <param name="rng">Randomness.</param>
     /// <returns>The puck's velocity, flat on the ice.</returns>
-    public static Vector3 PassVelocity(Vector3 from, Vector3 target, float speed, int smartPasses, Random rng)
+    public static Vector3 PassVelocity(Vector3 from, Vector3 target, float speed, int hockeyIq, Random rng)
     {
-        float miss = 1f - Traits.Unit(smartPasses);
+        float miss = 1f - Traits.Unit(hockeyIq);
         var dir = Flat(target - from);
         dir = dir.LengthSquared() > 1e-6f ? Vector2.Normalize(dir) : Vector2.UnitX;
         dir = Rotate(dir, Gauss(rng) * Deg(0.3f + 2f * miss));

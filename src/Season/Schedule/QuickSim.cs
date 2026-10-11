@@ -45,13 +45,13 @@ public static class QuickSim
     {
         var s = Skaters(club);
         if (s.Count == 0) return 50;
-        return s.Average(t => (t.ShotAccuracy + t.ShotPower + t.PuckControl + t.SmartPasses + t.TopSpeed + t.Acceleration) / 6.0);
+        return s.Average(t => (t.ShotAccuracy + t.ShotPower + t.PuckControl + t.HockeyIq + t.TopSpeed + t.Acceleration) / 6.0);
     }
 
     static double Defence(ClubData club)
     {
         var s = Skaters(club);
-        double skaters = s.Count == 0 ? 50 : s.Average(t => (t.Checking + t.SmartPositioning + t.TopSpeed) / 3.0);
+        double skaters = s.Count == 0 ? 50 : s.Average(t => (t.Checking + t.HockeyIq + t.TopSpeed) / 3.0);
         var goalie = club.Roster.Where(p => p.Position == PlayingPosition.G).Select(p => (double)p.Traits.GoalieReflexes).DefaultIfEmpty(50).Max();
         return (skaters + goalie) / 2;
     }

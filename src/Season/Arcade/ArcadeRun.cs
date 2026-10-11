@@ -130,7 +130,7 @@ public sealed class ArcadeRun
     public static double Strength(ClubData club)
     {
         var skaters = club.Roster.Where(p => p.Position != PlayingPosition.G).Select(p => p.Traits).ToList();
-        double s = skaters.Count == 0 ? 50 : skaters.Average(t => (t.Acceleration + t.TopSpeed + t.ShotAccuracy + t.ShotPower + t.Checking + t.PuckControl + t.SmartPasses + t.SmartPositioning) / 8.0);
+        double s = skaters.Count == 0 ? 50 : skaters.Average(t => (t.Acceleration + t.TopSpeed + t.ShotAccuracy + t.ShotPower + t.Checking + t.PuckControl + t.HockeyIq) / 7.0);
         double g = club.Roster.Where(p => p.Position == PlayingPosition.G).Select(p => (double)p.Traits.GoalieReflexes).DefaultIfEmpty(50).Max();
         return ((s * 5) + g) / 6;
     }
