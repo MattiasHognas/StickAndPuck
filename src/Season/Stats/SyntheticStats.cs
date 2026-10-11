@@ -112,7 +112,7 @@ public static class SyntheticStats
     static double Passing(ClubData club, MatchStatLine l)
     {
         var t = Roster(club, l).Traits;
-        double skill = ((t.SmartPasses + t.PuckControl) / 2.0) - 30;
+        double skill = ((t.HockeyIq + t.PuckControl) / 2.0) - 30;
         return Math.Max(2, skill * skill / 40) * (l.Position == PlayingPosition.D ? 0.7 : 1);
     }
 
