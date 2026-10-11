@@ -25,6 +25,7 @@ public sealed class SeasonSelfTest : IScene
             Points();
             AutosaveAndContinue(clubs, settings, path);
             WholeSeason(clubs, path);
+            SimGame(clubs, path);
             BadSave(path);
         }
         finally
@@ -176,6 +177,48 @@ public sealed class SeasonSelfTest : IScene
         var resumed = SeasonSession.Continue(clubs, path);
         Check(resumed != null && resumed.IsOver && resumed.Table.SequenceEqual(table), "a finished season reads back with the same table");
         Check(SeasonSession.NextSetup() == null, "a finished season has no next game");
+    }
+
+    void SimGame(IReadOnlyList<ClubData> clubs, string path)
+    {
+        // W26: "Sim this game" settles the human's game on paper, records it like a played game and saves
+        SeasonSession.End();
+        var season = SeasonSession.StartNew(clubs, clubs[3].Id, seed: 11, path: path);
+        string before = File.ReadAllText(path);
+        var game = season.NextGame!;
+        var simmed = SeasonSession.SimCurrentGame();
+        Check(simmed is { Playoff: false } && Same(simmed.Home, game.Home) && Same(simmed.Away, game.Away), "sim this game settles the human's next game");
+        var recorded = season.Games[game.Number];
+        Check(recorded.Played && recorded.Result == simmed!.Result && recorded.Result.HomeGoals != recorded.Result.AwayGoals, "the result is recorded in the fixture with a winner");
+        Check(recorded.Result == QuickSim.Play(clubs.First(c => Same(c.Id, game.Home)), clubs.First(c => Same(c.Id, game.Away)), season.GameSeed(game.Number)),
+            "the simmed game uses the same simulation as the round's other games");
+        Check(season.Round(0).All(g => g.Played) && !season.Round(1).Any(g => g.Played), "the rest of the round is settled too");
+        var table = season.Table;
+        Check(table.All(r => r.Played == 1) && table.Sum(r => r.Points) == 7 * 3, "the table updates: every club has played once, 21 points handed out");
+        Check(SeasonSession.Playing == null && !SeasonSession.Unsaved && !Same(File.ReadAllText(path), before), "the sim is saved at once and no game is left marked as playing");
+        Check(season.NextGame is { Round: 1 }, "the next game is in round 2");
+
+        // the whole regular season can be simmed, then the playoffs start and sim too
+        int count = 1;
+        while (!season.IsOver && SeasonSession.SimCurrentGame() != null && ++count < 60) { }
+        Check(count == 52 && season.IsOver, $"simming every game ends the regular season ({count} sims)");
+        var playoffSim = SeasonSession.SimCurrentGame();
+        var playoffs = season.Playoffs;
+        if (playoffs == null || !playoffs.UserQualified)
+        {
+            Check(playoffs != null && playoffSim == null, "a club out of the playoffs has nothing to sim");
+        }
+        else
+        {
+            Check(playoffSim is { Playoff: true } && playoffSim.Result.Kind != ResultKind.Shootout && playoffs.Rounds.Any(r => r.Series.Any(s => s.Games.Count > 0 && s.Involves(season.UserClub))),
+                $"the first playoff game is simmed and recorded in the series ({playoffSim?.Stage})");
+            int more = 0;
+            while (SeasonSession.SimCurrentGame() != null && ++more < 40) { }
+            Check(playoffs.IsOver || !playoffs.UserAlive, $"simming on plays the human's playoffs out ({more + 1} playoff sims, champion {playoffs.Champion ?? "none yet"})");
+        }
+        SeasonSession.End();
+        var resumed = SeasonSession.Continue(clubs, path);
+        Check(resumed != null && resumed.Games.SequenceEqual(season.Games) && Equals(resumed.Playoffs?.Champion, playoffs?.Champion), "the simmed season reads back from the save");
     }
 
     void BadSave(string path)
