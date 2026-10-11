@@ -75,11 +75,12 @@ internal static class InputDevices
     }
 
     /// <summary>Left stick or d-pad skates, right trigger sprints, A shoots, X passes, B checks, Y switches, LB changes line, RB blocks, start pauses.</summary>
-    /// <param name="pad">The gamepad index.</param>
-    /// <returns>What is held, or nothing when no pad is connected.</returns>
-    public static DeviceState Gamepad(int pad)
+    /// <param name="index">0 for the first connected pad, 1 for the second (W38: not the Raylib slot).</param>
+    /// <returns>What is held, or nothing when that pad is not connected.</returns>
+    public static DeviceState Gamepad(int index)
     {
-        if (!IsGamepadAvailable(pad)) return default;
+        int pad = Gamepads.Slot(index);
+        if (pad < 0) return default;
         var move = Stick(GetGamepadAxisMovement(pad, GamepadAxis.LeftX), GetGamepadAxisMovement(pad, GamepadAxis.LeftY));
         if (move == Vector2.Zero)
         {

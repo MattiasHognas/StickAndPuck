@@ -16,6 +16,7 @@ internal sealed class InputSystem : ISystem
 
     public void Update(World world, float dt)
     {
+        Gamepads.Log();
         var inputs = world.Setup.Inputs;
         bool padFree = !inputs.Any(s => s.Device == InputDevice.Gamepad1);
         for (int slot = 0; slot < MatchSetup.Slots && slot < inputs.Count; slot++)
