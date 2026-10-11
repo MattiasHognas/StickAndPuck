@@ -54,6 +54,14 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
                 poses[p.Id] = (fc, frame);
                 continue;
             }
+            if (Rules.Celebration.Pose(world, p) is { } pose && Find(pose.Clip) is >= 0 and var pc)
+            {
+                // W40: the end-of-game celebration poses the winners and the losers the same way
+                frame = pose.Seconds * ClipFps;
+                if (pose.Loop) frame %= clips[pc].KeyFrameCount;
+                poses[p.Id] = (pc, frame);
+                continue;
+            }
             int want = p.Action == PlayerAction.Shoot ? Find("shoot") : p.Speed > 0.4f ? Find("skate") : Find("idle");
             if (want != clip) { clip = want; frame = 0; }
             if (p.Action == PlayerAction.Shoot) frame = p.ActionTime * ClipFps;
