@@ -6,8 +6,9 @@ namespace StickAndPuck.Arena;
 
 /// <summary>
 /// A4: skate scratches on the ice from art/scene/ice_scratches.png (made by
-/// art/scripts/ice_scratches.py), a white mask over the whole rink tinted with the ice band tone,
-/// so they stay a palette colour and follow the lighting. Drawn flat on the ice with the bands.
+/// art/scripts/ice_scratches.py), a white mask over the whole rink tinted with the scratch tone,
+/// so they stay a palette colour and follow the lighting; the tone's alpha fades them towards
+/// the ice (W21). Drawn flat on the ice with the bands.
 /// </summary>
 internal static class IceScratches
 {
@@ -22,8 +23,8 @@ internal static class IceScratches
         SetTextureFilter(texture, TextureFilter.Point);
     }
 
-    /// <summary>Draws the scratches in the given tone, opaque whether or not the bands show.</summary>
-    /// <param name="tone">The ice band colour.</param>
+    /// <summary>Draws the scratches in the given tone whether or not the bands show.</summary>
+    /// <param name="tone">The scratch colour; its alpha is how strong they are.</param>
     public static void Draw(Color tone)
     {
         if (texture.Id == 0) return;
@@ -33,7 +34,7 @@ internal static class IceScratches
         Rlgl.DisableBackfaceCulling();
         Rlgl.SetTexture(texture.Id);
         Rlgl.Begin(DrawMode.Quads);
-        Rlgl.Color4ub(tone.R, tone.G, tone.B, 255);
+        Rlgl.Color4ub(tone.R, tone.G, tone.B, tone.A);
         Rlgl.TexCoord2f(0, 0); Rlgl.Vertex3f(-x, Y, -z);
         Rlgl.TexCoord2f(0, 1); Rlgl.Vertex3f(-x, Y, z);
         Rlgl.TexCoord2f(1, 1); Rlgl.Vertex3f(x, Y, z);
