@@ -26,7 +26,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `aimatch`: full exhibition with every skater played by the AI.
 - `lineup`: both clubs' starters at the opening faceoff, you on the home centre.
 - `practice`: one home skater with the puck on an empty rink.
-- `overtime`: a match that ends 0-0, then 3 on 3 overtime and a shootout.
+- `overtime`: a match that ends 0-0, then 3 on 3 overtime and a shootout; `SAP_PLAYOFF=1` plays the SHL playoff format instead (5 on 5 periods until a goal, no shootout).
 - `penalty`: an AI exhibition where a home skater trips someone two seconds in: arm up, box, power play.
 - `fight`: an AI exhibition where the two centres drop the gloves a quarter second after the drop.
 - `offsidedemo`: scripted plays after each faceoff: an offside pass, a clean carry-in and an icing.
@@ -52,7 +52,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `SAP_HOME`, `SAP_AWAY`: club ids, one of `bjorkloven brynas djurgarden farjestad frolunda hv71 linkoping lulea malmo orebro rogle skelleftea timra vaxjo`. Default: the first two clubs alphabetically.
 - `SAP_CLUB`: your club id for a new season, playoff or arcade run. Default: `SAP_HOME`, else the first club.
 - `SAP_PERIOD`: seconds per period. Default: the settings screen's period length in `start`, `season`, `playoffs`, `arcade` and `versussetup`; 1200 in `match`, `aimatch`, `versus`, `positioning`, `lines`, `penalty` and `fight`; 25 in `matchdemo`; 120 in `goalieswap`; 5 in `overtime`.
-- `SAP_OT`: seconds of 3 on 3 overtime in the `overtime`, `season`, `playoffs` and `arcade` scenes. Default 15 in `overtime`, the normal 5 minutes elsewhere.
+- `SAP_OT`: seconds of an overtime period in the `overtime`, `season`, `playoffs` and `arcade` scenes. Default 15 in `overtime`, the normal 5 minutes (20 in `playoffs`) elsewhere.
 - `SAP_START`: `overtime` or `shootout` skips straight there in the `overtime` scene. Default: play regulation first.
 - `SAP_HUMAN`: `1` gives you the home club in the `overtime` scene (default off there); `0` lets the AI play both clubs in `start`, `season`, `playoffs`, `arcade`, `versus` and `versussetup` (default: you play).
 - `SAP_AI_HUMAN=1`: you control the home centre in `aimatch`, `positioning`, `lines`, `penalty` and `fight`. Default off (all AI).

@@ -1,3 +1,5 @@
+using StickAndPuck.Rules;
+
 namespace StickAndPuck.Core;
 
 /// <summary>Home or away. Home defends the -x end in the first period.</summary>
@@ -71,6 +73,9 @@ public sealed record MatchSetup
 
     /// <summary>Gets how a tie after regulation is settled.</summary>
     public OvertimeRule Overtime { get; init; } = OvertimeRule.Shl;
+
+    /// <summary>Gets the mode's own overtime rules (W19), or null to play the format <see cref="Overtime"/> names.</summary>
+    public OvertimeFormat? OvertimeFormat { get; init; }
 
     /// <summary>Gets the club playing on the given side.</summary>
     /// <param name="side">Home or away.</param>
