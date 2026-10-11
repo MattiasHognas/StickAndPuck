@@ -54,6 +54,12 @@ public static class ArcadeSession
     {
         path ??= ArcadeSave.DefaultPath;
         var run = ArcadeRun.New(clubs, userClub, rule, seed ?? Random.Shared.Next());
+        // the best-runs board carries over; a run given up with games played goes on it as it stands
+        if (ArcadeSave.Read(path) is { } old)
+        {
+            run.Records = old.Records;
+            if (!old.IsOver && old.Games.Count > 0) run.Records = ArcadeRecord.Add(old.Records, ArcadeRecord.Of(old));
+        }
         Use(run, clubs, path);
         ArcadeSave.Write(run, path);
         return run;
@@ -76,6 +82,12 @@ public static class ArcadeSession
         if (Current == null || Playing == null) return null;
         var game = Current.Record(result);
         Playing = null;
+        if (Current.IsOver)
+        {
+            var record = ArcadeRecord.Of(Current);
+            Current.Records = ArcadeRecord.Add(Current.Records, record);
+            Current.Place = ArcadeRecord.Place(Current.Records, record);
+        }
         ArcadeSave.Write(Current, SavePath);
         return game;
     }
