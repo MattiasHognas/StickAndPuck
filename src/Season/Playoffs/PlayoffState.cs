@@ -152,8 +152,9 @@ public sealed class PlayoffState
         var away = byId.GetValueOrDefault(s.NextAway) ?? throw new InvalidOperationException($"club {s.NextAway} from the save has no data file");
         var r = QuickSim.Play(home, away, GameSeed(Rounds.Count - 1, index, s.Games.Count));
 
-        // playoff overtime is sudden death until a goal: there are no shootouts
-        return r.Kind == ResultKind.Shootout ? r with { Kind = ResultKind.Overtime } : r;
+        // a simulated game follows the mode's overtime rules like a played one: with no shootout in
+        // the format, a tie is settled in sudden death overtime instead
+        return r.Kind == ResultKind.Shootout && !PlayoffSession.Rules.Overtime.HasShootout ? r with { Kind = ResultKind.Overtime } : r;
     }
 
     PlayoffRound Pair(int round, IEnumerable<int> seeds)

@@ -1,4 +1,5 @@
 using StickAndPuck.Core;
+using StickAndPuck.Rules;
 
 namespace StickAndPuck.Season;
 
@@ -150,7 +151,14 @@ public sealed class PlayoffSelfTest : IScene
         var setup = PlayoffSession.NextSetup()!;
         var series = PlayoffSession.Playing!;
         Check(series is { HighSeed: 8, LowSeed: 9 } && Same(setup.Away.Id, season.UserClub), "the 8th seed opens the play-in away at the 9th");
-        Check(setup.Overtime == OvertimeRule.Shl && setup.Inputs[0].Device == InputDevice.KeyboardMouse, "keyboard and mouse play the human's club");
+        Check(setup.Inputs[0].Device == InputDevice.KeyboardMouse, "keyboard and mouse play the human's club");
+        Check(setup.OvertimeFormat == OvertimeFormat.ShlPlayoffs && OvertimeFormat.Of(setup) is { Skaters: 5, UntilGoal: true, HasShootout: false }, "a playoff game carries the SHL playoff overtime: 5 on 5 until a goal, no shootout");
+        var seasonGame = season.SetupFor(new Fixture(0, 0, setup.Home.Id, setup.Away.Id), clubs);
+        Check(seasonGame.OvertimeFormat == null && OvertimeFormat.Of(seasonGame) == OvertimeFormat.Shl, "a season game keeps 3 on 3 and the shootout");
+        PlayoffSession.Rules = PlayoffSession.Rules with { Name = "test league", Overtime = OvertimeFormat.Shl with { Skaters = 4 } };
+        Check(PlayoffSession.NextSetup()!.OvertimeFormat is { Skaters: 4 }, "a mode with its own playoff rules puts them on the game");
+        PlayoffSession.Rules = PlayoffRules.Shl;
+        PlayoffSession.NextSetup();
         Check(!PlayoffSession.Finish(new FixtureResult(2, 2, ResultKind.Regulation)), "a tie is not a playoff result");
 
         // the match goes to overtime and the home side wins 3-2
