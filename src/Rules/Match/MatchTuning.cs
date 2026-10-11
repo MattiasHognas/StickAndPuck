@@ -9,6 +9,9 @@ public static class MatchTuning
     /// <summary>Players lined up, puck on the dot, before it drops (unless the referee drops it).</summary>
     public const float FaceoffSeconds = 1f;
 
+    /// <summary>How fast the draw pulls the puck back off the dot towards the winning skater, m/s.</summary>
+    public const float DrawSpeed = 3f;
+
     /// <summary>Celebration after a goal before the centre faceoff (W9's replay fits in here).</summary>
     public const float GoalSeconds = 4f;
 
