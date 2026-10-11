@@ -7,7 +7,7 @@ namespace StickAndPuck.Screens;
 /// SAP_SCENE=start, the game's default: the start screen over the rink, and from there seasons,
 /// other modes, settings, pause, results and standings. For screenshots SAP_SCREEN opens one
 /// screen straight away: settings, modes, teams, pause (a match, paused), results (a made-up
-/// 3-2 overtime win) standings (the saved season) or
+/// 3-2 overtime win) standings (the saved season), leaders (its scoring leaders, with ten rounds settled on paper when nothing is played) or
 /// bracket (W16b's playoff test save, its regular season settled on paper). SAP_SCREEN_KEYS scripts the presses
 /// (<see cref="MenuInput"/>), SAP_PERIOD=seconds shortens periods and SAP_HUMAN=0 lets the AI
 /// play, so a headless run can go start, match, results and back.
@@ -39,6 +39,11 @@ public sealed class StartScene : IScene
                 if (SeasonSession.Continue(clubs) == null) SeasonSession.StartNew(clubs, Scenes.DefaultSetup(clubs).Home.Id, 1);
                 ScreenFlow.Push(new StandingsScreen());
                 break;
+            case "leaders":
+                if (SeasonSession.Continue(clubs) == null) SeasonSession.StartNew(clubs, Scenes.DefaultSetup(clubs).Home.Id, 1);
+                StatsScenes.SettleSomeRounds(10);    // an empty season shows nothing; a few rounds on paper fill the page
+                ScreenFlow.Push(new LeadersScreen());
+                break;
             case "bracket":
                 PlayoffScenes.OpenTestSeason(clubs);
                 PlayoffSession.Open();
@@ -57,7 +62,7 @@ public sealed class StartScene : IScene
                 ScreenFlow.Push(new PauseScreen());
                 break;
             default:
-                throw new InvalidOperationException($"SAP_SCREEN={screen}: use start, settings, modes, teams, pause, results, standings or bracket");
+                throw new InvalidOperationException($"SAP_SCREEN={screen}: use start, settings, modes, teams, pause, results, standings, leaders or bracket");
         }
         Console.WriteLine($"SAP: screens: {screen}");
         return world;

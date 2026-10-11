@@ -19,12 +19,11 @@ internal sealed class BracketScreen : MenuScreen
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        return
-        [
-            new MenuItem("PLAY NEXT GAME", ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame()),
-            new MenuItem("TABLE", () => ScreenFlow.Replace(new StandingsScreen())),
-            new MenuItem("MAIN MENU", Back),
-        ];
+        List<MenuItem> items = [new MenuItem("PLAY NEXT GAME", ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame())];
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem("SIM THIS GAME", ScreenFlow.SimSeasonGame, Enabled: ScreenFlow.CanSimGame()));
+        items.Add(new MenuItem("TABLE", () => ScreenFlow.Replace(new StandingsScreen())));
+        items.Add(new MenuItem("MAIN MENU", Back));
+        return items;
     }
 
     /// <inheritdoc/>
@@ -33,7 +32,8 @@ internal sealed class BracketScreen : MenuScreen
         if (PlayoffSession.Current is not { } playoffs) return;
         var clubs = ScreenFlow.Clubs;
         int rows = 4 * 3;
-        int h = 5 + ScreenArt.Row + 2 + Line + 4 + (rows * Line) + 6 + Line + 4 + (3 * ScreenArt.Row) + 4;
+        var items = Items();
+        int h = 5 + ScreenArt.Row + 2 + Line + 4 + (rows * Line) + 6 + Line + 4 + (items.Count * ScreenArt.Row) + 4;
         var (x, top) = art.Panel("SHL PLAYOFFS", PanelW, h, Math.Max(2, (Game.Height - h - 15) / 2));
 
         for (int r = 0; r < PlayoffState.RoundCount; r++)
@@ -51,7 +51,7 @@ internal sealed class BracketScreen : MenuScreen
         top += Line + 4 + (rows * Line) + 6;
         art.Centred(Footer(playoffs, clubs), Game.Width / 2, top, art.Gold);
         top += Line + 4;
-        art.Menu(Items(), Selected, x + 140, PanelW - 280, top);
+        art.Menu(items, Selected, x + 140, PanelW - 280, top);
     }
 
     static void DrawSeries(ScreenArt art, PlayoffSeries series, string user, IReadOnlyList<ClubData> clubs, int x, int y)

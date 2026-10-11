@@ -54,7 +54,7 @@ public sealed class VersusMode : IGameMode
         return [new InputSlot(playerOne, Side.Home), new InputSlot(playerTwo, Side.Away)];
     }
 
-    /// <summary>Player two's device: the first gamepad unless player one holds it, then the keyboard; SAP_VERSUS_P2 overrides.</summary>
+    /// <summary>Player two's device: the settings screen's pick (default the first gamepad) unless player one holds it, then the keyboard; SAP_VERSUS_P2 overrides, and OFF hands the visitors to the AI.</summary>
     /// <param name="playerOne">Player one's device.</param>
     /// <returns>A device different from player one's.</returns>
     public static InputDevice SecondDevice(InputDevice playerOne)
@@ -66,6 +66,8 @@ public sealed class VersusMode : IGameMode
             "pad2" or "gamepad2" => InputDevice.Gamepad2,
             _ => (InputDevice?)null,
         };
+        wanted ??= Screens.ScreenFlow.Prefs.Player2;    // W20: the settings screen's PLAYER 2 CONTROLS
+        if (wanted == InputDevice.None) return InputDevice.None;    // player two turned off: the AI plays the visitors
         if (wanted is { } w && w != playerOne) return w;
         return playerOne == InputDevice.Gamepad1 ? InputDevice.KeyboardMouse : InputDevice.Gamepad1;
     }
