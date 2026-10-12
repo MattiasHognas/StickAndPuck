@@ -48,6 +48,21 @@ public static class Steering
         return new PlayerCommand { Move = move, Sprint = flatOut };
     }
 
+    /// <summary>
+    /// Gets where to skate first on the way to a spot so the skater goes round a net rather than
+    /// into its cage: the spot itself when the way is clear, otherwise a point beside the nearer post
+    /// (<see cref="Cycle.AroundNet"/>), checked for the net at his end of the rink first.
+    /// </summary>
+    /// <param name="from">The skater (x, z).</param>
+    /// <param name="to">The spot (x, z).</param>
+    /// <returns>The spot, or the point to skate to first (x, z).</returns>
+    public static Vector2 AroundNets(Vector2 from, Vector2 to)
+    {
+        int near = from.X >= 0 ? 1 : -1;
+        var way = Cycle.AroundNet(from, to, near);
+        return way != to ? way : Cycle.AroundNet(from, to, -near);
+    }
+
     /// <summary>Gets the point a skater should aim its body at so its blade meets a point, facing it from where the skater is.</summary>
     /// <param name="p">The skater.</param>
     /// <param name="point">Where the blade should be (x, z).</param>

@@ -167,7 +167,7 @@ public sealed class PositioningSelfTest : IScene
             foreach (var p in team.Where(p => Positioning.JobOf(world, p) == Job.Shape)) { t.Shaped++; t.AwaySum += Vector2.Distance(Positioning.IdealOf(world, p), new Vector2(p.Position.X, p.Position.Z)); }
             // offside: an attacking forward over the far blue line while the puck is still outside it
             if (Positioning.PhaseOf(world, side) == TeamPhase.Attack && end * pk.Position.X < RinkSpec.BlueLineX
-                && team.Exists(p => !Roles.IsDefence(Positioning.RoleOf(world, p)) && Positioning.JobOf(world, p) == Job.Shape && end * p.Position.X > RinkSpec.BlueLineX + 0.5f))
+                && team.Exists(p => !Roles.IsDefence(Positioning.RoleOf(world, p)) && Positioning.JobOf(world, p) is Job.Shape or Job.Support && end * p.Position.X > RinkSpec.BlueLineX + 0.5f))
                 t.Offside += 0.5f;
         }
     }

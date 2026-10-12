@@ -30,6 +30,12 @@ public enum Job
     /// <summary>Holding the role's spot in the team shape.</summary>
     Shape,
 
+    /// <summary>
+    /// Off the puck with a teammate carrying it in attack: getting open for a pass around the
+    /// shape spot or the cycle station (W22a), so on purpose away from the shape's ideal spot.
+    /// </summary>
+    Support,
+
     /// <summary>Lining up for a faceoff around the puck.</summary>
     Faceoff,
 
