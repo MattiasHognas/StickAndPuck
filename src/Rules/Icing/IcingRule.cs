@@ -13,7 +13,8 @@ namespace StickAndPuck.Rules;
 /// whistles a faceoff at the offending club's own end-zone dot on the side the puck was sent from.
 /// W44: <see cref="RuleSet.Icing"/> switches it: Hybrid as above, Touch (no race: the icing waits
 /// for the next touch and stands when a defender plays the puck first, an attacker waves it off)
-/// or Off.
+/// or Off. W49: under <see cref="RuleSet.IcingNoChange"/> the icing club keeps the skaters it had
+/// on the ice until the faceoff after the call (<see cref="HoldsLines"/>; W13's lines read it).
 /// </summary>
 internal sealed class IcingRule : ISystem
 {
@@ -33,10 +34,28 @@ internal sealed class IcingRule : ISystem
         return MatchFlow.NearestDot(new Vector3(own * EndDotX, 0, sentFrom.Z >= 0 ? 1 : -1));
     }
 
+    /// <summary>Gets whether a club iced the puck and may not change lines until the puck is dropped (W49).</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The club.</param>
+    /// <returns>True from the icing whistle until play resumes.</returns>
+    public static bool HoldsLines(World world, Side side)
+    {
+        return States.TryGetValue(world, out var s) && s.Held[(int)side];
+    }
+
+    /// <summary>Holds a club's lines as an icing call under <see cref="RuleSet.IcingNoChange"/> does; for the test scenes.</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The icing club.</param>
+    internal static void HoldLines(World world, Side side)
+    {
+        States.GetOrCreateValue(world).Held[(int)side] = true;
+    }
+
     public void Update(World world, float dt)
     {
         var s = States.GetOrCreateValue(world);
         var pk = world.Puck;
+        if (world.Match.Phase == MatchPhase.Play) Array.Clear(s.Held);   // the puck is down: the hold is over
         var call = world.Setup.Rules.Icing;
         if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live || call == IcingCall.Off)
         {
@@ -95,6 +114,7 @@ internal sealed class IcingRule : ISystem
         if (!MatchFlow.Whistle(world, dot)) return;
         var call = new MatchEvent(MatchEventKind.Icing, world.Time, offender, touch, world.Puck.Position);
         world.Events.Publish(call);
+        if (world.Setup.Rules.IcingNoChange) HoldLines(world, offender);
         LineCallsDemo.Log(call, dot);
     }
 
@@ -136,5 +156,8 @@ internal sealed class IcingState
 
     /// <summary>Gets or sets where that player sent the puck from.</summary>
     public Vector3 IcedFrom { get; set; }
+
+    /// <summary>Gets, per side, whether the club iced the puck and keeps its skaters until the drop.</summary>
+    public bool[] Held { get; } = new bool[2];
 
 }

@@ -135,7 +135,7 @@ internal sealed class LinesSystem : ISystem
             {
                 if (b.Changing[(int)side] == null && Best(world, b, side, group) is { } unit) Begin(world, b, side, group, unit);
             }
-            else
+            else if (!IcingRule.HoldsLines(world, side))   // W49: a club that iced the puck keeps its skaters
             {
                 b.Pending[(int)side, (int)group] = true;
             }
@@ -159,6 +159,11 @@ internal sealed class LinesSystem : ISystem
         foreach (var side in BothSides)
         {
             int s = (int)side;
+            if (IcingRule.HoldsLines(world, side))
+            {
+                Hold(world, b, side);
+                continue;
+            }
             if (b.Changing[s] is { } change) Finish(world, b, change, onTheFly: false);
             var squad = b.Squads[s]!;
 
@@ -196,6 +201,19 @@ internal sealed class LinesSystem : ISystem
             }
             b.FirstUnits[s] = false;
         }
+    }
+
+    /// <summary>
+    /// W49, no change after icing: the club that iced the puck faces off with the skaters it had on
+    /// the ice at the whistle. A change on the fly stops where it is (who reached the bench stays
+    /// there), asked-for changes are dropped and a goalie swap waits for the next faceoff.
+    /// </summary>
+    static void Hold(World world, LinesBoard b, Side side)
+    {
+        int s = (int)side;
+        b.Changing[s] = null;
+        foreach (var group in BothGroups) b.Pending[s, (int)group] = false;
+        Log(world, $"{world.Setup.Club(side).ShortName} iced the puck: no line change");
     }
 
     /// <summary>In play, a club whose forwards or defence are tired calls a change on the fly, if it is safe or they are spent.</summary>

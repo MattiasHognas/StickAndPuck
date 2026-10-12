@@ -65,7 +65,7 @@ public static class RuleRows
         Flag(nameof(RuleSet.StackPenalties), "THIRD PENALTY WAITS", "PENALTIES", false, r => r.StackPenalties, (r, v) => r with { StackPenalties = v }),
         Choice(nameof(RuleSet.CoincidentalMinors), "COINCIDENTAL MINORS", "PENALTIES", false, Enum.GetValues<CoincidentalMinors>(), r => r.CoincidentalMinors, (r, v) => r with { CoincidentalMinors = v }),
         Choice(nameof(RuleSet.PenaltySeverity), "PENALTY LENGTHS", "PENALTIES", false, Enum.GetValues<PenaltySeverity>(), r => r.PenaltySeverity, (r, v) => r with { PenaltySeverity = v }),
-        Flag(nameof(RuleSet.IcingNoChange), "NO CHANGE AFTER ICING", "GAME", false, r => r.IcingNoChange, (r, v) => r with { IcingNoChange = v }),
+        Flag(nameof(RuleSet.IcingNoChange), "NO CHANGE AFTER ICING", "GAME", true, r => r.IcingNoChange, (r, v) => r with { IcingNoChange = v }),
         Flag(nameof(RuleSet.Fights), "FIGHTS", "FIGHTS", true, r => r.Fights, (r, v) => r with { Fights = v }),
         Choice(nameof(RuleSet.FightPenalty), "FIGHT PENALTY", "FIGHTS", false, Enum.GetValues<FightPenalty>(), r => r.FightPenalty, (r, v) => r with { FightPenalty = v }),
     ];
