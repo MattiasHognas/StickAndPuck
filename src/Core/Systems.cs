@@ -34,6 +34,7 @@ public static class Systems
             new InputSystem(),           // W4a human input slots -> PlayerCommand
             new PositioningSystem(),     // W6a AI: where each AI player skates
             new DefenceSystem(),         // W22b AI: contain, mark the man, cut lanes, stay home
+            new SpecialTeamsSystem(),    // W22c AI: power play and penalty kill shapes, clears
             new DecisionSystem(),        // W6b AI: chase, pass, shoot
             new PregameSystem(),         // W28 warm-up before the opening faceoff
             new SwitchingSystem(),       // W4c which player each human controls
