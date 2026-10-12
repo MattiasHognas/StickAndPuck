@@ -10,7 +10,7 @@ namespace StickAndPuck.Players;
 /// </summary>
 internal static class KeyInput
 {
-    /// <summary>Whether the action's key or pad button (on either pad) went down this frame.</summary>
+    /// <summary>Whether the action's key or pad button (on any pad) went down this frame.</summary>
     /// <param name="settings">The settings holding the bindings.</param>
     /// <param name="action">The action.</param>
     /// <returns>Whether it was pressed.</returns>
@@ -19,7 +19,7 @@ internal static class KeyInput
         var b = KeyBindings.Of(settings, action);
         if ((b.Key != KeyboardKey.Null && IsKeyPressed(b.Key)) || (b.Alt != KeyboardKey.Null && IsKeyPressed(b.Alt))) return true;
         if (b.Button == GamepadButton.Unknown) return false;
-        for (int pad = 0; pad < 2; pad++)
+        for (int pad = 0; pad < Gamepads.MaxSlots; pad++)    // W38: any slot a pad landed in
             if (IsGamepadAvailable(pad) && IsGamepadButtonPressed(pad, b.Button)) return true;
         return false;
     }
