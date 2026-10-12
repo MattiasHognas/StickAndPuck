@@ -20,6 +20,8 @@ internal sealed class MatchRules : ISystem
         MatchDemo.Update(world);
         var s = MatchFlow.State(world);
         var m = world.Match;
+        // W40: from the horn the celebration poses every player, then hands over to the final
+        if (Celebration.Update(world, s, dt)) return;
         switch (m.Phase)
         {
             case MatchPhase.Intro:
@@ -127,12 +129,13 @@ internal sealed class MatchRules : ISystem
         }
     }
 
-    static void EndMatch(World world, FlowState s)
+    /// <summary>The horn: MatchEnd with the winner, then the celebration (W40) holds the final for a while, or the final at once after a tie.</summary>
+    internal static void EndMatch(World world, FlowState s)
     {
         var m = world.Match;
-        m.Phase = MatchPhase.Final;
         world.Puck.Live = false;
         Side? winner = m.Score[0] > m.Score[1] ? Side.Home : m.Score[1] > m.Score[0] ? Side.Away : null;
+        m.Phase = Celebration.Begin(world, s, winner) ? MatchPhase.Stopped : MatchPhase.Final;
         world.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, world.Time, winner));
         Log(world, s, "final");
     }

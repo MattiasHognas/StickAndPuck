@@ -5,10 +5,12 @@ using StickAndPuck.Camera;
 using StickAndPuck.Fights;
 using StickAndPuck.Goalie;
 using StickAndPuck.Hud;
+using StickAndPuck.Intermission;
 using StickAndPuck.Lighting;
 using StickAndPuck.Lines;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
+using StickAndPuck.Pregame;
 using StickAndPuck.Referee;
 using StickAndPuck.Rules;
 using StickAndPuck.Screens;
@@ -33,6 +35,7 @@ public static class Systems
             new PositioningSystem(),     // W6a AI: where each AI player skates
             new DefenceSystem(),         // W22b AI: contain, mark the man, cut lanes, stay home
             new DecisionSystem(),        // W6b AI: chase, pass, shoot
+            new PregameSystem(),         // W28 warm-up before the opening faceoff
             new SwitchingSystem(),       // W4c which player each human controls
             new LinesSystem(),           // W13 fatigue, line changes, goalie swap
             new SkatingSystem(),         // W4a movement from commands and traits
@@ -47,11 +50,13 @@ public static class Systems
             new PenaltyRules(),          // W14 calls, box, power play
             new FightSystem(),           // W15
             new RefereeSystem(),         // W8 skates, drops the puck, signals
+            new StatsSystem(),           // W25 player stats, player of the game
             new ScheduleSystem(),        // W16a season schedule and standings
             new AutosaveSystem(),        // W16a autosave after each match
             new PlayoffSystem(),         // W16b
             new ArcadeSystem(),          // W16c
             new CameraSystem(),          // W9 gameplay and replay camera
+            new IntermissionSystem(),    // W31 the Zamboni between periods
             new LightingSystem(),        // W18 time of day, light cues
             new AudioSystem(),           // W12 8-bit effects
             new ArenaSystem(),           // W2 ice, boards, glass, nets, ads, crowd

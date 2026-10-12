@@ -346,9 +346,7 @@ internal sealed class OvertimeRules : ISystem
         s.Stage = ShootoutStage.Done;
         var m = world.Match;
         m.Score[(int)winner]++;
-        m.Phase = MatchPhase.Final;
-        world.Puck.Live = false;
-        world.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, world.Time, winner));
+        MatchRules.EndMatch(world, MatchFlow.State(world));
         Log(world, $"final after the shootout, {world.Setup.Club(winner).ShortName} win it");
     }
 

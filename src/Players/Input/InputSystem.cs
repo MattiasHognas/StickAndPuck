@@ -23,10 +23,10 @@ internal sealed class InputSystem : ISystem
             var device = inputs[slot].Device;
             var state = device switch
             {
-                InputDevice.KeyboardMouse when padFree => InputDevices.Merge(InputDevices.KeyboardMouse(), InputDevices.Gamepad(0)),
-                InputDevice.KeyboardMouse => InputDevices.KeyboardMouse(),
-                InputDevice.Gamepad1 => InputDevices.Gamepad(0),
-                InputDevice.Gamepad2 => InputDevices.Gamepad(1),
+                InputDevice.KeyboardMouse when padFree => InputDevices.Merge(InputDevices.KeyboardMouse(world.Settings), InputDevices.Gamepad(0, world.Settings)),
+                InputDevice.KeyboardMouse => InputDevices.KeyboardMouse(world.Settings),
+                InputDevice.Gamepad1 => InputDevices.Gamepad(0, world.Settings),
+                InputDevice.Gamepad2 => InputDevices.Gamepad(1, world.Settings),
                 _ => default,
             };
 

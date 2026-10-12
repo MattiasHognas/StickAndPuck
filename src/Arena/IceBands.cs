@@ -8,11 +8,12 @@ namespace StickAndPuck.Arena;
 /// <summary>
 /// The flat diagonal light bands across the ice, like the Blender render: pairs of a wide and a
 /// thin band, rising to the right on screen, clipped to the rounded rink so none spill past the
-/// boards. Built once, drawn just above the ice and below the markings.
+/// boards. Built once, drawn on the ice plane with the depth test but no depth write, so a goalie or
+/// puck drawn earlier stays in front and the markings drawn later z-fight nothing.
 /// </summary>
 internal static class IceBands
 {
-    const float Y = 0.001f;               // on the ice; drawn without a depth test, before the markings
+    const float Y = 0f;                   // on the ice plane; the sheet writes no depth while the bands go down
     const float Slope = -0.73f;           // x change per metre of z: about 36 degrees off the short axis
     static readonly List<Vector3[]> Polygons = [];
 
@@ -75,19 +76,17 @@ internal static class IceBands
         return output;
     }
 
-    /// <summary>Draws the bands in one flat colour.</summary>
+    /// <summary>Draws the bands in one flat colour. The caller has turned depth writes off.</summary>
     /// <param name="tone">The band colour; alpha 0 skips them.</param>
     public static void Draw(Color tone)
     {
         if (tone.A == 0) return;
         Rlgl.DrawRenderBatchActive();
         Rlgl.DisableBackfaceCulling();
-        Rlgl.DisableDepthTest();
         foreach (var poly in Polygons)
             for (int i = 1; i + 1 < poly.Length; i++)
                 DrawTriangle3D(poly[0], poly[i], poly[i + 1], tone);
         Rlgl.DrawRenderBatchActive();
-        Rlgl.EnableDepthTest();
         Rlgl.EnableBackfaceCulling();
     }
 }

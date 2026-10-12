@@ -92,6 +92,49 @@ public static class SeasonSession
         return true;
     }
 
+    /// <summary>
+    /// W26: plays the human's current game off screen instead of on the ice, with the same
+    /// <see cref="QuickSim"/> the other games of the round use (and the playoffs' other series),
+    /// then records and saves it exactly as a played game: the result goes into the fixture or the
+    /// series, the rest of the round is settled and the save is written. Null when there is nothing
+    /// to play; once the regular season is over it starts the playoffs and sims the next playoff game.
+    /// </summary>
+    /// <returns>The game that was simmed, with its result, or null.</returns>
+    public static SimmedGame? SimCurrentGame()
+    {
+        if (Current is not { } season) return null;
+        ClubData? Find(string id) => Clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
+
+        if (!season.IsOver)
+        {
+            if (season.NextGame is not { } game || Find(game.Home) is not { } home || Find(game.Away) is not { } away) return null;
+            Playing = game;
+            var result = QuickSim.Play(home, away, season.GameSeed(game.Number));
+            if (!Finish(result)) return null;
+            Save();
+            Console.WriteLine($"SAP: simmed season game {game.Number + 1}, round {game.Round + 1}: {game.Home} {result.HomeGoals}-{result.AwayGoals} {game.Away} ({result.Kind})");
+            return new SimmedGame(game.Home, game.Away, result, Playoff: false, $"ROUND {game.Round + 1}");
+        }
+
+        if (PlayoffSession.Open() is not { } playoffs || PlayoffSession.NextSetup(InputDevice.None) is not { } setup || PlayoffSession.Playing is not { } series) return null;
+        int round = playoffs.Rounds.Count - 1, index = playoffs.Current.Series.IndexOf(series), gameNo = series.Games.Count;
+        string stage = playoffs.Current.Name;    // read before Finish, which may draw the next round
+        var r = QuickSim.Play(setup.Home, setup.Away, playoffs.GameSeed(round, index, gameNo));
+        if (r.Kind == ResultKind.Shootout && !PlayoffSession.Rules.Overtime.HasShootout) r = r with { Kind = ResultKind.Overtime };    // W19: the mode's overtime rules, SHL playoffs have no shootout
+        if (!PlayoffSession.Finish(r)) return null;
+        Save();
+        Console.WriteLine($"SAP: simmed playoff game {gameNo + 1} of {stage}: {setup.Home.Id} {r.HomeGoals}-{r.AwayGoals} {setup.Away.Id} ({r.Kind})");
+        return new SimmedGame(setup.Home.Id, setup.Away.Id, r, Playoff: true, $"{stage} GAME {gameNo + 1}");
+    }
+
+    /// <summary>Writes the save when the season changed, as <see cref="AutosaveSystem"/> does after a played match.</summary>
+    static void Save()
+    {
+        if (!Unsaved || Current is not { } season) return;
+        SeasonSave.Write(season, SavePath);
+        Unsaved = false;
+    }
+
     static void Use(SeasonState season, IReadOnlyList<ClubData> clubs, string path)
     {
         Current = season;
@@ -100,3 +143,11 @@ public static class SeasonSession
         Playing = null;
     }
 }
+
+/// <summary>A game settled by <see cref="SeasonSession.SimCurrentGame"/>.</summary>
+/// <param name="Home">The home club's id.</param>
+/// <param name="Away">The away club's id.</param>
+/// <param name="Result">The result.</param>
+/// <param name="Playoff">True for a playoff game, false for a regular season game.</param>
+/// <param name="Stage">The round or series stage, for the screen ("ROUND 12", "FINAL GAME 3").</param>
+public sealed record SimmedGame(string Home, string Away, FixtureResult Result, bool Playoff, string Stage);

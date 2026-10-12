@@ -25,7 +25,7 @@ public static class Game
     {
         var clubs = Clubs.LoadAll();
         Console.WriteLine($"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}");
-        var world = Scenes.CreateFromEnvironment(clubs, new Settings());
+        var world = Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
         bool headless = string.Equals(Environment.GetEnvironmentVariable("SAP_SCREENSHOT"), "1", StringComparison.Ordinal);
         var recorder = FrameRecorder.FromEnvironment();
 
@@ -56,7 +56,7 @@ public static class Game
             // W11: a screen started a match or went back to the menus; the new world gets fresh systems
             if (ScreenFlow.TakeNextWorld() is { } next) (world, systems) = (next, Restart(next, systems));
 
-            Draw(world, systems, pixel, render, showFps: recorder == null);
+            Draw(world, systems, pixel, render, showFps: recorder == null && world.Settings.FpsLine);
             if (recorder?.Save(world) == true) break;
 
             // F12 saves a frame; SAP_SCREENSHOT=1 saves one after a second and quits (headless checks)
