@@ -22,6 +22,9 @@ public sealed record ClubData
 
     /// <summary>Gets the match squad: 4 forward lines, 3 defence pairs and 2 goalies in a full club.</summary>
     public IReadOnlyList<PlayerData> Roster { get; init; } = [];
+
+    /// <summary>Gets how the club plays: forecheck, zone entry and power play (W22d, src/AI/Tactics).</summary>
+    public ClubTactics Tactics { get; init; } = new();
 }
 
 /// <summary>A kit's colours as palette hex strings such as "#c8574a".</summary>

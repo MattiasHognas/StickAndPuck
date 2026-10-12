@@ -14,6 +14,11 @@
     "accent": "#e9b646",
     "helmet": "#008e52"
   },
+  "tactics": {
+    "forecheck": "aggressive",
+    "entry": "carry",
+    "powerPlay": "oneThreeOne"
+  },
   "roster": [
     {
       "number": 35,
