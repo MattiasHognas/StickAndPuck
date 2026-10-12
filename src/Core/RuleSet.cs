@@ -127,6 +127,12 @@ public sealed record RuleSet
         PenaltiesCarryIntoOvertime = false,
         StackPenalties = false,
         PenaltySeverity = PenaltySeverity.MinorsOnly,
+        Interference = false,
+        Holding = false,
+        HighSticking = false,
+        CrossChecking = false,
+        Boarding = false,
+        Roughing = false,
         FightPenalty = FightPenalty.LoserMinor,
         IcingNoChange = false,
     };
@@ -187,6 +193,24 @@ public sealed record RuleSet
 
     /// <summary>Gets which penalty lengths are handed out (W47).</summary>
     public PenaltySeverity PenaltySeverity { get; init; } = PenaltySeverity.Full;
+
+    /// <summary>Gets a value indicating whether the referee calls interference: a hit on a skater without the puck (W47).</summary>
+    public bool Interference { get; init; } = true;
+
+    /// <summary>Gets a value indicating whether the referee calls holding: close trailing contact on a slowed carrier (W47).</summary>
+    public bool Holding { get; init; } = true;
+
+    /// <summary>Gets a value indicating whether the referee calls high-sticking: the stick up on a face-to-face check (W47).</summary>
+    public bool HighSticking { get; init; } = true;
+
+    /// <summary>Gets a value indicating whether the referee calls cross-checking: a hard hit from the front on the carrier (W47).</summary>
+    public bool CrossChecking { get; init; } = true;
+
+    /// <summary>Gets a value indicating whether the referee calls boarding: a hard hit from behind near the boards (W47).</summary>
+    public bool Boarding { get; init; } = true;
+
+    /// <summary>Gets a value indicating whether the referee calls roughing: a hit after the whistle, or the same skater hit again at once (W47).</summary>
+    public bool Roughing { get; init; } = true;
 
     /// <summary>Gets what a fight costs (W48).</summary>
     public FightPenalty FightPenalty { get; init; } = FightPenalty.MajorAndEjection;

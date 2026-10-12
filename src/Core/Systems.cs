@@ -8,6 +8,7 @@ using StickAndPuck.Hud;
 using StickAndPuck.Intermission;
 using StickAndPuck.Lighting;
 using StickAndPuck.Lines;
+using StickAndPuck.Momentum;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Pregame;
@@ -35,6 +36,7 @@ public static class Systems
             new PositioningSystem(),     // W6a AI: where each AI player skates
             new DefenceSystem(),         // W22b AI: contain, mark the man, cut lanes, stay home
             new SpecialTeamsSystem(),    // W22c AI: power play and penalty kill shapes, clears
+            new TacticsSystem(),         // W22d AI: club tactics: forecheck, trap, dump and chase
             new DecisionSystem(),        // W6b AI: chase, pass, shoot
             new PregameSystem(),         // W28 warm-up before the opening faceoff
             new SwitchingSystem(),       // W4c which player each human controls
@@ -60,6 +62,7 @@ public static class Systems
             new IntermissionSystem(),    // W31 the Zamboni between periods
             new LightingSystem(),        // W18 time of day, light cues
             new AudioSystem(),           // W12 8-bit effects
+            new MomentumSystem(),        // W29 boost after a goal, a fight won or a big hit; crowd swell, HUD bar
             new ArenaSystem(),           // W2 ice, boards, glass, nets, ads, crowd
             new SkaterRenderer(),        // W4a skater models and clips
             new HudSystem(),             // W10 scorebug, clock, messages

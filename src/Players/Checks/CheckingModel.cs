@@ -116,27 +116,4 @@ public static class CheckingModel
         }
         return best;
     }
-
-    /// <summary>Gets how far over a player's body leans: 0 upright, 1 flat on the ice. A fallen player tips over quickly.</summary>
-    /// <param name="p">The player.</param>
-    /// <returns>The lean.</returns>
-    public static float Lean(Player p)
-    {
-        return p.Action == PlayerAction.Fallen ? Math.Min(1f, p.ActionTime / 0.2f) : 0f;
-    }
-
-    /// <summary>Gets the rotation a skater model is drawn with: the heading, tipped onto its side by <see cref="Lean"/>.</summary>
-    /// <param name="p">The player.</param>
-    /// <returns>An axis and an angle in degrees, as DrawModelEx takes them.</returns>
-    public static (Vector3 Axis, float Degrees) BodyRotation(Player p)
-    {
-        float lean = Lean(p);
-        if (lean <= 0) return (Vector3.UnitY, p.Heading * 180f / MathF.PI);
-        var q = Quaternion.Concatenate(
-            Quaternion.CreateFromAxisAngle(Vector3.UnitZ, lean * 85f * MathF.PI / 180f),
-            Quaternion.CreateFromAxisAngle(Vector3.UnitY, p.Heading));
-        float angle = 2f * MathF.Acos(Math.Clamp(q.W, -1f, 1f));
-        float s = MathF.Sqrt(Math.Max(1e-8f, 1f - q.W * q.W));
-        return (new Vector3(q.X, q.Y, q.Z) / s, angle * 180f / MathF.PI);
-    }
 }

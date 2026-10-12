@@ -14,6 +14,11 @@
     "accent": "#c8102e",
     "helmet": "#002e5f"
   },
+  "tactics": {
+    "forecheck": "balanced",
+    "entry": "dumpAndChase",
+    "powerPlay": "mixed"
+  },
   "roster": [
     {
       "number": 63,

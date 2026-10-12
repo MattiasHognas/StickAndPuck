@@ -97,12 +97,13 @@ internal static class InputDevices
     }
 
     /// <summary>A gamepad through the button bindings (W39); the left stick always skates, the bound buttons (the d-pad by default) too. By default right trigger sprints, A shoots, X passes, B checks, Y switches and accepts, LB changes line, RB blocks, start pauses.</summary>
-    /// <param name="pad">The gamepad index.</param>
+    /// <param name="index">0 for the first connected pad, 1 for the second (W38: not the Raylib slot).</param>
     /// <param name="settings">The settings holding the bindings.</param>
-    /// <returns>What is held, or nothing when no pad is connected.</returns>
-    public static DeviceState Gamepad(int pad, Settings settings)
+    /// <returns>What is held, or nothing when that pad is not connected.</returns>
+    public static DeviceState Gamepad(int index, Settings settings)
     {
-        if (!IsGamepadAvailable(pad)) return default;
+        int pad = Gamepads.Slot(index);
+        if (pad < 0) return default;
         bool Button(GameAction action) => PadDown(pad, KeyBindings.Of(settings, action).Button);
 
         var move = Stick(GetGamepadAxisMovement(pad, GamepadAxis.LeftX), GetGamepadAxisMovement(pad, GamepadAxis.LeftY));

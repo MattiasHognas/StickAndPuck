@@ -62,6 +62,12 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
                 poses[p.Id] = (pc, frame);
                 continue;
             }
+            if (p.Action == PlayerAction.Fallen && Find("fall") is >= 0 and var down)
+            {
+                // W64: a knocked-down skater plays the fall clip, which lies flat on the ice, and holds its last frame
+                poses[p.Id] = (down, p.ActionTime * ClipFps);
+                continue;
+            }
             int want = p.Action == PlayerAction.Shoot ? Find("shoot") : p.Speed > 0.4f ? Find("skate") : Find("idle");
             if (want != clip) { clip = want; frame = 0; }
             if (p.Action == PlayerAction.Shoot) frame = p.ActionTime * ClipFps;
@@ -107,8 +113,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
                 model.Materials[i].Shader = render.Toon;
                 SetMaterialTexture(ref model.Materials[i], MaterialMapIndex.Albedo, kit);
             }
-            var (axis, degrees) = CheckingModel.BodyRotation(p);
-            DrawModelEx(model, p.Position, axis, degrees, new Vector3(Scale), Color.White);
+            DrawModelEx(model, p.Position, Vector3.UnitY, p.Heading * 180f / MathF.PI, new Vector3(Scale), Color.White);
         }
     }
 
@@ -121,8 +126,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
             for (int i = 0; i < model.MaterialCount; i++) model.Materials[i].Shader = render.Mask;
             int id = p.MaskId;
             var c = new Color((byte)(40 + id * 37 % 200), (byte)(90 + id * 59 % 160), (byte)(200 - id * 23 % 150), (byte)255);
-            var (axis, degrees) = CheckingModel.BodyRotation(p);
-            DrawModelEx(model, p.Position, axis, degrees, new Vector3(Scale), c);
+            DrawModelEx(model, p.Position, Vector3.UnitY, p.Heading * 180f / MathF.PI, new Vector3(Scale), c);
         }
     }
 
