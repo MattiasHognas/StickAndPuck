@@ -9,12 +9,14 @@ namespace StickAndPuck.Camera;
 /// height and tilt, in whole pixels, and zooms with speed when <see cref="Settings.CameraZoom"/> is on.
 /// Goals cut to a low angled replay. Runs after every gameplay system, so it sees this step's
 /// positions and events. F6 toggles the zoom while trying it out (a dev key); SAP_CAMERA_ZOOM=0 or 1
-/// sets it at start, for headless checks.
+/// sets it at start, for headless checks. W30 adds the impact feel (hit-stop, shake, rumble, the
+/// fight close-up) and draws the marker under each skater a person controls.
 /// </summary>
 internal sealed class CameraSystem : ISystem
 {
     readonly FollowCamera follow = new();
     readonly Replay replay = new();
+    readonly Impact impact = new();
 
     public bool RunsWhilePaused => true;
 
@@ -31,6 +33,7 @@ internal sealed class CameraSystem : ISystem
         if (world.Match.Paused) return;   // the frame holds while a screen is up
         if (Players.KeyInput.Pressed(world.Settings, GameAction.Zoom)) world.Settings = world.Settings with { CameraZoom = !world.Settings.CameraZoom };
 
+        impact.Update(world, dt);
         if (replay.Update(world, dt)) follow.Cut(world);
         if (Replay.Playing)
         {
@@ -39,7 +42,12 @@ internal sealed class CameraSystem : ISystem
         }
 
         follow.Update(world, dt);
-        world.Camera = follow.Camera;
+        world.Camera = impact.Apply(follow.Camera, follow.PixelStep);
+    }
+
+    public void DrawScene(World world, RenderContext render)
+    {
+        if (!Replay.Playing) Render.Marker.Draw(world);
     }
 
     public void DrawHud(World world, RenderContext render)

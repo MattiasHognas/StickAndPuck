@@ -43,6 +43,9 @@ internal sealed class FollowCamera
     /// <summary>Gets the camera for the current state.</summary>
     public Camera3D Camera { get; private set; } = BroadcastCamera.Straight();
 
+    /// <summary>Gets one pixel of the frame at the far boards, in metres; a camera moved by whole steps of this keeps the boards on the pixel grid.</summary>
+    public float PixelStep => PixelAtFarBoards();
+
     /// <summary>Jumps straight to where the camera wants to be, with no easing (start of play, end of a replay).</summary>
     /// <param name="world">The match state.</param>
     public void Cut(World world)
