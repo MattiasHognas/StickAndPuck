@@ -3,16 +3,16 @@
   "name": "Timrå IK",
   "shortName": "TIK",
   "home": {
-    "primary": "#124a97",
+    "primary": "#c8102e",
     "secondary": "#ffffff",
-    "accent": "#e33125",
-    "helmet": "#124a97"
+    "accent": "#124a97",
+    "helmet": "#c8102e"
   },
   "away": {
     "primary": "#ffffff",
-    "secondary": "#124a97",
-    "accent": "#e33125",
-    "helmet": "#124a97"
+    "secondary": "#c8102e",
+    "accent": "#124a97",
+    "helmet": "#c8102e"
   },
   "roster": [
     {

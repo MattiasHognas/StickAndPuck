@@ -9,9 +9,9 @@
     "helmet": "#002d59"
   },
   "away": {
-    "primary": "#ffffff",
+    "primary": "#ffd500",
     "secondary": "#002d59",
-    "accent": "#ffd500",
+    "accent": "#ffffff",
     "helmet": "#002d59"
   },
   "roster": [

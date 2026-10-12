@@ -5,13 +5,13 @@
   "home": {
     "primary": "#1a1a1a",
     "secondary": "#ffcc00",
-    "accent": "#ffffff",
+    "accent": "#e30613",
     "helmet": "#1a1a1a"
   },
   "away": {
     "primary": "#ffffff",
-    "secondary": "#1a1a1a",
-    "accent": "#ffcc00",
+    "secondary": "#ffcc00",
+    "accent": "#e30613",
     "helmet": "#1a1a1a"
   },
   "roster": [

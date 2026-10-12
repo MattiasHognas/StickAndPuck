@@ -3,15 +3,15 @@
   "name": "Skellefteå AIK",
   "shortName": "SAIK",
   "home": {
-    "primary": "#fbb906",
-    "secondary": "#1a1a1a",
-    "accent": "#ffffff",
+    "primary": "#1a1a1a",
+    "secondary": "#fbb906",
+    "accent": "#c8102e",
     "helmet": "#1a1a1a"
   },
   "away": {
-    "primary": "#ffffff",
+    "primary": "#fbb906",
     "secondary": "#1a1a1a",
-    "accent": "#fbb906",
+    "accent": "#c8102e",
     "helmet": "#1a1a1a"
   },
   "roster": [

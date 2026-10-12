@@ -3,16 +3,16 @@
   "name": "Malmö Redhawks",
   "shortName": "MIF",
   "home": {
-    "primary": "#ba0c2f",
-    "secondary": "#1a1a1a",
-    "accent": "#f3c944",
-    "helmet": "#ba0c2f"
+    "primary": "#1a1a1a",
+    "secondary": "#ba0c2f",
+    "accent": "#ffffff",
+    "helmet": "#1a1a1a"
   },
   "away": {
     "primary": "#ffffff",
     "secondary": "#ba0c2f",
     "accent": "#1a1a1a",
-    "helmet": "#ba0c2f"
+    "helmet": "#1a1a1a"
   },
   "roster": [
     {
