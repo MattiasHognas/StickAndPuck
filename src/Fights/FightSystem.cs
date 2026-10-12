@@ -156,6 +156,7 @@ internal sealed class FightSystem : ISystem, IDisposable
             var p = world.Players[f.PlayerId];
             Place(p, fight.Spot + (fight.Spot.X < p.Position.X ? 1 : -1) * new Vector3(FightTuning.HalfGap, 0, 0), fight.Spot);
         }
+        BackOff(world, fight, dt);
 
         fight.StageTime += dt;
         switch (fight.Stage)
@@ -169,6 +170,32 @@ internal sealed class FightSystem : ISystem, IDisposable
             default:
                 if (fight.StageTime >= FightTuning.EndSeconds) End(world, s, fight, penalise: true);
                 break;
+        }
+    }
+
+    /// <summary>
+    /// W30: everyone else gives the fighters room. A skater inside the ring around the fight glides
+    /// out to its edge and faces the fighters; nobody is pulled from farther away.
+    /// </summary>
+    static void BackOff(World world, Fight fight, float dt)
+    {
+        foreach (var p in world.Players)
+        {
+            if (!p.OnIce || p.IsGoalie || fight.Of(p.Id) != null) continue;
+            var away = p.Position - fight.Spot;
+            away.Y = 0;
+            float d = away.Length();
+            if (d >= FightTuning.Room) continue;
+            var dir = d > 0.01f ? away / d : new Vector3(p.Side == Side.Home ? -1 : 1, 0, 0);
+            // undo any skating in toward the fight this step, then glide out
+            float inward = Math.Max(0, -Vector3.Dot(p.Velocity, dir));
+            float step = Math.Min(FightTuning.Room - d, (FightTuning.BackOffSpeed + inward) * dt);
+            var to = p.Position + (dir * step);
+            p.Position = new Vector3(
+                Math.Clamp(to.X, -RinkSpec.HalfLength + 1f, RinkSpec.HalfLength - 1f), p.Position.Y,
+                Math.Clamp(to.Z, -RinkSpec.HalfWidth + 0.6f, RinkSpec.HalfWidth - 0.6f));
+            p.Velocity = dir * FightTuning.BackOffSpeed;
+            p.Heading = MathF.Atan2(-dir.X, -dir.Z);
         }
     }
 
