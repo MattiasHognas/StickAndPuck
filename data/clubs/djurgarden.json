@@ -3,16 +3,16 @@
   "name": "Djurgårdens IF",
   "shortName": "DIF",
   "home": {
-    "primary": "#0568af",
-    "secondary": "#e21f26",
-    "accent": "#ffec0d",
-    "helmet": "#0568af"
+    "primary": "#2b3a6e",
+    "secondary": "#ffec0d",
+    "accent": "#a6192e",
+    "helmet": "#2b3a6e"
   },
   "away": {
-    "primary": "#ffffff",
-    "secondary": "#0568af",
-    "accent": "#e21f26",
-    "helmet": "#0568af"
+    "primary": "#f6b83c",
+    "secondary": "#2b3a6e",
+    "accent": "#a6192e",
+    "helmet": "#2b3a6e"
   },
   "roster": [
     {

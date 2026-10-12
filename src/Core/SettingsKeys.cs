@@ -29,6 +29,9 @@ public enum GameAction
     /// <summary>Body check.</summary>
     Check,
 
+    /// <summary>Deke past a defender with the puck (W32).</summary>
+    Deke,
+
     /// <summary>Switch player.</summary>
     Switch,
 
@@ -83,6 +86,7 @@ public static class KeyBindings
         [GameAction.Shoot] = new(KeyboardKey.Space, KeyboardKey.Null, GamepadButton.RightFaceDown),
         [GameAction.Pass] = new(KeyboardKey.E, KeyboardKey.Null, GamepadButton.RightFaceLeft),
         [GameAction.Check] = new(KeyboardKey.Q, KeyboardKey.Null, GamepadButton.RightFaceRight),
+        [GameAction.Deke] = new(KeyboardKey.R, KeyboardKey.Null, GamepadButton.RightTrigger1),
         [GameAction.Switch] = new(KeyboardKey.C, KeyboardKey.Null, GamepadButton.RightFaceUp),
         [GameAction.LineChange] = new(KeyboardKey.L, KeyboardKey.Null, GamepadButton.LeftTrigger1),
         [GameAction.Block] = new(KeyboardKey.LeftControl, KeyboardKey.Null, GamepadButton.RightTrigger1),
