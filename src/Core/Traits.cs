@@ -41,6 +41,18 @@ public sealed record Traits
     /// <summary>Gets how quickly a goalie reacts to shots.</summary>
     public int GoalieReflexes { get; init; } = 50;
 
+    /// <summary>Gets how well a goalie's glove hand stops shots on that side; the weaker hand is the side shooters pick.</summary>
+    public int GoalieGlove { get; init; } = 50;
+
+    /// <summary>Gets how well a goalie's blocker (stick hand) stops shots on that side.</summary>
+    public int GoalieBlocker { get; init; } = 50;
+
+    /// <summary>Gets how often a goalie holds a shot, and how soft and wide the rebounds it leaves are.</summary>
+    public int GoalieReboundControl { get; init; } = 50;
+
+    /// <summary>Gets how well a goalie plays the puck: stopping dump-ins behind the net and passing it out to a teammate.</summary>
+    public int GoaliePuckHandling { get; init; } = 50;
+
     /// <summary>Gets <see cref="HockeyIq"/> as 0..1, the odds the AI's reads roll against.</summary>
     [JsonIgnore]
     public float Iq => Unit(HockeyIq);

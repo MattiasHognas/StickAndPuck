@@ -108,8 +108,26 @@ public static class MatchFlow
         world.Puck.Position = s.Dot;
         world.Puck.Velocity = Vector3.Zero;
         world.Puck.Live = true;
+        Draw(world, s);
         world.Events.Publish(new MatchEvent(MatchEventKind.Faceoff, world.Time, Position: s.Dot));
         return true;
+    }
+
+    /// <summary>
+    /// The draw: the two skaters nearest the dot, one per club, contest it on puck control and hockey
+    /// IQ with some luck, and the puck is pulled back towards the winner's blade. Without it the puck
+    /// lay still on the dot and the quicker centre to skate onto it won every draw.
+    /// </summary>
+    static void Draw(World world, FlowState s)
+    {
+        Player? Centre(Side side) => world.OnIce(side).Where(p => !p.IsGoalie).MinBy(p => Vector3.DistanceSquared(p.Position, s.Dot));
+        if (Centre(Side.Home) is not { } home || Centre(Side.Away) is not { } away) return;
+        static float Skill(Player p) => 0.5f + Traits.Unit(p.Data.Traits.PuckControl) + 0.5f * p.Data.Traits.Iq;
+        float h = Skill(home), a = Skill(away);
+        var winner = s.Dice.NextSingle() * (h + a) < h ? home : away;
+        var pull = winner.Position + (winner.Position - s.Dot) * 0.5f - s.Dot;
+        pull.Y = 0;
+        if (pull.LengthSquared() > 1e-6f) world.Puck.Velocity = Vector3.Normalize(pull) * MatchTuning.DrawSpeed;
     }
 
     /// <summary>Gets the faceoff dot nearest a point on the ice.</summary>
@@ -168,6 +186,11 @@ internal sealed class FlowState
     public Vector3 Dot { get; set; }
 
     public bool RefereeDrops { get; set; }
+
+    /// <summary>Gets the luck in the draws; seeded so test runs repeat.</summary>
+#pragma warning disable S2245 // gameplay dice, not security
+    public Random Dice { get; } = new(43);
+#pragma warning restore S2245
 
     /// <summary>Gets or sets how long a goalie has held the puck in play.</summary>
     public float Held { get; set; }

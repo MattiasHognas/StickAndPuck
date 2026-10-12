@@ -57,6 +57,33 @@ public static class Positioning
         return Board(world).Get(p.Id)?.Ideal ?? new Vector2(p.Position.X, p.Position.Z);
     }
 
+    /// <summary>Gets a skater's station in his side's attacking-zone cycle (W22a).</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="p">The skater.</param>
+    /// <returns>The station, or null when he is not cycling.</returns>
+    public static Station? StationOf(World world, Player p)
+    {
+        return Board(world).Get(p.Id)?.Station;
+    }
+
+    /// <summary>Gets whether a side is cycling the puck in the attacking zone this step (W22a).</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The club.</param>
+    /// <returns>True while it cycles.</returns>
+    public static bool Cycling(World world, Side side)
+    {
+        return Board(world).Cycle[(int)side].Active;
+    }
+
+    /// <summary>Gets what a side's cycle came to this match (W22a).</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The club.</param>
+    /// <returns>The tally.</returns>
+    public static CycleTally CycleOf(World world, Side side)
+    {
+        return Board(world).Cycle[(int)side].Tally;
+    }
+
     /// <summary>Gets whether a side is attacking or defending this step.</summary>
     /// <param name="world">The match.</param>
     /// <param name="side">The club.</param>
@@ -108,6 +135,9 @@ internal sealed class PositioningBoard
     /// <summary>Gets each side's phase, indexed by <see cref="Side"/>.</summary>
     public TeamPhase[] Phase { get; } = [TeamPhase.Defend, TeamPhase.Defend];
 
+    /// <summary>Gets each side's attacking-zone cycle (W22a), indexed by <see cref="Side"/>.</summary>
+    public CycleState[] Cycle { get; } = [new(), new()];
+
     /// <summary>Gets the on-ice skaters the roles were handed out to, so they are only redone after a change.</summary>
     public string Lineup { get; set; } = "";
 
@@ -144,6 +174,15 @@ internal sealed class SkaterPlan
 
     /// <summary>Gets or sets when the misjudgement is next re-rolled.</summary>
     public float ErrorUntil { get; set; } = float.NegativeInfinity;
+
+    /// <summary>Gets or sets the skater's cycle station this step, or null (W22a).</summary>
+    public Station? Station { get; set; }
+
+    /// <summary>Gets or sets the spot this skater last read as open for a pass, or null (W22a).</summary>
+    public Vector2? Open { get; set; }
+
+    /// <summary>Gets or sets when the skater next reads where to get open.</summary>
+    public float OpenNext { get; set; }
 
     public Vector2? Request { get; set; }
 
