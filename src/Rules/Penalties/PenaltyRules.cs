@@ -18,6 +18,10 @@ namespace StickAndPuck.Rules;
 /// empty it; the first overtime faceoff then takes the format's skaters as the full strength.
 /// Waiting third penalties show in the box with their clock standing; skaters kept in the box after
 /// their time go to the bench at the next stoppage.
+/// W47: each call is graded (<see cref="PenaltyModel.Grade"/>); a power play goal ends a minor or
+/// the running half of a double minor, never a major; misconducts run on their own clock; hits in
+/// the moments after the whistle can be called as roughing. The box shows majors with a game
+/// misconduct as "5:00 GM" and misconducts as "10:00 MISC".
 /// </summary>
 internal sealed class PenaltyRules : ISystem, IDisposable
 {
@@ -52,6 +56,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         }
 
         if (float.IsNaN(book.FirstDrop) && m.Phase == MatchPhase.Play) book.FirstDrop = world.Time;     // the referee drops the puck after this system runs
+        if (m.Phase == MatchPhase.Stopped && book.LastPhase != MatchPhase.Stopped) book.StoppedAt = world.Time;
         if (m.Phase == MatchPhase.Faceoff && book.LastPhase != MatchPhase.Faceoff) AtFaceoff(world, book);
         book.LastPhase = m.Phase;
         RunClocks(world, book);
@@ -67,7 +72,12 @@ internal sealed class PenaltyRules : ISystem, IDisposable
                 Penalties.CallDelayed(world, book);
             }
         }
-        else if (book.Delayed.Count > 0)
+        else if (m.Phase == MatchPhase.Stopped && world.Settings.Penalties && world.Time - book.StoppedAt < PenaltyTuning.AfterWhistle)
+        {
+            LateHits(world, book);
+        }
+
+        if (m.Phase != MatchPhase.Play && book.Delayed.Count > 0)
         {
             // play stopped by itself (offside, icing, a frozen puck, the period's end): the call is made now
             if (m.Phase == MatchPhase.Stopped) MatchFlow.State(world).Dot = Penalties.FaceoffDot(world, book.Delayed[0].Side);
@@ -132,9 +142,19 @@ internal sealed class PenaltyRules : ISystem, IDisposable
             if (left <= 0.0001f) Penalties.End(world, book, p, "served");
             else m.Penalties[m.Penalties.IndexOf(p)] = p with { SecondsLeft = left };
         }
+        foreach (var p in book.Misconducts.ToList())
+        {
+            float left = p.SecondsLeft - ran;
+            if (left <= 0.0001f) Penalties.EndMisconduct(world, book, p);
+            else book.Misconducts[book.Misconducts.IndexOf(p)] = p with { SecondsLeft = left };
+        }
     }
 
-    /// <summary>A goal against the offending club waves its delayed calls off; a power play goal ends the shortest penalty of the club scored on.</summary>
+    /// <summary>
+    /// A goal against the offending club waves its delayed calls off; a power play goal ends the
+    /// shortest minor of the club scored on, or the running half of a double minor (W47); a major
+    /// is served in full.
+    /// </summary>
     static void Goals(World world, PenaltyBook book)
     {
         foreach (var goal in world.Events.Of(MatchEventKind.Goal))
@@ -143,10 +163,27 @@ internal sealed class PenaltyRules : ISystem, IDisposable
             var other = scorer == Side.Home ? Side.Away : Side.Home;
             if (book.Delayed.RemoveAll(d => d.Side == other) > 0) book.Log(world, "delayed call waved off by the goal");
             if (Penalties.Serving(world, scorer) < Penalties.Serving(world, other)
-                && world.Match.Penalties.Where(p => p.Side == other && !Penalties.Substituted(world, p.PlayerId)).MinBy(p => p.SecondsLeft) is { } shortest)
-                Penalties.End(world, book, shortest, "power play goal");
+                && world.Match.Penalties.Where(p => p.Side == other && !Penalties.Substituted(world, p.PlayerId) && Ends(world, p)).MinBy(p => p.SecondsLeft) is { } shortest)
+            {
+                float minor = Penalties.MinorSeconds(world);
+                if (Penalties.SeverityOf(world, shortest.PlayerId) == Severity.DoubleMinor && shortest.SecondsLeft > minor + 0.0001f)
+                {
+                    world.Match.Penalties[world.Match.Penalties.IndexOf(shortest)] = shortest with { SecondsLeft = minor };
+                    book.Log(world, $"power play goal ends the first half of {Penalties.Name(world, world.Players[shortest.PlayerId])}'s double minor");
+                }
+                else
+                {
+                    Penalties.End(world, book, shortest, "power play goal");
+                }
+            }
             return;     // MatchRules counts one goal per step
         }
+    }
+
+    /// <summary>Gets whether a power play goal can end a penalty: minors and double minors, not majors (W47).</summary>
+    static bool Ends(World world, PenaltyState p)
+    {
+        return Penalties.SeverityOf(world, p.PlayerId) is Severity.Minor or Severity.DoubleMinor or Severity.MinorAndMisconduct;
     }
 
     /// <summary>Judges every check this step and every close chase of the carrier.</summary>
@@ -154,14 +191,38 @@ internal sealed class PenaltyRules : ISystem, IDisposable
     {
         foreach (var check in world.Events.Of(MatchEventKind.Check).ToList())
         {
-            if (PenaltyModel.Judge(world, check) is { } foul) Roll(world, book, foul);
+            if (PenaltyModel.Judge(world, check, Again(world, book, check)) is { } foul) Roll(world, book, foul, check.Strength);
         }
-        foreach (var foul in PenaltyModel.Chases(world, dt).ToList()) Roll(world, book, foul);
+        foreach (var foul in PenaltyModel.Chases(world, dt).ToList()) Roll(world, book, foul, 0);
+        foreach (var foul in PenaltyModel.Holds(world, dt).ToList()) Roll(world, book, foul, 0);
     }
 
-    static void Roll(World world, PenaltyBook book, Foul foul)
+    /// <summary>W47: hits in the moments after the whistle can only be roughing.</summary>
+    static void LateHits(World world, PenaltyBook book)
     {
-        if (book.Rng.NextSingle() < foul.Chance * Penalties.Strictness * world.Setup.Rules.StrictnessScale) Penalties.Signal(world, foul.PlayerId, foul.Infraction);
+        foreach (var check in world.Events.Of(MatchEventKind.Check).ToList())
+        {
+            if (PenaltyModel.Judge(world, check, afterWhistle: true) is { } foul) Roll(world, book, foul, check.Strength, afterWhistle: true);
+        }
+    }
+
+    /// <summary>Notes the hit and gets whether the checker hit the same skater a moment ago (W47, roughing).</summary>
+    static bool Again(World world, PenaltyBook book, MatchEvent check)
+    {
+        var target = world.Players
+            .Where(p => p.Side != check.Side && p.OnIce && !p.IsGoalie)
+            .MinBy(p => System.Numerics.Vector3.DistanceSquared(p.Position, check.Position));
+        if (target == null) return false;
+        bool again = book.LastHit.TryGetValue(check.PlayerId, out var last) && last.Target == target.Id && world.Time - last.Time < PenaltyTuning.RoughingWindow;
+        book.LastHit[check.PlayerId] = (target.Id, world.Time);
+        return again;
+    }
+
+    static void Roll(World world, PenaltyBook book, Foul foul, float strength, bool afterWhistle = false)
+    {
+        if (book.Rng.NextSingle() >= foul.Chance * Penalties.Strictness * world.Setup.Rules.StrictnessScale) return;
+        var severity = PenaltyModel.Grade(world.Setup.Rules, foul.Infraction, strength, book.Rng.NextSingle());
+        Penalties.Signal(world, foul.PlayerId, foul.Infraction, severity, afterWhistle);
     }
 
     /// <summary>Gets the offending club once it touches the puck: it carries it, or last played it.</summary>
@@ -174,7 +235,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         return book.Delayed.Exists(d => d.Side == side) ? side : null;
     }
 
-    /// <summary>The penalty scene's scripted call: a few seconds after the opening drop, once away has the puck, the home skater nearest it trips someone.</summary>
+    /// <summary>The penalty scene's scripted call: a few seconds after the opening drop, once away has the puck, the home skater nearest it trips someone (or boards him, W47).</summary>
     static void Script(World world, PenaltyBook book)
     {
         if (float.IsNaN(book.ScriptAfterDrop) || float.IsNaN(book.FirstDrop) || world.Time - book.FirstDrop < book.ScriptAfterDrop) return;
@@ -185,7 +246,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         var offender = world.OnIce(Side.Home)
             .Where(p => !p.IsGoalie && p.Id != world.Puck.Carrier)
             .MinBy(p => System.Numerics.Vector3.DistanceSquared(p.Position, world.Puck.Position));
-        if (offender != null) Penalties.Signal(world, offender.Id, Infraction.Tripping);
+        if (offender != null) Penalties.Signal(world, offender.Id, book.ScriptCall.Infraction, book.ScriptCall.Severity);
     }
 
     /// <summary>Penalties end before the shootout and with the match, and with regulation unless they carry into overtime: skaters in the box go to the bench and delayed calls are dropped.</summary>
@@ -208,13 +269,19 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         {
             foreach (var p in m.Penalties.Where(p => p.Side == side).OrderBy(p => p.SecondsLeft))
             {
-                string text = $"#{world.Players[p.PlayerId].Data.Number} {MatchFlow.ClockText(p.SecondsLeft)}";
+                string text = $"#{world.Players[p.PlayerId].Data.Number} {MatchFlow.ClockText(p.SecondsLeft)}{(Penalties.Ejected(world, p.PlayerId) ? " GM" : "")}";
                 Row(art, world.Setup.Club(side).Id, text, "panel_red", x, y, h, pad, crest, gap);
                 y += h + 1;
             }
             foreach (var p in Penalties.Waiting(world).Where(p => p.Side == side))
             {
                 string text = $"#{world.Players[p.PlayerId].Data.Number} NEXT {MatchFlow.ClockText(p.SecondsLeft)}";
+                Row(art, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
+                y += h + 1;
+            }
+            foreach (var p in Penalties.Misconducts(world).Where(p => p.Side == side))
+            {
+                string text = $"#{world.Players[p.PlayerId].Data.Number} {MatchFlow.ClockText(p.SecondsLeft)} MISC";
                 Row(art, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
                 y += h + 1;
             }

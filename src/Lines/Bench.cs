@@ -144,6 +144,23 @@ public static class Bench
             ?? skaters.OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault();
     }
 
+    /// <summary>
+    /// Takes an ejected player (W47) out of his club's squad for the rest of the match: off the ice
+    /// if he is on it, out of his line or pair, and a skater from the last unit moves up into the gap
+    /// (<see cref="Squad.Remove"/>). The penalty box keeps him off the bench (<see cref="Rules.Penalties.InBox"/>).
+    /// </summary>
+    /// <param name="world">The match.</param>
+    /// <param name="p">The ejected player.</param>
+    public static void Eject(World world, Player p)
+    {
+        SendOff(world, p);
+        if (SquadOf(world, p.Side) is not { } squad) return;
+        var unit = squad.UnitOf(p);
+        var up = squad.Remove(p);
+        if (unit != null && Rules.MatchFlow.State(world).Log)
+            Console.WriteLine($"LINES: {world.Setup.Club(p.Side).ShortName} {unit.Name} refilled{(up == null ? " short" : $" with {up.Data.LastName}")}");
+    }
+
     internal static IEnumerable<Player> OnIce(World world, Side side, Group group)
     {
         return world.OnIce(side).Where(p => !p.IsGoalie && Squad.GroupOf(p) == group);

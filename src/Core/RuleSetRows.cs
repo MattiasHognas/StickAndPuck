@@ -42,8 +42,8 @@ public sealed record RuleRow(string Key, string Label, string Group, bool Plays,
 }
 
 /// <summary>
-/// Every rule switch, in page order: Game (offside, icing, goalie pull), Overtime, Penalties and
-/// Fights. W45 to W49 flip their row's <see cref="RuleRow.Plays"/> when they wire the rule.
+/// Every rule switch, in page order: Game (offside, icing, goalie pull), Overtime, Penalties,
+/// Infractions (W47) and Fights. W45 to W49 flip their row's <see cref="RuleRow.Plays"/> when they wire the rule.
 /// </summary>
 public static class RuleRows
 {
@@ -64,7 +64,13 @@ public static class RuleRows
         Flag(nameof(RuleSet.PenaltiesCarryIntoOvertime), "CARRY INTO OT", "PENALTIES", false, r => r.PenaltiesCarryIntoOvertime, (r, v) => r with { PenaltiesCarryIntoOvertime = v }),
         Flag(nameof(RuleSet.StackPenalties), "THIRD PENALTY WAITS", "PENALTIES", false, r => r.StackPenalties, (r, v) => r with { StackPenalties = v }),
         Choice(nameof(RuleSet.CoincidentalMinors), "COINCIDENTAL MINORS", "PENALTIES", false, Enum.GetValues<CoincidentalMinors>(), r => r.CoincidentalMinors, (r, v) => r with { CoincidentalMinors = v }),
-        Choice(nameof(RuleSet.PenaltySeverity), "PENALTY LENGTHS", "PENALTIES", false, Enum.GetValues<PenaltySeverity>(), r => r.PenaltySeverity, (r, v) => r with { PenaltySeverity = v }),
+        Choice(nameof(RuleSet.PenaltySeverity), "PENALTY LENGTHS", "PENALTIES", true, Enum.GetValues<PenaltySeverity>(), r => r.PenaltySeverity, (r, v) => r with { PenaltySeverity = v }),
+        Flag(nameof(RuleSet.Interference), "INTERFERENCE", "INFRACTIONS", true, r => r.Interference, (r, v) => r with { Interference = v }),
+        Flag(nameof(RuleSet.Holding), "HOLDING", "INFRACTIONS", true, r => r.Holding, (r, v) => r with { Holding = v }),
+        Flag(nameof(RuleSet.HighSticking), "HIGH-STICKING", "INFRACTIONS", true, r => r.HighSticking, (r, v) => r with { HighSticking = v }),
+        Flag(nameof(RuleSet.CrossChecking), "CROSS-CHECKING", "INFRACTIONS", true, r => r.CrossChecking, (r, v) => r with { CrossChecking = v }),
+        Flag(nameof(RuleSet.Boarding), "BOARDING", "INFRACTIONS", true, r => r.Boarding, (r, v) => r with { Boarding = v }),
+        Flag(nameof(RuleSet.Roughing), "ROUGHING", "INFRACTIONS", true, r => r.Roughing, (r, v) => r with { Roughing = v }),
         Flag(nameof(RuleSet.IcingNoChange), "NO CHANGE AFTER ICING", "GAME", true, r => r.IcingNoChange, (r, v) => r with { IcingNoChange = v }),
         Flag(nameof(RuleSet.Fights), "FIGHTS", "FIGHTS", true, r => r.Fights, (r, v) => r with { Fights = v }),
         Choice(nameof(RuleSet.FightPenalty), "FIGHT PENALTY", "FIGHTS", false, Enum.GetValues<FightPenalty>(), r => r.FightPenalty, (r, v) => r with { FightPenalty = v }),
