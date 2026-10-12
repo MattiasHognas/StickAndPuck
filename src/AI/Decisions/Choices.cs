@@ -26,11 +26,19 @@ public readonly record struct PassOption(Player Receiver, Vector2 Target, float 
 /// </summary>
 public static class Choices
 {
+    /// <summary>What keeping the puck in the attacking-zone cycle is worth on top of its spot (W22a).</summary>
+    public const float CycleKeep = 0.08f;
+
+    /// <summary>What losing the puck on a pass costs in the cycle, where a turnover gives up the zone (W22a).</summary>
+    public const float CycleTurnover = 0.2f;
+
     /// <summary>Passes shorter than this are not worth making.</summary>
     public const float ShortestPass = 4f;
 
     const float Reaction = 0.2f;     // seconds before a defender reacts to a pass
     const float StickReach = 0.8f;   // how far from the blade a defender can knock a pass down
+    const int LaneSamples = 8;
+    const float CloseStick = 1.4f;   // a stick this near the puck as it leaves covers every lane on its side       // points along a lane checked against each defender
 
     /// <summary>Gets how good a shot from a spot is: 1 on the doorstep, about 0.4 in the slot, near 0 from the blue line or a bad angle.</summary>
     /// <param name="end">The attacked end, +1 or -1.</param>
@@ -104,23 +112,53 @@ public static class Choices
     {
         float length = Vector2.Distance(from, to);
         float react = Reaction + 0.5f * (1f - Traits.Unit(hockeyIq));
+        Span<float> times = stackalloc float[LaneSamples + 1];
+        SampleTimes(length, speed, times);
         float success = 1f;
         foreach (var (at, top) in defenders)
         {
             float worst = 0f;
-            for (int i = 0; i <= 8; i++)
+            for (int i = 0; i <= LaneSamples; i++)
             {
-                float f = i / 8f;
+                float f = i / (float)LaneSamples;
                 var point = Vector2.Lerp(from, to, f);
-                float puckTime = PuckHandling.SlideTime(length * f, speed);
+                float puckTime = times[i];
                 float reach = Math.Max(0f, Vector2.Distance(at, point) - StickReach);
                 // a stick already in the lane needs no reaction: the puck runs into it
                 float margin = react * Math.Min(1f, reach / 0.6f) + reach / Math.Max(top, 1f) - puckTime;
                 worst = Math.Max(worst, 1f / (1f + MathF.Exp(margin / 0.08f)));
             }
+
+            // W22a: a stick right at the release, on the side the pass goes, gets a touch on it nearly every time
+            var near = at - from;
+            float gap = near.Length();
+            if (gap < CloseStick && length > 1e-3f && Vector2.Dot(near / Math.Max(gap, 1e-3f), (to - from) / length) > 0.2f) worst = Math.Max(worst, 0.85f);
             success *= 1f - worst;
         }
         return success;
+    }
+
+    /// <summary>
+    /// Fills in when a sliding puck reaches each of <see cref="LaneSamples"/> + 1 evenly spaced points
+    /// along a lane, in one pass of the same friction maths as <see cref="PuckHandling.SlideTime"/>,
+    /// so lane reads stay cheap enough for every off-puck skater to make many of them (W22a).
+    /// </summary>
+    /// <param name="length">The lane's length in metres.</param>
+    /// <param name="speed">The pass speed.</param>
+    /// <param name="times">Seconds to each point; 5 s for points the puck never reaches.</param>
+    static void SampleTimes(float length, float speed, Span<float> times)
+    {
+        const float step = 1 / 60f;
+        float covered = 0, t = 0;
+        int next = 0;
+        while (next < times.Length && speed > 0.1f && t < 5f)
+        {
+            while (next < times.Length && covered >= length * next / (times.Length - 1)) times[next++] = t;
+            covered += speed * step;
+            speed -= (Physics.PuckTuning.IceFriction + Physics.PuckTuning.Drag * speed) * step;
+            t += step;
+        }
+        for (; next < times.Length; next++) times[next] = t;
     }
 
     /// <summary>Gets how much room a spot has: 0 with a defender on it, 1 with none within 4 m.</summary>

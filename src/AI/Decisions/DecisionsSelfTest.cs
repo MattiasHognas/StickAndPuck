@@ -13,7 +13,10 @@ namespace StickAndPuck.AI;
 /// puck handling, goalies, puck physics, match rules) and checks it reaches the final with
 /// passes, shots, checks and goals on both sides. Then plays the same clubs with every skater's
 /// hockey IQ set to 90 on one side and 20 on the other, both ways round, and checks the smart
-/// side completes clearly more of its passes: the "done when" of W6b. The defence (W22b) runs too,
+/// side completes clearly more of its passes: the "done when" of W6b.
+/// W22a adds: the jitter's odds, the cycle stations and their path round the net, that AI passes go to
+/// moving teammates in open ice, that both clubs cycle and take the puck behind the net, and that a
+/// hockey IQ 100 club still fumbles and misses now and then while a 20 club gets lucky. The defence (W22b) runs too,
 /// so each side throws 15 to 30 checks; SAP_SCENE=defencetest checks its reads in detail. SAP_SEED picks the full match's seed (default 1).
 /// </summary>
 public sealed class DecisionsSelfTest : IScene
@@ -27,8 +30,11 @@ public sealed class DecisionsSelfTest : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         ChoicesMaths();
+        JitterMaths();
+        CycleMaths();
         var match = FullMatch(clubs, settings);
         HockeyIq(clubs, settings);
+        Stars(clubs, settings);
         Console.WriteLine(failures == 0 ? "AIMATCHTEST: all checks passed" : $"AIMATCHTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
         return match;
@@ -56,6 +62,63 @@ public sealed class DecisionsSelfTest : IScene
         Check(poorSees > smartSees + 0.2f, $"a poor passer thinks a lane a defender can close is open ({poorSees:F2} vs {smartSees:F2})");
     }
 
+    /// <summary>W22a: the jitter's odds come out as the trait says over many rolls.</summary>
+    void JitterMaths()
+    {
+#pragma warning disable S2245 // fixed seed so the check repeats
+        var rng = new Random(7);
+#pragma warning restore S2245
+        (float Fumble, float Lucky) Share(int iq)
+        {
+            int fumbles = 0, lucky = 0;
+            for (int i = 0; i < 20000; i++)
+            {
+                var outcome = Jitter.Roll(rng, iq).Outcome;
+                if (outcome == ReadOutcome.Fumble) fumbles++;
+                else if (outcome == ReadOutcome.Lucky) lucky++;
+            }
+            return (fumbles / 20000f, lucky / 20000f);
+        }
+        var star = Share(100);
+        var poor = Share(10);
+        Check(star.Fumble is > 0.02f and < 0.07f && star.Lucky < 1e-6f, $"a hockey IQ 100 skater still fumbles now and then ({star.Fumble:P1} of reads)");
+        Check(poor.Fumble > star.Fumble * 2.5f && poor.Lucky > 0.08f, $"a hockey IQ 10 skater fumbles more and sometimes gets lucky ({poor.Fumble:P1} fumbled, {poor.Lucky:P1} lucky)");
+        Check(Jitter.Fumbled(100) < 70 && Jitter.Fumbled(100) > 40, $"a star's fumble plays like an average player (hockey IQ {Jitter.Fumbled(100)})");
+    }
+
+    /// <summary>W22a: the cycle's stations sit where they should and its path goes round the cage.</summary>
+    void CycleMaths()
+    {
+        bool inside = true, order = true, around = true;
+        foreach (int end in new[] { -1, 1 })
+            foreach (float cs in new[] { -1f, 1f })
+            {
+                var slot = Cycle.Spot(Station.Slot, end, cs);
+                var corner = Cycle.Spot(Station.Corner, end, cs);
+                var behind = Cycle.Spot(Station.BehindNet, end, cs);
+                foreach (var spot in new[] { slot, corner, behind }) inside &= Vector2.Distance(spot, TeamShape.Inside(spot, 1.2f)) < 1e-4f && !Cycle.ThroughNet(spot, spot);
+                order &= end * behind.X > RinkSpec.GoalLineX + RinkSpec.NetDepth && end * slot.X < RinkSpec.GoalLineX - 5f && corner.Y * cs > 5f;
+
+                // walk from each station to each other one, a metre at a time toward the next waypoint
+                foreach (var from in new[] { slot, corner, behind })
+                    foreach (var to in new[] { slot, corner, behind })
+                    {
+                        var at = from;
+                        for (int i = 0; i < 80 && Vector2.Distance(at, to) > 0.5f; i++)
+                        {
+                            var way = Cycle.AroundNet(at, to, end);
+                            var next = at + Vector2.Normalize(way - at) * Math.Min(1f, Vector2.Distance(at, way));
+                            if (Cycle.ThroughNet(at, next)) around = false;
+                            at = next;
+                        }
+                        if (Vector2.Distance(at, to) > 0.5f) around = false;
+                    }
+            }
+        Check(inside, "every cycle station is on the ice and clear of the cage");
+        Check(order, "the stations are behind the net, low in the corner on its side and out in the slot");
+        Check(around, "a skater going from station to station goes round the net, never through it");
+    }
+
     /// <summary>A whole regulation match, every skater AI.</summary>
     World FullMatch(IReadOnlyList<ClubData> clubs, Settings settings)
     {
@@ -72,6 +135,17 @@ public sealed class DecisionsSelfTest : IScene
         Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 10, "goals are scored, about as many as in a real match");
         Check(h.Checks is >= 15 and <= 30 && a.Checks is >= 15 and <= 30, "the AI throws 15 to 30 checks a side, like a real match (W22b)");
         Check(still < 15f, "the AI never leaves a loose puck lying");
+
+        // W22a: passes to moving, open teammates, and a cycle in the attacking zone
+        float moving = (float)(h.ToMoving + a.ToMoving) / Math.Max(1, h.Aimed + a.Aimed);
+        float open = (float)(h.ToOpen + a.ToOpen) / Math.Max(1, h.Aimed + a.Aimed);
+        var hc = Positioning.CycleOf(world, Side.Home);
+        var ac = Positioning.CycleOf(world, Side.Away);
+        Console.WriteLine($"      passes to a moving teammate {moving:P0}, to one with nobody within 3 m {open:P0}; cycle: {hc.Entries} and {ac.Entries} times, {hc.Turns} and {ac.Turns} turns, {hc.Seconds:F0} and {ac.Seconds:F0} s, puck behind the net {hc.BehindNet:F0} and {ac.BehindNet:F0} s");
+        Check(moving > 0.5f, "most AI passes go to a teammate on the move");
+        Check(open > 0.5f, "most AI passes go to a teammate in open ice");
+        Check(hc.Entries >= 10 && ac.Entries >= 10 && hc.Turns >= 20 && ac.Turns >= 20, "both clubs cycle in the attacking zone, turning the forwards over");
+        Check(hc.BehindNet > 5f && ac.BehindNet > 5f, "the cycle takes the puck behind the net");
         return world;
     }
 
@@ -94,6 +168,21 @@ public sealed class DecisionsSelfTest : IScene
         Check(smart > poor + 0.1f, "the smarter club completes clearly more of its passes");
         float smartLostShare = (float)smartLost / Math.Max(1, smartTotal), poorLostShare = (float)poorLost / Math.Max(1, poorPasses);
         Check(smartLostShare < poorLostShare * 0.75f, "the smarter club's passes are picked off less often");
+    }
+
+    /// <summary>W22a: hockey IQ 100 against 20 for two periods; the stars still fumble and miss now and then, the weak side gets lucky.</summary>
+    void Stars(IReadOnlyList<ClubData> clubs, Settings settings)
+    {
+        var world = Make(clubs, settings, 15 * 60, 100, 20);
+        Play(world, Systems(world, 23), 2 * 15 * 60 + 300, stopAfter: 3);
+        var star = Decisions.Tally(world, Side.Home);
+        var poor = Decisions.Tally(world, Side.Away);
+        float rate = (float)star.StarFumbles / Math.Max(1, star.StarRolls);
+        Console.WriteLine($"      hockey IQ 100: {star.StarFumbles} fumbles in {star.StarRolls} reads ({rate:P1}), {star.Completed}/{star.Passes} passes completed; hockey IQ 20: {poor.Lucky} lucky reads in {poor.Rolls}, {poor.Completed}/{poor.Passes} completed");
+        Check(star.StarFumbles > 0 && rate < 0.08f, "a hockey IQ 100 club still fumbles a read now and then");
+        Check(star.Completed < star.Passes, "a hockey IQ 100 club still misses a pass now and then");
+        Check(poor.Lucky > 0, "a hockey IQ 20 club gets lucky now and then");
+        Check(star.Completion > poor.Completion, "hockey IQ 100 still passes better than 20");
     }
 
     static World Make(IReadOnlyList<ClubData> clubs, Settings settings, float period, int? smartHome, int? smartAway)
