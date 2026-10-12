@@ -130,7 +130,7 @@ internal sealed class MomentumSystem : ISystem, IDisposable
     }
 }
 
-/// <summary>W29: the momentum bar under the scorebug: the boosted club's crest and a bar in its colour that drains with the boost.</summary>
+/// <summary>W29: the momentum bar under the scorebug and any penalty rows (W48): the boosted club's crest and a bar in its colour that drains with the boost.</summary>
 internal static class MomentumBar
 {
     /// <summary>Draws the bar.</summary>
@@ -143,7 +143,10 @@ internal static class MomentumBar
         const int pad = 3, crest = 16, gap = 4, barH = 4;
         const string label = "MOMENTUM";
         int x = art.BugPosition.X;
-        int y = art.BugPosition.Y + art.BugSize.H + 3;
+        // below the penalty box rows (20 px and a 1 px gap each), which share the spot under the scorebug
+        int rows = world.Match.Penalties.Count + Penalties.Waiting(world).Count + Penalties.Misconducts(world).Count + Penalties.Delayed(world).Count
+            + (Lines.GoaliePull.IsPulled(world, Side.Home) ? 1 : 0) + (Lines.GoaliePull.IsPulled(world, Side.Away) ? 1 : 0);
+        int y = Math.Max(art.BugPosition.Y + art.BugSize.H + 3, HudSystem.PenaltyTop + (rows * 21) + (rows > 0 ? 2 : 0));
         int w = pad + crest + gap + art.Measure(label) + pad + 1;
         int h = crest + (pad * 2);
         bool fresh = world.Time - Momentum.State(world).Since[(int)side] < 1.5f && ((int)(world.Time * 6) % 2 == 0);

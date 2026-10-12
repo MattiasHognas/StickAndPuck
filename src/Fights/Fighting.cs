@@ -160,8 +160,9 @@ public sealed class Fight
 /// the middle lands (harder the closer to the middle) unless the other fighter gets his guard up just
 /// in time (inside <see cref="FightTuning.BlockFresh"/> of the punch landing). A fighter whose balance
 /// runs out goes down; after <see cref="FightTuning.MaxExchanges"/> the linesmen step in and the one
-/// with less balance loses. The loser serves two minutes for fighting through W14's penalty box; the
-/// winner stays on. Fights happen in regulation only, never involve goalies, and never put a club three short.
+/// with less balance loses. The penalty follows the rule set (W48): the loser's two minutes (Arcade), or
+/// coincidental 5 minute majors for both, with a game misconduct under SHL. Fights happen in regulation
+/// only, never involve goalies, and never put a club three short.
 /// </summary>
 public static class Fighting
 {
@@ -216,8 +217,8 @@ public static class Fighting
 
     /// <summary>
     /// Offers a fight between a checker and the skater he hit. Nothing happens if fights are off, play is
-    /// not running in regulation, either is a goalie, off the ice, in the box or about to be, either club
-    /// already serves the most penalties it can, or another fight or offer is on.
+    /// not running in regulation, either is a goalie, off the ice, in the box or about to be, the loser's
+    /// minor would put a club three short, or another fight or offer is on.
     /// </summary>
     /// <param name="world">The match.</param>
     /// <param name="checkerId">The checker.</param>
@@ -254,9 +255,19 @@ public static class Fighting
         foreach (var p in new[] { pa, pb })
         {
             if (p.IsGoalie || !p.OnIce || Penalties.InBox(world, p.Id) || Penalties.Delayed(world).Any(d => d.PlayerId == p.Id)) return false;
-            if (Penalties.Serving(world, p.Side) + Penalties.Delayed(world).Count(d => d.Side == p.Side) >= PenaltyTuning.MaxServing) return false;
+            if (ShortsClub(world) && Penalties.Serving(world, p.Side) + Penalties.Delayed(world).Count(d => d.Side == p.Side) >= PenaltyTuning.MaxServing) return false;
         }
         return true;
+    }
+
+    /// <summary>
+    /// Gets whether the fight penalty can put a club three short (W48): only the loser's minor, and only
+    /// when a third penalty does not wait its turn. Coincidental majors are substituted and never do.
+    /// </summary>
+    static bool ShortsClub(World world)
+    {
+        var rules = world.Setup.Rules;
+        return rules.FightPenalty == FightPenalty.LoserMinor && !rules.StackPenalties;
     }
 
     /// <summary>Gets the human slot playing for a club, or -1 when the AI plays it.</summary>
