@@ -298,7 +298,6 @@ internal sealed class DecisionSystem : ISystem
     {
         PassOption? best = null;
         float vision = Choices.Vision(smart);
-        var keep = p.Command;
         foreach (var mate in world.OnIce(p.Side))
         {
             if (mate == p || mate.IsGoalie || mate.Action == PlayerAction.Fallen) continue;
@@ -309,11 +308,8 @@ internal sealed class DecisionSystem : ISystem
             if (smart >= 50 && Choices.Offside(end, at, Flat(mate.Position))) continue;
             if (Cycle.ThroughNet(at, target)) continue;   // W37's cage stops a pass through it
 
-            // the stick has to point so puck handling picks this teammate
-            p.Command = keep with { Move = Vector2.Normalize(target - at) };
-            bool picked = PuckHandling.PickReceiver(world, p) == mate;
-            p.Command = keep;
-            if (!picked) continue;
+            // the stick has to point so puck handling picks this teammate; asked without touching his command
+            if (PuckHandling.PickReceiver(world, p, Vector2.Normalize(target - at)) != mate) continue;
 
             float success = Choices.LaneSuccess(at, target, speed, seen, smart);
             float value = success * Choices.SpotValue(end, target) * (0.5f + 0.5f * Choices.Room(target, seen)) - (1f - success) * (cycling ? Choices.CycleTurnover : 0.08f);
