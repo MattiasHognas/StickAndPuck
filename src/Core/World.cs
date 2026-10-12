@@ -13,7 +13,7 @@ public sealed class World
     /// <param name="settings">Player options.</param>
     public World(MatchSetup setup, Settings settings)
     {
-        Setup = setup;
+        Setup = AI.DifficultyScale.Apply(setup, settings.Difficulty);   // W29: easy and hard scale the AI club's traits
         Settings = settings;
         Match.Clock = setup.PeriodSeconds;
     }

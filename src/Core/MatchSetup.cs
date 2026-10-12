@@ -48,7 +48,7 @@ public sealed record InputSlot(InputDevice Device, Side Side);
 
 /// <summary>
 /// Everything needed to start a match, so season, arcade and player vs player modes all start one
-/// the same way: the two clubs, who is human, period length and the overtime rule.
+/// the same way: the two clubs, who is human, period length, the overtime rule and the rules (W44).
 /// </summary>
 public sealed record MatchSetup
 {
@@ -77,6 +77,38 @@ public sealed record MatchSetup
     /// <summary>Gets the mode's own overtime rules (W19), or null to play the format <see cref="Overtime"/> names.</summary>
     public OvertimeFormat? OvertimeFormat { get; init; }
 
+    /// <summary>Gets the rules the match is played by (W44), resolved when it starts; systems read their switches here.</summary>
+    public RuleSet Rules { get; init; } = RuleSet.Shl;
+
+    /// <summary>
+    /// This setup played by a rule set (W44): the set goes on <see cref="Rules"/>, and its overtime
+    /// switch picks the format. A setup whose mode pinned its own <see cref="OvertimeFormat"/> is a
+    /// playoff game (W19) and takes <see cref="RuleSet.PlayoffOvertime"/>, keeping the mode's own
+    /// format for sudden death; every other game takes <see cref="RuleSet.Overtime"/>. A setup
+    /// whose tie stands (<see cref="OvertimeRule.None"/>, the test scenes) keeps it.
+    /// </summary>
+    /// <param name="rules">The resolved rules.</param>
+    /// <returns>The setup to start.</returns>
+    public MatchSetup WithRules(RuleSet rules)
+    {
+        var setup = this with { Rules = rules };
+        if (Overtime == OvertimeRule.None && OvertimeFormat == null) return setup;
+        if (OvertimeFormat != null)
+        {
+            return setup with
+            {
+                OvertimeFormat = rules.PlayoffOvertime == OvertimeStyle.SuddenDeath && OvertimeFormat.UntilGoal ? OvertimeFormat : Format(rules.PlayoffOvertime),
+            };
+        }
+        return rules.Overtime switch
+        {
+            OvertimeStyle.ThreeOnThree => setup with { Overtime = OvertimeRule.Shl },
+            OvertimeStyle.ShootoutOnly => setup with { Overtime = OvertimeRule.ShootoutOnly },
+            OvertimeStyle.Tie => setup with { Overtime = OvertimeRule.None },
+            _ => setup with { OvertimeFormat = global::StickAndPuck.Rules.OvertimeFormat.ShlPlayoffs },
+        };
+    }
+
     /// <summary>Gets the club playing on the given side.</summary>
     /// <param name="side">Home or away.</param>
     /// <returns>The club.</returns>
@@ -84,4 +116,12 @@ public sealed record MatchSetup
     {
         return side == Side.Home ? Home : Away;
     }
+
+    static OvertimeFormat Format(OvertimeStyle style) => style switch
+    {
+        OvertimeStyle.ThreeOnThree => global::StickAndPuck.Rules.OvertimeFormat.Shl,
+        OvertimeStyle.ShootoutOnly => global::StickAndPuck.Rules.OvertimeFormat.ShootoutOnly,
+        OvertimeStyle.Tie => global::StickAndPuck.Rules.OvertimeFormat.None,
+        _ => global::StickAndPuck.Rules.OvertimeFormat.ShlPlayoffs,
+    };
 }

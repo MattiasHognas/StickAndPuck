@@ -9,9 +9,9 @@
     "helmet": "#002d59"
   },
   "away": {
-    "primary": "#ffffff",
+    "primary": "#ffd500",
     "secondary": "#002d59",
-    "accent": "#ffd500",
+    "accent": "#ffffff",
     "helmet": "#002d59"
   },
   "roster": [
@@ -29,7 +29,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 61,
-        "goalieReflexes": 63
+        "goalieReflexes": 63,
+        "goalieGlove": 64,
+        "goalieBlocker": 49,
+        "goalieReboundControl": 58,
+        "goaliePuckHandling": 49
       }
     },
     {
@@ -46,7 +50,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 50,
-        "goalieReflexes": 52
+        "goalieReflexes": 52,
+        "goalieGlove": 46,
+        "goalieBlocker": 53,
+        "goalieReboundControl": 56,
+        "goaliePuckHandling": 38
       }
     },
     {

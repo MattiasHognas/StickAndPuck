@@ -58,7 +58,7 @@ public static class GoaliePull
     /// <returns>True if the goalie was pulled.</returns>
     public static bool Pull(World world, Side side)
     {
-        if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || IsPulled(world, side)) return false;
+        if (!world.Setup.Rules.GoaliePull || !MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || IsPulled(world, side)) return false;
         var goalie = world.OnIce(side).FirstOrDefault(p => p.IsGoalie);
         if (goalie == null) return false;
         var b = Bench.Board(world);

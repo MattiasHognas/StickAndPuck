@@ -22,6 +22,30 @@ public sealed class DecisionTally
     /// <summary>Gets or sets the checks the AI threw.</summary>
     public int Checks { get; set; }
 
+    /// <summary>Gets or sets the AI passes aimed at a teammate who was skating (over 2 m/s) when the puck left (W22a).</summary>
+    public int ToMoving { get; set; }
+
+    /// <summary>Gets or sets the AI passes aimed at a teammate with no opponent within 3 m when the puck left (W22a).</summary>
+    public int ToOpen { get; set; }
+
+    /// <summary>Gets or sets the AI passes aimed at a teammate.</summary>
+    public int Aimed { get; set; }
+
+    /// <summary>Gets or sets the reads and executions the AI rolled against hockey IQ (W22a's jitter).</summary>
+    public int Rolls { get; set; }
+
+    /// <summary>Gets or sets the rolls that came out as a fumble.</summary>
+    public int Fumbles { get; set; }
+
+    /// <summary>Gets or sets the rolls that came out lucky.</summary>
+    public int Lucky { get; set; }
+
+    /// <summary>Gets or sets the rolls by skaters with hockey IQ 95 or more.</summary>
+    public int StarRolls { get; set; }
+
+    /// <summary>Gets or sets the fumbles by skaters with hockey IQ 95 or more.</summary>
+    public int StarFumbles { get; set; }
+
     /// <summary>Gets the share of passes that reached a teammate, 0 to 1.</summary>
     public float Completion => Passes == 0 ? 0f : (float)Completed / Passes;
 }
@@ -101,6 +125,12 @@ internal sealed class Brain
 
     /// <summary>Gets or sets the teammate this skater last passed to.</summary>
     public int PassTo { get; set; } = -1;
+
+    /// <summary>Gets or sets a pass decided on but fumbled: released a beat late, at <see cref="PassAt"/>.</summary>
+    public PassOption? LatePass { get; set; }
+
+    /// <summary>Gets or sets when a late pass is released.</summary>
+    public float PassAt { get; set; }
 
     /// <summary>Gets or sets until when this skater goes for a hit on the carrier.</summary>
     public float HitUntil { get; set; } = float.NegativeInfinity;

@@ -16,6 +16,9 @@ internal sealed record ScreenPrefs
     /// <summary>Gets the player options.</summary>
     public Settings Settings { get; init; } = new();
 
+    /// <summary>Gets the rule preset and the rules changed from it (W44); <see cref="RuleChoice.Resolve"/> gives the rules a match plays.</summary>
+    public RuleChoice Rules { get; init; } = new();
+
     /// <summary>Gets the period length in minutes of game clock.</summary>
     public int PeriodMinutes { get; init; } = 5;
 

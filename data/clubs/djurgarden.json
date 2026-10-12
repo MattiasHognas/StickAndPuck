@@ -3,16 +3,16 @@
   "name": "Djurgårdens IF",
   "shortName": "DIF",
   "home": {
-    "primary": "#0568af",
-    "secondary": "#e21f26",
-    "accent": "#ffec0d",
-    "helmet": "#0568af"
+    "primary": "#2b3a6e",
+    "secondary": "#ffec0d",
+    "accent": "#a6192e",
+    "helmet": "#2b3a6e"
   },
   "away": {
-    "primary": "#ffffff",
-    "secondary": "#0568af",
-    "accent": "#e21f26",
-    "helmet": "#0568af"
+    "primary": "#f6b83c",
+    "secondary": "#2b3a6e",
+    "accent": "#a6192e",
+    "helmet": "#2b3a6e"
   },
   "roster": [
     {
@@ -29,7 +29,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 70,
-        "goalieReflexes": 72
+        "goalieReflexes": 72,
+        "goalieGlove": 74,
+        "goalieBlocker": 60,
+        "goalieReboundControl": 67,
+        "goaliePuckHandling": 71
       }
     },
     {
@@ -46,7 +50,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 59,
-        "goalieReflexes": 61
+        "goalieReflexes": 61,
+        "goalieGlove": 66,
+        "goalieBlocker": 50,
+        "goalieReboundControl": 58,
+        "goaliePuckHandling": 57
       }
     },
     {

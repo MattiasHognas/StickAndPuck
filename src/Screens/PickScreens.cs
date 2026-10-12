@@ -45,22 +45,29 @@ internal sealed class ModeScreen : MenuScreen
                 picks.RemoveRange(index, picks.Count - index);    // back from a later pick and pick again
                 picks.Add(club);
                 Next();
-            }));
+            }, RulePicks.Fixed(mode)));
         }
 
         Next();
     }
 }
 
-/// <summary>Team select: every club's crest and name in two columns. Arrows move, enter picks.</summary>
+/// <summary>
+/// Team select: every club's crest and name in two columns, and a RULES row under them (W44) with
+/// the rule preset the match plays. Arrows move, enter picks; down from a column's last club reaches
+/// RULES, where left and right pick SHL, ARCADE or NHL (clearing changed rules) and the choice is
+/// saved with the settings. A mode fixed to a preset (arcade) shows it greyed out.
+/// </summary>
 /// <param name="heading">What is being picked.</param>
 /// <param name="taken">A club already picked, shown greyed and skipped.</param>
 /// <param name="picked">What to do with the pick.</param>
-internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<ClubData> picked) : Screen
+/// <param name="fixedRules">The rules the mode always plays, or null when the player picks.</param>
+internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<ClubData> picked, RuleSet? fixedRules = null) : Screen
 {
     const int ColW = 150, RowH = 20, PanelW = (ColW * 2) + 24;
 
     int selected = -1;
+    bool onRules;
 
     static IReadOnlyList<ClubData> Clubs => ScreenFlow.Clubs;
 
@@ -70,9 +77,18 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
     public override void Update(World world, IReadOnlySet<MenuButton> press)
     {
         if (selected < 0) selected = Start();
+        if (onRules)
+        {
+            RulesRow(press);
+            return;
+        }
         int col = selected / Rows, row = selected % Rows;
         if (press.Contains(MenuButton.Up)) Move(-1);
-        else if (press.Contains(MenuButton.Down)) Move(1);
+        else if (press.Contains(MenuButton.Down))
+        {
+            if (row == Rows - 1 || selected + 1 >= Clubs.Count) onRules = true;
+            else Move(1);
+        }
         else if (press.Contains(MenuButton.Left) || press.Contains(MenuButton.Right))
         {
             int other = ((1 - col) * Rows) + row;
@@ -80,7 +96,7 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
         }
         else if (press.Contains(MenuButton.Accept))
         {
-            Console.WriteLine($"SAP: screens: picked {Clubs[selected].Id} ({heading.ToLowerInvariant()})");
+            Console.WriteLine($"SAP: screens: picked {Clubs[selected].Id} ({heading.ToLowerInvariant()}), {Rules.Name} rules");
             picked(Clubs[selected]);
         }
         else if (press.Contains(MenuButton.Back))
@@ -93,19 +109,52 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
     public override void Draw(ScreenArt art, World world)
     {
         if (selected < 0) selected = Start();
-        int h = 5 + ScreenArt.Row + 4 + (Rows * RowH) + 4;
+        int h = 5 + ScreenArt.Row + 4 + (Rows * RowH) + 4 + RowH;
         var (x, top) = art.Panel(heading, PanelW, h, Math.Max(4, (Game.Height - h - 18) / 2));
         for (int i = 0; i < Clubs.Count; i++)
         {
             var club = Clubs[i];
             int cx = x + 12 + ((i / Rows) * ColW), cy = top + ((i % Rows) * RowH);
-            bool on = i == selected;
+            bool on = !onRules && i == selected;
             if (on) DrawRectangle(cx - 2, cy - 2, ColW - 4, RowH, new Color(0x42, 0x32, 0x36, 0xff));
             art.Hud.DrawCrest(club.Id, cx, cy);
             var ink = club == taken ? ScreenArt.Muted : on ? art.Gold : art.Text;
             art.Left(club.Name, cx + 22, cy + 3, ink);
         }
-        art.Hint("ARROWS MOVE   ENTER PICKS   ESC BACK");
+        DrawRules(art, x, top + (Rows * RowH) + 4);
+        string hint = !onRules ? "ARROWS MOVE   ENTER PICKS   ESC BACK"
+            : fixedRules != null ? "THIS MODE PLAYS ITS OWN RULES   UP BACK" : "LEFT RIGHT PICKS THE RULES   UP BACK";
+        art.Hint(hint);
+    }
+
+    /// <summary>Gets the rules the match will play: the mode's own, or the player's choice.</summary>
+    RuleSet Rules => fixedRules ?? RulePicks.Choice.Resolve();
+
+    /// <summary>The RULES row: up goes back to the clubs, left and right pick a preset unless the mode fixes it.</summary>
+    void RulesRow(IReadOnlySet<MenuButton> press)
+    {
+        int dir = press.Contains(MenuButton.Left) ? -1 : press.Contains(MenuButton.Right) || press.Contains(MenuButton.Accept) ? 1 : 0;
+        if (press.Contains(MenuButton.Up)) onRules = false;
+        else if (press.Contains(MenuButton.Back)) ScreenFlow.Pop();
+        else if (dir != 0 && fixedRules == null)
+        {
+            var choice = ScreenFlow.Prefs.Rules;
+            RulesScreen.Pick(choice.Custom ? choice.Preset : RulesScreen.Cycle(choice.Preset, dir));    // from CUSTOM the first press goes back to its preset
+            ScreenPrefsFile.Write(ScreenFlow.Prefs);
+            Console.WriteLine($"SAP: screens: team select rules {Rules.Name}");
+        }
+    }
+
+    void DrawRules(ScreenArt art, int x, int y)
+    {
+        var ink = fixedRules != null ? ScreenArt.Muted : onRules ? art.Gold : art.Text;
+        if (onRules)
+        {
+            DrawRectangle(x + 10, y - 2, PanelW - 20, RowH - 4, new Color(0x42, 0x32, 0x36, 0xff));
+            art.Hud.DrawIcon("arrow_right", x + 12, y + 2);
+        }
+        art.Left("RULES", x + 24, y, ink);
+        art.Right(onRules && fixedRules == null ? $"< {Rules.Name} >" : Rules.Name, x + PanelW - 14, y, ink);
     }
 
     int Start()

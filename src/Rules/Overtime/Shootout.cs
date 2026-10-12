@@ -22,6 +22,9 @@ public sealed class ShootoutState
     /// <summary>Gets the club shooting now (or last).</summary>
     public Side Shooting { get; internal set; }
 
+    /// <summary>Gets the shooters per club before sudden death, from the match's rules (W45).</summary>
+    public int Rounds { get; internal set; } = 3;
+
     /// <summary>Gets the winner once the shootout is decided.</summary>
     public Side? Winner { get; internal set; }
 

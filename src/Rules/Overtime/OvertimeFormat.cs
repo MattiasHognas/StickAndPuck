@@ -39,9 +39,6 @@ public sealed record OvertimeFormat
     /// <summary>Gets a value indicating whether a shootout follows the overtime (or the tie, with no overtime period).</summary>
     public bool HasShootout { get; init; }
 
-    /// <summary>Gets the shooters per club before the shootout goes to sudden death rounds.</summary>
-    public int ShootoutRounds { get; init; } = OvertimeTuning.Rounds;
-
     /// <summary>Gets the format a match plays: the setup's own, or the one its <see cref="OvertimeRule"/> names.</summary>
     /// <param name="setup">The match setup.</param>
     /// <returns>The format.</returns>

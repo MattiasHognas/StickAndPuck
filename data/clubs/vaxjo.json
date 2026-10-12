@@ -5,7 +5,7 @@
   "home": {
     "primary": "#002f60",
     "secondary": "#ec732b",
-    "accent": "#be9e55",
+    "accent": "#ffffff",
     "helmet": "#002f60"
   },
   "away": {
@@ -29,7 +29,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 71,
-        "goalieReflexes": 73
+        "goalieReflexes": 73,
+        "goalieGlove": 64,
+        "goalieBlocker": 78,
+        "goalieReboundControl": 73,
+        "goaliePuckHandling": 56
       }
     },
     {
@@ -46,7 +50,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 39,
-        "goalieReflexes": 41
+        "goalieReflexes": 41,
+        "goalieGlove": 29,
+        "goalieBlocker": 45,
+        "goalieReboundControl": 40,
+        "goaliePuckHandling": 39
       }
     },
     {

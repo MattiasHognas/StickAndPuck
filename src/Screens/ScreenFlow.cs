@@ -230,7 +230,7 @@ internal static class ScreenFlow
     /// <param name="settings">The settings.</param>
     public static void Apply(World world, Settings settings)
     {
-        world.Settings = settings;
+        world.Settings = settings with { Penalties = world.Setup.Rules.Penalties, Fights = world.Setup.Rules.Fights };    // W44: the match's rules switch W14 and W15
         MatchRules.ShowLine = settings.MatchDebug;
         Lines.LinesSystem.ShowPanel = settings.LinesDebug;
     }
@@ -247,7 +247,7 @@ internal static class ScreenFlow
 
     static void Start(MatchSetup setup, MatchPlan plan)
     {
-        setup = setup with { PeriodSeconds = PeriodSeconds() };
+        setup = (setup with { PeriodSeconds = PeriodSeconds() }).WithRules(RulePicks.For(plan));
         var world = new World(setup, Settings);
         Apply(world, world.Settings);
         Scenes.AddStarters(world);
@@ -263,7 +263,7 @@ internal static class ScreenFlow
         Backdrop = setup;
         Stack.Clear();
         next = world;
-        Console.WriteLine($"SAP: screens: match {setup.Home.Id} vs {setup.Away.Id}, {(plan.Season ? "season" : plan.Mode!.Title)}, {setup.PeriodSeconds:0} s periods, {world.Settings}");
+        Console.WriteLine($"SAP: screens: match {setup.Home.Id} vs {setup.Away.Id}, {(plan.Season ? "season" : plan.Mode!.Title)}, {setup.PeriodSeconds:0} s periods, {world.Settings}, {setup.Rules}");
     }
 
     /// <summary>The period length from the settings; SAP_PERIOD=seconds overrides it for quick checks.</summary>

@@ -3,15 +3,15 @@
   "name": "Skellefteå AIK",
   "shortName": "SAIK",
   "home": {
-    "primary": "#fbb906",
-    "secondary": "#1a1a1a",
-    "accent": "#ffffff",
+    "primary": "#1a1a1a",
+    "secondary": "#fbb906",
+    "accent": "#c8102e",
     "helmet": "#1a1a1a"
   },
   "away": {
-    "primary": "#ffffff",
+    "primary": "#fbb906",
     "secondary": "#1a1a1a",
-    "accent": "#fbb906",
+    "accent": "#c8102e",
     "helmet": "#1a1a1a"
   },
   "roster": [
@@ -29,7 +29,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 62,
-        "goalieReflexes": 64
+        "goalieReflexes": 64,
+        "goalieGlove": 56,
+        "goalieBlocker": 66,
+        "goalieReboundControl": 59,
+        "goaliePuckHandling": 63
       }
     },
     {
@@ -46,7 +50,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 60,
-        "goalieReflexes": 62
+        "goalieReflexes": 62,
+        "goalieGlove": 52,
+        "goalieBlocker": 67,
+        "goalieReboundControl": 61,
+        "goaliePuckHandling": 39
       }
     },
     {

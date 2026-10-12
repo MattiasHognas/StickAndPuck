@@ -1,6 +1,7 @@
 using System.Numerics;
 using StickAndPuck.AI;
 using StickAndPuck.Core;
+using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Rules;
 
@@ -24,9 +25,9 @@ public sealed class LinesSelfTest : IScene
     {
         LinesTuning.Pace = 1f;
         var setup = Scenes.DefaultSetup(clubs);
-        World Make(Settings? s = null, bool human = false)
+        World Make(Settings? s = null, bool human = false, RuleSet? rules = null)
         {
-            var w = new World(setup, s ?? settings);
+            var w = new World(rules is { } r ? setup.WithRules(r) : setup, s ?? settings);
             Scenes.AddStarters(w);
             if (human) w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.C).Slot = 0;
             MatchFlow.Begin(w, log: false);
@@ -46,6 +47,10 @@ public sealed class LinesSelfTest : IScene
         NewPeriodFirstLine(Make());
         OvertimeThreeOnThree(Make());
         PulledGoalie(Make(human: true));
+        NoChangeAfterIcing(Make(human: true, rules: RuleSet.Shl), hold: true, "SHL");
+        NoChangeAfterIcing(Make(human: true, rules: RuleSet.Nhl), hold: true, "NHL");
+        NoChangeAfterIcing(Make(human: true, rules: RuleSet.Arcade with { Icing = IcingCall.Hybrid }), hold: false, "Arcade");
+        HeldChangeOnTheFly(Make(human: true, rules: RuleSet.Shl));
 
         Console.WriteLine(failures == 0 ? "LINESTEST: all checks passed" : $"LINESTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
@@ -354,5 +359,94 @@ public sealed class LinesSelfTest : IScene
         Check(!GoaliePull.IsPulled(w, Side.Home) && goalie.OnIce && w.OnIce(Side.Home).Count(p => !p.IsGoalie) == 5,
             "at the whistle the goalie is back and the extra attacker is off: five skaters");
         Check(w.Controlled(0) is { OnIce: true, Side: Side.Home }, "the human still controls a skater on the ice");
+    }
+
+    /// <summary>
+    /// W49: home dumps the puck from its own half over the away goal line and icing is called. Both
+    /// clubs' units are tired and home asks for a change while play is stopped: under SHL and NHL
+    /// home faces off with the same five skaters and away changes; under Arcade both change. After
+    /// the drop the hold is over and home's next stoppage changes again.
+    /// </summary>
+    void NoChangeAfterIcing(World w, bool hold, string preset)
+    {
+        var events = IceThePuck(w);
+        Check(events.Count(e => e.Kind == MatchEventKind.Icing && e.Side == Side.Home) == 1, $"{preset}: home ices the puck");
+        Check(IcingRule.HoldsLines(w, Side.Home) == hold && !IcingRule.HoldsLines(w, Side.Away),
+            $"{preset}: {(hold ? "the icing club is held, the other is not" : "nobody is held")}");
+
+        var home = w.OnIce(Side.Home).Where(p => !p.IsGoalie).ToList();
+        var away = w.OnIce(Side.Away).Where(p => !p.IsGoalie).ToList();
+        SetEnergy(home, 0.5f);
+        SetEnergy(away, 0.5f);
+        Bench.RequestChange(w, Side.Home);
+        events = Rules(w, 15f, until: x => x.Match.Phase == MatchPhase.Play);
+        Check(w.Match.Phase == MatchPhase.Play, $"{preset}: the faceoff after the icing is dropped");
+        bool kept = home.TrueForAll(p => p.OnIce);
+        Check(hold ? kept && !events.Exists(e => e.Kind == MatchEventKind.LineChange && e.Side == Side.Home) : home.TrueForAll(p => !p.OnIce),
+            hold ? $"{preset}: the icing club faces off with the same five skaters, whatever the bench or button asks" : $"{preset}: the icing club changes freely");
+        Check(away.TrueForAll(p => !p.OnIce) && On(w, Side.Away, Group.Forwards).Count == 3 && On(w, Side.Away, Group.Defence).Count == 2,
+            $"{preset}: the other club changes, still five skaters");
+        Check(w.OnIce(Side.Home).Count(p => !p.IsGoalie) == 5, $"{preset}: home still has five skaters");
+
+        Rules(w, 0.2f);
+        Check(!IcingRule.HoldsLines(w, Side.Home), $"{preset}: the hold ends with the drop");
+        if (!hold) return;
+        Phase(w, MatchPhase.Stopped);
+        Run(w, 0.1f);
+        Phase(w, MatchPhase.Faceoff);
+        Run(w, Game.Step);
+        Check(home.TrueForAll(p => !p.OnIce), $"{preset}: at the next stoppage the tired icing club changes");
+    }
+
+    /// <summary>W49: home is mid-change on the fly when it ices the puck; the change stops where it is and nobody else comes on.</summary>
+    void HeldChangeOnTheFly(World w)
+    {
+        Phase(w, MatchPhase.Play);
+        var line = Bench.SquadOf(w, Side.Home)!.Lines[0].Members.ToList();
+        IcingRule.HoldLines(w, Side.Home);
+        Bench.RequestChange(w, Side.Home);
+        SetEnergy(line, 0.3f);
+        Run(w, Game.Step);
+        Check(Bench.IsChanging(w, Side.Home), "home calls a change on the fly");
+        Phase(w, MatchPhase.Stopped);
+        Run(w, 0.1f);
+        Phase(w, MatchPhase.Faceoff);
+        Run(w, Game.Step);
+        Check(!Bench.IsChanging(w, Side.Home) && line.TrueForAll(p => p.OnIce) && On(w, Side.Home, Group.Forwards).TrueForAll(line.Contains),
+            "a change under way at the icing stops: the skaters on the ice stay on");
+        Check(w.OnIce(Side.Home).Count(p => !p.IsGoalie) == 5, "five skaters after the stopped change");
+    }
+
+    /// <summary>A dump from the home half over the away goal line with an away defender nearest the dot; runs until the icing whistle.</summary>
+    static List<MatchEvent> IceThePuck(World w)
+    {
+        Rules(w, 10f, until: x => x.Match.Phase == MatchPhase.Play);
+        int z = 0;
+        foreach (var p in w.OnIce(Side.Home).Where(p => !p.IsGoalie)) p.Position = new Vector3(-12, 0, -11 + z++ * 0.8f);
+        foreach (var p in w.OnIce(Side.Away).Where(p => !p.IsGoalie)) p.Position = new Vector3(4, 0, -11 + z++ * 0.8f);
+        w.OnIce(Side.Away).First(p => p.Data.Position == PlayingPosition.D).Position = new Vector3(22, 0, 10);
+        int own = FaceoffFormation.DefendedEnd(w.Match, Side.Home);
+        var pk = w.Puck;
+        pk.Carrier = -1;
+        pk.LastTouch = w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.D).Id;
+        pk.Position = new Vector3(own * 10, 0, 5);
+        pk.Velocity = new Vector3(-own * 30, 0, 0);
+        return Rules(w, 3f, until: x => x.Match.Phase != MatchPhase.Play);
+    }
+
+    /// <summary>Runs the puck, match flow, icing and lines with nobody skating; returns the events.</summary>
+    static List<MatchEvent> Rules(World world, float seconds, Func<World, bool>? until = null)
+    {
+        var systems = new ISystem[] { new PuckPhysics(), new MatchRules(), new IcingRule(), new LinesSystem() };
+        var events = new List<MatchEvent>();
+        for (int i = 0; i < seconds / Game.Step && !(until?.Invoke(world) ?? false); i++)
+        {
+            world.Events.Clear();
+            foreach (var p in world.Players) p.Command = default;
+            foreach (var s in systems) s.Update(world, Game.Step);
+            events.AddRange(world.Events.Current);
+            world.Time += Game.Step; world.Tick++;
+        }
+        return events;
     }
 }

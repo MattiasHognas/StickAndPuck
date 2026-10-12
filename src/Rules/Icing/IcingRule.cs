@@ -11,6 +11,10 @@ namespace StickAndPuck.Rules;
 /// nearest skater is closer to the end-zone dot on the puck's side wins it; the defending club wins
 /// a tie. An attacking win waves icing off. A call publishes Icing (Side = offending club) and
 /// whistles a faceoff at the offending club's own end-zone dot on the side the puck was sent from.
+/// W44: <see cref="RuleSet.Icing"/> switches it: Hybrid as above, Touch (no race: the icing waits
+/// for the next touch and stands when a defender plays the puck first, an attacker waves it off)
+/// or Off. W49: under <see cref="RuleSet.IcingNoChange"/> the icing club keeps the skaters it had
+/// on the ice until the faceoff after the call (<see cref="HoldsLines"/>; W13's lines read it).
 /// </summary>
 internal sealed class IcingRule : ISystem
 {
@@ -30,16 +34,37 @@ internal sealed class IcingRule : ISystem
         return MatchFlow.NearestDot(new Vector3(own * EndDotX, 0, sentFrom.Z >= 0 ? 1 : -1));
     }
 
+    /// <summary>Gets whether a club iced the puck and may not change lines until the puck is dropped (W49).</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The club.</param>
+    /// <returns>True from the icing whistle until play resumes.</returns>
+    public static bool HoldsLines(World world, Side side)
+    {
+        return States.TryGetValue(world, out var s) && s.Held[(int)side];
+    }
+
+    /// <summary>Holds a club's lines as an icing call under <see cref="RuleSet.IcingNoChange"/> does; for the test scenes.</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="side">The icing club.</param>
+    internal static void HoldLines(World world, Side side)
+    {
+        States.GetOrCreateValue(world).Held[(int)side] = true;
+    }
+
     public void Update(World world, float dt)
     {
         var s = States.GetOrCreateValue(world);
         var pk = world.Puck;
-        if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live)
+        if (world.Match.Phase == MatchPhase.Play) Array.Clear(s.Held);   // the puck is down: the hold is over
+        var call = world.Setup.Rules.Icing;
+        if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live || call == IcingCall.Off)
         {
             s.Touch = -1;
             s.Over = false;
+            s.Iced = -1;
             return;
         }
+        if (s.Iced >= 0 && Touched(world, s)) return;
 
         // the last place the puck was played: every step it is carried, or the step it changes sticks or bodies
         if (pk.Carrier >= 0 || pk.LastTouch != s.Touch)
@@ -59,12 +84,37 @@ internal sealed class IcingRule : ISystem
         // over the opponents' goal line, sent from the club's own side of the red line
         if (end == own || own * s.From.X <= 0) return;
         if (ShortHanded(world.Match, offender)) return;
+        if (call == IcingCall.Touch)
+        {
+            s.Iced = s.Touch;    // touch icing: the next player on the puck decides
+            s.IcedFrom = s.From;
+            return;
+        }
         if (!DefenceWinsRace(world, offender, end, pk.Position)) return;
+        Call(world, offender, s.Touch, s.From);
+    }
 
-        var dot = FaceoffDot(world.Match, offender, s.From);
+    /// <summary>Touch icing waiting on the next touch: a defender on the puck calls it, an attacker waves it off.</summary>
+    /// <returns>True while it still waits (nothing else to do this step).</returns>
+    static bool Touched(World world, IcingState s)
+    {
+        var pk = world.Puck;
+        int by = pk.Carrier >= 0 ? pk.Carrier : pk.LastTouch;
+        if (by == s.Iced || by < 0 || by >= world.Players.Count) return true;
+        int iced = s.Iced;
+        s.Iced = -1;
+        var offender = world.Players[iced].Side;
+        if (world.Players[by].Side != offender) Call(world, offender, iced, s.IcedFrom);
+        return true;
+    }
+
+    static void Call(World world, Side offender, int touch, Vector3 from)
+    {
+        var dot = FaceoffDot(world.Match, offender, from);
         if (!MatchFlow.Whistle(world, dot)) return;
-        var call = new MatchEvent(MatchEventKind.Icing, world.Time, offender, s.Touch, pk.Position);
+        var call = new MatchEvent(MatchEventKind.Icing, world.Time, offender, touch, world.Puck.Position);
         world.Events.Publish(call);
+        if (world.Setup.Rules.IcingNoChange) HoldLines(world, offender);
         LineCallsDemo.Log(call, dot);
     }
 
@@ -100,5 +150,14 @@ internal sealed class IcingState
 
     /// <summary>Gets or sets a value indicating whether the puck was past a goal line last step.</summary>
     public bool Over { get; set; }
+
+    /// <summary>Gets or sets the player whose touch icing waits on the next touch, or -1.</summary>
+    public int Iced { get; set; } = -1;
+
+    /// <summary>Gets or sets where that player sent the puck from.</summary>
+    public Vector3 IcedFrom { get; set; }
+
+    /// <summary>Gets, per side, whether the club iced the puck and keeps its skaters until the drop.</summary>
+    public bool[] Held { get; } = new bool[2];
 
 }

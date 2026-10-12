@@ -78,9 +78,60 @@ public static class GoalieTuning
     /// <summary>Shots from closer than this, in metres, find a goalie who has squared up and fills more of the net.</summary>
     public const float CloseRange = 8f;
 
-    /// <summary>How much further a goalie reaches against a shot from the doorstep (see <see cref="GoalieModel.CloseRead"/>).</summary>
+    /// <summary>How much further a goalie reaches against a shot from the doorstep (see <see cref="GoalieModel.CloseRead(float, int)"/>).</summary>
     public const float CloseBonus = 0.3f;
 
     /// <summary>Seconds a goalie stays down in the butterfly after dropping.</summary>
     public const float ButterflySeconds = 0.8f;
+
+    /// <summary>How far a goalie squares up to the puck's side: positioning 0 and 100 (capped at full).</summary>
+    public const float SquareWorst = 0.7f, SquareBest = 1.3f;
+
+    /// <summary>How far out a goalie comes, as a share of <see cref="DepthFar"/>: positioning 0 and 100.</summary>
+    public const float DepthWorst = 0.7f, DepthBest = 1.3f;
+
+    /// <summary>Crease shuffle speed as a share of <see cref="ShuffleSpeed"/>: positioning 0 and 100.</summary>
+    public const float ShuffleWorst = 0.75f, ShuffleBest = 1.25f;
+
+    /// <summary>Reach of the glove or blocker compared with an average one: hand trait 0 and 100.</summary>
+    public const float HandWorst = 0.4f, HandBest = 1.6f;
+
+    /// <summary>What a hand trait adds to or takes off the clean-stop chance on its side: at 0, and the opposite at 100.</summary>
+    public const float HandClean = 0.16f;
+
+    /// <summary>Glove and blocker this far apart, or more, give the goalie a weak side shooters pick.</summary>
+    public const int WeakSideGap = 6;
+
+    /// <summary>Chance to play a held puck to a teammate rather than the corner: puck handling 0 and 100.</summary>
+    public const float PassOutPoor = 0.1f, PassOutGood = 0.95f;
+
+    /// <summary>How far a goalie's pass strays from its target, in radians: puck handling 0 and 100.</summary>
+    public const float PassErrorPoor = 0.45f, PassErrorGood = 0.04f;
+
+    /// <summary>Speed of a goalie's pass: puck handling 0 and 100.</summary>
+    public const float PassSpeedPoor = 7f, PassSpeedGood = 13f;
+
+    /// <summary>Chance a goalie leaves the crease to stop a loose puck behind the net: puck handling 0 and 100.</summary>
+    public const float PlayChancePoor = 0f, PlayChanceGood = 0.95f;
+
+    /// <summary>How far from the middle of the goal line a loose puck behind the net may be for the goalie to go for it.</summary>
+    public const float PlayReach = 4.5f;
+
+    /// <summary>A loose puck behind the net slower than this can be stopped by the goalie.</summary>
+    public const float PlaySpeed = 14f;
+
+    /// <summary>Skating speed of a goalie going out to play the puck.</summary>
+    public const float PlaySkate = 5f;
+
+    /// <summary>How close the goalie must get to touch the puck it is going for.</summary>
+    public const float PlayTouch = 0.7f;
+
+    /// <summary>The goalie gives up on the puck once an opponent is this close to it.</summary>
+    public const float PlayPressure = 1.6f;
+
+    /// <summary>Seconds a goalie may spend out of the crease going for one puck.</summary>
+    public const float PlaySeconds = 3f;
+
+    /// <summary>Seconds a glove or blocker save pose is shown.</summary>
+    public const float HandPoseSeconds = 0.45f;
 }
