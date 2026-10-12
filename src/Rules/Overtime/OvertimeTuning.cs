@@ -9,9 +9,6 @@ public static class OvertimeTuning
     /// <summary>The break after regulation before the overtime faceoff, and before the shootout.</summary>
     public const float BreakSeconds = 4f;
 
-    /// <summary>Shooters per club before the shootout goes to sudden death rounds.</summary>
-    public const int Rounds = 5;
-
     /// <summary>The shooter waits at centre with the puck this long before the attempt starts.</summary>
     public const float ReadySeconds = 1.5f;
 
