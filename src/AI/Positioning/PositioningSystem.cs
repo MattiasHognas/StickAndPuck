@@ -50,6 +50,7 @@ internal sealed class PositioningSystem : ISystem
         var board = Positioning.Board(world);
         AssignRoles(world, board);
         var step = Read(world, board);
+        foreach (var side in new[] { Side.Home, Side.Away }) Cycle.Update(world, board, side, step.Carrier, step.Play, rng, dt);
         foreach (var p in world.Players)
             if (p.OnIce && !p.IsGoalie) Plan(world, board.For(p.Id), p, step, dt);
         Space(world, board);
@@ -103,17 +104,70 @@ internal sealed class PositioningSystem : ISystem
             : step.Presser[(int)p.Side] == p.Id ? Job.Pressure
             : Job.Shape;
 
+        var cycle = Positioning.Board(world).Cycle[(int)p.Side];
+        plan.Station = cycle.Active && cycle.Stations.TryGetValue(p.Id, out var station) ? station : null;
+        var at = new Vector2(p.Position.X, p.Position.Z);
+
         plan.Target = plan.Job switch
         {
             Job.Requested => plan.Request!.Value,
             Job.Faceoff => TeamShape.Faceoff(plan.Role, end, new Vector2(pk.Position.X, pk.Position.Z)),
+            Job.Carry when plan.Station is { } own => Cycle.AroundNet(at, Cycle.Spot(own, end, cycle.CornerSide), end),
             Job.Carry => CarryTarget(world, p, end),
             Job.Chase => ChaseTarget(p, pk, smart),
             Job.Pressure => PressureTarget(step.Carrier!, end, smart),
-            Job.Shape => ShapeTarget(world, plan, p, TeamShape.Spot(plan.Role, teamPhase, end, Read(pk, smart)), smart, dt),
-            _ => new Vector2(p.Position.X, p.Position.Z),
+            Job.Shape => ShapeTarget(world, plan, p, OpenSpot(world, plan, p, step.Carrier, teamPhase, end, cycle, Read(pk, smart)), smart, dt),
+            _ => at,
         };
-        if (plan.Job != Job.Shape) plan.Read = null;
+        if (plan.Job == Job.Shape && plan.Station != null) plan.Target = Cycle.AroundNet(at, plan.Target, end);
+        if (plan.Job != Job.Shape) { plan.Read = null; plan.Open = null; }
+    }
+
+    /// <summary>
+    /// W22a: the spot an off-puck skater holds. Defending, or with nobody of his own on the puck,
+    /// it is his role's spot in the shape. With a teammate on the puck he gets open: around his
+    /// cycle station in the attacking zone, or his shape spot elsewhere, he goes where a pass would
+    /// get through to a spot worth having (<see cref="GetOpen"/>). Each read is rolled against his
+    /// hockey IQ and lasts a moment before the next, shorter for a smart skater.
+    /// </summary>
+    Vector2 OpenSpot(World world, SkaterPlan plan, Player p, Player? carrier, TeamPhase phase, int end, CycleState cycle, Vector2 puckRead)
+    {
+        var shape = TeamShape.Spot(plan.Role, phase, end, puckRead);
+        if (phase != TeamPhase.Attack || carrier == null || carrier.Side != p.Side)
+        {
+            plan.Open = null;
+            return shape;
+        }
+
+        var spot = plan.Station is { } station ? Cycle.Spot(station, end, cycle.CornerSide) : shape;
+        float radius;
+        float minA = -RinkSpec.HalfLength, maxA = RinkSpec.HalfLength;
+        float puckA = end * world.Puck.Position.X;
+        bool inZone = Cycle.InZone(end, new Vector2(world.Puck.Position.X, world.Puck.Position.Z));
+        if (Roles.IsDefence(plan.Role))
+        {
+            // the defence hold the points in the zone, and stay behind the play outside it
+            radius = inZone ? 2.5f : 3.5f;
+            if (inZone) (minA, maxA) = (RinkSpec.BlueLineX + 0.6f, RinkSpec.BlueLineX + 4.5f);
+            else maxA = end * spot.X + 2f;
+        }
+        else if (plan.Station != null)
+        {
+            radius = 2.2f;
+            minA = RinkSpec.BlueLineX + 1.5f;
+        }
+        else
+        {
+            radius = 4f;
+            if (puckA <= RinkSpec.BlueLineX) maxA = RinkSpec.BlueLineX - 0.8f;   // stay onside
+        }
+
+        bool stale = plan.Open is not { } open || Vector2.Distance(open, spot) > radius * 1.6f;
+        if (!stale && world.Time < plan.OpenNext) return plan.Open!.Value;
+        int iq = Jitter.Roll(world, p, rng).Iq;
+        plan.Open = GetOpen.Best(world, p, carrier, spot, radius, minA, maxA, iq, rng, plan.Open);
+        plan.OpenNext = world.Time + Traits.Scale(p.Data.Traits.HockeyIq, 0.7f, 0.3f) * (0.8f + 0.4f * rng.NextSingle());
+        return plan.Open.Value;
     }
 
     /// <summary>Writes the command that takes an AI skater to its target; decisions may add a shot, pass or check.</summary>
@@ -124,6 +178,7 @@ internal sealed class PositioningSystem : ISystem
         {
             Job.Idle => Steering.Toward(p, at),
             Job.Chase or Job.Pressure => Steering.Toward(p, plan.Target, 0.8f, sprint: true),
+            Job.Carry when plan.Station != null => Steering.Toward(p, plan.Target, 1f),
             Job.Carry => Steering.Toward(p, plan.Target, 1.5f, sprint: true),
             Job.Requested => Steering.Toward(p, plan.Target, sprint: plan.RequestSprint),
             Job.Faceoff => Steering.Toward(p, plan.Target, 1.5f),
