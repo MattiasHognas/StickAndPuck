@@ -716,7 +716,7 @@ public sealed class PenaltySelfTest : IScene
     void FullMatch(MatchSetup setup, Settings settings)
     {
         var (calls, broken, served) = Match(setup with { PeriodSeconds = 240 }, settings, 8f, 1);
-        Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step");
+        Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step in play");
         int normal = 0, broken2 = 0;
         foreach (int seed in Seeds)
         {
@@ -763,7 +763,8 @@ public sealed class PenaltySelfTest : IScene
             // penalties end with regulation, leaving the box empty for overtime
             foreach (var side in w.Match.Phase is MatchPhase.Final or MatchPhase.Overtime or MatchPhase.Shootout ? [] : new[] { Side.Home, Side.Away })
             {
-                if (Skaters(w, side) != Penalties.TargetSkaters(w, side))
+                // in play: a call at a stoppage can leave a club a skater short until the faceoff brings it to strength (a third penalty waiting, W46)
+                if (w.Match.Phase == MatchPhase.Play && Skaters(w, side) != Penalties.TargetSkaters(w, side))
                     broken++;
                 if (w.Match.Penalties.Exists(p => w.Players[p.PlayerId].OnIce)) broken++;
             }
