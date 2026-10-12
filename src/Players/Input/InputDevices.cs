@@ -9,7 +9,7 @@ namespace StickAndPuck.Players;
 internal struct DeviceState
 {
     public Vector2 Move;
-    public bool Sprint, Shoot, Pass, Check, Switch, Line, Punch, Block, Accept, Pause;
+    public bool Sprint, Shoot, Pass, Check, Deke, Switch, Line, Punch, Block, Accept, Pause;
 }
 
 /// <summary>
@@ -34,6 +34,7 @@ internal sealed class DeviceReader
             Block = now.Block,
             Pass = now.Pass && !last.Pass,
             Check = now.Check && !last.Check,
+            Deke = now.Deke,
             SwitchPlayer = now.Switch && !last.Switch,
             ChangeLine = now.Line && !last.Line,
             Punch = now.Punch && !last.Punch,
@@ -85,6 +86,7 @@ internal static class InputDevices
             Shoot = shoot,
             Pass = Key(GameAction.Pass),
             Check = Key(GameAction.Check),
+            Deke = Key(GameAction.Deke),
             Switch = Key(GameAction.Switch),
             Line = Key(GameAction.LineChange),
             Punch = shoot,
@@ -119,6 +121,7 @@ internal static class InputDevices
             Shoot = shoot,
             Pass = Button(GameAction.Pass),
             Check = Button(GameAction.Check),
+            Deke = Button(GameAction.Deke),
             Switch = Button(GameAction.Switch),
             Line = Button(GameAction.LineChange),
             Punch = shoot,
@@ -157,6 +160,7 @@ internal static class InputDevices
             Shoot = a.Shoot || b.Shoot,
             Pass = a.Pass || b.Pass,
             Check = a.Check || b.Check,
+            Deke = a.Deke || b.Deke,
             Switch = a.Switch || b.Switch,
             Line = a.Line || b.Line,
             Punch = a.Punch || b.Punch,
