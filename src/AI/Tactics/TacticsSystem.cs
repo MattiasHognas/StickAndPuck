@@ -141,9 +141,8 @@ internal sealed class TacticsSystem : ISystem
 
         var dump = board.Dump;
         if (a > RinkSpec.BlueLineX - 0.5f) { board.Dump = null; return; }   // missed the moment: carry it in
-        if (brain.ShootSteps > 0 || p.Action != PlayerAction.None) return;
-        brain.NextThink = Math.Max(brain.NextThink, world.Time + 0.2f);   // no pass or shot of decisions' own meanwhile
-        brain.LatePass = null;
+        if (AiCommand.Committed(world, p)) return;
+        AiCommand.Hold(world, p);   // no pass or shot of decisions' own meanwhile
 
         var then = at + Flat(p.Velocity) * Release;
         var net = new Vector2(end * RinkSpec.GoalLineX, 0);
@@ -151,14 +150,12 @@ internal sealed class TacticsSystem : ISystem
         {
             // take it wide toward the red line, where a dump is not icing and not a shot on goal
             var lane = TeamShape.Inside(new Vector2(end * (a + 6f), dump.Wide * WideZ));
-            p.Command = Steering.Toward(p, lane, 1f, sprint: true);
+            AiCommand.Steer(world, p, AiLayer.Tactics, Steering.Toward(p, lane, 1f, sprint: true), "dump: take it wide");
             return;
         }
 
         var aim = Vector2.Normalize(DumpTarget(world, p.Side, end) - at);
-        brain.ShootAim = aim;
-        brain.ShootSteps = 3;   // a tap: a wrist shot along the ice
-        p.Command = p.Command with { Move = aim, Shoot = true, Sprint = false };
+        AiCommand.Shoot(world, p, AiLayer.Tactics, aim, 3, "dump");   // a tap: a wrist shot along the ice
         Tactics.Tally(world, p.Side).Dumps++;
         board.Dump = null;
         board.Chasing = new ChaseWatch(p.Side, p.Id, world.Time + Release + ChaseFor, Released: false);
@@ -289,11 +286,9 @@ internal sealed class TacticsSystem : ISystem
         read += (spot - read) * Math.Min(1f, (2f + 6f * iq) * dt);
         board.Reads[p.Id] = (read, world.Tick);
         var target = sprint ? spot : read;
-        var plan = Positioning.Board(world).For(p.Id);
-        plan.Job = Job.Requested;
-        plan.Target = target;
         float far = Vector2.Distance(target, Flat(p.Position));
-        p.Command = sprint ? Steering.Toward(p, target, 0.8f, sprint: true) : Steering.Toward(p, target, 1.6f, sprint: far > 4f);
+        var move = sprint ? Steering.Toward(p, target, 0.8f, sprint: true) : Steering.Toward(p, target, 1.6f, sprint: far > 4f);
+        AiCommand.Take(world, p, AiLayer.Tactics, target, move, Reason(task));
     }
 
     /// <summary>Counts each side's zone entries and, while the other side breaks out of its zone, where its skaters stand.</summary>
@@ -353,6 +348,19 @@ internal sealed class TacticsSystem : ISystem
         }
         DrawText($"{Club(Side.Home)}   {Club(Side.Away)}", 6, 246, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }
+
+    /// <summary>The words a debug trace shows for a tactical task.</summary>
+    static string Reason(TacticTask task) => task switch
+    {
+        TacticTask.Chase => "chase the dump",
+        TacticTask.Outlet => "forecheck: take the outlet",
+        TacticTask.High => "forecheck: sit high",
+        TacticTask.Pinch => "forecheck: pinch",
+        TacticTask.Angle => "trap: angle",
+        TacticTask.Back => "trap: stay back",
+        TacticTask.Wall => "trap: wall",
+        _ => "tactics",
+    };
 
     static string Name(Forecheck f) => f switch
     {

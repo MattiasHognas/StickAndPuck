@@ -134,7 +134,7 @@ internal sealed class SpecialTeamsSystem : ISystem
         foreach (var p in team)
         {
             if (p == carrier || p == support || p.Slot >= 0 || Positioning.JobOf(world, p) == Job.Chase) continue;
-            Take(world, p, Back(world, p, end, puck));
+            Take(world, p, Back(world, p, end, puck), "kill stays back");
         }
     }
 
@@ -151,7 +151,7 @@ internal sealed class SpecialTeamsSystem : ISystem
         foreach (var p in killers)
         {
             if (p.Slot >= 0 || Positioning.JobOf(world, p) != Job.Chase || Vector3.Distance(p.Position, puck) < theirs - 2f) continue;
-            Take(world, p, Back(world, p, end, Flat(puck)));
+            Take(world, p, Back(world, p, end, Flat(puck)), "kill does not chase");
         }
     }
 
@@ -236,7 +236,7 @@ internal sealed class SpecialTeamsSystem : ISystem
                 Shoot(world, board, p, end);
                 continue;
             }
-            Take(world, p, carrier != null ? Open(world, board, p, carrier, spot) : Read(world, board, p, spot, 1.2f));
+            Take(world, p, carrier != null ? Open(world, board, p, carrier, spot) : Read(world, board, p, spot, 1.2f), "power play spot");
         }
         tally.OnSpot += dt * held / Math.Max(1, pairs.Count);
     }
@@ -257,7 +257,7 @@ internal sealed class SpecialTeamsSystem : ISystem
                 && Vector2.Distance(Flat(carrier.Position), spot) < PressFrom;
             if (presses || Vector2.Distance(Flat(p.Position), spot) < OnSpot) held++;
             if (presses || p.Slot >= 0 || Positioning.JobOf(world, p) == Job.Chase) continue;
-            Take(world, p, Read(world, board, p, spot, 1.6f));
+            Take(world, p, Read(world, board, p, spot, 1.6f), "kill spot");
         }
         tally.KillOnSpot += dt * held / Math.Max(1, pairs.Count);
     }
@@ -305,7 +305,7 @@ internal sealed class SpecialTeamsSystem : ISystem
     {
         var plan = board.For(p.Id);
         var brain = Decisions.Board(world).For(p.Id);
-        if (p.Slot >= 0 || p.Action != PlayerAction.None || brain.ShootSteps > 0 || brain.LatePass != null || world.Time < plan.ShotLook) return;
+        if (p.Slot >= 0 || AiCommand.Committed(world, p) || brain.LatePass != null || world.Time < plan.ShotLook) return;
         plan.ShotLook = world.Time + Choices.ThinkEvery(p.Data.Traits.HockeyIq) * (0.8f + 0.4f * rng.NextSingle());
         if (world.Time - brain.GotAt < 0.25f) return;
         var at = Flat(world.Puck.Position);
@@ -321,10 +321,8 @@ internal sealed class SpecialTeamsSystem : ISystem
         float distance = Vector2.Distance(net, at);
         int side = at.Y > 0 ? -1 : 1;
         var aim = Vector2.Normalize(net - at + new Vector2(0, side * 0.6f));
-        brain.ShootAim = aim;
-        brain.ShootSteps = distance > 13f && !pressed ? 30 + rng.Next(20) : 2;
+        AiCommand.Shoot(world, p, AiLayer.SpecialTeams, aim, distance > 13f && !pressed ? 30 + rng.Next(20) : 2, "power play shot");
         brain.NextThink = Math.Max(brain.NextThink, world.Time + 0.2f);
-        p.Command = p.Command with { Move = aim, Shoot = true, Sprint = false, Pass = false };
         board.Tally[(int)p.Side].Shots++;
     }
 
@@ -345,13 +343,10 @@ internal sealed class SpecialTeamsSystem : ISystem
     }
 
     /// <summary>Takes a skater over from positioning and the defence, as the defence does, and skates him to his spot.</summary>
-    static void Take(World world, Player p, Vector2 target)
+    static void Take(World world, Player p, Vector2 target, string reason)
     {
-        var job = Positioning.Board(world).For(p.Id);
-        job.Job = Job.Requested;
-        job.Target = target;
         float far = Vector2.Distance(target, Flat(p.Position));
-        p.Command = Steering.Toward(p, target, 1.6f, sprint: far > 6f);
+        AiCommand.Take(world, p, AiLayer.SpecialTeams, target, Steering.Toward(p, target, 1.6f, sprint: far > 6f), reason);
     }
 
     /// <summary>
@@ -365,7 +360,6 @@ internal sealed class SpecialTeamsSystem : ISystem
         int end = PuckHandling.AttackEnd(world, p.Side);
         var at = Flat(world.Puck.Position);
         if (end * at.X > 0f) { board.ClearCarrier = -1; return; }   // over the red line: a short-handed rush is decisions' play
-        var brain = Decisions.Board(world).For(p.Id);
         if (board.ClearCarrier != p.Id)
         {
             board.ClearCarrier = p.Id;
@@ -374,9 +368,8 @@ internal sealed class SpecialTeamsSystem : ISystem
             if (outcome == ReadOutcome.Fumble) beat += 0.5f + 0.5f * rng.NextSingle();
             board.ClearAt = world.Time + beat;
         }
-        if (brain.ShootSteps > 0 || p.Action != PlayerAction.None) return;
-        brain.NextThink = Math.Max(brain.NextThink, world.Time + 0.2f);   // no carry, pass or shot of decisions' own in the meantime
-        brain.LatePass = null;
+        if (AiCommand.Committed(world, p)) return;
+        AiCommand.Hold(world, p);   // no carry, pass or shot of decisions' own in the meantime
         if (world.Time < board.ClearAt) return;
 
         float side = at.Y >= 0 ? 1f : -1f;
@@ -385,9 +378,7 @@ internal sealed class SpecialTeamsSystem : ISystem
         var opponents = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).Where(o => !o.IsGoalie).Select(o => Flat(o.Position)).ToList();
         var best = lanes.Select(Vector2.Normalize).MinBy(d => Crowd(at, d, opponents) + MathF.Abs(MathF.Abs(d.Y) - 0.41f));
         bool flip = Crowd(at, best, opponents) > 0;
-        brain.ShootAim = best;
-        brain.ShootSteps = flip ? 20 : 4;   // a flip is a short slap wind-up, lifted (W35's held shot), a clear along the ice a tap
-        p.Command = p.Command with { Move = best, Shoot = true, Sprint = false };
+        AiCommand.Shoot(world, p, AiLayer.SpecialTeams, best, flip ? 20 : 4, "kill clear");   // a flip is a short slap wind-up, lifted (W35's held shot), a clear along the ice a tap
         board.Clearing = new ClearWatch(p.Side, p.Id, flip, world.Time);
         board.ClearCarrier = -1;
     }

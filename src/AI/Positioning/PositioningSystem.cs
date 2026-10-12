@@ -7,7 +7,7 @@ namespace StickAndPuck.AI;
 /// <summary>
 /// W6a: where each AI skater skates, by role, in attack and defence, from hockey IQ.
 /// Writes Move and Sprint into the <see cref="Player.Command"/> of every skater with no human
-/// slot (the other buttons are cleared for decisions to fill); goalies are W5's.
+/// slot (the other buttons are cleared for decisions to fill; <see cref="AiCommand.Base"/>); goalies are W5's.
 /// <list type="bullet">
 /// <item>Each side's skaters get a role (<see cref="Roles"/>) and the side a phase: attacking when
 /// it has the puck or touched it last, else defending.</item>
@@ -192,8 +192,22 @@ internal sealed class PositioningSystem : ISystem
             Job.Faceoff => Steering.Toward(p, target, round ? 0.5f : 1.5f),
             _ => Steering.Toward(p, target, round ? 0.5f : Steering.Arrive, sprint: Vector2.Distance(plan.Target, at) > 12f),
         };
-        p.Command = command;
+        AiCommand.Base(world, p, command, Reason(plan.Job));
     }
+
+    /// <summary>The words a debug trace shows for a job.</summary>
+    static string Reason(Job job) => job switch
+    {
+        Job.Idle => "idle",
+        Job.Shape => "hold shape",
+        Job.Support => "get open",
+        Job.Faceoff => "faceoff spot",
+        Job.Carry => "carry",
+        Job.Chase => "chase the puck",
+        Job.Pressure => "pressure the carrier",
+        Job.Requested => "requested spot",
+        _ => "human",
+    };
 
     public void DrawScene(World world, RenderContext render)
     {

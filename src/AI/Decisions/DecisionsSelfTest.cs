@@ -25,6 +25,7 @@ namespace StickAndPuck.AI;
 /// W63 plays full matches with the offside and icing rules on: under SHL over several seeds the AI ices the puck and
 /// goes offside at a hockey-like rate, a hockey IQ 30 club clears blind more and holds up at the blue line less than an 85 one,
 /// and under Arcade, rules off, never.
+/// W68 ends with <see cref="CommandFixtures"/>: who writes an AI skater's command and which write wins.
 /// </summary>
 public sealed class DecisionsSelfTest : IScene
 {
@@ -45,6 +46,7 @@ public sealed class DecisionsSelfTest : IScene
         SpecialTeamsSelfTest.PowerPlay(clubs, settings, 1, Check);
         TacticsSelfTest.Compare(clubs, settings, 1, Check);
         LineCalls(clubs, settings);
+        CommandFixtures.Run(clubs, settings, Check);
         Console.WriteLine(failures == 0 ? "AIMATCHTEST: all checks passed" : $"AIMATCHTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
         return match;
