@@ -79,7 +79,7 @@ public static class NetBody
         if (!Contact(u, z, front, radius, out var normal, out float depth)) return;
         u += normal.X * depth;
         z += normal.Y * depth;
-        var slide = Around(u - (front + Back) / 2, z, normal, new Vector2(end * move.X, move.Y));
+        var slide = Around(u - (front + Back) / 2, z, normal, new Vector2(end * move.X, move.Y), goalie);
         if (goalie)
         {
             // a goalie's spot steering sets its velocity afresh every step, so move it along the frame here
@@ -138,17 +138,19 @@ public static class NetBody
     /// <param name="z">Sideways offset.</param>
     /// <param name="normal">The frame's outward normal at the contact, in depth and sideways.</param>
     /// <param name="stick">The way the player wants to go, in depth and sideways, up to length 1.</param>
+    /// <param name="goalie">True for a goalie.</param>
     /// <returns>The unit direction to slide in, in depth and sideways, or zero.</returns>
-    static Vector2 Around(float u, float z, Vector2 normal, Vector2 stick)
+    static Vector2 Around(float u, float z, Vector2 normal, Vector2 stick, bool goalie)
     {
         if (-Vector2.Dot(stick, normal) <= PuckTuning.PushingIntent) return Vector2.Zero;
         var tangent = new Vector2(-normal.Y, normal.X);
         float along = Vector2.Dot(stick, tangent);
         float edge = Vector2.Dot(new Vector2(u, z), tangent);
-        // on a flat face the nearer edge wins unless the stick clearly says otherwise; round a corner the
-        // stick's lean decides, since the nearer edge flips there
+        // on a flat face the nearer edge wins unless the stick clearly says otherwise; round a corner a
+        // skater's lean decides, since the nearer edge flips there; a goalie heads for a spot just past
+        // the frame, so the nearer edge always decides for it
         bool corner = MathF.Abs(normal.X) > 0.2f && MathF.Abs(normal.Y) > 0.2f;
-        float intent = corner ? 0.05f : PuckTuning.SlideIntent;
+        float intent = goalie ? float.PositiveInfinity : corner ? 0.05f : PuckTuning.SlideIntent;
         float way = MathF.Abs(along) > intent ? MathF.Sign(along) : edge < 0 ? -1 : 1;
         return tangent * way;
     }
