@@ -272,8 +272,11 @@ internal sealed class SpecialTeamsSystem : ISystem
         bool valid = old.Count == Math.Min(team.Count, spots.Count) && team.Take(spots.Count).All(p => old.ContainsKey(p.Id))
             && old.Values.Distinct().Count() == old.Count && old.Values.All(s => s < spots.Count);
         if (valid)
+        {
             for (int i = 0; i < team.Count; i++)
                 if (old.TryGetValue(team[i].Id, out int s)) oldCost += Formations.Cost(who[i], spots[s], s);
+        }
+
         if (!valid || freshCost < oldCost - Switch)
         {
             old.Clear();

@@ -294,7 +294,10 @@ public static class PuckHandling
             : MathF.Abs(from.Z) > 0.3f ? -MathF.Sign(from.Z) * side * 0.8f
             : (rng.NextSingle() * 2 - 1) * side;
         float h;
-        if (held >= 0) h = ShotHeight.AtNet(held, accuracy, rng);
+        if (held >= 0)
+        {
+            h = ShotHeight.AtNet(held, accuracy, rng);
+        }
         else
         {
             h = kind == ShotKind.Slap ? 0.1f + rng.NextSingle() * 0.4f : 0.15f + rng.NextSingle() * 0.6f;

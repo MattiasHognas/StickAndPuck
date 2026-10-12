@@ -1,4 +1,3 @@
-using System.Numerics;
 using StickAndPuck.Core;
 
 namespace StickAndPuck.Season;

@@ -278,7 +278,7 @@ public sealed record RuleChoice
         var rules = preset;
         foreach (var row in RuleRows.All)
         {
-            if (Overrides.TryGetValue(row.Key, out var value) && row.Values.Contains(value, StringComparer.OrdinalIgnoreCase))
+            if (Overrides.TryGetValue(row.Key, out string? value) && row.Values.Contains(value, StringComparer.OrdinalIgnoreCase))
                 rules = row.Set(rules, row.Values.First(v => string.Equals(v, value, StringComparison.OrdinalIgnoreCase)));
         }
         return rules == preset ? preset : rules with { Custom = true };

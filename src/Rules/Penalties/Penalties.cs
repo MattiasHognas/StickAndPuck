@@ -444,7 +444,7 @@ public static class Penalties
             var sub = world.Players
                 .Where(o => o.Side == penalty.Side && !o.OnIce && !o.IsGoalie && !InBox(world, o.Id))
                 .MaxBy(o => o.Energy);
-            if (sub != null) OutOfTheBox(world, sub);
+            if (sub != null) OutOfTheBox(sub);
             book.Log(world, $"{(sub == null ? "nobody" : Name(world, sub))} out of the box for {Name(world, world.Players[penalty.PlayerId])} ({why})");
             return;
         }
@@ -488,11 +488,11 @@ public static class Penalties
     {
         world.Match.Penalties.Remove(penalty);
         var p = world.Players[penalty.PlayerId];
-        OutOfTheBox(world, p);
+        OutOfTheBox(p);
         book.Log(world, $"{Name(world, p)} back on the ice ({why})");
     }
 
-    static void OutOfTheBox(World world, Player p)
+    static void OutOfTheBox(Player p)
     {
         var door = BoxDoor(p.Side);
         p.OnIce = true;

@@ -1,5 +1,4 @@
 using StickAndPuck.Core;
-using StickAndPuck.Players;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Rules;

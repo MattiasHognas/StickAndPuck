@@ -124,6 +124,8 @@ internal sealed class PuckPhysics : ISystem, IDisposable
                 case PuckHit.Body:
                     world.Puck.LastTouch = i.PlayerId;
                     break;
+                default:
+                    break;
             }
         }
         if (boards is { } b) world.Events.Publish(new MatchEvent(MatchEventKind.PuckBoards, world.Time, Position: b.Position, Strength: b.Speed));

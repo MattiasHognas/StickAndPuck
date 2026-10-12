@@ -145,8 +145,11 @@ public sealed class Replay
     {
         if (IsKeyPressed(KeyboardKey.Enter) || IsKeyPressed(KeyboardKey.Space)) return true;
         for (int pad = 0; pad < 2; pad++)
+        {
             if (IsGamepadAvailable(pad) && (IsGamepadButtonPressed(pad, GamepadButton.RightFaceDown) || IsGamepadButtonPressed(pad, GamepadButton.MiddleRight)))
                 return true;
+        }
+
         return false;
     }
 

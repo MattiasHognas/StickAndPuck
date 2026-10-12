@@ -172,7 +172,9 @@ public static class Cycle
         // behind the net is a place to pass through, not to stay: the carrier comes out soon after he gets there
         if (state.Stations.TryGetValue(carrier.Id, out var spot) && spot == Station.BehindNet && state.Count % 2 == 0
             && Vector2.Distance(new Vector2(carrier.Position.X, carrier.Position.Z), Spot(Station.BehindNet, end, state.CornerSide)) < 1.5f)
+        {
             state.NextTurn = Math.Min(state.NextTurn, world.Time + 0.5f);
+        }
 
         // a carrier pinned on his station skates on to the next one rather than stand there
         if (carrier.Speed > 1.5f) state.MovingAt = world.Time;
@@ -231,12 +233,14 @@ public static class Cycle
 
         // a defenceman has it at the point: all three forwards rotate slot -> corner -> behind the net -> slot
         foreach (var m in mates)
+        {
             state.Stations[m.Id] = state.Stations[m.Id] switch
             {
                 Station.Slot => Station.Corner,
                 Station.Corner => Station.BehindNet,
                 _ => Station.Slot,
             };
+        }
     }
 
     /// <summary>Seconds between turns: about 4 for a line of hockey IQ 0, 2.6 for 100, a little random.</summary>

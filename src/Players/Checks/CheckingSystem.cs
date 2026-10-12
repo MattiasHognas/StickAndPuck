@@ -49,7 +49,11 @@ internal sealed class CheckingSystem : ISystem
             if (p.Action == PlayerAction.Check)
             {
                 if (p.ActionTime >= CheckingModel.Recover) { p.Begin(PlayerAction.None); landed.Remove(p.Id); }
-                else if (p.ActionTime <= CheckingModel.Window && !landed.Contains(p.Id)) TryHit(world, p);
+                else if (p.ActionTime <= CheckingModel.Window && !landed.Contains(p.Id))
+                {
+                    TryHit(world, p);
+                }
+
                 continue;
             }
             if (p.Command.Check && p.Action == PlayerAction.None && world.Puck.Carrier != p.Id) Begin(world, p);

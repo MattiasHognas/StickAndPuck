@@ -1,6 +1,4 @@
-using Raylib_cs;
 using StickAndPuck.Core;
-using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Camera;
 

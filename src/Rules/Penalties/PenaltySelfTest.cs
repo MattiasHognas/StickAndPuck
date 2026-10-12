@@ -186,9 +186,8 @@ public sealed class PenaltySelfTest : IScene
         Run(w, x => x.Match.Clock <= start - 20, Watch, 30);
         float left = w.Match.Penalties.Single().SecondsLeft;
         Check(Math.Abs(left - (Penalties.MinorSeconds(w) - 20)) < 0.02f, $"the penalty clock runs with the game clock ({MatchFlow.ClockText(left)} left after 0:20)");
-        float released = float.NaN;
         Run(w, x => !Penalties.InBox(x, d.Id), Watch, 120);
-        released = w.Match.Clock;
+        float released = w.Match.Clock;
         Check(Math.Abs(start - released - Penalties.MinorSeconds(w)) < Game.Step * 1.5f, $"served exactly {MatchFlow.ClockText(Penalties.MinorSeconds(w))} of game time ({start - released:0.00} s)");
         Check(!boxedOn && !extra && changes > 3, "the bench changes during the kill but never sends him on or a fifth skater");
         Check(d.OnIce && Skaters(w, Side.Home) == 5 && w.Match.Penalties.Count == 0 && Vector3.Distance(d.Position, Penalties.BoxDoor(Side.Home)) < 1, "he comes back through the box door: five on five");
@@ -286,10 +285,14 @@ public sealed class PenaltySelfTest : IScene
         bool steady = true;
         Run(w, x => !Penalties.InBox(x, home.Id), x => steady &= Skaters(x, Side.Home) == want && Skaters(x, Side.Away) == want, 120);
         if (shl)
+        {
             Check(steady && !home.OnIce && !away.OnIce && !Penalties.InBox(w, away.Id) && w.Match.Penalties.Count == 0 && Skaters(w, Side.Home) == 5,
                 "both serve their time, 5 on 5 throughout, and go to the bench");
+        }
         else
+        {
             Check(steady && home.OnIce && away.OnIce && Skaters(w, Side.Home) == 5 && Skaters(w, Side.Away) == 5, "both come out together: 5 on 5");
+        }
     }
 
     void CoincidentalOnPowerPlay(World w)
@@ -555,7 +558,7 @@ public sealed class PenaltySelfTest : IScene
     {
         Check(Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 3 && Penalties.BaseSkaters(w) == 3, "overtime starts 3 on 3, and that is the full strength now");
         var d = w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.D);
-        var penalty = Penalise(w, d, Infraction.Hooking);
+        Penalise(w, d, Infraction.Hooking);
         ToPlay(w);
         Check(Penalties.InBox(w, d.Id) && !d.OnIce && Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 4 && Penalties.PowerPlay(w) == Side.Away,
             "a penalty in overtime: home keeps three, away adds a skater, 4 on 3");

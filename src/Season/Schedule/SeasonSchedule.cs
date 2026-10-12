@@ -38,8 +38,11 @@ public static class SeasonSchedule
 
         var games = new List<Fixture>();
         for (int r = 0; r < rounds.Count; r++)
+        {
             foreach (var (home, away) in rounds[r])
                 if (home.Length > 0 && away.Length > 0) games.Add(new Fixture(games.Count, r, home, away));
+        }
+
         return games;
     }
 
@@ -61,7 +64,7 @@ public static class SeasonSchedule
             }
             cycle.Add(round);
             // keep ring[0], rotate the rest one step
-            var last = ring[n - 1];
+            string last = ring[n - 1];
             ring.RemoveAt(n - 1);
             ring.Insert(1, last);
         }

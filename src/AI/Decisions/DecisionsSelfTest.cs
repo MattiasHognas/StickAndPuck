@@ -103,6 +103,7 @@ public sealed class DecisionsSelfTest : IScene
     {
         bool inside = true, order = true, around = true;
         foreach (int end in new[] { -1, 1 })
+        {
             foreach (float cs in new[] { -1f, 1f })
             {
                 var slot = Cycle.Spot(Station.Slot, end, cs);
@@ -113,6 +114,7 @@ public sealed class DecisionsSelfTest : IScene
 
                 // walk from each station to each other one, a metre at a time toward the next waypoint
                 foreach (var from in new[] { slot, corner, behind })
+                {
                     foreach (var to in new[] { slot, corner, behind })
                     {
                         var at = from;
@@ -125,7 +127,10 @@ public sealed class DecisionsSelfTest : IScene
                         }
                         if (Vector2.Distance(at, to) > 0.5f) around = false;
                     }
+                }
             }
+        }
+
         Check(inside, "every cycle station is on the ice and clear of the cage");
         Check(order, "the stations are behind the net, low in the corner on its side and out in the slot");
         Check(around, "a skater going from station to station goes round the net, never through it");
@@ -136,7 +141,7 @@ public sealed class DecisionsSelfTest : IScene
     {
         var world = Make(clubs, settings, 20 * 60, null, null);
         var systems = Systems(world, int.Parse(Environment.GetEnvironmentVariable("SAP_SEED") ?? "1", System.Globalization.CultureInfo.InvariantCulture));
-        var still = Play(world, systems, 2 * 60 * 60);
+        float still = Play(world, systems, 2 * 60 * 60);
         var h = Decisions.Tally(world, Side.Home);
         var a = Decisions.Tally(world, Side.Away);
         Console.WriteLine($"      match: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {h.Shots}-{a.Shots}, passes {h.Completed}/{h.Passes} ({h.Completion:P0}) and {a.Completed}/{a.Passes} ({a.Completion:P0}), checks {h.Checks}-{a.Checks}, longest loose puck {still:F1} s");

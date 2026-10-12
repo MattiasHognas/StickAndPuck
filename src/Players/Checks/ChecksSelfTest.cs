@@ -164,7 +164,10 @@ public sealed class ChecksSelfTest : IScene
             p.Command = new PlayerCommand { Move = -Vector2.UnitY };   // stick toward the far boards
             checker.Command = new PlayerCommand { Check = i == 0 };
             if (p.Action == PlayerAction.Fallen) { wasDown = true; ignoredStick &= p.Position.Z > -0.3f; }
-            else if (wasDown && upAt < 0) upAt = x.Time;
+            else if (wasDown && upAt < 0)
+            {
+                upAt = x.Time;
+            }
         });
         Check(wasDown, "a full-strength check knocks an average player down");
         Check(ignoredStick, "a fallen player slides where the hit sent them, whatever their stick says");
@@ -228,7 +231,7 @@ public sealed class ChecksSelfTest : IScene
     {
         // two teammates equally near a carrier circling between them: control must not flicker
         var a = Add(w, Side.Home, new Vector3(-3, 0, 0));
-        var b = Add(w, Side.Home, new Vector3(3, 0, 0));
+        Add(w, Side.Home, new Vector3(3, 0, 0));
         var them = Add(w, Side.Away, new Vector3(0, 0, 4));
         a.Slot = 0;
         Give(w, them);

@@ -37,6 +37,8 @@ internal static class PolishScenes
                 ArcadeRuns(clubs);
                 ScreenFlow.Push(new ArcadeBoardScreen());
                 break;
+            default:
+                break;
         }
     }
 

@@ -219,8 +219,11 @@ public sealed class PuckSelfTest : IScene
             {
                 var p = x.Puck.Position;
                 for (int end = -1; end <= 1; end += 2)
+                {
                     if (end * last.X <= RinkSpec.GoalLineX && end * p.X > RinkSpec.GoalLineX && MathF.Abs(p.Z) < RinkSpec.NetWidth / 2 && p.Y < RinkSpec.NetHeight)
                         mouth = true;
+                }
+
                 if (!InsideRink(p) || p.Y < 0) escapes++;
                 last = p;
             });

@@ -24,7 +24,10 @@ public sealed class LinesScene : IScene
         Scenes.AddStarters(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
             && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
+        {
             centre.Slot = 0;
+        }
+
         StandInPlay.Start(world);
         MatchFlow.Begin(world);
         StandInPlay.FollowCamera = true;
@@ -80,7 +83,10 @@ public sealed class GoaliePullScene : IScene
         Scenes.AddStarters(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
             && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
+        {
             centre.Slot = 0;
+        }
+
         MatchFlow.Begin(world);
         world.Match.Score[1] = 1;
         MatchFlow.StartPeriod(world, world.Setup.Periods, GoaliePull.PullSeconds(world) + 8f);

@@ -240,7 +240,10 @@ public sealed class LinesSelfTest : IScene
         Run(w, 12, world =>
         {
             if (!pressed && world.Controlled(0) is { } me) { me.Command = me.Command with { ChangeLine = true }; pressed = true; }
-            else if (world.Controlled(0) is { } me2) me2.Command = me2.Command with { ChangeLine = false };
+            else if (world.Controlled(0) is { } me2)
+            {
+                me2.Command = me2.Command with { ChangeLine = false };
+            }
         }, until: _ => line.TrueForAll(p => !p.OnIce));
         Check(line.TrueForAll(p => !p.OnIce), "the button sends the tired line off");
     }
@@ -260,7 +263,10 @@ public sealed class LinesSelfTest : IScene
             Check(starter.OnIce, $"goal {goal + 1}: the starter is still in until the faceoff");
             Phase(w, MatchPhase.Faceoff);
             var events = Run(w, 0.1f);
-            if (goal < LinesTuning.GoalieGoals - 1) Check(starter.OnIce && !backup.OnIce, $"goal {goal + 1}: the starter stays in");
+            if (goal < LinesTuning.GoalieGoals - 1)
+            {
+                Check(starter.OnIce && !backup.OnIce, $"goal {goal + 1}: the starter stays in");
+            }
             else
             {
                 Check(!starter.OnIce && backup.OnIce, $"{LinesTuning.GoalieGoals} goals in a minute: the backup comes in at the faceoff");

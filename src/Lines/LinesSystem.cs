@@ -89,8 +89,14 @@ internal sealed class LinesSystem : ISystem
         {
             if (p.IsGoalie) continue;
             float change;
-            if (!p.OnIce) change = LinesTuning.BenchRest;
-            else if (!play) change = LinesTuning.IceRest;
+            if (!p.OnIce)
+            {
+                change = LinesTuning.BenchRest;
+            }
+            else if (!play)
+            {
+                change = LinesTuning.IceRest;
+            }
             else
             {
                 float pace01 = Math.Min(p.Speed / SkatingModel.TopSpeed(p.Data.Traits), 1.2f);
@@ -133,7 +139,7 @@ internal sealed class LinesSystem : ISystem
             var group = BothGroups.MinBy(g => Bench.OnIceEnergy(world, side, g));
             if (world.Match.Phase == MatchPhase.Play)
             {
-                if (b.Changing[(int)side] == null && Best(world, b, side, group) is { } unit) Begin(world, b, side, group, unit);
+                if (b.Changing[(int)side] == null && Best(b, side, group) is { } unit) Begin(world, b, side, group, unit);
             }
             else if (!IcingRule.HoldsLines(world, side))   // W49: a club that iced the puck keeps its skaters
             {
@@ -190,7 +196,7 @@ internal sealed class LinesSystem : ISystem
                 }
                 else
                 {
-                    unit = Best(world, b, side, group);
+                    unit = Best(b, side, group);
                     float energy = Bench.OnIceEnergy(world, side, group);
                     bool want = b.Pending[s, (int)group]
                         || (Automatic(world, side) && energy < LinesTuning.FaceoffBelow && unit != null && unit.Energy >= energy + LinesTuning.FresherBy);
@@ -225,7 +231,7 @@ internal sealed class LinesSystem : ISystem
             float energy = Bench.OnIceEnergy(world, side, group);
             if (energy >= LinesTuning.ChangeBelow) continue;
             if (energy >= LinesTuning.ForceBelow && !Safe(world, side)) continue;
-            if (Best(world, b, side, group) is not { } unit || unit.Energy < energy + LinesTuning.FresherBy) continue;
+            if (Best(b, side, group) is not { } unit || unit.Energy < energy + LinesTuning.FresherBy) continue;
             Begin(world, b, side, group, unit);
             return;
         }
@@ -339,7 +345,7 @@ internal sealed class LinesSystem : ISystem
     }
 
     /// <summary>Gets the freshest unit of a group with nobody on the ice, lines 1 to 3 a little ahead of line 4.</summary>
-    static Unit? Best(World world, LinesBoard b, Side side, Group group)
+    static Unit? Best(LinesBoard b, Side side, Group group)
     {
         var squad = b.Squads[(int)side];
         if (squad == null) return null;

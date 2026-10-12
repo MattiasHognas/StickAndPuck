@@ -50,17 +50,32 @@ internal abstract class MenuScreen : Screen
         if (items.Count == 0) return;
         if (!items[Math.Clamp(Selected, 0, items.Count - 1)].Enabled) Selected = Step(items, Selected, 1);
         Selected = Math.Clamp(Selected, 0, items.Count - 1);
-        if (press.Contains(MenuButton.Up)) Selected = Step(items, Selected, -1);
-        else if (press.Contains(MenuButton.Down)) Selected = Step(items, Selected, 1);
-        else if (press.Contains(MenuButton.Left)) items[Selected].Change?.Invoke(-1);
-        else if (press.Contains(MenuButton.Right)) items[Selected].Change?.Invoke(1);
+        if (press.Contains(MenuButton.Up))
+        {
+            Selected = Step(items, Selected, -1);
+        }
+        else if (press.Contains(MenuButton.Down))
+        {
+            Selected = Step(items, Selected, 1);
+        }
+        else if (press.Contains(MenuButton.Left))
+        {
+            items[Selected].Change?.Invoke(-1);
+        }
+        else if (press.Contains(MenuButton.Right))
+        {
+            items[Selected].Change?.Invoke(1);
+        }
         else if (press.Contains(MenuButton.Accept))
         {
             var item = items[Selected];
             if (item.Pick != null) item.Pick();
             else item.Change?.Invoke(1);
         }
-        else if (press.Contains(MenuButton.Back)) Back();
+        else if (press.Contains(MenuButton.Back))
+        {
+            Back();
+        }
     }
 
     /// <summary>Selects the row with this label, if there is one and it can be picked.</summary>

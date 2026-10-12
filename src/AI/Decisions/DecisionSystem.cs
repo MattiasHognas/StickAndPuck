@@ -198,11 +198,11 @@ internal sealed class DecisionSystem : ISystem
         if (Clear(world, p, brain, end, at, nearest, pass)) return;
         float passValue = pass?.Value + wobble * PuckHandling.Gauss(rng) ?? float.MinValue;
 
-        if (shoot > carry && shoot > passValue && shoot > (camping ? ShootFrom * 0.6f : ShootFrom)) Shoot(world, p, brain, end, at, pressed);
-        else if (PointShot(end, at, lane, pressed, held) && passValue < carry) Shoot(world, p, brain, end, at, pressed);
+        if (shoot > carry && shoot > passValue && shoot > (camping ? ShootFrom * 0.6f : ShootFrom)) Shoot(world, p, end, at, pressed);
+        else if (PointShot(end, at, lane, pressed, held) && passValue < carry) Shoot(world, p, end, at, pressed);
         else if (pass is { } best && (passValue > carry * 1.05f + 0.01f || (camping && held > 6f && (!cycling || best.Success > 0.35f))))
             Pass(world, p, brain, best, at);
-        else if (camping && held > 6f && Choices.ShotQuality(end, at) > (cycling ? 0.2f : 0f)) Shoot(world, p, brain, end, at, pressed);   // pinned too long: get rid of it (in the cycle only from a real chance; else skate on)
+        else if (camping && held > 6f && Choices.ShotQuality(end, at) > (cycling ? 0.2f : 0f)) Shoot(world, p, end, at, pressed);   // pinned too long: get rid of it (in the cycle only from a real chance; else skate on)
     }
 
     /// <summary>
@@ -321,7 +321,7 @@ internal sealed class DecisionSystem : ISystem
         return best;
     }
 
-    void Shoot(World world, Player p, Brain brain, int end, Vector2 at, bool pressed)
+    void Shoot(World world, Player p, int end, Vector2 at, bool pressed)
     {
         var toNet = new Vector2(end * RinkSpec.GoalLineX, 0) - at;
         float distance = toNet.Length();

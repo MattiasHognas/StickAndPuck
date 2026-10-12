@@ -111,7 +111,10 @@ internal static class ChecksDemo
             float a = t * 0.6f;
             carrier.Command = new PlayerCommand { Move = new Vector2(-MathF.Cos(a), -MathF.Sin(a)) * 0.6f };
         }
-        else if (carrier.Slot < 0) carrier.Command = default;
+        else if (carrier.Slot < 0)
+        {
+            carrier.Command = default;
+        }
 
         if (scripted)
         {

@@ -107,7 +107,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
     /// <summary>The players the view lists, best first.</summary>
     IReadOnlyList<PlayerStats> Lines(StatTable table, string user)
     {
-        IEnumerable<PlayerStats> skaters = table.Players.Where(p => !p.IsGoalie);
+        var skaters = table.Players.Where(p => !p.IsGoalie);
         return view switch
         {
             0 => table.Leaders(Rows),
