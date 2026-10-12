@@ -23,6 +23,9 @@ public struct PlayerCommand
     /// <summary>Gets or sets a value indicating whether check was pressed this step.</summary>
     public bool Check { get; set; }
 
+    /// <summary>Gets or sets a value indicating whether deke is held (W32: the puck handling system acts on the press).</summary>
+    public bool Deke { get; set; }
+
     /// <summary>Gets or sets a value indicating whether the human asked to switch to another player.</summary>
     public bool SwitchPlayer { get; set; }
 
