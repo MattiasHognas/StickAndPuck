@@ -1,6 +1,7 @@
 using System.Numerics;
 using StickAndPuck.Core;
 using StickAndPuck.Players;
+using StickAndPuck.Rules;
 
 namespace StickAndPuck.AI;
 
@@ -25,12 +26,21 @@ namespace StickAndPuck.AI;
 /// goalie's side; a lucky roll plays it like a star. In the attacking-zone cycle the carrier
 /// values keeping the puck and fears a turnover more, so the club passes it round until a lane
 /// to a good shot opens; passes never go through a net's cage.</item>
+/// <item>W63: a carrier pinned in his own zone with no safe pass sometimes fires the puck out, hard
+/// up the boards: untouched from his own half, that is icing. A poor or rushed skater does it far
+/// more often than a smart one. A carrier coming up to the
+/// attacking blue line with a teammate already over it may hold up short of the line so he can
+/// tag up; a smart, unhurried one usually does, a poor or pressed one carries on in, offside.
+/// Neither care applies with the rule switched off (Arcade).</item>
 /// </list>
 /// </summary>
 internal sealed class DecisionSystem : ISystem
 {
     const float CheckFrom = 3.2f;   // distance at which a presser decides whether to hit
     const float ShootFrom = 0.64f;  // a shot worth less than this is not taken, unless the carrier has stood still with the puck
+    const float SafePass = 0.55f;   // a pass the carrier gives at least this chance is a way out of his zone; with none he may clear it
+    const float HoldFrom = 4f;      // metres short of the attacking blue line at which a carrier looks for teammates already over it
+    const float HoldFor = 1.6f;     // longest a carrier holds up at the line before carrying on in
 
     readonly Random rng;
 
@@ -67,7 +77,12 @@ internal sealed class DecisionSystem : ISystem
             var brain = board.For(p.Id);
             if (brain.ShootSteps > 0 || (p.Action == PlayerAction.Shoot && pk.Carrier == p.Id)) { HoldShot(world, p, brain); continue; }
             if (pk.Carrier == p.Id && brain.LatePass != null) { LatePass(world, p, brain); continue; }
-            if (pk.Carrier == p.Id) { Carry(world, p, brain); continue; }
+            if (pk.Carrier == p.Id)
+            {
+                HoldLine(world, p, brain);
+                Carry(world, p, brain);
+                continue;
+            }
             brain.LatePass = null;
             if (MeetPass(world, board, p)) continue;
             if (Positioning.JobOf(world, p) == Job.Chase && pk.Carrier < 0) { Pounce(world, p); continue; }
@@ -175,6 +190,7 @@ internal sealed class DecisionSystem : ISystem
         shoot += wobble * PuckHandling.Gauss(rng);
 
         var pass = BestPass(world, p, end, at, seen, smart, cycling);
+        if (Clear(world, p, brain, end, at, nearest, pass)) return;
         float passValue = pass?.Value + wobble * PuckHandling.Gauss(rng) ?? float.MinValue;
 
         if (shoot > carry && shoot > passValue && shoot > (camping ? ShootFrom * 0.6f : ShootFrom)) Shoot(world, p, brain, end, at, pressed);
@@ -182,6 +198,75 @@ internal sealed class DecisionSystem : ISystem
         else if (pass is { } best && (passValue > carry * 1.05f + 0.01f || (camping && held > 6f && (!cycling || best.Success > 0.35f))))
             Pass(world, p, brain, best, at);
         else if (camping && held > 6f && Choices.ShotQuality(end, at) > (cycling ? 0.2f : 0f)) Shoot(world, p, brain, end, at, pressed);   // pinned too long: get rid of it (in the cycle only from a real chance; else skate on)
+    }
+
+    /// <summary>
+    /// W63: a carrier in his own zone with a forechecker on him and no pass he trusts weighs, once
+    /// while pinned, firing the puck out. Hockey IQ sets the odds (a poor skater panics far more often
+    /// than a smart one, who would rather skate it out or wait for a lane), a fumbled read doubles
+    /// them, and a tighter check makes it likelier. The clear goes hard up the boards on his side:
+    /// untouched from behind the red line it goes the length, icing. With icing off (Arcade) there is
+    /// nothing to fear, so the odds are higher still. The penalty kill clears its own way (W22c).
+    /// </summary>
+    /// <returns>True when the carrier clears.</returns>
+    bool Clear(World world, Player p, Brain brain, int end, Vector2 at, float nearest, PassOption? pass)
+    {
+        bool pinned = end * at.X < -RinkSpec.BlueLineX && nearest < 2.6f && (pass == null || pass.Value.Success < SafePass);
+        if (!pinned || Same(brain.ClearRun, brain.GotAt) || p.Slot >= 0) return false;
+        brain.ClearRun = brain.GotAt;
+        if (Penalties.PowerPlay(world) is { } pp && pp != p.Side) return false;   // a killer clears with special teams
+
+        var (outcome, iq) = Jitter.Roll(world, p, rng);
+        float odds = Traits.Scale(iq, 0.12f, 0.015f) * (outcome == ReadOutcome.Fumble ? 2f : 1f) * (nearest < 1.4f ? 1.4f : 1f) * (world.Setup.Rules.Icing == IcingCall.Off ? 1.5f : 1f);
+        if (rng.NextSingle() >= odds) return false;
+
+        // up the boards on his side, a little off them so the puck runs along the wall, never at the far net
+        float side = MathF.Abs(at.Y) > 1f ? MathF.Sign(at.Y) : rng.NextSingle() < 0.5f ? -1f : 1f;
+        var aim = Vector2.Normalize(new Vector2(end, side * (0.12f + 0.2f * rng.NextSingle())));
+        brain.ShootSteps = 3;   // a quick snap, a wrist shot's speed: plenty to go the length
+        brain.ShootAim = aim;
+        p.Command = p.Command with { Move = aim, Shoot = true, Sprint = false };
+        var tally = Decisions.Tally(world, p.Side);
+        tally.Clears++;
+        return true;
+    }
+
+    /// <summary>
+    /// W63: a carrier coming up to the attacking blue line with a teammate already wholly over it
+    /// decides once whether to hold up short of the line, so the teammate can tag up. A smart skater
+    /// with time usually does; a poor one, a fumbled read or a defender on him and he carries on in,
+    /// offside. Holding, he curls across the ice short of the line until everyone is back onside or
+    /// his patience runs out. With offside off (Arcade) nobody holds up.
+    /// </summary>
+    void HoldLine(World world, Player p, Brain brain)
+    {
+        if (!world.Setup.Rules.Offside || p.Action != PlayerAction.None || brain.ShootSteps > 0) return;
+        int end = PuckHandling.AttackEnd(world, p.Side);
+        var at = Flat(world.Puck.Position);
+        float toLine = RinkSpec.BlueLineX - end * at.X;
+        if (toLine is < 0.2f or > HoldFrom) return;
+        bool ahead = world.OnIce(p.Side).Any(m => m != p && !m.IsGoalie && OffsideRule.PlayerInZone(m.Position, end));
+        if (!ahead) return;
+
+        if (!Same(brain.HoldRun, brain.GotAt))
+        {
+            if (end * p.Velocity.X < 0.5f) return;   // not going in: nothing to hold up for yet
+            brain.HoldRun = brain.GotAt;
+            brain.HoldUntil = float.NegativeInfinity;
+            var (outcome, iq) = Jitter.Roll(world, p, rng);
+            bool pressed = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home)
+                .Any(o => !o.IsGoalie && Vector3.Distance(o.Position, p.Position) < 2.6f);
+            float odds = Traits.Scale(iq, 0.3f, 0.98f) * (pressed ? 0.6f : 1f);
+            if (outcome == ReadOutcome.Fumble || rng.NextSingle() >= odds) return;
+            brain.HoldUntil = world.Time + HoldFor;
+            Decisions.Tally(world, p.Side).HoldUps++;
+        }
+        if (world.Time > brain.HoldUntil) return;
+
+        // curl across the ice a couple of metres short of the line
+        float across = MathF.Abs(at.Y) > 6f ? -MathF.Sign(at.Y) : at.Y >= 0 ? 1f : -1f;
+        var spot = TeamShape.Inside(new Vector2(end * (RinkSpec.BlueLineX - 2.2f), at.Y + across * 4f), 1.5f);
+        p.Command = p.Command with { Move = Steering.Toward(p, spot, 1f).Move, Sprint = false };
     }
 
     /// <summary>Now and then, a skater at the point with a clear lane and time winds up from distance, for a deflection or a rebound.</summary>
@@ -366,6 +451,12 @@ internal sealed class DecisionSystem : ISystem
             brain.HitUntil = float.NegativeInfinity;
             board.Tally[(int)p.Side].Checks++;
         }
+    }
+
+    /// <summary>Gets whether a remembered possession is the current one (both are its <see cref="Brain.GotAt"/>).</summary>
+    static bool Same(float run, float gotAt)
+    {
+        return MathF.Abs(run - gotAt) < 1e-4f;
     }
 
     static Vector2 Flat(Vector3 v)
