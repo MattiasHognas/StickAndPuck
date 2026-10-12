@@ -39,6 +39,13 @@ public readonly record struct DelayedPenalty(Side Side, int PlayerId, string Inf
 /// on the ice when the period started (<see cref="TargetSkaters"/>): at 5 on 5 the penalised
 /// club loses a skater, at 3 on 3 it keeps three and the other club adds one (4 on 3, then 5 on 3).
 /// A club that has pulled its goalie (<see cref="Lines.GoaliePull"/>) has one skater more.
+/// W46, as <see cref="MatchSetup.Rules"/> says: penalties running at the end of regulation carry
+/// into overtime (<see cref="RuleSet.PenaltiesCarryIntoOvertime"/>); a club already two short
+/// takes a third penalty into the box, where it waits and starts when one of the two ends, the
+/// skater whose time is up staying in the box until play stops (<see cref="RuleSet.StackPenalties"/>,
+/// <see cref="Waiting"/>); and equal minors on both clubs at the same whistle are substituted,
+/// leaving the strength as it was, or in the NHL played 4 on 4 when both clubs were at full
+/// strength (<see cref="RuleSet.CoincidentalMinors"/>, <see cref="Substituted"/>).
 /// </summary>
 public static class Penalties
 {
@@ -69,7 +76,25 @@ public static class Penalties
     /// <returns>The count.</returns>
     public static int Serving(World world, Side side)
     {
-        return world.Match.Penalties.Count(p => p.Side == side);
+        var book = Book(world);
+        return world.Match.Penalties.Count(p => p.Side == side && !book.Substituted.Contains(p.PlayerId));
+    }
+
+    /// <summary>Gets the penalties waiting in the box for one of the club's two running penalties to end (W46).</summary>
+    /// <param name="world">The match.</param>
+    /// <returns>The waiting penalties, in the order they start; their clocks stand still.</returns>
+    public static IReadOnlyList<PenaltyState> Waiting(World world)
+    {
+        return Book(world).Waiting;
+    }
+
+    /// <summary>Gets whether a running penalty is one of a coincidental pair that was substituted: it leaves the strength alone (W46).</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="playerId">The penalised player.</param>
+    /// <returns>True for a substituted coincidental minor.</returns>
+    public static bool Substituted(World world, int playerId)
+    {
+        return Book(world).Substituted.Contains(playerId);
     }
 
     /// <summary>Gets the club on the power play: the one serving fewer penalties, or null at even strength.</summary>
@@ -114,13 +139,15 @@ public static class Penalties
     /// <returns>True while serving.</returns>
     public static bool InBox(World world, int playerId)
     {
-        return world.Match.Penalties.Exists(p => p.PlayerId == playerId);
+        var book = Book(world);
+        return world.Match.Penalties.Exists(p => p.PlayerId == playerId) || book.Waiting.Exists(p => p.PlayerId == playerId) || book.Held.Contains(playerId);
     }
 
     /// <summary>
     /// The referee sees an infraction: the arm goes up (<see cref="Referee.Referee.Signal"/>) and the call
     /// waits for the offending club to touch the puck. Waved off when penalties are off in the settings,
-    /// outside play (the shootout included), for a goalie, for a skater already called, or when the club already serves two.
+    /// outside play (the shootout included), for a goalie, for a skater already called, or when the club already serves two
+    /// and the rules do not stack penalties (<see cref="RuleSet.StackPenalties"/>).
     /// </summary>
     /// <param name="world">The match.</param>
     /// <param name="playerId">The offending skater.</param>
@@ -135,7 +162,7 @@ public static class Penalties
         var p = world.Players[playerId];
         var book = Book(world);
         if (p.IsGoalie || InBox(world, playerId) || book.Delayed.Exists(d => d.PlayerId == playerId)) return false;
-        if (Serving(world, p.Side) + book.Delayed.Count(d => d.Side == p.Side) >= PenaltyTuning.MaxServing) return false;
+        if (!world.Setup.Rules.StackPenalties && Serving(world, p.Side) + book.Delayed.Count(d => d.Side == p.Side) >= PenaltyTuning.MaxServing) return false;
         book.Delayed.Add(new DelayedPenalty(p.Side, playerId, infraction, world.Time));
         Referee.Referee.Signal(world, infraction, playerId);
         book.Log(world, $"{infraction} on {Name(world, p)}, delayed");
@@ -161,27 +188,97 @@ public static class Penalties
         return new Vector3(side == Side.Home ? -PenaltyTuning.BoxDoorX : PenaltyTuning.BoxDoorX, 0, RinkSpec.HalfWidth - PenaltyTuning.BoxDoorInset);
     }
 
-    /// <summary>Makes every delayed call: each skater to the box, a Penalty event per call, the referee's signal.</summary>
+    /// <summary>
+    /// Makes every delayed call: each skater to the box, a Penalty event per call, the referee's signal.
+    /// Calls on both clubs at the same whistle pair up as coincidental minors (W46): substituted, so
+    /// the strength stays, except one each from full strength under the NHL's 4 on 4.
+    /// </summary>
     internal static void CallDelayed(World world, PenaltyBook book)
     {
-        foreach (var d in book.Delayed) Assess(world, book, d);
+        int pairs = Math.Min(book.Delayed.Count(d => d.Side == Side.Home), book.Delayed.Count(d => d.Side == Side.Away));
+        bool fourOnFour = world.Setup.Rules.CoincidentalMinors == CoincidentalMinors.FourOnFour
+            && pairs == 1 && book.Delayed.Count == 2 && Serving(world, Side.Home) == 0 && Serving(world, Side.Away) == 0;
+        var paired = new HashSet<int>();
+        if (!fourOnFour)
+        {
+            foreach (var side in new[] { Side.Home, Side.Away })
+                foreach (var d in book.Delayed.Where(d => d.Side == side).Take(pairs)) paired.Add(d.PlayerId);
+        }
+
+        foreach (var d in book.Delayed) Assess(world, book, d, paired.Contains(d.PlayerId));
         book.Delayed.Clear();
     }
 
-    /// <summary>Sends a skater to the box for a minor and publishes the Penalty event (Strength = seconds to serve).</summary>
-    internal static void Assess(World world, PenaltyBook book, DelayedPenalty d)
+    /// <summary>
+    /// Sends a skater to the box for a minor and publishes the Penalty event (Strength = seconds to serve).
+    /// A substituted coincidental minor leaves the strength alone; a club already serving two puts the
+    /// penalty on <see cref="Waiting"/> (W46).
+    /// </summary>
+    internal static void Assess(World world, PenaltyBook book, DelayedPenalty d, bool substitute = false)
     {
         var p = world.Players[d.PlayerId];
         float seconds = MinorSeconds(world);
-        world.Match.Penalties.Add(new PenaltyState(p.Id, p.Side, d.Infraction, seconds));
+        var penalty = new PenaltyState(p.Id, p.Side, d.Infraction, seconds);
+        bool waits = !substitute && Serving(world, p.Side) >= PenaltyTuning.MaxServing;
+        if (waits) book.Waiting.Add(penalty);
+        else world.Match.Penalties.Add(penalty);
+        if (substitute) book.Substituted.Add(p.Id);
         // a skater who changed off during the delay still goes in; a teammate of his group leaves the ice so the club still plays short
-        if (!p.OnIce && world.OnIce(p.Side).Where(o => !o.IsGoalie && Squad.GroupOf(o) == Squad.GroupOf(p)).MinBy(o => o.Position.Z) is { } stand)
+        if (!p.OnIce && !waits && !substitute && world.OnIce(p.Side).Where(o => !o.IsGoalie && Squad.GroupOf(o) == Squad.GroupOf(p)).MinBy(o => o.Position.Z) is { } stand)
             ToBench(world, stand);
         ToBox(world, p);
         book.Called[(int)p.Side]++;
         world.Events.Publish(new MatchEvent(MatchEventKind.Penalty, world.Time, p.Side, p.Id, p.Position, seconds));
         Referee.Referee.Announce(world, d.Infraction, p.Id);
-        book.Log(world, $"{d.Infraction}, {Name(world, p)}, {MatchFlow.ClockText(seconds)}");
+        book.Log(world, $"{d.Infraction}, {Name(world, p)}, {MatchFlow.ClockText(seconds)}{(substitute ? ", coincidental, substituted" : waits ? ", waits in the box" : "")}");
+    }
+
+    /// <summary>
+    /// Ends a running penalty, served or ended by a goal (W46): a substituted skater goes to the bench,
+    /// the club's next waiting penalty starts with the skater whose time is up kept in the box until
+    /// play stops, and otherwise he comes out of the box door onto the ice.
+    /// </summary>
+    internal static void End(World world, PenaltyBook book, PenaltyState penalty, string why)
+    {
+        if (book.Substituted.Remove(penalty.PlayerId))
+        {
+            world.Match.Penalties.Remove(penalty);
+            ToBench(world, world.Players[penalty.PlayerId]);
+            book.Log(world, $"{Name(world, world.Players[penalty.PlayerId])} to the bench ({why}, substituted)");
+            return;
+        }
+
+        if (book.Waiting.Find(w => w.Side == penalty.Side) is { } next)
+        {
+            world.Match.Penalties.Remove(penalty);
+            book.Waiting.Remove(next);
+            world.Match.Penalties.Add(next);
+            book.Held.Add(penalty.PlayerId);
+            book.Log(world, $"{Name(world, world.Players[next.PlayerId])}'s penalty starts, {Name(world, world.Players[penalty.PlayerId])} waits for the whistle ({why})");
+            return;
+        }
+
+        Release(world, book, penalty, why);
+    }
+
+    /// <summary>Play has stopped: skaters kept in the box after their time was up go to the bench, free to come on (W46).</summary>
+    internal static void LetOutHeld(World world, PenaltyBook book)
+    {
+        if (book.Held.Count == 0) return;
+        foreach (int id in book.Held) ToBench(world, world.Players[id]);
+        book.Held.Clear();
+    }
+
+    /// <summary>Empties the box: every skater in it, waiting or done, goes to the bench and no call stays pending.</summary>
+    internal static void ClearBox(World world, PenaltyBook book)
+    {
+        book.Delayed.Clear();
+        var ids = world.Match.Penalties.Select(p => p.PlayerId).Concat(book.Waiting.Select(p => p.PlayerId)).Concat(book.Held).ToList();
+        foreach (int id in ids.Where(id => !world.Players[id].OnIce)) ToBench(world, world.Players[id]);
+        world.Match.Penalties.Clear();
+        book.Waiting.Clear();
+        book.Held.Clear();
+        book.Substituted.Clear();
     }
 
     /// <summary>Ends a penalty: the skater comes out of the box door onto the ice.</summary>
@@ -249,6 +346,15 @@ public static class Penalties
 internal sealed class PenaltyBook
 {
     public List<DelayedPenalty> Delayed { get; } = [];
+
+    /// <summary>Gets the penalties waiting for one of their club's two running penalties to end (W46).</summary>
+    public List<PenaltyState> Waiting { get; } = [];
+
+    /// <summary>Gets the skaters whose time is up but who stay in the box until play stops, because a waiting penalty took their place (W46).</summary>
+    public HashSet<int> Held { get; } = [];
+
+    /// <summary>Gets the skaters serving a substituted coincidental minor (W46).</summary>
+    public HashSet<int> Substituted { get; } = [];
 
     /// <summary>Gets the penalties called per club this match.</summary>
     public int[] Called { get; } = new int[2];

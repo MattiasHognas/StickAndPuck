@@ -13,7 +13,9 @@ namespace StickAndPuck.Rules;
 /// full AI match, no window; prints one line per check and exits with 0 when all pass, 1 otherwise.
 /// Covers the W14 "done when": calls happen, the penalised club plays short, time is served correctly,
 /// and W23's: a penalty in 3 on 3 overtime gives 4 on 3, the goalie is pulled on a delayed call
-/// and when trailing late. In period 1 home defends -x.
+/// and when trailing late; W46's: a penalty running at 60:00 continues in overtime, a third penalty
+/// is served after the first expires, coincidental minors stay 5 on 5 under SHL and play 4 on 4
+/// under NHL. In period 1 home defends -x.
 /// </summary>
 public sealed class PenaltySelfTest : IScene
 {
@@ -27,9 +29,9 @@ public sealed class PenaltySelfTest : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period };
-        World Make(int period = 1)
+        World Make(int period = 1, RuleSet? rules = null)
         {
-            var w = new World(setup, settings);
+            var w = new World(rules == null ? setup : setup.WithRules(rules), settings);
             Scenes.AddStarters(w);
             MatchFlow.Begin(w, log: false);
             if (period > 1) MatchFlow.StartPeriod(w, period, Period);
@@ -43,10 +45,15 @@ public sealed class PenaltySelfTest : IScene
         PowerPlayGoal(Make());
         ShortHandedGoal(Make());
         GoalWavesOffDelayedCall(Make());
-        TwoAtMost(Make());
+        TwoAtMost(Make(rules: RuleSet.Arcade));
+        ThirdWaits(Make());
         FourOnFour(Make());
+        Coincidental(Make(), RuleSet.Shl);
+        Coincidental(Make(rules: RuleSet.Nhl), RuleSet.Nhl);
+        CoincidentalOnPowerPlay(Make(rules: RuleSet.Nhl));
         CarriesOverIntermission(Make());
-        EndsWithRegulation(Make(3));
+        EndsWithRegulation(Make(3, RuleSet.Arcade));
+        CarriesIntoOvertime(Make(3));
         NoCallsWhenOff(Make());
         HumanHandOff(Make());
         ChangedOffDuringDelay(Make());
@@ -75,7 +82,7 @@ public sealed class PenaltySelfTest : IScene
     /// <summary>Physics, the match rules, the bench, penalties and the referee: everything but the players moving themselves.</summary>
     static ISystem[] Systems(World world)
     {
-        return Sets.GetValue(world, _ => [new LinesSystem(), new PuckPhysics(), new MatchRules(), new OffsideRule(), new IcingRule(), new PenaltyRules(), new Referee.RefereeSystem()]);
+        return Sets.GetValue(world, _ => [new LinesSystem(), new PuckPhysics(), new MatchRules(), new OffsideRule(), new IcingRule(), new OvertimeRules(), new PenaltyRules(), new Referee.RefereeSystem()]);
     }
 
     static List<MatchEvent> Run(World world, Func<World, bool> until, Action<World>? each = null, float limit = 10)
@@ -219,12 +226,83 @@ public sealed class PenaltySelfTest : IScene
         bool second = Penalties.Signal(w, skaters[1].Id, Infraction.Slashing);
         bool third = Penalties.Signal(w, skaters[2].Id, Infraction.Slashing);
         bool goalie = Penalties.Signal(w, w.OnIce(Side.Away).First(p => p.IsGoalie).Id, Infraction.Slashing);
-        Check(second && !third && !goalie, "a club is never more than two short, and goalies are not called");
+        Check(second && !third && !goalie, "Arcade: a club is never more than two short, and goalies are not called");
         w.Puck.Carrier = skaters[2].Id;
         Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
         w.Puck.Carrier = -1;
         ToPlay(w);
         Check(Skaters(w, Side.Home) == 3 && Penalties.Serving(w, Side.Home) == 2, "two penalties: three on five");
+    }
+
+    void ThirdWaits(World w)
+    {
+        var skaters = w.OnIce(Side.Home).Where(p => !p.IsGoalie).ToList();
+        var first = Penalise(w, skaters[0]);
+        ToPlay(w);
+        Run(w, _ => false, null, 5);
+        Penalise(w, skaters[1]);
+        ToPlay(w);
+        Penalties.Signal(w, skaters[2].Id, Infraction.Slashing);
+        w.Puck.Carrier = skaters[3].Id;
+        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        w.Puck.Carrier = -1;
+        ToPlay(w);
+        Check(Penalties.Serving(w, Side.Home) == 2 && Penalties.Waiting(w) is [{ PlayerId: var waiting }] && waiting == skaters[2].Id && Penalties.InBox(w, skaters[2].Id) && Skaters(w, Side.Home) == 3,
+            "SHL: a third penalty goes to the box and waits, home stays three on five");
+        float clock = w.Match.Clock;
+        bool steady = true;
+        Run(w, x => !x.Match.Penalties.Exists(p => p.PlayerId == first.PlayerId), x => steady &= Skaters(x, Side.Home) == 3, 120);
+        var third = w.Match.Penalties.Find(p => p.PlayerId == skaters[2].Id);
+        Check(steady && third != null && Math.Abs(third.SecondsLeft - Penalties.MinorSeconds(w)) < 0.05f && Penalties.Waiting(w).Count == 0 && Math.Abs(clock - w.Match.Clock - (Penalties.MinorSeconds(w) - 5)) < 0.05f,
+            "the third penalty starts in full when the first expires");
+        Check(Penalties.InBox(w, skaters[0].Id) && !skaters[0].OnIce && Skaters(w, Side.Home) == 3 && Penalties.Serving(w, Side.Home) == 2,
+            "the skater whose time is up stays in the box, home still three");
+        MatchFlow.Whistle(w, RinkSpec.CentreDot);
+        ToPlay(w);
+        Check(!Penalties.InBox(w, skaters[0].Id) && Skaters(w, Side.Home) == 3, "at the whistle he goes to the bench and home plays on with three");
+        Run(w, x => !Penalties.InBox(x, skaters[2].Id), null, 120);
+        Check(skaters[1].OnIce || !Penalties.InBox(w, skaters[1].Id), "the second and third penalties run out in turn");
+    }
+
+    void Coincidental(World w, RuleSet rules)
+    {
+        bool shl = rules.CoincidentalMinors == CoincidentalMinors.Substitute;
+        var home = Skater(w, Side.Home, PlayingPosition.LW);
+        var away = Skater(w, Side.Away, PlayingPosition.RW);
+        w.Puck.Carrier = Skater(w, Side.Away, PlayingPosition.C).Id;
+        Penalties.Signal(w, home.Id, Infraction.Hooking);
+        Penalties.Signal(w, away.Id, Infraction.Slashing);
+        w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.C).Id;
+        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        w.Puck.Carrier = -1;
+        ToPlay(w);
+        int want = shl ? 5 : 4;
+        Check(Penalties.InBox(w, home.Id) && Penalties.InBox(w, away.Id) && Skaters(w, Side.Home) == want && Skaters(w, Side.Away) == want && Penalties.PowerPlay(w) == null,
+            shl ? "SHL: coincidental minors are substituted, 5 on 5" : "NHL: coincidental minors from full strength play 4 on 4");
+        bool steady = true;
+        Run(w, x => !Penalties.InBox(x, home.Id), x => steady &= Skaters(x, Side.Home) == want && Skaters(x, Side.Away) == want, 120);
+        if (shl)
+            Check(steady && !home.OnIce && !away.OnIce && !Penalties.InBox(w, away.Id) && w.Match.Penalties.Count == 0 && Skaters(w, Side.Home) == 5,
+                "both serve their time, 5 on 5 throughout, and go to the bench");
+        else
+            Check(steady && home.OnIce && away.OnIce && Skaters(w, Side.Home) == 5 && Skaters(w, Side.Away) == 5, "both come out together: 5 on 5");
+    }
+
+    void CoincidentalOnPowerPlay(World w)
+    {
+        Penalise(w, Skater(w, Side.Home, PlayingPosition.C));
+        ToPlay(w);
+        var home = Skater(w, Side.Home, PlayingPosition.LW);
+        var away = Skater(w, Side.Away, PlayingPosition.RW);
+        w.Puck.Carrier = Skater(w, Side.Away, PlayingPosition.C).Id;
+        Penalties.Signal(w, home.Id, Infraction.Hooking);
+        Penalties.Signal(w, away.Id, Infraction.Slashing);
+        w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.D).Id;
+        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        w.Puck.Carrier = -1;
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == Side.Away,
+            "NHL: coincidental minors during a power play are substituted, still 5 on 4");
     }
 
     void FourOnFour(World w)
@@ -254,7 +332,29 @@ public sealed class PenaltySelfTest : IScene
         Penalise(w, lw);
         Run(w, x => x.Match.Phase is MatchPhase.Overtime or MatchPhase.Final, null, 30);
         Run(w, _ => false, null, 0.1f);
-        Check(w.Match.Phase == MatchPhase.Overtime && w.Match.Penalties.Count == 0 && !lw.OnIce, "penalties end with regulation (he waits on the bench)");
+        Check(w.Match.Phase == MatchPhase.Overtime && w.Match.Penalties.Count == 0 && !lw.OnIce, "Arcade: penalties end with regulation (he waits on the bench)");
+    }
+
+    void CarriesIntoOvertime(World w)
+    {
+        w.Match.Clock = 5;
+        var lw = Skater(w, Side.Home, PlayingPosition.LW);
+        Penalise(w, lw);
+        ToPlay(w);
+        Run(w, x => x.Match.Phase is MatchPhase.Overtime or MatchPhase.Final, null, 30);
+        var carried = w.Match.Penalties.SingleOrDefault();
+        Check(w.Match.Phase == MatchPhase.Overtime && carried != null && carried.PlayerId == lw.Id && Math.Abs(carried.SecondsLeft - (Penalties.MinorSeconds(w) - 5)) < 0.05f,
+            "SHL: a penalty running at 60:00 carries into overtime with its time left");
+        Run(w, x => x.Match.Period == 4 && x.Match.Phase == MatchPhase.Play, null, 30);
+        Check(Penalties.InBox(w, lw.Id) && Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 4 && Penalties.BaseSkaters(w) == 3 && Penalties.PowerPlay(w) == Side.Away,
+            "overtime starts 4 on 3 for the rest of it");
+        float clock = w.Match.Clock;
+        Run(w, x => !Penalties.InBox(x, lw.Id), null, 120);
+        Check(lw.OnIce && Math.Abs(clock - w.Match.Clock - carried!.SecondsLeft) < 0.05f && Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 4,
+            "it runs out in overtime and he plays on, 4 on 4 until the whistle");
+        MatchFlow.Whistle(w, RinkSpec.CentreDot);
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 3 && Penalties.BaseSkaters(w) == 3, "back to 3 on 3 at the next faceoff");
     }
 
     void NoCallsWhenOff(World off)
