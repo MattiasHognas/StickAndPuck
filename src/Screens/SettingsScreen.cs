@@ -99,13 +99,7 @@ internal sealed class SettingsScreen : MenuScreen
 
     static string OnOff(bool on) => on ? "ON" : "OFF";
 
-    static string Device(InputDevice device) => device switch
-    {
-        InputDevice.None => "OFF",
-        InputDevice.KeyboardMouse => "KEYBOARD",
-        InputDevice.Gamepad1 => "GAMEPAD 1",
-        _ => "GAMEPAD 2",
-    };
+    static string Device(InputDevice device) => Players.Gamepads.Label(device);    // W38: the pad by name
 
     static T Cycle<T>(T value, int dir)
         where T : struct, Enum
