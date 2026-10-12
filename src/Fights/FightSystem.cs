@@ -8,8 +8,8 @@ using StickAndPuck.Rules;
 namespace StickAndPuck.Fights;
 
 /// <summary>
-/// W15: a fight may start after a hard check; accept or decline, punch and block timing, the loser
-/// gets 2 minutes. See <see cref="Fighting"/> for the rules. Runs after the penalty rules, so it sees
+/// W15: a fight may start after a hard check; accept or decline, punch and block timing, then the
+/// rule set's fight penalty (W48). See <see cref="Fighting"/> for the rules. Runs after the penalty rules, so it sees
 /// this step's checks and the whistle it blows stops play before the referee and the bench look.
 /// While the fight lasts the match stays stopped (no clock, no faceoff) and the dead puck lies by the
 /// fighters, so the camera stays on them. Draws the offer prompt and the fight bar at the foot of the HUD.
@@ -303,7 +303,12 @@ internal sealed class FightSystem : ISystem, IDisposable
         s.Log(world, $"{Penalties.Name(world, world.Players[winner.PlayerId])} wins {(knockdown ? "by knockdown" : "on balance")}");
     }
 
-    /// <summary>The fight is over: the loser serves two minutes for fighting, the winner stays on, and the faceoff follows.</summary>
+    /// <summary>
+    /// The fight is over: the rule set's fight penalty (W48) is handed out and the faceoff follows in the
+    /// loser's end. Arcade: the loser serves two minutes, the winner stays on. SHL and NHL: both fighters
+    /// get a 5 minute major, coincidental and substituted so neither club plays short; under SHL both also
+    /// get a game misconduct and leave the squad.
+    /// </summary>
     static void End(World world, FightState s, Fight fight, bool penalise)
     {
         s.Fight = null;
@@ -316,7 +321,21 @@ internal sealed class FightSystem : ISystem, IDisposable
         }
         if (!penalise || fight.LoserId < 0) return;
         var loser = world.Players[fight.LoserId];
-        Penalties.Assess(world, Penalties.Book(world), new DelayedPenalty(loser.Side, loser.Id, FightTuning.Infraction, world.Time));
+        var book = Penalties.Book(world);
+        var rule = world.Setup.Rules.FightPenalty;
+        if (rule == FightPenalty.LoserMinor)
+        {
+            Penalties.Assess(world, book, new DelayedPenalty(loser.Side, loser.Id, FightTuning.Infraction, world.Time));
+        }
+        else
+        {
+            var severity = rule == FightPenalty.MajorAndEjection ? Severity.MajorAndGameMisconduct : Severity.Major;
+            foreach (var f in fight.Both)
+            {
+                var p = world.Players[f.PlayerId];
+                Penalties.Assess(world, book, new DelayedPenalty(p.Side, p.Id, FightTuning.Infraction, world.Time, severity), substitute: true);
+            }
+        }
         MatchFlow.State(world).Dot = Penalties.FaceoffDot(world, loser.Side);
     }
 

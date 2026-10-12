@@ -13,7 +13,8 @@ namespace StickAndPuck.Fights;
 /// SAP_SCENE=fighttest: scripted fights under the match rules, the bench, the penalty box and the
 /// referee, then full AI matches, no window; prints one line per check and exits with 0 when all
 /// pass, 1 otherwise. Covers the W15 "done when": a fight can start, be won by timing, and sends the
-/// loser to the box.
+/// loser to the box; and W48's: each preset's fight penalty (Arcade the loser's minor, NHL coincidental
+/// majors, SHL majors and game misconducts that take both fighters off the squad).
 /// </summary>
 public sealed class FightSelfTest : IScene
 {
@@ -26,10 +27,11 @@ public sealed class FightSelfTest : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period };
-        World Make(int period = 1, Settings? options = null)
+        var shl = Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period };
+        var setup = shl.WithRules(RuleSet.Arcade);   // W15's checks: the loser's two minutes
+        World Make(int period = 1, Settings? options = null, RuleSet? rules = null)
         {
-            var w = new World(setup, options ?? settings);
+            var w = new World(rules == null ? setup : shl.WithRules(rules), options ?? settings);
             Scenes.AddStarters(w);
             MatchFlow.Begin(w, log: false);
             if (period > 1) MatchFlow.StartPeriod(w, period, Period);
@@ -46,8 +48,12 @@ public sealed class FightSelfTest : IScene
         BlockTiming(Make(), Make());
         BrokenUp(Make());
         NoFight(Make(4), Make(options: settings with { Fights = false }), Make());
+        ArcadePenalty(Make(rules: RuleSet.Arcade));
+        MajorsStay(Make(rules: RuleSet.Nhl));
+        MajorsAndEjection(Make(rules: RuleSet.Shl));
+        MajorsNeverShort(Make(rules: RuleSet.Shl));
         Penalties.Strictness = 1;
-        FullMatches(setup, settings);
+        foreach (var rules in new[] { RuleSet.Arcade, RuleSet.Shl, RuleSet.Nhl }) FullMatches(shl.WithRules(rules), settings);
 
         Console.WriteLine(failures == 0 ? "FIGHTTEST: all checks passed" : $"FIGHTTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
@@ -269,16 +275,105 @@ public sealed class FightSelfTest : IScene
         Check(!Fighting.Offer(w, Skater(w, Side.Away, PlayingPosition.C).Id, Skater(w, Side.Home, PlayingPosition.C).Id), "no fight when a club already serves two penalties");
     }
 
+    /// <summary>A fight the home centre wins by knockdown; returns the events from the gloves dropping to the end.</summary>
+    static List<MatchEvent> HomeWins(World w)
+    {
+        var me = Skater(w, Side.Home, PlayingPosition.C);
+        me.Slot = 0;
+        var s = Fighting.State(w);
+        s.AiPunches = false;
+        s.AiBlocks = false;
+        StartFight(w);
+        return Run(w, x => Fighting.Current(x) == null, Human(0.5f), 20);
+    }
+
+    static int Skaters(World w, Side side)
+    {
+        return w.OnIce(side).Count(p => !p.IsGoalie);
+    }
+
+    static PenaltyState? Fighting5(World w, Player p)
+    {
+        return w.Match.Penalties.Find(x => x.PlayerId == p.Id && string.Equals(x.Infraction, FightTuning.Infraction, StringComparison.Ordinal)
+            && Math.Abs(x.SecondsLeft - Penalties.ClubSeconds(w, Severity.Major)) < 0.01f);
+    }
+
+    void ArcadePenalty(World w)
+    {
+        var me = Skater(w, Side.Home, PlayingPosition.C);
+        var them = Skater(w, Side.Away, PlayingPosition.C);
+        HomeWins(w);
+        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+        var call = w.Match.Penalties.Find(p => p.PlayerId == them.Id);
+        Check(call != null && Math.Abs(call.SecondsLeft - Penalties.MinorSeconds(w)) < 0.01f && w.Match.Penalties.Count == 1 && me.OnIce
+            && Penalties.PowerPlay(w) == Side.Home && !Penalties.Ejected(w, them.Id),
+            "Arcade: the loser gets two minutes, the winner stays on and his club has the power play");
+    }
+
+    void MajorsStay(World w)
+    {
+        var me = Skater(w, Side.Home, PlayingPosition.C);
+        var them = Skater(w, Side.Away, PlayingPosition.C);
+        var events = HomeWins(w);
+        Check(Fighting5(w, me) != null && Fighting5(w, them) != null && Penalties.InBox(w, me.Id) && Penalties.InBox(w, them.Id) && !me.OnIce && !them.OnIce
+            && events.Count(e => e.Kind == MatchEventKind.Penalty) == 2 && !Penalties.Ejected(w, me.Id) && !Penalties.Ejected(w, them.Id),
+            "NHL: both fighters get a five minute major for fighting, winner and loser, and neither is ejected");
+        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+        Check(Skaters(w, Side.Home) == 5 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == null,
+            "NHL: the majors are coincidental and substituted, so play goes on five on five");
+        var homeSquad = Bench.SquadOf(w, Side.Home)!;
+        var awaySquad = Bench.SquadOf(w, Side.Away)!;
+        Run(w, x => x.Match.Penalties.Count == 0, x => { if (x.Tick % 180 == 0) { Bench.RequestChange(x, Side.Home); Bench.RequestChange(x, Side.Away); } }, 400);
+        Check(w.Match.Penalties.Count == 0 && !Penalties.InBox(w, me.Id) && !Penalties.InBox(w, them.Id) && homeSquad.UnitOf(me) != null && awaySquad.UnitOf(them) != null,
+            "NHL: when the five minutes are up both fighters leave the box and stay in their lines");
+    }
+
+    void MajorsAndEjection(World w)
+    {
+        var me = Skater(w, Side.Home, PlayingPosition.C);
+        var them = Skater(w, Side.Away, PlayingPosition.C);
+        var homeSquad = Bench.SquadOf(w, Side.Home)!;
+        var awaySquad = Bench.SquadOf(w, Side.Away)!;
+        var events = HomeWins(w);
+        Check(Fighting5(w, me) != null && Fighting5(w, them) != null && events.Count(e => e.Kind == MatchEventKind.Penalty) == 2,
+            "SHL: both fighters get a five minute major for fighting, winner and loser, on the scorebug");
+        Check(Penalties.Ejected(w, me.Id) && Penalties.Ejected(w, them.Id) && homeSquad.UnitOf(me) == null && awaySquad.UnitOf(them) == null && !me.OnIce && !them.OnIce,
+            "SHL: both also get a game misconduct and are off the squad, the lines refill without them");
+        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+        Check(Skaters(w, Side.Home) == 5 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == null,
+            "SHL: the majors are coincidental and substituted, so play goes on five on five");
+        bool back = false;
+        Run(w, x => x.Match.Penalties.Count == 0, x =>
+        {
+            back |= me.OnIce || them.OnIce;
+            if (x.Tick % 180 == 0) { Bench.RequestChange(x, Side.Home); Bench.RequestChange(x, Side.Away); }
+        }, 400);
+        Check(w.Match.Penalties.Count == 0 && !back && !me.OnIce && !them.OnIce && Skaters(w, Side.Home) == 5 && Skaters(w, Side.Away) == 5,
+            "SHL: when the five minutes are up neither fighter comes back, both clubs play five on five");
+    }
+
+    void MajorsNeverShort(World w)
+    {
+        // two home skaters already serve: substituted majors cannot put home three short, so the fight may go on
+        var book = Penalties.Book(w);
+        Penalties.Assess(w, book, new DelayedPenalty(Side.Home, Skater(w, Side.Home, PlayingPosition.LW).Id, Infraction.Tripping, w.Time));
+        Penalties.Assess(w, book, new DelayedPenalty(Side.Home, Skater(w, Side.Home, PlayingPosition.RW).Id, Infraction.Hooking, w.Time));
+        Fighting.State(w).ForceAccept = true;
+        Check(Fighting.Offer(w, Skater(w, Side.Away, PlayingPosition.C).Id, Skater(w, Side.Home, PlayingPosition.C).Id),
+            "SHL: a club serving two penalties can still fight, since coincidental majors never leave it shorter");
+    }
+
     void FullMatches(MatchSetup setup, Settings settings)
     {
+        int perFight = setup.Rules.FightPenalty == FightPenalty.LoserMinor ? 1 : 2;
         int fights = 0, boxed = 0, broken = 0, open = 0;
         foreach (int seed in Seeds)
         {
             var (f, b, x, o) = Match(setup with { PeriodSeconds = 600 }, settings, seed);
             fights += f; boxed += b; broken += x; open += o;
         }
-        Check(fights >= 1 && boxed == fights && broken == 0 && open == 0,
-            $"AI matches of 3 x 10:00: {fights} fight(s) in {Seeds.Length} matches, each loser boxed once, clubs short by exactly their penalties");
+        Check(fights >= 1 && boxed == fights * perFight && broken == 0 && open == 0,
+            $"{setup.Rules.Preset}: AI matches of 3 x 10:00: {fights} fight(s) in {Seeds.Length} matches, {boxed} fighting penalties ({perFight} a fight), clubs short by exactly their penalties");
     }
 
     static readonly int[] Seeds = [2, 3, 4, 5];
@@ -307,7 +402,8 @@ public sealed class FightSelfTest : IScene
             w.Time += Game.Step; w.Tick++;
             foreach (var e in w.Events.Of(MatchEventKind.Penalty))
                 if (string.Equals(w.Match.Penalties.FindLast(p => p.PlayerId == e.PlayerId)?.Infraction, FightTuning.Infraction, StringComparison.Ordinal)) boxed++;
-            if (w.Match.Phase is MatchPhase.Final or MatchPhase.Overtime or MatchPhase.Shootout) continue;
+            // strength is checked in play: between a whistle and the faceoff the bench is still filling the gaps (as W47's penaltytest does)
+            if (w.Match.Phase != MatchPhase.Play) continue;
             foreach (var side in new[] { Side.Home, Side.Away })
                 if (w.OnIce(side).Count(p => !p.IsGoalie) != Penalties.TargetSkaters(w, side)) broken++;
         }
