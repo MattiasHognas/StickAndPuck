@@ -194,4 +194,7 @@ internal sealed class FlowState
 
     /// <summary>Gets or sets how long a goalie has held the puck in play.</summary>
     public float Held { get; set; }
+
+    /// <summary>Gets or sets the end-of-game celebration (W40), from the horn of a decided game.</summary>
+    public Celebration.CelebrationState? Celebration { get; set; }
 }

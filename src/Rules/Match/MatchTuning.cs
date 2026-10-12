@@ -24,6 +24,9 @@ public static class MatchTuning
     /// <summary>Between periods.</summary>
     public const float IntermissionSeconds = 4f;
 
+    /// <summary>The end-of-game celebration after the horn of a decided game, before the final (W40).</summary>
+    public const float CelebrationSeconds = 8f;
+
     /// <summary>Length of an SHL 3 on 3 overtime period, for W7c to pass to <see cref="MatchFlow.StartPeriod"/>.</summary>
     public const float OvertimeSeconds = 5 * 60;
 }

@@ -41,7 +41,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
 
     public void Update(World world, float dt)
     {
-        if (IsKeyPressed(KeyboardKey.Tab)) world.Settings = world.Settings with { SwapKits = !world.Settings.SwapKits };
+        if (KeyInput.Pressed(world.Settings, GameAction.Kit)) world.Settings = world.Settings with { SwapKits = !world.Settings.SwapKits };
         swapKits = world.Settings.SwapKits;    // W20: the setting, which Tab flips in play
         foreach (var p in Skaters(world))
         {
@@ -52,6 +52,14 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
                 frame = fight.Seconds * ClipFps;
                 if (fight.Loop) frame %= clips[fc].KeyFrameCount;
                 poses[p.Id] = (fc, frame);
+                continue;
+            }
+            if (Rules.Celebration.Pose(world, p) is { } pose && Find(pose.Clip) is >= 0 and var pc)
+            {
+                // W40: the end-of-game celebration poses the winners and the losers the same way
+                frame = pose.Seconds * ClipFps;
+                if (pose.Loop) frame %= clips[pc].KeyFrameCount;
+                poses[p.Id] = (pc, frame);
                 continue;
             }
             int want = p.Action == PlayerAction.Shoot ? Find("shoot") : p.Speed > 0.4f ? Find("skate") : Find("idle");

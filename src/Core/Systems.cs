@@ -9,6 +9,7 @@ using StickAndPuck.Lighting;
 using StickAndPuck.Lines;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
+using StickAndPuck.Pregame;
 using StickAndPuck.Referee;
 using StickAndPuck.Rules;
 using StickAndPuck.Screens;
@@ -32,6 +33,7 @@ public static class Systems
             new InputSystem(),           // W4a human input slots -> PlayerCommand
             new PositioningSystem(),     // W6a AI: where each AI player skates
             new DecisionSystem(),        // W6b AI: chase, pass, shoot
+            new PregameSystem(),         // W28 warm-up before the opening faceoff
             new SwitchingSystem(),       // W4c which player each human controls
             new LinesSystem(),           // W13 fatigue, line changes, goalie swap
             new SkatingSystem(),         // W4a movement from commands and traits
