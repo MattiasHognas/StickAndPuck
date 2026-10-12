@@ -213,7 +213,7 @@ internal sealed class DecisionSystem : ISystem
         var toNet = new Vector2(end * RinkSpec.GoalLineX, 0) - at;
         float distance = toNet.Length();
         var goalie = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).FirstOrDefault(o => o.IsGoalie);
-        int side = Choices.ShotSide(at, goalie?.Position.Z);
+        int side = goalie != null && StickAndPuck.Goalie.GoalieModel.WeakSide(goalie, end) is var weak and not 0 && rng.NextSingle() < p.Data.Traits.Iq ? weak : Choices.ShotSide(at, goalie?.Position.Z);
 
         // an accurate shooter points the stick at the side of the net to beat the goalie; anyone
         // else, and any slap shot, just aims at the net and lets the shot find the far side

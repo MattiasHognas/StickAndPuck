@@ -29,7 +29,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 74,
-        "goalieReflexes": 76
+        "goalieReflexes": 76,
+        "goalieGlove": 67,
+        "goalieBlocker": 81,
+        "goalieReboundControl": 70,
+        "goaliePuckHandling": 49
       }
     },
     {
@@ -46,7 +50,11 @@
         "checking": 25,
         "puckControl": 40,
         "hockeyIq": 63,
-        "goalieReflexes": 65
+        "goalieReflexes": 65,
+        "goalieGlove": 68,
+        "goalieBlocker": 59,
+        "goalieReboundControl": 68,
+        "goaliePuckHandling": 52
       }
     },
     {
