@@ -29,11 +29,14 @@ public sealed record Unit(Group Group, int Number, IReadOnlyList<Player> Members
 /// <summary>One club's match squad: four forward lines, three defence pairs and two goalies, all of them in <see cref="World.Players"/>.</summary>
 public sealed class Squad
 {
+    readonly List<Unit> lines;
+    readonly List<Unit> pairs;
+
     Squad(Side side, List<Unit> lines, List<Unit> pairs, List<Player> goalies)
     {
         Side = side;
-        Lines = lines;
-        Pairs = pairs;
+        this.lines = lines;
+        this.pairs = pairs;
         Goalies = goalies;
     }
 
@@ -41,10 +44,10 @@ public sealed class Squad
     public Side Side { get; }
 
     /// <summary>Gets the forward lines, line 1 first.</summary>
-    public IReadOnlyList<Unit> Lines { get; }
+    public IReadOnlyList<Unit> Lines => lines;
 
     /// <summary>Gets the defence pairs, pair 1 first.</summary>
-    public IReadOnlyList<Unit> Pairs { get; }
+    public IReadOnlyList<Unit> Pairs => pairs;
 
     /// <summary>Gets the goalies, the starter first.</summary>
     public IReadOnlyList<Player> Goalies { get; }
@@ -130,6 +133,38 @@ public sealed class Squad
     public Unit? UnitOf(Player p)
     {
         return Lines.Concat(Pairs).FirstOrDefault(u => u.Members.Contains(p));
+    }
+
+    /// <summary>
+    /// Takes a player out of the squad for good, as an ejection does (W47), and refills his unit:
+    /// the last unit of his group gives up a skater, of the same position if it has one, so the top
+    /// lines and pairs stay whole and the last one plays short (a change fills it from the bench).
+    /// A unit left with nobody is dropped.
+    /// </summary>
+    /// <param name="p">The player.</param>
+    /// <returns>The skater who moved up into the gap, or null when nobody did.</returns>
+    public Player? Remove(Player p)
+    {
+        if (UnitOf(p) is not { } unit) return null;
+        var units = unit.Group == Group.Forwards ? lines : pairs;
+        int at = units.IndexOf(unit);
+        var members = unit.Members.ToList();
+        int slot = members.IndexOf(p);
+        var last = units[^1];
+        Player? donor = null;
+        if (last != unit && last.Members.Count > 0)
+        {
+            donor = last.Members.FirstOrDefault(m => m.Data.Position == p.Data.Position) ?? last.Members[^1];
+            members[slot] = donor;
+            units[^1] = last with { Members = [.. last.Members.Where(m => m != donor)] };
+        }
+        else
+        {
+            members.RemoveAt(slot);
+        }
+        units[at] = unit with { Members = members };
+        units.RemoveAll(u => u.Members.Count == 0);
+        return donor;
     }
 
     static Queue<Player> Queue(List<Player> players, PlayingPosition position)

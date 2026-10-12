@@ -11,6 +11,8 @@ namespace StickAndPuck.Rules;
 /// penalties after that (1 is normal); SAP_AI_HUMAN=1 puts the keyboard on the home centre.
 /// W23: SAP_PENALTY_OT=1 starts in 3 on 3 overtime instead, so the call gives 4 on 3;
 /// SAP_PENALTY_SKIP=seconds plays that long off screen first (for a headless screenshot).
+/// W47: SAP_PENALTY_MAJOR=1 makes the scripted call boarding, a major with a game misconduct: the
+/// skater is ejected, his line refills from the last one (SAP_LINES_DEBUG=1 shows the units).
 /// </summary>
 public sealed class PenaltyScene : IScene
 {
@@ -39,6 +41,8 @@ public sealed class PenaltyScene : IScene
             MatchFlow.SetUpFaceoff(world, RinkSpec.CentreDot);
         }
         Penalties.Book(world).ScriptAfterDrop = 2f;
+        if (string.Equals(Environment.GetEnvironmentVariable("SAP_PENALTY_MAJOR"), "1", StringComparison.Ordinal))
+            Penalties.Book(world).ScriptCall = (Infraction.Boarding, Severity.MajorAndGameMisconduct);
         if (Env("SAP_PENALTY_SKIP") is { } skip and > 0) PenaltyScenes.FastForward(world, skip);
         return world;
     }

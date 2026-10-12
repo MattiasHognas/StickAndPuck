@@ -15,7 +15,10 @@ namespace StickAndPuck.Rules;
 /// and W23's: a penalty in 3 on 3 overtime gives 4 on 3, the goalie is pulled on a delayed call
 /// and when trailing late; W46's: a penalty running at 60:00 continues in overtime, a third penalty
 /// is served after the first expires, coincidental minors stay 5 on 5 under SHL and play 4 on 4
-/// under NHL. In period 1 home defends -x.
+/// under NHL; W47's: a major with a game misconduct ejects the skater and refills the lines, a
+/// power play goal ends half a double minor and never a major, a misconduct keeps the skater out
+/// while a teammate serves, Arcade calls only minors, and each new infraction is called and stays
+/// silent when its switch is off. In period 1 home defends -x.
 /// </summary>
 public sealed class PenaltySelfTest : IScene
 {
@@ -51,6 +54,7 @@ public sealed class PenaltySelfTest : IScene
         Coincidental(Make(), RuleSet.Shl);
         Coincidental(Make(rules: RuleSet.Nhl), RuleSet.Nhl);
         CoincidentalOnPowerPlay(Make(rules: RuleSet.Nhl));
+        Severities(rules => Make(rules: rules));
         CarriesOverIntermission(Make());
         EndsWithRegulation(Make(3, RuleSet.Arcade));
         CarriesIntoOvertime(Make(3));
@@ -111,9 +115,9 @@ public sealed class PenaltySelfTest : IScene
     }
 
     /// <summary>Calls a penalty on a skater and makes it at once by giving his club the puck.</summary>
-    static PenaltyState Penalise(World w, Player p, string infraction = Infraction.Tripping)
+    static PenaltyState Penalise(World w, Player p, string infraction = Infraction.Tripping, Severity severity = Severity.Minor)
     {
-        Penalties.Signal(w, p.Id, infraction);
+        Penalties.Signal(w, p.Id, infraction, severity);
         w.Puck.Carrier = (w.OnIce(p.Side).FirstOrDefault(o => o.Data.Position == PlayingPosition.C && o != p) ?? w.OnIce(p.Side).First(o => !o.IsGoalie && o != p)).Id;
         Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
         w.Puck.Carrier = -1;
@@ -357,6 +361,176 @@ public sealed class PenaltySelfTest : IScene
         Check(Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 3 && Penalties.BaseSkaters(w) == 3, "back to 3 on 3 at the next faceoff");
     }
 
+    /// <summary>W47's checks, each in a fresh match under the rules given (null for SHL).</summary>
+    void Severities(Func<RuleSet?, World> make)
+    {
+        MajorAndEjection(make(null));
+        DoubleMinor(make(null));
+        MinorAndMisconduct(make(null));
+        MinorsOnly(make(RuleSet.Arcade));
+        GiveForFights(make(null));
+        foreach (var scene in InfractionScenes) Infractions(scene, make);
+    }
+
+    void MajorAndEjection(World w)
+    {
+        var lw = Skater(w, Side.Home, PlayingPosition.LW);
+        var squad = Bench.SquadOf(w, Side.Home)!;
+        var line = squad.UnitOf(lw)!;
+        int lastCount = squad.Lines[^1].Members.Count;
+        var major = Penalise(w, lw, Infraction.Boarding, Severity.MajorAndGameMisconduct);
+        Check(Penalties.Ejected(w, lw.Id) && Penalties.InBox(w, lw.Id) && !lw.OnIce && Math.Abs(major.SecondsLeft - Penalties.ClubSeconds(w, Severity.Major)) < 0.01f
+            && Math.Abs(Penalties.ClubSeconds(w, Severity.Major) - (2.5f * Penalties.MinorSeconds(w))) < 0.01f, "boarding at full force: a five minute major and a game misconduct, the skater is ejected");
+        var refilled = squad.Lines.First(u => u.Number == line.Number);
+        Check(squad.UnitOf(lw) == null && refilled.Members.Count == line.Members.Count && squad.Lines[^1].Members.Count == lastCount - 1,
+            $"the lines refill without him: {refilled.Name} takes a skater from the last line, which plays short ({string.Join(" ", squad.Lines.Select(u => $"{u.Name}:{u.Members.Count}"))})");
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 4 && Penalties.PowerPlay(w) == Side.Away, "home kills the major four on five");
+        PublishGoal(w, Side.Away);
+        ToPlay(w);
+        Check(w.Match.Penalties.Exists(p => p.PlayerId == lw.Id) && Skaters(w, Side.Home) == 4, "a power play goal does not end a major");
+        bool back = false;
+        void Watch(World x)
+        {
+            back |= lw.OnIce;
+            if (x.Tick % 180 == 0) Bench.RequestChange(x, Side.Home);
+        }
+        Run(w, x => !x.Match.Penalties.Exists(p => p.PlayerId == lw.Id), Watch, 400);
+        Check(!w.Match.Penalties.Exists(p => p.PlayerId == lw.Id) && Skaters(w, Side.Home) == 5 && Penalties.InBox(w, lw.Id) && !lw.OnIce,
+            "when the five minutes are up a teammate comes out of the box: five on five");
+        MatchFlow.Whistle(w, RinkSpec.CentreDot);
+        ToPlay(w);
+        Run(w, _ => false, Watch, 30);
+        Check(!back && !lw.OnIce && Skaters(w, Side.Home) == 5, "the ejected skater never comes back on, through every change");
+    }
+
+    void DoubleMinor(World w)
+    {
+        var rw = Skater(w, Side.Home, PlayingPosition.RW);
+        var p = Penalise(w, rw, Infraction.HighSticking, Severity.DoubleMinor);
+        Check(Math.Abs(p.SecondsLeft - (2 * Penalties.MinorSeconds(w))) < 0.01f && Penalties.SeverityOf(w, rw.Id) == Severity.DoubleMinor, "a high stick that draws blood: a double minor, four minutes");
+        ToPlay(w);
+        PublishGoal(w, Side.Away);
+        Check(w.Match.Penalties.Find(x => x.PlayerId == rw.Id) is { } half && Math.Abs(half.SecondsLeft - Penalties.MinorSeconds(w)) < 0.01f && !rw.OnIce,
+            "a power play goal ends the first half: two minutes left, still in the box");
+        ToPlay(w);
+        PublishGoal(w, Side.Away);
+        Check(!w.Match.Penalties.Exists(x => x.PlayerId == rw.Id) && rw.OnIce, "a second power play goal ends the second half");
+    }
+
+    void MinorAndMisconduct(World w)
+    {
+        var d = Skater(w, Side.Home, PlayingPosition.D);
+        Penalise(w, d, Infraction.Roughing, Severity.MinorAndMisconduct);
+        Check(Penalties.Misconducts(w) is [{ SecondsLeft: var sits }] && Math.Abs(sits - (Penalties.MinorSeconds(w) + Penalties.MisconductSeconds(w))) < 0.01f
+            && Math.Abs(Penalties.MisconductSeconds(w) - (5 * Penalties.MinorSeconds(w))) < 0.01f, "roughing with a misconduct: two minutes for the club, twelve in the box for him");
+        ToPlay(w);
+        Check(Skaters(w, Side.Home) == 4, "home kills the minor four on five");
+        Run(w, x => !x.Match.Penalties.Exists(p => p.PlayerId == d.Id), null, 200);
+        Check(Skaters(w, Side.Home) == 5 && !d.OnIce && Penalties.InBox(w, d.Id), "after the minor a teammate comes out, he sits on: five on five");
+        Run(w, x => Penalties.Misconducts(x).Count == 0, null, 600);
+        Check(Penalties.Misconducts(w).Count == 0 && Penalties.InBox(w, d.Id), "the misconduct runs out on its own clock and he waits for the whistle");
+        MatchFlow.Whistle(w, RinkSpec.CentreDot);
+        ToPlay(w);
+        Check(!Penalties.InBox(w, d.Id) && Skaters(w, Side.Home) == 5, "at the whistle he goes to the bench, free to play");
+    }
+
+    void MinorsOnly(World w)
+    {
+        var c = Skater(w, Side.Home, PlayingPosition.C);
+        var p = Penalise(w, c, Infraction.Tripping, Severity.MajorAndGameMisconduct);
+        Check(!Penalties.Ejected(w, c.Id) && Math.Abs(p.SecondsLeft - Penalties.MinorSeconds(w)) < 0.01f && Penalties.Misconducts(w).Count == 0, "Arcade: every call is a two minute minor");
+        Check(PenaltyModel.Grade(RuleSet.Arcade, Infraction.Boarding, 3f, 0f) == Severity.Minor && PenaltyModel.Grade(RuleSet.Shl, Infraction.Boarding, 3f, 0f) == Severity.MajorAndGameMisconduct
+            && PenaltyModel.Grade(RuleSet.Shl, Infraction.Boarding, 1.6f, 0f) == Severity.Minor && PenaltyModel.Grade(RuleSet.Shl, Infraction.HighSticking, 0, 0.1f) == Severity.DoubleMinor
+            && PenaltyModel.Grade(RuleSet.Shl, Infraction.CheckingFromBehind, 1.6f, 0.9f) == Severity.MinorAndMisconduct && PenaltyModel.Grade(RuleSet.Nhl, Infraction.Hooking, 3f, 0f) == Severity.Minor,
+            "the referee's grading: majors from very hard boarding, double minors from a bloody high stick, minors in Arcade");
+    }
+
+    void GiveForFights(World w)
+    {
+        var lw = Skater(w, Side.Away, PlayingPosition.LW);
+        Penalties.Give(w, lw.Id, "fighting", Severity.MajorAndGameMisconduct);
+        Check(Penalties.Ejected(w, lw.Id) && w.Match.Penalties.Exists(p => p.PlayerId == lw.Id && Math.Abs(p.SecondsLeft - Penalties.ClubSeconds(w, Severity.Major)) < 0.01f),
+            "W48's hook: Give hands out a major and a game misconduct at once");
+    }
+
+    /// <summary>One W47 infraction: how to stage it, the rules with its switch off, and the hit (0 for a chase).</summary>
+    sealed record InfractionScene(string Infraction, Func<RuleSet, RuleSet> Off, Action<World, Player, Player> SetUp, float Strength, bool Late = false);
+
+    static readonly InfractionScene[] InfractionScenes =
+    [
+        new(Infraction.Interference, r => r with { Interference = false }, (w, t, c) =>
+        {
+            Place(t, new Vector3(0, 0, 0), MathF.PI / 2, c, new Vector3(0, 0, -1));
+            w.Puck.Position = new Vector3(20, 0, 0);
+        }, 1f),
+        new(Infraction.Holding, r => r with { Holding = false }, (w, t, c) =>
+        {
+            Place(t, new Vector3(0, 0, 0), MathF.PI / 2, c, new Vector3(-0.6f, 0, 0));
+            t.Velocity = new Vector3(2, 0, 0);
+            w.Puck.Carrier = t.Id;
+        }, 0f),
+        new(Infraction.HighSticking, r => r with { HighSticking = false }, (w, t, c) =>
+        {
+            Place(t, new Vector3(0, 0, 0), MathF.PI / 2, c, new Vector3(1, 0, 0));
+            w.Puck.Carrier = t.Id;
+        }, 1f),
+        new(Infraction.CrossChecking, r => r with { CrossChecking = false }, (w, t, c) =>
+        {
+            Place(t, new Vector3(0, 0, 0), MathF.PI / 2, c, new Vector3(1, 0, 0));
+            w.Puck.Carrier = t.Id;
+        }, CheckingModel.HardHit + 0.3f),
+        new(Infraction.Boarding, r => r with { Boarding = false }, (w, t, c) =>
+        {
+            Place(t, new Vector3(0, 0, RinkSpec.HalfWidth - 0.8f), 0, c, new Vector3(0, 0, RinkSpec.HalfWidth - 1.8f));
+        }, CheckingModel.HardHit + 0.3f),
+        new(Infraction.Roughing, r => r with { Roughing = false }, (w, t, c) =>
+        {
+            Place(t, new Vector3(0, 0, 0), MathF.PI / 2, c, new Vector3(0, 0, -1));
+            MatchFlow.Whistle(w, RinkSpec.CentreDot);
+        }, 1f, Late: true),
+    ];
+
+    static void Place(Player target, Vector3 at, float heading, Player checker, Vector3 from)
+    {
+        target.Position = at;
+        target.Heading = heading;
+        target.Velocity = Vector3.Zero;
+        target.Begin(PlayerAction.None);
+        checker.Position = from;
+        checker.Velocity = Vector3.Zero;
+        checker.Begin(PlayerAction.None);
+    }
+
+    /// <summary>W47: stages an infraction with a referee who calls everything he sees, once with its switch on and once off.</summary>
+    void Infractions(InfractionScene scene, Func<RuleSet?, World> make)
+    {
+        var on = Stage(make(null), scene);
+        var off = Stage(make(scene.Off(RuleSet.Shl)), scene);
+        Check(on.Contains(scene.Infraction, StringComparer.Ordinal) && !off.Contains(scene.Infraction, StringComparer.Ordinal),
+            $"{scene.Infraction} is called{(scene.Late ? " after the whistle" : "")} and stays silent when switched off (on: {string.Join(", ", on)}; off: {(off.Count == 0 ? "nothing" : string.Join(", ", off))})");
+    }
+
+    static List<string> Stage(World w, InfractionScene scene)
+    {
+        var target = Skater(w, Side.Home, PlayingPosition.C);
+        var checker = Skater(w, Side.Away, PlayingPosition.D);
+        w.Puck.Carrier = -1;
+        w.Puck.LastTouch = -1;
+        w.Puck.Position = Vector3.Zero;
+        w.Puck.Velocity = Vector3.Zero;
+        scene.SetUp(w, target, checker);
+        Penalties.Strictness = 1e6f;
+        bool hit = false;
+        Run(w, _ => hit && (scene.Strength > 0 || w.Time > 1), x =>
+        {
+            if (!hit && scene.Strength > 0) x.Events.Publish(new MatchEvent(MatchEventKind.Check, x.Time, Side.Away, checker.Id, target.Position, scene.Strength));
+            hit = true;
+        }, scene.Strength > 0 ? 1 : 2);
+        Penalties.Strictness = 1f;
+        return [.. Penalties.Delayed(w).Select(d => d.Infraction).Concat(w.Match.Penalties.Select(p => p.Infraction))];
+    }
+
     void NoCallsWhenOff(World off)
     {
         off.Settings = off.Settings with { Penalties = false };
@@ -542,7 +716,7 @@ public sealed class PenaltySelfTest : IScene
     void FullMatch(MatchSetup setup, Settings settings)
     {
         var (calls, broken, served) = Match(setup with { PeriodSeconds = 240 }, settings, 8f, 1);
-        Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step");
+        Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step in play");
         int normal = 0, broken2 = 0;
         foreach (int seed in Seeds)
         {
@@ -589,11 +763,12 @@ public sealed class PenaltySelfTest : IScene
             // penalties end with regulation, leaving the box empty for overtime
             foreach (var side in w.Match.Phase is MatchPhase.Final or MatchPhase.Overtime or MatchPhase.Shootout ? [] : new[] { Side.Home, Side.Away })
             {
-                if (Skaters(w, side) != Penalties.TargetSkaters(w, side))
+                // in play: a call at a stoppage can leave a club a skater short until the faceoff brings it to strength (a third penalty waiting, W46)
+                if (w.Match.Phase == MatchPhase.Play && Skaters(w, side) != Penalties.TargetSkaters(w, side))
                     broken++;
                 if (w.Match.Penalties.Exists(p => w.Players[p.PlayerId].OnIce)) broken++;
             }
-            served &= w.Match.Penalties.TrueForAll(p => p.SecondsLeft <= Penalties.MinorSeconds(w) + 0.01f);
+            served &= w.Match.Penalties.TrueForAll(p => p.SecondsLeft <= Penalties.ClubSeconds(w, Severity.Major) + 0.01f);
         }
         Penalties.Strictness = 1f;
         Console.WriteLine($"      {string.Join(", ", kinds.Select(k => $"{k.Value} {k.Key}"))}");
