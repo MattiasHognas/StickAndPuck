@@ -38,6 +38,9 @@ public sealed class SeasonState
     /// <summary>Gets or sets the playoffs (W16b), null until the regular season is over and they start.</summary>
     public PlayoffState? Playoffs { get; set; }
 
+    /// <summary>Gets or sets the rules every game of this season plays (W44), stored when its first game starts so a later settings change never alters a running season; null in a save from before W44 until then.</summary>
+    public RuleSet? Rules { get; set; }
+
     /// <summary>Gets or sets the player stats and records (W25), filled as games are played or settled.</summary>
     public SeasonStats Stats { get; set; } = new();
 

@@ -141,7 +141,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
 
     static void Roll(World world, PenaltyBook book, Foul foul)
     {
-        if (book.Rng.NextSingle() < foul.Chance * Penalties.Strictness) Penalties.Signal(world, foul.PlayerId, foul.Infraction);
+        if (book.Rng.NextSingle() < foul.Chance * Penalties.Strictness * world.Setup.Rules.StrictnessScale) Penalties.Signal(world, foul.PlayerId, foul.Infraction);
     }
 
     /// <summary>Gets the offending club once it touches the puck: it carries it, or last played it.</summary>
