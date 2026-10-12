@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.Core;
+using StickAndPuck.Render;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Physics;
@@ -35,7 +36,7 @@ internal sealed class PuckPhysics : ISystem, IDisposable
 
     public void Start(World world)
     {
-        puck = LoadModelFromMesh(GenMeshCylinder(0.12f, 0.05f, 12));
+        puck = LoadModelFromMesh(GenMeshCylinder(PuckLook.Radius, PuckLook.Thickness, 12));
         loaded = true;
     }
 
@@ -147,10 +148,14 @@ internal sealed class PuckPhysics : ISystem, IDisposable
     public void DrawScene(World world, RenderContext render)
     {
         var pos = world.Puck.Position;
-        // a flat shadow under a flying puck, so its height reads from the broadcast camera
-        if (pos.Y > 0.05f)
-            DrawCylinder(pos with { Y = 0.003f }, 0.1f, 0.1f, 0.004f, 12, new Color(0x3a, 0x2e, 0x48, 255));
-        DrawModel(puck, pos, 1f, Rubber);
+        // W35: an airborne puck drops a crisp dark shadow on the ice and grows a little, so its height reads from the broadcast camera
+        if (PuckLook.Airborne(pos.Y))
+        {
+            float r = PuckLook.Shadow(pos.Y);
+            DrawCylinder(pos with { Y = PuckLook.ShadowLift }, r, r, 0.004f, 16, PuckLook.ShadowColour);
+        }
+        float scale = PuckLook.Scale(pos.Y);
+        DrawModelEx(puck, pos, Vector3.UnitY, 0f, new Vector3(scale), Rubber);
     }
 
     public void Dispose()

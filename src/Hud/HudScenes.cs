@@ -7,7 +7,8 @@ namespace StickAndPuck.Hud;
 
 /// <summary>
 /// SAP_SCENE=hud: both starting lineups with the scorebug at 2-1 in the second period and one
-/// banner up. SAP_HUD_MESSAGE picks it: goal (default), period, final, tie, offside, icing, intro
+/// banner up. SAP_HUD_MESSAGE picks it: goal (default), period, final, tie, offside, icing, intro,
+/// hattrick, firstgoal, shutout, gwg (final with the game-winning goal), pp (a power play, no banner)
 /// or none. For screenshots of the HUD without waiting for a match to get there.
 /// </summary>
 public sealed class HudScene : IScene
@@ -28,6 +29,14 @@ public sealed class HudScene : IScene
         HudSystem.ShowAlways = true;
         HudDemo.Message = Environment.GetEnvironmentVariable("SAP_HUD_MESSAGE") is { Length: > 0 } s ? s : "goal";
         if (string.Equals(HudDemo.Message, "intro", StringComparison.Ordinal)) m.Phase = MatchPhase.Intro;
+        if (string.Equals(HudDemo.Message, "shutout", StringComparison.Ordinal)) m.Score[1] = 0;
+        if (string.Equals(HudDemo.Message, "firstgoal", StringComparison.Ordinal))
+        {
+            m.Score[0] = 0;
+            HudMessages.SeasonGoals = (_, _) => 0;    // as if the club had not scored yet this season
+        }
+        if (string.Equals(HudDemo.Message, "pp", StringComparison.Ordinal) && world.OnIce(Side.Away).FirstOrDefault(p => !p.IsGoalie) is { } boxed)
+            m.Penalties.Add(new PenaltyState(boxed.Id, Side.Away, "tripping", 74));
         return world;
     }
 }
@@ -44,14 +53,28 @@ internal static class HudDemo
     {
         if (Message == null || world.Tick != 0) return;
         var scorer = world.OnIce(Side.Home).FirstOrDefault(p => !p.IsGoalie);
+        var other = world.OnIce(Side.Away).FirstOrDefault(p => !p.IsGoalie);
+        if (string.Equals(Message, "hattrick", StringComparison.Ordinal) || string.Equals(Message, "gwg", StringComparison.Ordinal))
+        {
+            // the earlier goals of the match, so the tally knows them: two by the scorer, or home, away, home
+            bool hat = string.Equals(Message, "hattrick", StringComparison.Ordinal);
+            world.Events.Publish(new(MatchEventKind.Goal, world.Time, Side.Home, scorer?.Id ?? -1));
+            world.Events.Publish(new(MatchEventKind.Goal, world.Time, hat ? Side.Home : Side.Away, hat ? scorer?.Id ?? -1 : other?.Id ?? -1));
+            world.Events.Publish(new(MatchEventKind.Goal, world.Time, Side.Home, scorer?.Id ?? -1));
+            if (hat) world.Match.Score[0] = 3;
+            if (!hat) world.Events.Publish(new(MatchEventKind.MatchEnd, world.Time, Side.Home));
+            return;
+        }
+
         MatchEvent? e = Message switch
         {
-            "goal" => new(MatchEventKind.Goal, world.Time, Side.Home, scorer?.Id ?? -1),
+            "goal" or "firstgoal" => new(MatchEventKind.Goal, world.Time, Side.Home, scorer?.Id ?? -1),
+            "shutout" => new(MatchEventKind.MatchEnd, world.Time, Side.Home),
             "period" => new(MatchEventKind.PeriodEnd, world.Time, Strength: 2),
             "final" => new(MatchEventKind.MatchEnd, world.Time, Side.Home),
             "tie" => new(MatchEventKind.MatchEnd, world.Time),
             "offside" => new(MatchEventKind.Offside, world.Time),
-            "icing" => new(MatchEventKind.Icing, world.Time),
+            "icing" => new(MatchEventKind.Icing, world.Time, Side.Away, other?.Id ?? -1),
             _ => null,
         };
         if (e is { } ev) world.Events.Publish(ev);
@@ -84,6 +107,9 @@ public sealed class HudSelfTest : IScene
         Texts(Make());
         Stripes(Make());
         Banners(Make());
+        Specials(Make());
+        Finals(Make());
+        PowerPlay(Make());
         WholeMatch(Make());
 
         Console.WriteLine(failures == 0 ? "HUDTEST: all checks passed" : $"HUDTEST: {failures} check(s) failed");
@@ -137,14 +163,96 @@ public sealed class HudSelfTest : IScene
         hud.Update(w);
         Check(hud.Current == null, "the goal banner goes away");
 
-        w.Events.Publish(new MatchEvent(MatchEventKind.Icing, w.Time));
+        w.Events.Publish(new MatchEvent(MatchEventKind.Icing, w.Time, Side.Home, home.Id));
         hud.Update(w);
-        Check(hud.Current is { Title: "ICING", Icon: "whistle" }, "icing shows a call");
+        Check(hud.Current is { Title: "ICING" } ic && string.Equals(ic.Detail, w.Setup.Home.Name, StringComparison.Ordinal) && string.Equals(ic.Crest, w.Setup.Home.Id, StringComparison.Ordinal),
+            "icing names the club that iced the puck");
 
         w.Events.Clear();
         w.Events.Publish(new MatchEvent(MatchEventKind.Fight, w.Time));
         hud.Update(w);
         Check(string.Equals(hud.Current?.Title, "ICING", StringComparison.Ordinal), "events the HUD does not announce leave the banner alone");
+    }
+
+    void Specials(World w)
+    {
+        var hud = new HudMessages();
+        var scorer = w.OnIce(Side.Home).First(p => !p.IsGoalie);
+        var other = w.OnIce(Side.Away).First(p => !p.IsGoalie);
+        HudMessages.SeasonGoals = (_, side) => side == Side.Home ? 0 : 4;
+        void Goal(Side side, int player)
+        {
+            w.Events.Clear();
+            w.Events.Publish(new MatchEvent(MatchEventKind.Goal, w.Time, side, player));
+            w.Match.Score[(int)side]++;
+            hud.Update(w);
+        }
+
+        Goal(Side.Home, scorer.Id);
+        Check(hud.Current is { Title: "GOAL!" } g1 && g1.Lines.Count == 1 && string.Equals(g1.Lines[0], "FIRST GOAL OF THE SEASON", StringComparison.Ordinal),
+            "a club's first goal of the season gets a note on the goal banner");
+        Goal(Side.Away, other.Id);
+        Check(hud.Current is { Title: "GOAL!" } g2 && g2.Lines.Count == 0, "a club that has scored this season gets no note");
+        Goal(Side.Home, scorer.Id);
+        Check(hud.Current is { Title: "GOAL!" }, "two goals are not a hat trick");
+        Goal(Side.Home, scorer.Id);
+        Check(hud.Current is { Title: "HAT TRICK!" } h && string.Equals(h.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal), "the third goal by one player shows HAT TRICK!");
+        Goal(Side.Home, scorer.Id);
+        Check(hud.Current is { Title: "GOAL!" }, "the fourth is a plain goal again");
+        HudMessages.SeasonGoals = (_, _) => null;
+
+        // 4-1 home: the game winner is home's second goal
+        Check(Final(w, hud, Side.Home) is { Title: "FINAL" } f && f.Lines.Count == 1 && string.Equals(f.Lines[0], $"GAME-WINNING GOAL #{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal),
+            "the final names the game-winning goal and no shutout at 4-1");
+    }
+
+    void Finals(World w)
+    {
+        var other = w.OnIce(Side.Away).First(p => !p.IsGoalie);
+        var goalie = w.OnIce(Side.Away).First(p => p.IsGoalie);
+        var hud = new HudMessages();
+        for (int i = 0; i < 2; i++)
+        {
+            w.Events.Clear();
+            w.Events.Publish(new MatchEvent(MatchEventKind.Goal, w.Time, Side.Away, other.Id));
+            w.Match.Score[1]++;
+            hud.Update(w);
+        }
+
+        Check(Final(w, hud, Side.Away) is { Title: "FINAL" } s && s.Lines.Count == 2 && s.Lines[0].StartsWith("GAME-WINNING GOAL", StringComparison.Ordinal)
+            && string.Equals(s.Lines[1], $"SHUTOUT #{goalie.Data.Number} {goalie.Data.LastName}", StringComparison.Ordinal),
+            "a 2-0 final names the game winner and the goalie's shutout");
+
+        // a shootout win adds a goal with no event: no game winner named
+        w.Match.Score[0] = 1;
+        w.Match.Score[1] = 0;
+        Check(Final(w, new HudMessages(), Side.Home) is { Title: "FINAL" } so && so.Lines.Count == 1 && so.Lines[0].StartsWith("SHUTOUT", StringComparison.Ordinal),
+            "a goal the tally never saw names no game winner");
+    }
+
+    static HudMessage? Final(World w, HudMessages hud, Side winner)
+    {
+        w.Events.Clear();
+        w.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, w.Time, winner));
+        hud.Update(w);
+        return hud.Current;
+    }
+
+    void PowerPlay(World w)
+    {
+        w.Match.Phase = MatchPhase.Play;
+        Check(HudSystem.PowerPlayText(w) == null, "even strength shows no PP tag");
+        var away = w.OnIce(Side.Away).First(p => !p.IsGoalie);
+        w.Match.Penalties.Add(new PenaltyState(away.Id, Side.Away, "tripping", 120));
+        Check(string.Equals(HudSystem.PowerPlayText(w), "PP 5V4", StringComparison.Ordinal), "one penalty reads PP 5V4");
+        var home = w.OnIce(Side.Home).First(p => !p.IsGoalie);
+        w.Match.Penalties.Add(new PenaltyState(home.Id, Side.Home, "hooking", 120));
+        Check(HudSystem.PowerPlayText(w) == null, "coincidental minors are even strength");
+        var away2 = w.OnIce(Side.Away).Where(p => !p.IsGoalie).Skip(1).First();
+        w.Match.Penalties.Add(new PenaltyState(away2.Id, Side.Away, "slashing", 120));
+        Check(string.Equals(HudSystem.PowerPlayText(w), "PP 4V3", StringComparison.Ordinal), "two against one reads PP 4V3");
+        w.Match.Phase = MatchPhase.Shootout;
+        Check(HudSystem.PowerPlayText(w) == null, "no PP tag in the shootout");
     }
 
     void WholeMatch(World w)

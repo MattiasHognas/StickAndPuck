@@ -20,6 +20,11 @@ namespace StickAndPuck.AI;
 /// positioning's chaser.</item>
 /// <item>Checks: the defender pressing the carrier decides once per approach whether to finish the
 /// check, likelier with a better checking trait, then skates through the carrier and checks.</item>
+/// <item>W22a: every look, pass and shot is rolled with <see cref="Jitter"/>: a fumbled look is
+/// read like a much weaker player, a fumbled pass goes a beat late, a fumbled shot picks the
+/// goalie's side; a lucky roll plays it like a star. In the attacking-zone cycle the carrier
+/// values keeping the puck and fears a turnover more, so the club passes it round until a lane
+/// to a good shot opens; passes never go through a net's cage.</item>
 /// </list>
 /// </summary>
 internal sealed class DecisionSystem : ISystem
@@ -176,7 +181,7 @@ internal sealed class DecisionSystem : ISystem
         else if (PointShot(end, at, lane, pressed, held) && passValue < carry) Shoot(world, p, brain, end, at, pressed);
         else if (pass is { } best && (passValue > carry * 1.05f + 0.01f || (camping && held > 6f && (!cycling || best.Success > 0.35f))))
             Pass(world, p, brain, best, at);
-        else if (camping && held > 6f && Choices.ShotQuality(end, at) > 0f) Shoot(world, p, brain, end, at, pressed);   // pinned too long: get rid of it
+        else if (camping && held > 6f && Choices.ShotQuality(end, at) > (cycling ? 0.2f : 0f)) Shoot(world, p, brain, end, at, pressed);   // pinned too long: get rid of it (in the cycle only from a real chance; else skate on)
     }
 
     /// <summary>Now and then, a skater at the point with a clear lane and time winds up from distance, for a deflection or a rebound.</summary>
@@ -237,7 +242,7 @@ internal sealed class DecisionSystem : ISystem
         var toNet = new Vector2(end * RinkSpec.GoalLineX, 0) - at;
         float distance = toNet.Length();
         var goalie = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).FirstOrDefault(o => o.IsGoalie);
-        int side = Choices.ShotSide(at, goalie?.Position.Z);
+        int side = goalie != null && StickAndPuck.Goalie.GoalieModel.WeakSide(goalie, end) is var weak and not 0 && rng.NextSingle() < p.Data.Traits.Iq ? weak : Choices.ShotSide(at, goalie?.Position.Z);
         var roll = Jitter.Roll(world, p, rng).Outcome;
 
         // an accurate shooter points the stick at the side of the net to beat the goalie; anyone

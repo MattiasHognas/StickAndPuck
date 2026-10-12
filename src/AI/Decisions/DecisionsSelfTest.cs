@@ -13,7 +13,11 @@ namespace StickAndPuck.AI;
 /// puck handling, goalies, puck physics, match rules) and checks it reaches the final with
 /// passes, shots, checks and goals on both sides. Then plays the same clubs with every skater's
 /// hockey IQ set to 90 on one side and 20 on the other, both ways round, and checks the smart
-/// side completes clearly more of its passes: the "done when" of W6b. SAP_SEED picks the full match's seed (default 1).
+/// side completes clearly more of its passes: the "done when" of W6b.
+/// W22a adds: the jitter's odds, the cycle stations and their path round the net, that AI passes go to
+/// moving teammates in open ice, that both clubs cycle and take the puck behind the net, and that a
+/// hockey IQ 100 club still fumbles and misses now and then while a 20 club gets lucky. The defence (W22b) runs too,
+/// so each side throws 15 to 30 checks; SAP_SCENE=defencetest checks its reads in detail. SAP_SEED picks the full match's seed (default 1).
 /// </summary>
 public sealed class DecisionsSelfTest : IScene
 {
@@ -129,7 +133,7 @@ public sealed class DecisionsSelfTest : IScene
         Check(h.Completion > 0.5f && a.Completion > 0.5f, "most passes reach a teammate");
         Check(world.Match.Shots[0] >= 10 && world.Match.Shots[1] >= 10 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
         Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 10, "goals are scored, about as many as in a real match");
-        Check(h.Checks + a.Checks >= 10, "the AI throws checks");
+        Check(h.Checks is >= 15 and <= 30 && a.Checks is >= 15 and <= 30, "the AI throws 15 to 30 checks a side, like a real match (W22b)");
         Check(still < 15f, "the AI never leaves a loose puck lying");
 
         // W22a: passes to moving, open teammates, and a cycle in the attacking zone
@@ -217,7 +221,7 @@ public sealed class DecisionsSelfTest : IScene
 #pragma warning disable S2245 // fixed seeds so the checks repeat
         ISystem[] systems =
         [
-            new PositioningSystem(new Random(seed)), new DecisionSystem(new Random(seed)), new SkatingSystem(), new CheckingSystem(new Random(seed)),
+            new PositioningSystem(new Random(seed)), new DefenceSystem(new Random(seed)), new DecisionSystem(new Random(seed)), new SkatingSystem(), new CheckingSystem(new Random(seed)),
             new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), new MatchRules(), new OvertimeRules(),
         ];
 #pragma warning restore S2245

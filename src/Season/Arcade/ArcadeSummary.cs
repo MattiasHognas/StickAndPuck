@@ -7,12 +7,12 @@ namespace StickAndPuck.Season;
 /// <summary>
 /// A plain arcade panel in the A3 pixel font: the human's club, the rule, clubs beaten and lives
 /// left, then every game with W or L, the score and how it was decided. The heading says whether the
-/// run goes on, ended on a loss, or ended as champions. A stand-in until W11's results screen, which
-/// can read the same <see cref="ArcadeRun"/>.
+/// run goes on, ended on a loss, or ended as champions, and after the run the best runs so far
+/// (W25's <see cref="ArcadeRun.Records"/>). A stand-in until W33's trophy screen, which reads the same <see cref="ArcadeRun"/>.
 /// </summary>
 internal static class ArcadeSummary
 {
-    const int Line = 12, Pad = 6, Width = 300;
+    const int Line = 12, Pad = 6, Width = 300, BestShown = 3;
 
     /// <summary>Draws the panel centred on the 480x270 frame.</summary>
     /// <param name="art">The HUD art.</param>
@@ -22,7 +22,8 @@ internal static class ArcadeSummary
     {
         string Name(string id) => clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))?.Name ?? id;
 
-        int rows = run.Games.Count + 4 + (run.IsOver ? 0 : 1);
+        var best = run.IsOver ? run.Records.Take(BestShown).ToList() : [];
+        int rows = run.Games.Count + 4 + (run.IsOver ? 0 : 1) + (best.Count > 0 ? best.Count + 1 : 0);
         int h = (Pad * 2) + (rows * Line);
         int x = (Game.Width - Width) / 2, y = Math.Max(2, (Game.Height - h) / 2);
         art.DrawPanel(run.Champion ? "panel_gold" : run.Lost ? "panel_red" : "panel", x, y, Width, h);
@@ -51,6 +52,22 @@ internal static class ArcadeSummary
         }
 
         if (!run.IsOver) art.DrawText($"NEXT  {(run.NextAtHome ? "VS" : "AT")} {Name(run.NextOpponent!)}", left, top, art.Score);
+        if (best.Count == 0) return;
+
+        // W25: the best runs so far, this one marked
+        art.DrawText("BEST RUNS", left, top, art.Score);
+        top += Line;
+        for (int i = 0; i < best.Count; i++)
+        {
+            var r = best[i];
+            bool mine = i + 1 == run.Place;
+            var ink = mine ? art.Score : art.Text;
+            art.DrawText(Num(i + 1), left, top, ink);
+            art.DrawText($"{Name(r.Club)} {(r.Champion ? "CHAMPIONS" : $"{Num(r.Beaten)} BEATEN")}", left + 18, top, ink);
+            art.DrawText(r.Rule == ArcadeRule.SuddenDeath ? "SD" : "3L", x + 230, top, ink);
+            art.DrawText($"{Num(r.GoalsFor)}-{Num(r.GoalsAgainst)}", x + 250, top, ink);
+            top += Line;
+        }
     }
 
     static string Num(int n) => n.ToString(CultureInfo.InvariantCulture);

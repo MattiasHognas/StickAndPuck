@@ -10,7 +10,8 @@ namespace StickAndPuck.Goalie;
 /// <summary>
 /// SAP_SCENE=goalie: the away goalie in the +x net faces a loop of shots from the slot and the
 /// circles, aimed anywhere on the net, with a tally of saves, rebounds and goals. The camera sits
-/// over that end. SAP_GOALIE_REFLEXES=0..100 overrides the goalie's reflexes to compare.
+/// over that end. SAP_GOALIE_REFLEXES=0..100 overrides the goalie's reflexes to compare; the top line
+/// shows all of the goalie's traits.
 /// </summary>
 public sealed class GoalieScene : IScene
 {
@@ -103,7 +104,8 @@ internal static class GoalieDemo
     {
         if (!Enabled) return;
         var g = world.Players.Find(p => p.IsGoalie);
-        string who = g == null ? "" : $"{g.Data.LastName.ToUpperInvariant()} REFLEXES {g.Data.Traits.GoalieReflexes}";
+        var t = g?.Data.Traits;
+        string who = g == null || t == null ? "" : $"{g.Data.LastName.ToUpperInvariant()} REF {t.GoalieReflexes} POS {t.HockeyIq} GLV {t.GoalieGlove} BLK {t.GoalieBlocker} REB {t.GoalieReboundControl} PH {t.GoaliePuckHandling}";
         DrawText(who, 6, 6, 10, new Color(0xef, 0xe0, 0xc2, 255));
         DrawText($"SHOTS {shots}  SAVES {saves}  REBOUNDS {rebounds}  GOALS {goals}", 6, 18, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }

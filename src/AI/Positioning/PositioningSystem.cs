@@ -17,6 +17,9 @@ namespace StickAndPuck.AI;
 /// <item>Smart positioning: a smart skater reads where the puck is going, follows the play quickly
 /// and finds the exact spot; a poor one trails the play and settles a few metres off it.</item>
 /// <item>Teammates keep a couple of metres apart, so a shape never collapses into a pile.</item>
+/// <item>W22a: with a teammate on the puck, off-puck skaters get open (<see cref="GetOpen"/>), and
+/// in the attacking zone the forwards cycle corner, behind the net and slot while the defence
+/// hold the points (<see cref="Cycle"/>); a cycling carrier skates the puck round the net.</item>
 /// </list>
 /// Decisions (W6b) run next and add passes, shots and checks; see <see cref="Positioning"/>.
 /// </summary>
