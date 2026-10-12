@@ -41,7 +41,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
             if (!g.OnIce || !g.IsGoalie) continue;
             if (!states.TryGetValue(g.Id, out var state)) states[g.Id] = state = new GoalieState();
             Step(world, g, state, dt);
-            renderer.Animate(g, state, world.Time, dt);
+            renderer.Animate(g, state, world.Time, dt, Rules.Celebration.Slumps(world, g));
         }
     }
 

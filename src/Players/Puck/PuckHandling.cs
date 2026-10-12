@@ -45,6 +45,8 @@ public static class PuckHandling
     const float LongestPass = 40f;
     const float NetAimCone = 80f * MathF.PI / 180f;
     const float LongestShot = 26f;
+    const float MinFlight = 0.15f;
+    const float MaxLift = 7f;
 
     /// <summary>Gets how far from the blade a player can take a loose puck, in metres.</summary>
     /// <param name="t">The player's traits.</param>
@@ -247,30 +249,42 @@ public static class PuckHandling
     /// <param name="kind">Wrist or slap.</param>
     /// <param name="speed">Speed over the ice.</param>
     /// <param name="rng">Randomness.</param>
+    /// <param name="held">Seconds shoot was held, which sets the height (see <see cref="ShotHeight"/>); below 0 for a shot not fired with the button.</param>
     /// <returns>The puck's velocity.</returns>
-    public static Vector3 ShotVelocity(World world, Player shooter, Vector3 from, ShotKind kind, float speed, Random rng)
+    public static Vector3 ShotVelocity(World world, Player shooter, Vector3 from, ShotKind kind, float speed, Random rng, float held = -1f)
     {
         int end = AttackEnd(world, shooter.Side);
         var net = new Vector2(end * RinkSpec.GoalLineX, 0);
         var toNet = net - Flat(from);
         var intent = Intent(shooter);
         bool atNet = end * from.X < RinkSpec.GoalLineX && toNet.Length() < LongestShot && MathF.Abs(Angle(intent, toNet)) < NetAimCone;
-        if (!atNet) return new Vector3(intent.X * speed, kind == ShotKind.Wrist ? 1f : 0f, intent.Y * speed);
+        int accuracy = shooter.Data.Traits.ShotAccuracy;
+        if (!atNet)
+        {
+            float up = held >= 0 ? ShotHeight.Upward(held, accuracy, rng) : kind == ShotKind.Wrist ? 1f : 0f;
+            return new Vector3(intent.X * speed, up, intent.Y * speed);
+        }
 
-        float stray = (1f - Traits.Unit(shooter.Data.Traits.ShotAccuracy)) * (kind == ShotKind.Slap ? 1.4f : 1f);
+        float stray = (1f - Traits.Unit(accuracy)) * (kind == ShotKind.Slap ? 1.4f : 1f);
         float side = RinkSpec.NetWidth / 2 - 0.2f;
         float stickZ = shooter.Command.Move.Y;
         float z = MathF.Abs(stickZ) > 0.35f ? MathF.Sign(stickZ) * side
             : MathF.Abs(from.Z) > 0.3f ? -MathF.Sign(from.Z) * side * 0.8f
             : (rng.NextSingle() * 2 - 1) * side;
-        float h = kind == ShotKind.Slap ? 0.1f + rng.NextSingle() * 0.4f : 0.15f + rng.NextSingle() * 0.6f;
-        h = Math.Max(0.02f, h + Gauss(rng) * 0.3f * stray);
+        float h;
+        if (held >= 0) h = ShotHeight.AtNet(held, accuracy, rng);
+        else
+        {
+            h = kind == ShotKind.Slap ? 0.1f + rng.NextSingle() * 0.4f : 0.15f + rng.NextSingle() * 0.6f;
+            h = Math.Max(0.02f, h + Gauss(rng) * 0.3f * stray);
+        }
 
         var dir = Vector2.Normalize(new Vector2(end * RinkSpec.GoalLineX, z) - Flat(from));
         dir = Rotate(dir, Gauss(rng) * Deg(0.3f + 3.5f * stray));
         float distance = MathF.Abs((end * RinkSpec.GoalLineX - from.X) / dir.X);
-        float t = distance / speed;
-        float vy = (h - from.Y) / t + 0.5f * Physics.PuckTuning.Gravity * t;
+        // a shot from right at the goal line gets a floor on its flight time and a cap on its lift, so it cannot rocket straight up
+        float t = Math.Max(distance / speed, MinFlight);
+        float vy = Math.Min((h - from.Y) / t + 0.5f * Physics.PuckTuning.Gravity * t, MaxLift);
         return new Vector3(dir.X * speed, vy, dir.Y * speed);
     }
 

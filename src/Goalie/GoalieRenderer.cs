@@ -43,14 +43,15 @@ internal sealed unsafe class GoalieRenderer : IDisposable
 
     /// <summary>
     /// Picks and advances the clip: glove or blocker for a moment after a save with that hand,
-    /// butterfly from its first frame when the goalie drops, then held on its last pose.
+    /// butterfly from its first frame when the goalie drops (or slumps after a loss, W40), then
+    /// held on its last pose.
     /// </summary>
-    public void Animate(Player g, GoalieState state, float now, float dt)
+    public void Animate(Player g, GoalieState state, float now, float dt, bool slump = false)
     {
         if (!loaded) return;
         var (clip, frame) = poses.GetValueOrDefault(g.Id, (-1, 0f));
-        int hand = now < state.HandPoseUntil ? (state.HandPose > 0 ? glove : state.HandPose < 0 ? blocker : -1) : -1;
-        int want = hand >= 0 ? hand : state.Down && butterfly >= 0 ? butterfly : ready;
+        int hand = !slump && now < state.HandPoseUntil ? (state.HandPose > 0 ? glove : state.HandPose < 0 ? blocker : -1) : -1;
+        int want = hand >= 0 ? hand : (state.Down || slump) && butterfly >= 0 ? butterfly : ready;
         if (want != clip) { clip = want; frame = 0; }
         frame += dt * ClipFps;
         if (clip >= 0 && (clip == butterfly || clip == glove || clip == blocker)) frame = MathF.Min(frame, clips[clip].KeyFrameCount - 1);
