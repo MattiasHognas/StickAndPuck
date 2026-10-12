@@ -86,7 +86,10 @@ internal static class HandlingDemo
             var toMate = PuckHandling.Blade(receiver!) - pk.Position;
             carrier!.Command = new PlayerCommand { Move = Vector2.Normalize(new Vector2(toMate.X, toMate.Z)), Pass = true };
         }
-        else if (step > 80) carrier!.Command = default;
+        else if (step > 80)
+        {
+            carrier!.Command = default;
+        }
 
         if (got < 0 && pk.Carrier == receiver!.Id) got = step;
         if (got >= 0 && shotAt < 0)

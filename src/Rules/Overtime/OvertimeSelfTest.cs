@@ -161,7 +161,7 @@ public sealed class OvertimeSelfTest : IScene
             if (seed == 1) Check(w.Match.Period == 4 && w.Match.Phase == MatchPhase.Shootout, "a scoreless overtime goes to the shootout");
             var ev = Run(w, x => x.Match.Phase == MatchPhase.Final, seed, x =>
             {
-                if (OvertimeRules.Shootout(x) is not { ShooterId: >= 0 } so) return;
+                if (OvertimeRules.Shootout(x) is not { ShooterId: >= 0 }) return;
                 // only the shooter and the two goalies on the ice
                 alone &= x.Players.Count(p => p.OnIce && !p.IsGoalie) <= 1 && x.Players.Count(p => p.OnIce && p.IsGoalie) == 2;
             });

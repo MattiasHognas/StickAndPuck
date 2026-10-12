@@ -1,5 +1,3 @@
-using StickAndPuck.Core;
-
 namespace StickAndPuck.Season;
 
 /// <summary>Shared setup for the stats screenshots and checks.</summary>

@@ -86,7 +86,10 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
             return;
         }
         int col = selected / Rows, row = selected % Rows;
-        if (press.Contains(MenuButton.Up)) Move(-1);
+        if (press.Contains(MenuButton.Up))
+        {
+            Move(-1);
+        }
         else if (press.Contains(MenuButton.Down))
         {
             if (row == Rows - 1 || selected + 1 >= Clubs.Count) onRules = true;
@@ -138,8 +141,14 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
     void RulesRow(IReadOnlySet<MenuButton> press)
     {
         int dir = press.Contains(MenuButton.Left) ? -1 : press.Contains(MenuButton.Right) || press.Contains(MenuButton.Accept) ? 1 : 0;
-        if (press.Contains(MenuButton.Up)) onRules = false;
-        else if (press.Contains(MenuButton.Back)) ScreenFlow.Pop();
+        if (press.Contains(MenuButton.Up))
+        {
+            onRules = false;
+        }
+        else if (press.Contains(MenuButton.Back))
+        {
+            ScreenFlow.Pop();
+        }
         else if (dir != 0 && fixedRules == null)
         {
             var choice = ScreenFlow.Prefs.Rules;

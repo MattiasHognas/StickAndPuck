@@ -48,11 +48,14 @@ internal static class IceBands
         var pts = new List<Vector2>();
         (float X, float Z, float A0)[] corners = [(cx, cz, 0f), (-cx, cz, 90f), (-cx, -cz, 180f), (cx, -cz, 270f)];
         foreach (var (x, z, a0) in corners)
+        {
             for (int i = 0; i <= segmentsPerCorner; i++)
             {
                 float a = (a0 + 90f * i / segmentsPerCorner) * MathF.PI / 180f;
                 pts.Add(new Vector2(x + r * MathF.Cos(a), z + r * MathF.Sin(a)));
             }
+        }
+
         return pts;
     }
 
@@ -84,8 +87,11 @@ internal static class IceBands
         Rlgl.DrawRenderBatchActive();
         Rlgl.DisableBackfaceCulling();
         foreach (var poly in Polygons)
+        {
             for (int i = 1; i + 1 < poly.Length; i++)
                 DrawTriangle3D(poly[0], poly[i], poly[i + 1], tone);
+        }
+
         Rlgl.DrawRenderBatchActive();
         Rlgl.EnableBackfaceCulling();
     }

@@ -147,7 +147,10 @@ public static class SkatingModel
         }
         else if (MathF.Abs(pos.X) > hx) { normal = new Vector2(Math.Sign(pos.X), 0); pos.X = Math.Sign(pos.X) * hx; }
         else if (MathF.Abs(pos.Y) > hz) { normal = new Vector2(0, Math.Sign(pos.Y)); pos.Y = Math.Sign(pos.Y) * hz; }
-        else return (pos, v);
+        else
+        {
+            return (pos, v);
+        }
 
         // lose the speed into the boards with a small bounce, keep the speed along them
         float into = Vector2.Dot(v, normal);

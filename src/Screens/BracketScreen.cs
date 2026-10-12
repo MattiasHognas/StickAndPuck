@@ -1,5 +1,4 @@
 using System.Globalization;
-using Raylib_cs;
 using StickAndPuck.Core;
 using StickAndPuck.Season;
 
@@ -64,7 +63,7 @@ internal sealed class BracketScreen : MenuScreen
 
     static void DrawSide(ScreenArt art, int seed, string club, int wins, PlayoffSeries series, string user, IReadOnlyList<ClubData> clubs, int x, int y)
     {
-        Color ink = string.Equals(club, user, StringComparison.Ordinal) ? art.Gold : art.Text;
+        var ink = string.Equals(club, user, StringComparison.Ordinal) ? art.Gold : art.Text;
         if (series.IsOver && !string.Equals(series.Winner, club, StringComparison.Ordinal)) ink = ScreenArt.Muted;
         art.Right(N(seed), x + 10, y, ink);
         art.Left(Short(clubs, club), x + 16, y, ink);

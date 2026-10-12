@@ -27,7 +27,10 @@ public sealed class PenaltyScene : IScene
         Scenes.AddStarters(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
             && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
+        {
             centre.Slot = 0;
+        }
+
         if (Env("SAP_PENALTY_STRICT") is { } strict and >= 0) Penalties.Strictness = strict;
         MatchFlow.Begin(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_PENALTY_OT"), "1", StringComparison.Ordinal))

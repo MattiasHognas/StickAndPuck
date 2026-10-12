@@ -69,7 +69,7 @@ internal sealed class FightSystem : ISystem, IDisposable
         var away = world.OnIce(Side.Away).Where(p => !p.IsGoalie).MinBy(p => p.Position.LengthSquared());
         if (home == null || away == null) return;
         // the AI says yes to this one; a human still has to accept
-        var answer = s.ForceAccept;
+        bool? answer = s.ForceAccept;
         s.ForceAccept = true;
         Fighting.Offer(world, away.Id, home.Id);
         s.ForceAccept = answer;

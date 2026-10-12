@@ -22,7 +22,10 @@ public sealed class PositioningScene : IScene
         Scenes.AddStarters(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
             && world.OnIce(Side.Home).FirstOrDefault(p => !p.IsGoalie) is { } centre)
+        {
             centre.Slot = 0;
+        }
+
         StandInPlay.Start(world);
         MatchFlow.Begin(world, log: false);
         StandInPlay.FollowCamera = true;

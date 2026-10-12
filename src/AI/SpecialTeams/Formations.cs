@@ -105,11 +105,11 @@ public static class Formations
     public static (int[] Spot, float Cost) Assign(IReadOnlyList<(Vector2 At, bool Defence)> skaters, IReadOnlyList<Vector2> spots)
     {
         int n = Math.Min(skaters.Count, spots.Count);
-        var best = new int[skaters.Count];
+        int[] best = new int[skaters.Count];
         Array.Fill(best, -1);
         float bestCost = float.MaxValue;
-        var order = new int[n];
-        var used = new bool[spots.Count];
+        int[] order = new int[n];
+        bool[] used = new bool[spots.Count];
         void Walk(int i, float cost)
         {
             if (cost >= bestCost) return;

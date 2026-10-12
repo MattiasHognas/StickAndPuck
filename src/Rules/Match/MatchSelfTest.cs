@@ -96,7 +96,7 @@ public sealed class MatchSelfTest : IScene
             (1, 25, Side.Home), (1, 10, Side.Home), (2, 20, Side.Away), (3, 15, Side.Home),
         ];
         int next = 0;
-        var playTime = new float[4];
+        float[] playTime = new float[4];
         var defendsLeft = new Side[4];
         int lastPeriod = 0;
         float lastClock = 0;

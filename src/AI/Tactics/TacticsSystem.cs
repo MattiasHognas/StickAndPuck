@@ -98,7 +98,10 @@ internal sealed class TacticsSystem : ISystem
     static void Watch(World world, TacticsBoard board, Player? carrier)
     {
         if (board.Chasing is not { } dumped) return;
-        if (carrier == null) board.Chasing = dumped with { Released = true };
+        if (carrier == null)
+        {
+            board.Chasing = dumped with { Released = true };
+        }
         else if (dumped.Released || carrier.Id != dumped.Dumper || world.Time > dumped.Until)
         {
             if (dumped.Released && carrier.Side == dumped.Side) Tactics.Tally(world, dumped.Side).Recovered++;
@@ -296,7 +299,7 @@ internal sealed class TacticsSystem : ISystem
     {
         var pk = world.Puck;
         var lastTouch = pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count ? world.Players[pk.LastTouch] : null;
-        Side? owner = carrier?.Side ?? lastTouch?.Side;
+        var owner = carrier?.Side ?? lastTouch?.Side;
         if (carrier != null && carrier.Side != board.Owner)
         {
             board.Owner = carrier.Side;

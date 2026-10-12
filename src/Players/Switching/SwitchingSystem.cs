@@ -66,7 +66,9 @@ internal sealed class SwitchingSystem : ISystem
                 var near = Nearest(world, side, slot, null);
                 if (near != null && near != me && (newDefence ||
                     (world.Time - switchedAt[slot] >= Settle && ToPuck(world, near) + Nearer < ToPuck(world, me))))
+                {
                     want = near;
+                }
             }
 
             if (want != null && want != me)

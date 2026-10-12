@@ -226,8 +226,10 @@ internal sealed class PositioningSystem : ISystem
         if (string.Equals(lineup, board.Lineup, StringComparison.Ordinal)) return;
         board.Lineup = lineup;
         foreach (var side in new[] { Side.Home, Side.Away })
+        {
             foreach (var (id, role) in Roles.Assign([.. world.OnIce(side).Where(p => !p.IsGoalie)]))
                 board.For(id).Role = role;
+        }
     }
 
     /// <summary>With nobody having touched the puck, the side that can get to it first plays as if attacking.</summary>

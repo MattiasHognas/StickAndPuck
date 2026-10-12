@@ -28,7 +28,10 @@ public sealed class AiMatchScene : IScene
         DecisionScenes.SetHockeyIq(world, Side.Away, Env("SAP_IQ_AWAY"));
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
             && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
+        {
             centre.Slot = 0;
+        }
+
         MatchFlow.Begin(world);
         DecisionScenes.ShowLine = true;
         return world;

@@ -44,7 +44,9 @@ public sealed class SpecialTeamsSelfTest : IScene
     {
         bool inside = true, inZone = true, apart = true;
         foreach (int end in new[] { -1, 1 })
+        {
             foreach (var f in new[] { Formation.Umbrella, Formation.OneThreeOne, Formation.Box, Formation.Diamond })
+            {
                 foreach (int n in new[] { 3, 4, 5 })
                 {
                     var spots = Formations.Spots(f, n, end, new Vector2(end * 18f, 4f));
@@ -56,6 +58,9 @@ public sealed class SpecialTeamsSelfTest : IScene
                     for (int i = 0; i < spots.Count; i++)
                         for (int j = i + 1; j < spots.Count; j++) apart &= Vector2.Distance(spots[i], spots[j]) > 2.5f;
                 }
+            }
+        }
+
         Check(inside && inZone, "every power play and kill spot is on the ice, inside the zone");
         Check(apart, "no two spots of a shape sit on top of each other");
 
@@ -205,7 +210,7 @@ public sealed class SpecialTeamsSelfTest : IScene
     {
         var team = world.OnIce(side).Where(o => !o.IsGoalie).ToList();
         if (team.Count == 0) return 0;
-        Player? presser = carrier >= 0 ? team.MinBy(o => Vector3.Distance(o.Position, world.Players[carrier].Position)) : null;
+        var presser = carrier >= 0 ? team.MinBy(o => Vector3.Distance(o.Position, world.Players[carrier].Position)) : null;
         if (presser != null && Vector3.Distance(presser.Position, world.Players[carrier].Position) > 3f) presser = null;
         float best = 0;
         foreach (var f in shapes)

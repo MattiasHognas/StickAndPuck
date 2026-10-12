@@ -222,6 +222,8 @@ public static class Celebration
                     part.StartClip(c);
                 }
                 break;
+            default:
+                break;
         }
     }
 

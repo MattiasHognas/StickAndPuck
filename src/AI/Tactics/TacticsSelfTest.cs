@@ -44,7 +44,7 @@ public sealed class TacticsSelfTest : IScene
     /// <summary>The club files: every club has tactics, the league is not all one style, and a typo fails the load.</summary>
     void Data(IReadOnlyList<ClubData> clubs)
     {
-        var raw = Directory.Exists(Assets.ClubFolder) ? Directory.GetFiles(Assets.ClubFolder, "*.json") : [];
+        string[] raw = Directory.Exists(Assets.ClubFolder) ? Directory.GetFiles(Assets.ClubFolder, "*.json") : [];
         bool all = raw.Length > 0 && raw.All(f => File.ReadAllText(f).Contains("\"tactics\"", StringComparison.Ordinal));
         Check(all, $"every club file sets its tactics ({raw.Length} files)");
         int styles = clubs.Select(c => c.Tactics.Forecheck).Distinct().Count();
@@ -54,7 +54,7 @@ public sealed class TacticsSelfTest : IScene
 
         Check(Fails("{\"forecheck\": \"zone\"}"), "an unknown tactic fails the club load");
         Check(Fails("{\"forcheck\": \"trap\"}"), "a misspelt tactics key fails the club load");
-        var path = Path.Combine(Path.GetTempPath(), $"sap_tactics_{Environment.ProcessId}.json");
+        string path = Path.Combine(Path.GetTempPath(), $"sap_tactics_{Environment.ProcessId}.json");
         File.WriteAllText(path, "{\"id\": \"t\", \"tactics\": {\"forecheck\": \"trap\", \"entry\": \"dumpAndChase\", \"powerPlay\": \"oneThreeOne\"}}");
         var club = Clubs.Load(path);
         File.Delete(path);
@@ -63,7 +63,7 @@ public sealed class TacticsSelfTest : IScene
 
     static bool Fails(string tactics)
     {
-        var path = Path.Combine(Path.GetTempPath(), $"sap_tactics_bad_{Environment.ProcessId}.json");
+        string path = Path.Combine(Path.GetTempPath(), $"sap_tactics_bad_{Environment.ProcessId}.json");
         File.WriteAllText(path, $"{{\"id\": \"t\", \"tactics\": {tactics}}}");
         try
         {

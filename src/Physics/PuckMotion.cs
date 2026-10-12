@@ -105,7 +105,10 @@ public static class PuckMotion
                 v.Y = -v.Y * PuckTuning.IceBounce;
                 v.X *= 0.9f; v.Z *= 0.9f;
             }
-            else v.Y = 0;
+            else
+            {
+                v.Y = 0;
+            }
         }
 
         Boards(ref p, ref v, impacts);

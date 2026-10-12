@@ -38,7 +38,7 @@ public static class Palette
         {
             string line = raw.Trim();
             if (line.StartsWith(KitMarker, StringComparison.Ordinal)) return count;
-            var parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
             if (line.Length > 0 && char.IsDigit(line[0]) && parts.Length >= 3) count++;
         }
         return count;
@@ -57,7 +57,7 @@ public static class Palette
         {
             string line = raw.Trim();
             if (line.Length == 0 || line[0] == '#' || !char.IsDigit(line[0])) continue;     // header, Name:, Columns:, comments
-            var parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 3) continue;
             colours.Add(new Vector3(
                 byte.Parse(parts[0], CultureInfo.InvariantCulture) / 255f,

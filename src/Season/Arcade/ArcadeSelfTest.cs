@@ -82,7 +82,7 @@ public sealed class ArcadeSelfTest : IScene
         run.Record(Result(run, win: true));
         run.Record(Result(run, win: true));
         Check(!run.IsOver && run.Stage == 2, "two wins: still going, stage 3 next");
-        var beaten = run.NextOpponent;
+        string? beaten = run.NextOpponent;
         run.Record(Result(run, win: false, ResultKind.Shootout));
         Check(run.IsOver && run.Lost && !run.Champion, "sudden death: a shootout loss ends the run");
         Check(run.Stage == 2 && run.Games.Count == 3 && Same(run.Games[^1].Opponent, beaten!), "the summary has two wins and the loss to the third club");

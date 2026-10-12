@@ -25,7 +25,10 @@ public sealed class FightScene : IScene
         Scenes.AddStarters(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
             && world.OnIce(Side.Home).FirstOrDefault(x => x.Data.Position == PlayingPosition.C) is { } centre)
+        {
             centre.Slot = 0;
+        }
+
         MatchFlow.Begin(world);
         MatchFlow.SetUpFaceoff(world, RinkSpec.CentreDot);
         MatchFlow.Drop(world);

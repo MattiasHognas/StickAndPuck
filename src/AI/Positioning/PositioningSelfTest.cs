@@ -63,9 +63,13 @@ public sealed class PositioningSelfTest : IScene
     {
         bool inside = true, onside = true, goalSide = true;
         foreach (int end in new[] { -1, 1 })
+        {
             foreach (var phase in new[] { TeamPhase.Attack, TeamPhase.Defend })
+            {
                 for (float x = -29f; x <= 29f; x += 1.5f)
+                {
                     for (float z = -12f; z <= 12f; z += 1.5f)
+                    {
                         foreach (var role in Roles.For(5))
                         {
                             var puck = new Vector2(x, z);
@@ -75,6 +79,11 @@ public sealed class PositioningSelfTest : IScene
                             if (phase == TeamPhase.Attack && !Roles.IsDefence(role) && pa <= RinkSpec.BlueLineX && sa > RinkSpec.BlueLineX) onside = false;
                             if (phase == TeamPhase.Defend && Roles.IsDefence(role) && pa > -RinkSpec.BlueLineX && sa > pa) goalSide = false;
                         }
+                    }
+                }
+            }
+        }
+
         Check(inside, "every shape spot is inside the boards");
         Check(onside, "attacking forwards never wait past the blue line before the puck");
         Check(goalSide, "defending defencemen stay goal side of the puck outside their zone");
@@ -141,7 +150,10 @@ public sealed class PositioningSelfTest : IScene
             if (p.IsGoalie) continue;
             if (MathF.Abs(p.Position.X) > RinkSpec.HalfLength || MathF.Abs(p.Position.Z) > RinkSpec.HalfWidth || float.IsNaN(p.Position.X)) t.Outside++;
             var (at, since) = t.LastMoved.GetValueOrDefault(p.Id, (p.Position, world.Time));
-            if (Vector3.Distance(at, p.Position) > 1.0f) t.LastMoved[p.Id] = (p.Position, world.Time);
+            if (Vector3.Distance(at, p.Position) > 1.0f)
+            {
+                t.LastMoved[p.Id] = (p.Position, world.Time);
+            }
             else { t.LastMoved[p.Id] = (at, since); t.LongestStill = Math.Max(t.LongestStill, world.Time - since); }
 
             // stuck: pushing the stick hard but going nowhere
@@ -168,7 +180,9 @@ public sealed class PositioningSelfTest : IScene
             // offside: an attacking forward over the far blue line while the puck is still outside it
             if (Positioning.PhaseOf(world, side) == TeamPhase.Attack && end * pk.Position.X < RinkSpec.BlueLineX
                 && team.Exists(p => !Roles.IsDefence(Positioning.RoleOf(world, p)) && Positioning.JobOf(world, p) is Job.Shape or Job.Support && end * p.Position.X > RinkSpec.BlueLineX + 0.5f))
+            {
                 t.Offside += 0.5f;
+            }
         }
     }
 

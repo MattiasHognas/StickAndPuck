@@ -123,7 +123,7 @@ internal sealed class SettingsScreen : MenuScreen
 
     static void Period(int dir)
     {
-        var choices = ScreenPrefs.PeriodChoices;
+        int[] choices = ScreenPrefs.PeriodChoices;
         int i = Array.IndexOf(choices, Prefs.PeriodMinutes);
         i = i < 0 ? 2 : Math.Clamp(i + dir, 0, choices.Length - 1);
         ScreenFlow.Prefs = Prefs with { PeriodMinutes = choices[i] };

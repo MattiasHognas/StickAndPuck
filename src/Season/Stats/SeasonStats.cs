@@ -79,6 +79,7 @@ public sealed class SeasonStats
         if (season.Playoffs is { } playoffs)
         {
             for (int r = 0; r < playoffs.Rounds.Count; r++)
+            {
                 for (int s = 0; s < playoffs.Rounds[r].Series.Count; s++)
                 {
                     var series = playoffs.Rounds[r].Series[s];
@@ -91,6 +92,7 @@ public sealed class SeasonStats
                         if (Credit(key, SyntheticStats.Sheet(home, away, pg.Result, playoffs.GameSeed(r, s, i)))) count++;
                     }
                 }
+            }
         }
         return count;
     }

@@ -57,11 +57,14 @@ public static class GetOpen
         if (last is { } l && Vector2.Distance(l, spot) < radius * 1.2f) Try(l, 0.015f);
         float turn = rng.NextSingle() * MathF.Tau / Angles;
         foreach (float r in new[] { radius * 0.5f, radius })
+        {
             for (int i = 0; i < Angles; i++)
             {
                 float angle = turn + i * MathF.Tau / Angles;
                 Try(spot + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * r, 0f);
             }
+        }
+
         return best;
     }
 

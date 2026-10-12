@@ -120,7 +120,10 @@ public sealed class GoalieSelfTest : IScene
             var events = Run(world, goalie, physics, 1.6f, w => inCrease &= InCrease(g));
             int at = events.FindIndex(e => e.Kind is MatchEventKind.Save or MatchEventKind.Goal);
             if (at < 0) continue;                                       // wide of the net
-            if (events[at].Kind == MatchEventKind.Goal) goals++;
+            if (events[at].Kind == MatchEventKind.Goal)
+            {
+                goals++;
+            }
             else
             {
                 saves++;

@@ -52,7 +52,7 @@ public static class QuickSim
     {
         var s = Skaters(club);
         double skaters = s.Count == 0 ? 50 : s.Average(t => (t.Checking + t.HockeyIq + t.TopSpeed) / 3.0);
-        var goalie = club.Roster.Where(p => p.Position == PlayingPosition.G).Select(p => (double)p.Traits.GoalieReflexes).DefaultIfEmpty(50).Max();
+        double goalie = club.Roster.Where(p => p.Position == PlayingPosition.G).Select(p => (double)p.Traits.GoalieReflexes).DefaultIfEmpty(50).Max();
         return (skaters + goalie) / 2;
     }
 
