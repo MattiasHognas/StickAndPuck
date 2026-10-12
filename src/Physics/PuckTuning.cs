@@ -51,6 +51,24 @@ public static class PuckTuning
     /// <summary>Height of a skater's body for puck contact; a higher puck flies over.</summary>
     public const float BodyHeight = 1.8f;
 
+    /// <summary>W62: radius of a skater's footprint against the goal cage (body, skates and elbows); matches the skating body.</summary>
+    public const float SkaterNetRadius = 0.45f;
+
+    /// <summary>W62: radius of a goalie's footprint against the goal cage.</summary>
+    public const float GoalieNetRadius = 0.2f;
+
+    /// <summary>W62: speed along the frame that steers a player pushing into the cage around it.</summary>
+    public const float AroundSpeed = 2.5f;
+
+    /// <summary>W62: a skater whose stick points into the cage at least this hard (0 to 1) wants past it and is steered around.</summary>
+    public const float PushingIntent = 0.5f;
+
+    /// <summary>W62: a stick pointing along the frame at least this much (0 to 1) picks the way round; less and the nearer edge does, so a player aiming at a spot just past the far side still gets there.</summary>
+    public const float SlideIntent = 0.5f;
+
+    /// <summary>W62: a goalie skating slower than this is standing its ground, not trying to get past the cage.</summary>
+    public const float GoalieMoving = 0.3f;
+
     /// <summary>Restitution off a body: pads and legs soak up most of a hit.</summary>
     public const float BodyBounce = 0.2f;
 

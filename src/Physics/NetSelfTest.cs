@@ -29,6 +29,8 @@ public sealed class NetSelfTest : IScene
             OverTheTop(make, end);
             FromTheFront(make, end);
             Carried(make, end);
+            Skaters(make, end);
+            Goalies(make, end);
         }
         Fuzz(make);
 
@@ -216,6 +218,103 @@ public sealed class NetSelfTest : IScene
         var wev = Run(walk, 1.5f, wp, each: x => { u = Math.Min(0.4f, u + 0.03f); x.Puck.Position = At(end, u, 0.2f); });
         var g = wev.Where(e => e.Kind == MatchEventKind.Goal).ToList();
         Check(g.Count == 1 && g[0].PlayerId == 7, $"{End(end)}: a puck walked in through the mouth on the stick is a goal ({g.Count})");
+    }
+
+    /// <summary>W62: skaters driving at the cage, pushed every step the way skating would move them.</summary>
+    void Skaters(Func<World> make, int end)
+    {
+        var skater = new PlayerData { Position = PlayingPosition.C };
+
+        // skate hard at the net from behind, from both sides and in through the mouth
+        (string Name, Vector3 From, Vector3 Velocity)[] runs =
+        [
+            ("from behind", At(end, RinkSpec.NetDepth + 3f, 0.1f), new Vector3(-end * 9f, 0, 0)),
+            ("from the -z side", At(end, 0.5f, -3f), new Vector3(0, 0, 9f)),
+            ("from the +z side", At(end, 0.5f, 3f), new Vector3(0, 0, -9f)),
+            ("in through the mouth", At(end, -3f, 0.2f), new Vector3(end * 9f, 0, 0)),
+            ("diagonally across the back", At(end, RinkSpec.NetDepth + 2f, -2f), new Vector3(-end * 6f, 0, 6f)),
+        ];
+        foreach (var (name, from, velocity) in runs)
+        {
+            var w = make();
+            var p = w.AddPlayer(Side.Home, skater, from);
+            bool overlap = false;
+            Run(w, 2f, each: x =>
+            {
+                overlap |= NetBody.Overlaps(p.Position, end);
+                p.Velocity = velocity;    // keeps pushing into the cage like a held stick
+                p.Position += p.Velocity * Game.Step;
+            });
+            Check(!overlap, $"{End(end)}: a skater driving {name} never gets into or over the cage");
+        }
+
+        // a skater sliding along the back keeps its speed along the frame
+        var slide = make();
+        var sl = slide.AddPlayer(Side.Home, skater, At(end, RinkSpec.NetDepth + 0.5f, -0.5f));
+        Run(slide, 1f, each: x =>
+        {
+            sl.Velocity = new Vector3(-end * 2f, 0, 3f);
+            sl.Position += sl.Velocity * Game.Step;
+        });
+        Check(sl.Position.Z > RinkSpec.NetWidth / 2 + PuckTuning.SkaterNetRadius, $"{End(end)}: a skater pressed against the back slides along it and round the post (z {sl.Position.Z:0.0})");
+
+        // a carried puck goes with its carrier when the cage stops him
+        var carry = make();
+        var c = carry.AddPlayer(Side.Home, skater, At(end, RinkSpec.NetDepth + 0.6f, 0f));
+        carry.Puck.Position = At(end, RinkSpec.NetDepth + 1.2f, 0f);
+        carry.Puck.Carrier = c.Id;
+        var offset = carry.Puck.Position - c.Position;
+        Run(carry, 0.5f, each: x =>
+        {
+            c.Velocity = new Vector3(-end * 6f, 0, 0);
+            c.Position += c.Velocity * Game.Step;
+            x.Puck.Position += c.Velocity * Game.Step;
+        });
+        Check(Vector3.Distance(carry.Puck.Position - c.Position, offset) < 0.01f, $"{End(end)}: the carried puck stays on the stick of a skater stopped by the cage");
+
+    }
+
+    /// <summary>W62: a goalie keeps its crease and gets round the cage when it leaves it.</summary>
+    void Goalies(Func<World> make, int end)
+    {
+        var keeper = new PlayerData { Position = PlayingPosition.G };
+
+        // a goalie stands on its line between the posts and shuffles post to post untouched
+        bool moved = false;
+        var again = make();
+        var ak = again.AddPlayer(Side.Home, keeper, At(end, -0.04f, -0.9f));
+        for (int i = 0; i < 72; i++)
+        {
+            ak.Velocity = new Vector3(0, 0, 1.5f);
+            var want = ak.Position + ak.Velocity * Game.Step;
+            ak.Position = want;
+            Run(again, Game.Step);
+            moved |= ak.Position != want;
+        }
+        Check(!moved && MathF.Abs(PuckMotion.Depth(ak.Position, end) + 0.04f) < 1e-4f, $"{End(end)}: a goalie right on its goal line moves post to post without touching the cage");
+
+        // a goalie going straight out to a puck behind the net gets round the frame, and back again
+        var out_ = make();
+        var ok = out_.AddPlayer(Side.Home, keeper, At(end, -0.4f, 0f));
+        var target = At(end, RinkSpec.NetDepth + 0.8f, 0f);
+        bool inCage = false;
+        Run(out_, 4f, each: x =>
+        {
+            inCage |= NetBody.Overlaps(ok.Position, end, goalie: true);
+            var to = target - ok.Position;
+            ok.Velocity = to.Length() > 0.05f ? Vector3.Normalize(to) * MathF.Min(4f, to.Length() / Game.Step) : Vector3.Zero;
+            ok.Position += ok.Velocity * Game.Step;
+        });
+        Check(!inCage && Vector3.Distance(ok.Position, target) < 0.2f, $"{End(end)}: a goalie skating straight at a puck behind the net goes round the cage ({Vector3.Distance(ok.Position, target):0.00} m short)");
+        var home = At(end, -0.4f, 0f);
+        Run(out_, 4f, each: x =>
+        {
+            inCage |= NetBody.Overlaps(ok.Position, end, goalie: true);
+            var to = home - ok.Position;
+            ok.Velocity = to.Length() > 0.05f ? Vector3.Normalize(to) * MathF.Min(4f, to.Length() / Game.Step) : Vector3.Zero;
+            ok.Position += ok.Velocity * Game.Step;
+        });
+        Check(!inCage && Vector3.Distance(ok.Position, home) < 0.2f, $"{End(end)}: and back to the crease the same way ({Vector3.Distance(ok.Position, home):0.00} m short)");
     }
 
     void Fuzz(Func<World> make)

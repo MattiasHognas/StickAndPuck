@@ -19,6 +19,8 @@ namespace StickAndPuck.Physics;
 /// back out instead of counting.
 /// A body the puck bounces off becomes its last touch, so a deflection counts for the deflector.
 /// Goalies are left to W5, which runs before this system.
+/// W62: before the puck moves, <see cref="NetBody"/> pushes every player out of both cages, after all
+/// skating, checking, stickhandling and goalie movement of the step.
 /// </summary>
 internal sealed class PuckPhysics : ISystem, IDisposable
 {
@@ -43,6 +45,7 @@ internal sealed class PuckPhysics : ISystem, IDisposable
     public void Update(World world, float dt)
     {
         PuckDemo.Update(world);
+        NetBody.Resolve(world, dt);
         var pk = world.Puck;
         if (pk.Carrier < 0 && lastCarrier >= 0)
         {
