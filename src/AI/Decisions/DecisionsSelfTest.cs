@@ -19,7 +19,9 @@ namespace StickAndPuck.AI;
 /// hockey IQ 100 club still fumbles and misses now and then while a 20 club gets lucky. The defence (W22b) runs too,
 /// so each side throws 15 to 30 checks; SAP_SCENE=defencetest checks its reads in detail.
 /// W22c adds a power play, a man in the box throughout: the power play holds its umbrella or 1-3-1, the kill its box or
-/// diamond, and the kill clears the puck (SAP_SCENE=specialteamstest runs the same with other seeds). SAP_SEED picks the full match's seed (default 1).
+/// diamond, and the kill clears the puck (SAP_SCENE=specialteamstest runs the same with other seeds). W22d plays each club's tactics from
+/// its file, and adds a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in: they must play visibly differently
+/// (SAP_SCENE=tacticstest also checks the club files). SAP_SEED picks the full match's seed (default 1).
 /// </summary>
 public sealed class DecisionsSelfTest : IScene
 {
@@ -38,6 +40,7 @@ public sealed class DecisionsSelfTest : IScene
         HockeyIq(clubs, settings);
         Stars(clubs, settings);
         SpecialTeamsSelfTest.PowerPlay(clubs, settings, 1, Check);
+        TacticsSelfTest.Compare(clubs, settings, 1, Check);
         Console.WriteLine(failures == 0 ? "AIMATCHTEST: all checks passed" : $"AIMATCHTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
         return match;
@@ -224,7 +227,7 @@ public sealed class DecisionsSelfTest : IScene
 #pragma warning disable S2245 // fixed seeds so the checks repeat
         ISystem[] systems =
         [
-            new PositioningSystem(new Random(seed)), new DefenceSystem(new Random(seed)), new SpecialTeamsSystem(new Random(seed)), new DecisionSystem(new Random(seed)), new SkatingSystem(), new CheckingSystem(new Random(seed)),
+            new PositioningSystem(new Random(seed)), new DefenceSystem(new Random(seed)), new SpecialTeamsSystem(new Random(seed)), new TacticsSystem(new Random(seed)), new DecisionSystem(new Random(seed)), new SkatingSystem(), new CheckingSystem(new Random(seed)),
             new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), new MatchRules(), new OvertimeRules(),
         ];
 #pragma warning restore S2245
