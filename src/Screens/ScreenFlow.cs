@@ -163,16 +163,28 @@ internal static class ScreenFlow
 
     /// <summary>
     /// W26: settles the human's next season or playoff game on paper instead of playing it
-    /// (<see cref="SeasonSession.SimCurrentGame"/>), then shows the table or bracket again.
+    /// (<see cref="SeasonSession.SimCurrentGame"/>). W33: the table or bracket comes back with the
+    /// simmed score on top, which offers the trophy when the sim decided the final.
     /// </summary>
     public static void SimSeasonGame()
     {
         ArcadeSession.End();
         if (SeasonSession.Current == null) SeasonSession.Continue(Clubs);
+        bool crowned = PlayoffSession.Current?.Champion != null;
         var simmed = SeasonSession.SimCurrentGame();
-        if (simmed != null) Console.WriteLine($"SAP: screens: simmed {simmed.Home} {simmed.Result.HomeGoals}-{simmed.Result.AwayGoals} {simmed.Away} ({simmed.Stage})");
+        crowned = !crowned && PlayoffSession.Current?.Champion != null;
+        if (simmed != null) Console.WriteLine($"SAP: screens: simmed {simmed.Home} {simmed.Result.HomeGoals}-{simmed.Result.AwayGoals} {simmed.Away} ({simmed.Stage}){(crowned ? ", champions crowned" : "")}");
+        while (Top is SimResultScreen or ResultsScreen) Pop();
         var overview = Overview();
-        if (Top?.GetType() != overview.GetType()) Replace(overview);    // the table draws live; only swap to the bracket when the playoffs start
+        if (Top is StandingsScreen or BracketScreen)
+        {
+            if (Top.GetType() != overview.GetType()) Replace(overview);    // the table draws live; only swap to the bracket when the playoffs start
+        }
+        else
+        {
+            Push(overview);
+        }
+        if (simmed != null) Push(new SimResultScreen(simmed, crowned));
     }
 
     /// <summary>Gets a value indicating whether the season screens offer "Sim this game" (the SimGame setting, on by default).</summary>

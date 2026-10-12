@@ -112,8 +112,15 @@ internal sealed class ScreenSystem : ISystem, IDisposable
             if (touch >= 0 && touch < world.Players.Count && world.Players[touch] is { } p && p.Side == side)
                 scorer = $"#{p.Data.Number} {p.Data.LastName}";
             float elapsed = (m.Period > world.Setup.Periods ? OvertimeRules.PeriodLength(world) : world.Setup.PeriodSeconds) - m.Clock;
-            goals.Add(new GoalLine(side, HudSystem.PeriodText(world), MatchFlow.ClockText(Math.Max(0, elapsed)), scorer));
+            goals.Add(new GoalLine(side, PeriodLabel(world), MatchFlow.ClockText(Math.Max(0, elapsed)), scorer));
         }
+    }
+
+    /// <summary>The period a goal went in: "1" to "3", "OT", then "2OT", "3OT" in a long playoff sudden death.</summary>
+    static string PeriodLabel(World world)
+    {
+        int overtime = world.Match.Period - world.Setup.Periods;
+        return overtime <= 1 ? HudSystem.PeriodText(world) : $"{overtime.ToString(System.Globalization.CultureInfo.InvariantCulture)}OT";
     }
 
     MatchResult Result(World world)
@@ -129,7 +136,7 @@ internal sealed class ScreenSystem : ISystem, IDisposable
         }
         else if (m.Period > world.Setup.Periods)
         {
-            decided = "OT";
+            decided = PeriodLabel(world);
         }
         return new MatchResult(world.Setup, m.Score[(int)Side.Home], m.Score[(int)Side.Away], m.Shots[(int)Side.Home], m.Shots[(int)Side.Away],
             decided, lines, ScreenFlow.Playing!);

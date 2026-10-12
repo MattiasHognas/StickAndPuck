@@ -10,11 +10,14 @@ internal sealed class ModeScreen : MenuScreen
     const int PanelW = 200;
 
     readonly IReadOnlyList<IGameMode> modes = GameModes.All();
+    readonly bool board = ArcadeBoardScreen.Any();
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        return modes.Select(m => new MenuItem(m.Title, () => Choose(m))).ToList();
+        var items = modes.Select(m => new MenuItem(m.Title, () => Choose(m))).ToList();
+        if (board) items.Add(new MenuItem("ARCADE - BEST RUNS", () => ScreenFlow.Push(new ArcadeBoardScreen())));    // W33
+        return items;
     }
 
     /// <inheritdoc/>
@@ -64,7 +67,7 @@ internal sealed class ModeScreen : MenuScreen
 /// <param name="fixedRules">The rules the mode always plays, or null when the player picks.</param>
 internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<ClubData> picked, RuleSet? fixedRules = null) : Screen
 {
-    const int ColW = 150, RowH = 20, PanelW = (ColW * 2) + 24;
+    const int ColW = 150, RowH = 20, PanelW = (ColW * 2) + 24, StrengthH = 40;
 
     int selected = -1;
     bool onRules;
@@ -109,7 +112,7 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
     public override void Draw(ScreenArt art, World world)
     {
         if (selected < 0) selected = Start();
-        int h = 5 + ScreenArt.Row + 4 + (Rows * RowH) + 4 + RowH;
+        int h = 5 + ScreenArt.Row + 4 + (Rows * RowH) + 4 + RowH + StrengthH;
         var (x, top) = art.Panel(heading, PanelW, h, Math.Max(4, (Game.Height - h - 18) / 2));
         for (int i = 0; i < Clubs.Count; i++)
         {
@@ -122,6 +125,7 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
             art.Left(club.Name, cx + 22, cy + 3, ink);
         }
         DrawRules(art, x, top + (Rows * RowH) + 4);
+        DrawStrengths(art, Clubs[selected], x, top + (Rows * RowH) + 4 + RowH);
         string hint = !onRules ? "ARROWS MOVE   ENTER PICKS   ESC BACK"
             : fixedRules != null ? "THIS MODE PLAYS ITS OWN RULES   UP BACK" : "LEFT RIGHT PICKS THE RULES   UP BACK";
         art.Hint(hint);
@@ -155,6 +159,22 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
         }
         art.Left("RULES", x + 24, y, ink);
         art.Right(onRules && fixedRules == null ? $"< {Rules.Name} >" : Rules.Name, x + PanelW - 14, y, ink);
+    }
+
+    /// <summary>W33: the selected club's strengths as bars in two columns, and how it plays.</summary>
+    static void DrawStrengths(ScreenArt art, ClubData club, int x, int y)
+    {
+        var s = ClubStrengths.Of(club);
+        DrawRectangle(x + 10, y - 1, PanelW - 20, 1, new Color(0x42, 0x32, 0x36, 0xff));
+        (string Label, int Value)[] bars = [("ATTACK", s.Attack), ("DEFENCE", s.Defence), ("SPEED", s.Speed), ("GOALIE", s.Goalie)];
+        for (int i = 0; i < bars.Length; i++)
+        {
+            int bx = x + 24 + ((i % 2) * ColW), by = y + 3 + ((i / 2) * 11);
+            art.Left(bars[i].Label, bx, by, ScreenArt.Muted);
+            art.Bar(bars[i].Value, bx + 52, by, 60, art.Gold);
+        }
+        art.Left($"OVERALL {s.Overall.ToString(System.Globalization.CultureInfo.InvariantCulture)}", x + 24, y + 26, art.Text);
+        art.Right(art.Clip(s.Plays, PanelW - 110), x + PanelW - 14, y + 26, ScreenArt.Muted);
     }
 
     int Start()
