@@ -3,16 +3,16 @@
   "name": "Frölunda HC",
   "shortName": "FHC",
   "home": {
-    "primary": "#00573f",
-    "secondary": "#ffffff",
-    "accent": "#c8102e",
-    "helmet": "#00573f"
+    "primary": "#c8102e",
+    "secondary": "#00573f",
+    "accent": "#ffffff",
+    "helmet": "#c8102e"
   },
   "away": {
     "primary": "#ffffff",
     "secondary": "#00573f",
     "accent": "#c8102e",
-    "helmet": "#00573f"
+    "helmet": "#c8102e"
   },
   "roster": [
     {
