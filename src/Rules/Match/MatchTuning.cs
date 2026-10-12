@@ -9,6 +9,9 @@ public static class MatchTuning
     /// <summary>Players lined up, puck on the dot, before it drops (unless the referee drops it).</summary>
     public const float FaceoffSeconds = 1f;
 
+    /// <summary>How fast the draw pulls the puck back off the dot towards the winning skater, m/s.</summary>
+    public const float DrawSpeed = 3f;
+
     /// <summary>Celebration after a goal before the centre faceoff (W9's replay fits in here).</summary>
     public const float GoalSeconds = 4f;
 
@@ -20,6 +23,9 @@ public static class MatchTuning
 
     /// <summary>Between periods.</summary>
     public const float IntermissionSeconds = 4f;
+
+    /// <summary>The end-of-game celebration after the horn of a decided game, before the final (W40).</summary>
+    public const float CelebrationSeconds = 8f;
 
     /// <summary>Length of an SHL 3 on 3 overtime period, for W7c to pass to <see cref="MatchFlow.StartPeriod"/>.</summary>
     public const float OvertimeSeconds = 5 * 60;
