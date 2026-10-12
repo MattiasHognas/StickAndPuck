@@ -67,9 +67,9 @@ internal sealed class OffsideRule : ISystem
         LineCallsDemo.Update(world);
         var s = States.GetOrCreateValue(world);
         var pk = world.Puck;
-        if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live)
+        if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live || !world.Setup.Rules.Offside)
         {
-            // dead puck: forget any pending call, and read the zone afresh when the puck drops
+            // dead puck (or offside switched off, W44): forget any pending call, and read the zone afresh when the puck drops
             s.PendingEnd = 0;
             s.Zone = PuckZone(pk.Position, 0);
             return;

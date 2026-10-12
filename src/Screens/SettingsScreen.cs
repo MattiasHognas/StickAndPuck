@@ -4,8 +4,9 @@ using StickAndPuck.Core;
 namespace StickAndPuck.Screens;
 
 /// <summary>
-/// Settings: every switch in one place (W20). Game: control switching, line changes, difficulty,
-/// period length, sim game, auto deke, one-timers, penalties, fights. Controls: player one's and
+/// Settings: every switch in one place (W20). The rules page first (W44: the preset and every
+/// rule, penalties and fights among them). Game: control switching, line changes, difficulty,
+/// period length, sim game, auto deke, one-timers. Controls: player one's and
 /// player two's devices, the key mapping page (W39), the control marker. Display and sound: camera zoom, lighting mood, swap
 /// kits, volume. Debug: the fps line, the match line, the lines panel. Left and right change a
 /// value; it applies to the world on show at once (so a paused match plays on with it) and every
@@ -34,6 +35,7 @@ internal sealed class SettingsScreen : MenuScreen
         var s = Prefs.Settings;
         return
         [
+            new MenuItem("RULES", () => ScreenFlow.Push(new RulesScreen()), Value: Prefs.Rules.Resolve().Name),
             new MenuItem("CONTROL SWITCHING", Value: s.Switching switch
             {
                 ControlSwitching.Auto => "AUTO",
@@ -47,8 +49,6 @@ internal sealed class SettingsScreen : MenuScreen
             new MenuItem("SIM THIS GAME", Value: OnOff(s.SimGame), Change: _ => Set(s with { SimGame = !s.SimGame })),
             new MenuItem("AUTO DEKE", Value: OnOff(s.AutoDeke), Change: _ => Set(s with { AutoDeke = !s.AutoDeke })),
             new MenuItem("ONE-TIMERS", Value: OnOff(s.OneTimers), Change: _ => Set(s with { OneTimers = !s.OneTimers })),
-            new MenuItem("PENALTIES", Value: OnOff(s.Penalties), Change: _ => Set(s with { Penalties = !s.Penalties })),
-            new MenuItem("FIGHTS", Value: OnOff(s.Fights), Change: _ => Set(s with { Fights = !s.Fights })),
             new MenuItem("CONTROLS", Value: Device(Prefs.Controls), Change: Controls),
             new MenuItem("PLAYER 2 CONTROLS", Value: Device(Prefs.Player2), Change: Player2),
             new MenuItem("KEY MAPPING", () => ScreenFlow.Push(new KeyMappingScreen())),
