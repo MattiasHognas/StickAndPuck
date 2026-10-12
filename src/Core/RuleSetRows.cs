@@ -73,7 +73,7 @@ public static class RuleRows
         Flag(nameof(RuleSet.Roughing), "ROUGHING", "INFRACTIONS", true, r => r.Roughing, (r, v) => r with { Roughing = v }),
         Flag(nameof(RuleSet.IcingNoChange), "NO CHANGE AFTER ICING", "GAME", true, r => r.IcingNoChange, (r, v) => r with { IcingNoChange = v }),
         Flag(nameof(RuleSet.Fights), "FIGHTS", "FIGHTS", true, r => r.Fights, (r, v) => r with { Fights = v }),
-        Choice(nameof(RuleSet.FightPenalty), "FIGHT PENALTY", "FIGHTS", false, Enum.GetValues<FightPenalty>(), r => r.FightPenalty, (r, v) => r with { FightPenalty = v }),
+        Choice(nameof(RuleSet.FightPenalty), "FIGHT PENALTY", "FIGHTS", true, Enum.GetValues<FightPenalty>(), r => r.FightPenalty, (r, v) => r with { FightPenalty = v }),
     ];
 
     /// <summary>Gets the rules the game plays, grouped as the rules page shows them.</summary>
