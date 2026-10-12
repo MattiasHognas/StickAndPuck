@@ -26,9 +26,9 @@ public sealed class OvertimeSelfTest : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period, Inputs = NoHumans };
-        World Make(OvertimeRule rule = OvertimeRule.Shl, IReadOnlyList<InputSlot>? inputs = null, OvertimeFormat? format = null)
+        World Make(OvertimeRule rule = OvertimeRule.Shl, IReadOnlyList<InputSlot>? inputs = null, OvertimeFormat? format = null, RuleSet? rules = null)
         {
-            var w = new World(setup with { Overtime = rule, Inputs = inputs ?? NoHumans, OvertimeFormat = format }, settings);
+            var w = new World(setup with { Overtime = rule, Inputs = inputs ?? NoHumans, OvertimeFormat = format, Rules = rules ?? RuleSet.Shl }, settings);
             Scenes.AddStarters(w);
             MatchFlow.Begin(w, log: false);
             return w;
@@ -40,7 +40,10 @@ public sealed class OvertimeSelfTest : IScene
         ShootoutTally();
         Shootouts(rule => Make(rule));
         ShootoutOnly(Make(OvertimeRule.ShootoutOnly));
-        HumanShooter(Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]));
+        var homeFirst = RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home };
+        HumanShooter(Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: homeFirst));
+        ShootoutRules(setup, rules => Make(OvertimeRule.ShootoutOnly, rules: rules));
+        HomeChooses(Make(OvertimeRule.ShootoutOnly, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: RuleSet.Nhl));
         Formats(setup);
         var playoffs = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = Period };
         PlayoffOvertime(Make(format: playoffs, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]));
@@ -131,7 +134,7 @@ public sealed class OvertimeSelfTest : IScene
             return so;
         }
 
-        const int R = OvertimeTuning.Rounds;
+        const int R = 5;
         var h = Side.Home;
         var a = Side.Away;
         Check(Tally((h, true), (a, false), (h, true), (a, false), (h, true)).Decided(R) == null, "3-0 with the away club two shots behind is still open");
@@ -150,7 +153,7 @@ public sealed class OvertimeSelfTest : IScene
     void Shootouts(Func<OvertimeRule, World> make)
     {
         int goals = 0, misses = 0, decided = 0, games = 6;
-        bool alternate = true, homeFirst = true, alone = true, oneEnd = true, oneGoal = true, fairOrder = true, celebrated = true;
+        bool alternate = true, awayFirst = true, alone = true, oneEnd = true, oneGoal = true, fairOrder = true, celebrated = true;
         for (int seed = 1; seed <= games; seed++)
         {
             var w = make(OvertimeRule.Shl);
@@ -167,12 +170,12 @@ public sealed class OvertimeSelfTest : IScene
             decided++;
             goals += so.Shots.Count(s => s.Scored);
             misses += so.Shots.Count(s => !s.Scored);
-            for (int i = 0; i < so.Shots.Count; i++) alternate &= so.Shots[i].Side == (i % 2 == 0 ? Side.Home : Side.Away);
-            homeFirst &= so.Shots[0].Side == Side.Home;
-            var homeShooters = so.Shots.Where(s => s.Side == Side.Home).Select(s => s.PlayerId).Take(5).ToList();
+            for (int i = 0; i < so.Shots.Count; i++) alternate &= so.Shots[i].Side == (i % 2 == 0 ? Side.Away : Side.Home);
+            awayFirst &= so.Shots[0].Side == Side.Away && so.Rounds == 3;
+            var homeShooters = so.Shots.Where(s => s.Side == Side.Home).Select(s => s.PlayerId).Take(3).ToList();
             fairOrder &= homeShooters.Distinct().Count() == homeShooters.Count;
             var end = ev.Where(e => e.Kind == MatchEventKind.MatchEnd).ToList();
-            oneEnd &= end.Count == 1 && end[0].Side == so.Winner && so.Decided(OvertimeTuning.Rounds) == so.Winner;
+            oneEnd &= end.Count == 1 && end[0].Side == so.Winner && so.Decided(so.Rounds) == so.Winner;
             oneGoal &= w.Match.Score[(int)so.Winner!.Value] == 1 && w.Match.Score[1 - (int)so.Winner.Value] == 0;
             celebrated &= Celebration.Winner(w) == so.Winner && w.OnIce(so.Winner.Value).Count(p => !p.IsGoalie) == 5 && w.OnIce(1 - so.Winner.Value).Any(p => !p.IsGoalie);
             Console.WriteLine($"      seed {seed}: {string.Concat(so.Shots.Select(s => s.Scored ? "o" : "x"))}, {so.Winner} wins {w.Match.Score[0]}-{w.Match.Score[1]}");
@@ -180,8 +183,8 @@ public sealed class OvertimeSelfTest : IScene
 
         Check(decided == games, $"all {games} shootouts are decided");
         Check(celebrated, "after the shootout both benches pour back onto the ice and the winners celebrate (W40)");
-        Check(homeFirst && alternate, "home shoots first and the clubs take turns");
-        Check(fairOrder, "the first five shooters of a club are five different players");
+        Check(awayFirst && alternate, "SHL: three shooters each, the away club shoots first and opens every sudden death round");
+        Check(fairOrder, "the first three shooters of a club are three different players");
         Check(alone, "only the shooter and the two goalies are on the ice");
         Check(oneEnd, "one MatchEnd, naming the winner the tally gives");
         Check(oneGoal, "the winner gets one goal on the final score: 1-0 after a 0-0 match");
@@ -262,5 +265,39 @@ public sealed class OvertimeSelfTest : IScene
         Check(!so.Shots[0].Scored && w.Time - start >= OvertimeTuning.AttemptSeconds, "standing still, the attempt runs out of time: a miss");
         Run(w, x => so.ShooterId >= 0 && w.Players[so.ShooterId].Side == Side.Away && so.Shots.Count == 1 && x.Puck.Live);
         Check(w.Players[so.ShooterId].Slot < 0 && w.Controlled(0) == null, "an away shooter is the AI's; the home human controls nobody");
+    }
+
+    /// <summary>W45: shooters and order from the rules: SHL three each with away first, five when set, home first when set, NHL home choosing.</summary>
+    void ShootoutRules(MatchSetup setup, Func<RuleSet, World> make)
+    {
+        Check(ShootoutOrder.Shooters(setup with { Rules = RuleSet.Shl }) == 3 && ShootoutOrder.First(setup with { Rules = RuleSet.Shl }) == Side.Away, "SHL preset: three shooters each, away first");
+        Check(ShootoutOrder.Shooters(setup with { Rules = RuleSet.Nhl }) == 3 && ShootoutOrder.First(setup with { Rules = RuleSet.Nhl, Inputs = NoHumans }) == Side.Home, "NHL preset: three shooters each, an AI home club chooses to shoot first");
+        var human = setup with { Rules = RuleSet.Nhl, Inputs = [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]] };
+        Check(ShootoutOrder.First(human) == null, "NHL preset: a human home club is asked to choose");
+        Check(ShootoutOrder.First(human with { Inputs = [NoHumans[0], new InputSlot(InputDevice.Gamepad1, Side.Away)] }) == Side.Home, "NHL preset: a human away club does not choose; the AI home club shoots first");
+
+        var five = make(RuleSet.Shl with { ShootoutShooters = 5 });
+        Run(five, x => x.Match.Phase == MatchPhase.Final, 3);
+        Check(OvertimeRules.Shootout(five) is { Rounds: 5, Winner: not null } so5 && so5.Shots[0].Side == Side.Away && so5.Decided(5) == so5.Winner, "five shooters when set: decided over five rounds");
+
+        var home = make(RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home });
+        Run(home, x => x.Match.Phase == MatchPhase.Final, 2);
+        bool turns = OvertimeRules.Shootout(home) is { } soh && soh.Shots.Select((s, i) => s.Side == (i % 2 == 0 ? Side.Home : Side.Away)).All(b => b);
+        Check(turns && OvertimeRules.Shootout(home)!.Shots.Count > 0, "home first when set: home opens every round");
+
+        var nhl = make(RuleSet.Nhl);
+        Run(nhl, x => x.Match.Phase == MatchPhase.Final, 4);
+        Check(OvertimeRules.Shootout(nhl) is { Winner: not null } son && son.Shots[0].Side == Side.Home, "NHL preset with an AI home club: home shoots first");
+    }
+
+    /// <summary>W45: a human home club under NHL rules picks the order; nobody shoots until it does, and a home club that never picks shoots first.</summary>
+    void HomeChooses(World w)
+    {
+        Run(w, x => OvertimeRules.Shootout(x) != null);
+        Run(w, _ => false, limit: OvertimeTuning.BreakSeconds + 2);
+        var so = OvertimeRules.Shootout(w);
+        Check(so is { ShooterId: -1 } && so.Shots.Count == 0, "NHL: the shootout waits while the human home club chooses");
+        Run(w, x => OvertimeRules.Shootout(x) is { ShooterId: >= 0 }, limit: ShootoutOrder.ChooseSeconds + 2);
+        Check(so is { ShooterId: >= 0 } && w.Players[so.ShooterId].Side == Side.Home, "a home club that does not pick in time shoots first");
     }
 }

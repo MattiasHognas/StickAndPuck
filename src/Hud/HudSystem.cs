@@ -133,7 +133,7 @@ internal sealed class HudSystem : ISystem
     static void DrawShootout(World world, HudArt art, ShootoutState so)
     {
         const int pad = 3, crest = 16, gap = 4, row = 20, mark = 8, step = 10;
-        int rounds = Math.Max(OvertimeTuning.Rounds, Math.Max(so.Taken(Side.Home), so.Taken(Side.Away)));
+        int rounds = Math.Max(so.Rounds, Math.Max(so.Taken(Side.Home), so.Taken(Side.Away)));
         int nameW = Math.Max(art.Measure(world.Setup.Home.ShortName), art.Measure(world.Setup.Away.ShortName));
         string foot = Footer(world, so);
         int footH = foot.Length > 0 ? 12 : 0;

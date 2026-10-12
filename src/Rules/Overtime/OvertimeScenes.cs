@@ -9,7 +9,8 @@ namespace StickAndPuck.Rules;
 /// overtime (SAP_OT seconds, default 15) and the shootout with AI shooters. SAP_HUMAN=1 puts
 /// keyboard and mouse on the home club, so you take the home shots yourself. SAP_START=overtime or
 /// shootout skips regulation (and overtime) to start right there. SAP_PLAYOFF=1 plays the SHL
-/// playoff format instead: 5 on 5 overtime periods until a goal and no shootout. The score line is on.
+/// playoff format instead: 5 on 5 overtime periods until a goal and no shootout. SAP_RULES=shl|arcade|nhl
+/// plays that preset's shootout (W45: SHL away first, NHL home chooses). The score line is on.
 /// </summary>
 public sealed class OvertimeScene : IScene
 {
@@ -24,6 +25,7 @@ public sealed class OvertimeScene : IScene
         bool human = string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "1", StringComparison.Ordinal);
         bool playoff = string.Equals(Environment.GetEnvironmentVariable("SAP_PLAYOFF"), "1", StringComparison.Ordinal);
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Overtime = OvertimeRule.Shl };
+        if (Enum.TryParse<RulePreset>(Environment.GetEnvironmentVariable("SAP_RULES"), ignoreCase: true, out var preset)) setup = setup with { Rules = RuleSet.Of(preset) };
         if (playoff) setup = setup with { OvertimeFormat = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = OvertimeRules.PeriodSeconds } };
         if (!human) setup = setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
         var world = new World(setup, settings);
