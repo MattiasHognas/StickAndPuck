@@ -22,6 +22,9 @@ namespace StickAndPuck.AI;
 /// diamond, and the kill clears the puck (SAP_SCENE=specialteamstest runs the same with other seeds). W22d plays each club's tactics from
 /// its file, and adds a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in: they must play visibly differently
 /// (SAP_SCENE=tacticstest also checks the club files). SAP_SEED picks the full match's seed (default 1).
+/// W63 plays full matches with the offside and icing rules on: under SHL over several seeds the AI ices the puck and
+/// goes offside at a hockey-like rate, a hockey IQ 30 club clears blind more and holds up at the blue line less than an 85 one,
+/// and under Arcade, rules off, never.
 /// </summary>
 public sealed class DecisionsSelfTest : IScene
 {
@@ -41,6 +44,7 @@ public sealed class DecisionsSelfTest : IScene
         Stars(clubs, settings);
         SpecialTeamsSelfTest.PowerPlay(clubs, settings, 1, Check);
         TacticsSelfTest.Compare(clubs, settings, 1, Check);
+        LineCalls(clubs, settings);
         Console.WriteLine(failures == 0 ? "AIMATCHTEST: all checks passed" : $"AIMATCHTEST: {failures} check(s) failed");
         Environment.Exit(failures == 0 ? 0 : 1);
         return match;
@@ -191,9 +195,82 @@ public sealed class DecisionsSelfTest : IScene
         Check(star.Completion > poor.Completion, "hockey IQ 100 still passes better than 20");
     }
 
-    static World Make(IReadOnlyList<ClubData> clubs, Settings settings, float period, int? smartHome, int? smartAway)
+    /// <summary>W63: icings and offsides over full matches, per preset and per hockey IQ.</summary>
+    void LineCalls(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
+        const int Seeds = 4;
+        int icings = 0, offsides = 0, fewest = int.MaxValue, most = 0, clears = 0, holds = 0;
+        for (int seed = 31; seed < 31 + Seeds; seed++)
+        {
+            var (ice, off, world) = Calls(clubs, settings, RuleSet.Shl, seed, null, null);
+            int i = ice[0] + ice[1], o = off[0] + off[1];
+            var h = Decisions.Tally(world, Side.Home);
+            var a = Decisions.Tally(world, Side.Away);
+            Console.WriteLine($"      SHL seed {seed}: {i} icings, {o} offsides, {h.Clears + a.Clears} clears out of the own zone, {h.HoldUps + a.HoldUps} hold-ups at the blue line, {world.Match.Score[0]}-{world.Match.Score[1]}");
+            icings += i; offsides += o; clears += h.Clears + a.Clears; holds += h.HoldUps + a.HoldUps;
+            fewest = Math.Min(fewest, Math.Min(i, o));
+            most = Math.Max(most, Math.Max(i, o));
+        }
+        float iceRate = (float)icings / Seeds, offRate = (float)offsides / Seeds;
+        Console.WriteLine($"      SHL per match: {iceRate:F1} icings, {offRate:F1} offsides (a real match has about 4 to 10 of each)");
+        Check(iceRate is >= 3f and <= 12f, $"under SHL the AI ices the puck at a hockey-like rate ({iceRate:F1} a match)");
+        Check(offRate is >= 3f and <= 12f, $"under SHL the AI goes offside at a hockey-like rate ({offRate:F1} a match)");
+        Check(fewest >= 1 && most <= 18, $"every match has some of each and none is full of them ({fewest} to {most})");
+        Check(clears > 0 && holds > 0, "the AI clears its own zone under pressure and holds up at the blue line for a teammate offside");
+
+        var (aIce, aOff, arcade) = Calls(clubs, settings, RuleSet.Arcade, 41, null, null);
+        int arcadeClears = Decisions.Tally(arcade, Side.Home).Clears + Decisions.Tally(arcade, Side.Away).Clears;
+        Console.WriteLine($"      Arcade: {aIce[0] + aIce[1]} icings, {aOff[0] + aOff[1]} offsides, {arcadeClears} clears");
+        Check(aIce[0] + aIce[1] == 0 && aOff[0] + aOff[1] == 0 && arcade.Match.Phase == MatchPhase.Final, "under Arcade, rules off, a full match has no icing and no offside");
+
+        // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round
+        int[] smartTotals = new int[4], poorTotals = new int[4];
+        foreach (var smart in new[] { Side.Home, Side.Away })
+        {
+            var (ice, off, world) = Calls(clubs, settings, RuleSet.Shl, smart == Side.Home ? 51 : 52, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
+            var poor = smart == Side.Home ? Side.Away : Side.Home;
+            Add(smartTotals, ice[(int)smart], off[(int)smart], Decisions.Tally(world, smart));
+            Add(poorTotals, ice[(int)poor], off[(int)poor], Decisions.Tally(world, poor));
+        }
+        Console.WriteLine($"      hockey IQ 85: {smartTotals[0]} icings, {smartTotals[1]} offsides, {smartTotals[2]} clears, {smartTotals[3]} hold-ups; hockey IQ 30: {poorTotals[0]} icings, {poorTotals[1]} offsides, {poorTotals[2]} clears, {poorTotals[3]} hold-ups");
+        Check(poorTotals[2] > smartTotals[2] * 1.5f, "a hockey IQ 30 club fires the puck out of its zone blind far more often than an 85 one");
+        float smartHolds = (float)smartTotals[3] / Math.Max(1, smartTotals[3] + smartTotals[1]), poorHolds = (float)poorTotals[3] / Math.Max(1, poorTotals[3] + poorTotals[1]);
+        Check(smartHolds > poorHolds, $"a hockey IQ 85 club holds up at the line for a teammate offside more often than a 30 one ({smartHolds:P0} vs {poorHolds:P0})");
+    }
+
+    static void Add(int[] totals, int icings, int offsides, DecisionTally tally)
+    {
+        totals[0] += icings;
+        totals[1] += offsides;
+        totals[2] += tally.Clears;
+        totals[3] += tally.HoldUps;
+    }
+
+    /// <summary>Plays a full match with the offside and icing rules on; returns each side's icings and offsides.</summary>
+    static (int[] Icings, int[] Offsides, World World) Calls(IReadOnlyList<ClubData> clubs, Settings settings, RuleSet rules, int seed, int? smartHome, int? smartAway)
+    {
+        var world = Make(clubs, settings, 20 * 60, smartHome, smartAway, rules);
+        ISystem[] systems = [.. Systems(world, seed), new OffsideRule(), new IcingRule()];
+        int[] icings = [0, 0], offsides = [0, 0];
+        int steps = (int)(2 * 60 * 60 / Game.Step);
+        for (int i = 0; i < steps && world.Match.Phase != MatchPhase.Final; i++)
+        {
+            world.Events.Clear();
+            foreach (var s in systems) s.Update(world, Game.Step);
+            world.Time += Game.Step; world.Tick++;
+            foreach (var e in world.Events.Current)
+            {
+                if (e.Side is not { } side) continue;
+                if (e.Kind == MatchEventKind.Icing) icings[(int)side]++;
+                else if (e.Kind == MatchEventKind.Offside) offsides[(int)side]++;
+            }
+        }
+        return (icings, offsides, world);
+    }
+
+    static World Make(IReadOnlyList<ClubData> clubs, Settings settings, float period, int? smartHome, int? smartAway, RuleSet? rules = null)
+    {
+        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Rules = rules ?? RuleSet.Shl, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
         var world = new World(setup, settings);
         Scenes.AddStarters(world);
         DecisionScenes.SetHockeyIq(world, Side.Home, smartHome);

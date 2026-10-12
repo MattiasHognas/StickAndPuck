@@ -46,6 +46,15 @@ public sealed class DecisionTally
     /// <summary>Gets or sets the fumbles by skaters with hockey IQ 95 or more.</summary>
     public int StarFumbles { get; set; }
 
+    /// <summary>Gets or sets the times an AI carrier fired the puck out of his own zone under pressure (W63).</summary>
+    public int Clears { get; set; }
+
+    /// <summary>Gets or sets the clears fired hard up the ice, the kind that may go the length for icing (W63).</summary>
+    public int HardClears { get; set; }
+
+    /// <summary>Gets or sets the times an AI carrier held up at the blue line for a teammate offside to tag up (W63).</summary>
+    public int HoldUps { get; set; }
+
     /// <summary>Gets the share of passes that reached a teammate, 0 to 1.</summary>
     public float Completion => Passes == 0 ? 0f : (float)Completed / Passes;
 }
@@ -131,6 +140,15 @@ internal sealed class Brain
 
     /// <summary>Gets or sets when a late pass is released.</summary>
     public float PassAt { get; set; }
+
+    /// <summary>Gets or sets the possession (its <see cref="GotAt"/>) whose blue-line hold-up was decided, so it is rolled once (W63).</summary>
+    public float HoldRun { get; set; } = float.NaN;
+
+    /// <summary>Gets or sets until when the carrier holds up short of the blue line; past it he carries on.</summary>
+    public float HoldUntil { get; set; } = float.NegativeInfinity;
+
+    /// <summary>Gets or sets the possession whose own-zone clear was rolled, so a carrier weighs it once per pressing (W63).</summary>
+    public float ClearRun { get; set; } = float.NaN;
 
     /// <summary>Gets or sets until when this skater goes for a hit on the carrier.</summary>
     public float HitUntil { get; set; } = float.NegativeInfinity;
