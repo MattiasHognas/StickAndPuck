@@ -39,12 +39,12 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         return Array.FindIndex(clips, a => string.Equals(Marshal.PtrToStringUTF8((IntPtr)a.Name), $"goalie_{name}", StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>Picks and advances the clip: butterfly from its first frame when the goalie drops, then held on its last pose.</summary>
-    public void Animate(Player g, GoalieState state, float dt)
+    /// <summary>Picks and advances the clip: butterfly from its first frame when the goalie drops (or slumps after a loss, W40), then held on its last pose.</summary>
+    public void Animate(Player g, GoalieState state, float dt, bool slump = false)
     {
         if (!loaded) return;
         var (clip, frame) = poses.GetValueOrDefault(g.Id, (-1, 0f));
-        int want = state.Down && butterfly >= 0 ? butterfly : ready;
+        int want = (state.Down || slump) && butterfly >= 0 ? butterfly : ready;
         if (want != clip) { clip = want; frame = 0; }
         frame += dt * ClipFps;
         if (clip >= 0 && clip == butterfly) frame = MathF.Min(frame, clips[clip].KeyFrameCount - 1);
