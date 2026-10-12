@@ -8,6 +8,7 @@ using StickAndPuck.Hud;
 using StickAndPuck.Intermission;
 using StickAndPuck.Lighting;
 using StickAndPuck.Lines;
+using StickAndPuck.Momentum;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Pregame;
@@ -60,6 +61,7 @@ public static class Systems
             new IntermissionSystem(),    // W31 the Zamboni between periods
             new LightingSystem(),        // W18 time of day, light cues
             new AudioSystem(),           // W12 8-bit effects
+            new MomentumSystem(),        // W29 boost after a goal, a fight won or a big hit; crowd swell, HUD bar
             new ArenaSystem(),           // W2 ice, boards, glass, nets, ads, crowd
             new SkaterRenderer(),        // W4a skater models and clips
             new HudSystem(),             // W10 scorebug, clock, messages
