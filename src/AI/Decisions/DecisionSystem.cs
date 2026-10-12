@@ -256,6 +256,7 @@ internal sealed class DecisionSystem : ISystem
             if (end * p.Velocity.X < 0.5f) return;   // not going in: nothing to hold up for yet
             brain.HoldRun = brain.GotAt;
             brain.HoldUntil = float.NegativeInfinity;
+            Decisions.Tally(world, p.Side).HoldLooks++;
             var (outcome, iq) = Jitter.Roll(world, p, rng);
             bool pressed = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home)
                 .Any(o => !o.IsGoalie && Vector3.Distance(o.Position, p.Position) < 2.6f);
@@ -386,10 +387,33 @@ internal sealed class DecisionSystem : ISystem
         var from = Flat(pk.Position);
         var blade = Flat(PuckHandling.Blade(p));
         var dir = Vector2.Normalize(v);
-        float along = Math.Max(0.5f, Vector2.Dot(blade - from, dir));
+        float along = Intercept(p, blade, from, dir, v.Length()) ?? Math.Max(0.5f, Vector2.Dot(blade - from, dir));
         var meet = TeamShape.Inside(from + dir * along, 0.6f);
         AiCommand.Steer(world, p, AiLayer.Decisions, Steering.Toward(p, Steering.BodyForBlade(p, meet), 0.6f), "meet the pass");
         return true;
+    }
+
+    /// <summary>
+    /// W66: the earliest point along the puck's slide the receiver's blade can reach before the puck
+    /// does, in metres from the puck, or null when he cannot get to it in time anywhere. Going to
+    /// the point across from where he stands instead braked him sideways while a pass led ahead of
+    /// him ran on, so the more a smart passer led him the more passes he missed.
+    /// </summary>
+    static float? Intercept(Player p, Vector2 blade, Vector2 from, Vector2 dir, float speed)
+    {
+        const float step = 1 / 60f;
+        float top = SkatingModel.TopSpeed(p.Data.Traits, p.Energy), along = 0f, t = 0f;
+        while (speed > 0.1f && t < 5f)
+        {
+            along += speed * step;
+            speed -= (Physics.PuckTuning.IceFriction + Physics.PuckTuning.Drag * speed) * step;
+            t += step;
+            if (along >= 0.5f && Vector2.Distance(blade, from + dir * along) <= top * t)
+            {
+                return along;
+            }
+        }
+        return null;
     }
 
     /// <summary>

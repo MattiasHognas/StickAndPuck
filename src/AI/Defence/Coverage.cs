@@ -176,14 +176,17 @@ public static class Coverage
     /// <summary>
     /// Gets how much a side's appetite for the body is scaled so a match ends with about
     /// <see cref="HitsPerMatch"/> hits: more willing when behind that pace, less when ahead.
+    /// W66: the ratio is cubed; a plain ratio settled near 18 hits a side, too weak to pull the
+    /// engage odds up to the pace, so one match in ten fell under 15.
     /// </summary>
     /// <param name="hits">Checks the side has thrown so far.</param>
     /// <param name="played">The share of regulation played, 0 to 1.</param>
-    /// <returns>0.2 to 3.</returns>
+    /// <returns>0.2 to 5.</returns>
     public static float HitPace(int hits, float played)
     {
         float expected = HitsPerMatch * Math.Clamp(played, 0f, 1f);
-        return Math.Clamp((expected + 3f) / (hits + 3f), 0.2f, 3f);
+        float behind = (expected + 3f) / (hits + 3f);
+        return Math.Clamp(behind * behind * behind, 0.2f, 5f);
     }
 
     /// <summary>Keeps a spot at least <see cref="CarrierRoom"/> from the carrier, so only the man on the puck goes to him.</summary>
