@@ -43,7 +43,7 @@ public static class Coverage
     public const float NeutralLeash = 4.5f;
 
     /// <summary>About how many checks a side throws in a match.</summary>
-    public const float HitsPerMatch = 23f;
+    public const float HitsPerMatch = 25f;
 
     /// <summary>How far markers keep from the carrier, in metres.</summary>
     public const float CarrierRoom = 4.5f;
