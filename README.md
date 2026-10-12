@@ -6,7 +6,7 @@ A silly attempt at rendering 3D as pixel art in the form of a hockey game.
 
 ### Running
 
-- `dotnet run` from the repo root (needs the .NET 10 SDK) builds and starts the game on the start screen.
+- `dotnet run` from the repo root (needs the .NET 11 SDK; global.json pins the version) builds and starts the game on the start screen.
 - Settings are environment variables in front of the command, for example `SAP_SCENE=match SAP_HOME=frolunda SAP_AWAY=djurgarden dotnet run`. On Windows PowerShell: `$env:SAP_SCENE="match"; dotnet run`.
 - Release builds: download from the GitHub Releases page. `StickAndPuck-vX.Y.Z-linux-x64` needs `chmod +x` before it runs; `StickAndPuck-vX.Y.Z-win-x64.exe` runs as is. Neither needs .NET installed, and both read the same `SAP_*` variables.
 - The settings screen holds every switch: control switching, line changes, difficulty (easy, normal, hard), period length (2, 3, 5, 10 or 20 minutes, default 5), sim this game, auto deke, one-timers, penalties, fights, controls (keyboard or gamepad), player 2 controls (off, keyboard, gamepad 1 or 2), control marker, camera zoom, lighting mood, swap kits, volume, and the debug overlays (fps line, match debug line, lines panel; all off by default). Opening it from the pause menu keeps the match paused. They are saved as `settings.json` in `~/.config/StickAndPuck/` on Linux or `%APPDATA%\StickAndPuck\` on Windows, next to the season save; `SAP_SETTINGS=path` moves the file.
