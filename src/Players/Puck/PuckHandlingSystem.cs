@@ -16,6 +16,7 @@ namespace StickAndPuck.Players;
 /// receiver straight away, unless <see cref="Settings.Switching"/> is Manual.</item>
 /// <item>Shooting: a tap of shoot is a wrist shot, a hold past <see cref="PuckHandling.SlapAfter"/> a
 /// slap shot that grows with the wind-up (it fires by itself at full wind-up plus a moment).
+/// The hold also sets the height: a tap stays low, a full wind-up goes high (<see cref="ShotHeight"/>).
 /// The puck leaves the blade <see cref="PuckHandling.StrikeDelay"/> into the shoot clip.</item>
 /// </list>
 /// Publishes <see cref="MatchEventKind.Pass"/> and <see cref="MatchEventKind.Shot"/> (every shot,
@@ -31,7 +32,7 @@ internal sealed class PuckHandlingSystem : ISystem
     readonly Random rng;
     readonly HashSet<int> shootHeld = [];
     readonly Dictionary<int, float> charge = [];
-    (int Player, ShotKind Kind, float Speed)? pendingShot;
+    (int Player, ShotKind Kind, float Speed, float Held)? pendingShot;
     int releasedBy = -1;
     float releasedAt = float.NegativeInfinity;
     Vector3 lastPuck;
@@ -58,6 +59,7 @@ internal sealed class PuckHandlingSystem : ISystem
     public void Update(World world, float dt)
     {
         HandlingDemo.Update(world);
+        ShotDemo.Update(world);
         var pk = world.Puck;
         if (pk.Carrier >= 0 && (pk.Carrier >= world.Players.Count || world.Players[pk.Carrier].IsGoalie))
         {
@@ -102,7 +104,7 @@ internal sealed class PuckHandlingSystem : ISystem
                 var kind = PuckHandling.KindOf(held);
                 float speed = kind == ShotKind.Slap ? PuckHandling.SlapSpeed(p.Data.Traits, held) : PuckHandling.WristSpeed(p.Data.Traits);
                 speed *= Lines.LinesTuning.ShotFactor(p.Energy);   // W13: tired skaters shoot softer
-                pendingShot = (p.Id, kind, speed);
+                pendingShot = (p.Id, kind, speed, held);
                 p.Begin(PlayerAction.Shoot);
             }
         }
@@ -154,7 +156,7 @@ internal sealed class PuckHandlingSystem : ISystem
         if (p.ActionTime < PuckHandling.StrikeDelay) return;
         pendingShot = null;
         var from = world.Puck.Position;
-        var velocity = PuckHandling.ShotVelocity(world, p, from, shot.Kind, shot.Speed, rng);
+        var velocity = PuckHandling.ShotVelocity(world, p, from, shot.Kind, shot.Speed, rng, shot.Held);
         Release(world, p, velocity);
         world.Events.Publish(new MatchEvent(MatchEventKind.Shot, world.Time, p.Side, p.Id, from, velocity.Length()));
     }

@@ -50,59 +50,98 @@ internal static class InputDevices
 {
     const float StickDeadZone = 0.2f;
 
-    /// <summary>Arrows or WASD skate, shift sprints, space or left click shoots, E or right click passes, Q checks, C switches, L changes line, ctrl blocks, F accepts a fight, P pauses.</summary>
+    /// <summary>The keyboard and mouse through the key bindings (W39); by default arrows or WASD skate, shift sprints, space or left click shoots, E or right click passes, Q checks, C switches, L changes line, ctrl blocks, F accepts a fight, P pauses. The mouse buttons stay on shoot and pass.</summary>
+    /// <param name="settings">The settings holding the bindings.</param>
     /// <returns>What is held.</returns>
-    public static DeviceState KeyboardMouse()
+    public static DeviceState KeyboardMouse(Settings settings)
     {
+        var state = KeyboardMouse(settings, k => IsKeyDown(k));
+        state.Shoot |= IsMouseButtonDown(MouseButton.Left);
+        state.Punch = state.Shoot;
+        state.Pass |= IsMouseButtonDown(MouseButton.Right);
+        return state;
+    }
+
+    /// <summary>The keyboard through the key bindings, with the key test given, so it can be checked without a window.</summary>
+    /// <param name="settings">The settings holding the bindings.</param>
+    /// <param name="down">Whether a key is held.</param>
+    /// <returns>What is held.</returns>
+    public static DeviceState KeyboardMouse(Settings settings, Func<KeyboardKey, bool> down)
+    {
+        bool Key(GameAction action)
+        {
+            var b = KeyBindings.Of(settings, action);
+            return (b.Key != KeyboardKey.Null && down(b.Key)) || (b.Alt != KeyboardKey.Null && down(b.Alt));
+        }
+
         var move = new Vector2(
-            Held(KeyboardKey.Right, KeyboardKey.D) - Held(KeyboardKey.Left, KeyboardKey.A),
-            Held(KeyboardKey.Down, KeyboardKey.S) - Held(KeyboardKey.Up, KeyboardKey.W));
-        bool shoot = IsKeyDown(KeyboardKey.Space) || IsMouseButtonDown(MouseButton.Left);
+            (Key(GameAction.SkateRight) ? 1f : 0f) - (Key(GameAction.SkateLeft) ? 1f : 0f),
+            (Key(GameAction.SkateDown) ? 1f : 0f) - (Key(GameAction.SkateUp) ? 1f : 0f));
+        bool shoot = Key(GameAction.Shoot);
         return new DeviceState
         {
             Move = move.LengthSquared() > 1 ? Vector2.Normalize(move) : move,
-            Sprint = IsKeyDown(KeyboardKey.LeftShift) || IsKeyDown(KeyboardKey.RightShift),
+            Sprint = Key(GameAction.Sprint),
             Shoot = shoot,
-            Pass = IsKeyDown(KeyboardKey.E) || IsMouseButtonDown(MouseButton.Right),
-            Check = IsKeyDown(KeyboardKey.Q),
-            Switch = IsKeyDown(KeyboardKey.C),
-            Line = IsKeyDown(KeyboardKey.L),
+            Pass = Key(GameAction.Pass),
+            Check = Key(GameAction.Check),
+            Switch = Key(GameAction.Switch),
+            Line = Key(GameAction.LineChange),
             Punch = shoot,
-            Block = IsKeyDown(KeyboardKey.LeftControl),
-            Accept = IsKeyDown(KeyboardKey.F),
-            Pause = IsKeyDown(KeyboardKey.P),
+            Block = Key(GameAction.Block),
+            Accept = Key(GameAction.AcceptFight),
+            Pause = Key(GameAction.Pause),
         };
     }
 
-    /// <summary>Left stick or d-pad skates, right trigger sprints, A shoots, X passes, B checks, Y switches, LB changes line, RB blocks, start pauses.</summary>
+    /// <summary>A gamepad through the button bindings (W39); the left stick always skates, the bound buttons (the d-pad by default) too. By default right trigger sprints, A shoots, X passes, B checks, Y switches and accepts, LB changes line, RB blocks, start pauses.</summary>
     /// <param name="index">0 for the first connected pad, 1 for the second (W38: not the Raylib slot).</param>
+    /// <param name="settings">The settings holding the bindings.</param>
     /// <returns>What is held, or nothing when that pad is not connected.</returns>
-    public static DeviceState Gamepad(int index)
+    public static DeviceState Gamepad(int index, Settings settings)
     {
         int pad = Gamepads.Slot(index);
         if (pad < 0) return default;
+        bool Button(GameAction action) => PadDown(pad, KeyBindings.Of(settings, action).Button);
+
         var move = Stick(GetGamepadAxisMovement(pad, GamepadAxis.LeftX), GetGamepadAxisMovement(pad, GamepadAxis.LeftY));
         if (move == Vector2.Zero)
         {
             move = new Vector2(
-                Down(pad, GamepadButton.LeftFaceRight) - Down(pad, GamepadButton.LeftFaceLeft),
-                Down(pad, GamepadButton.LeftFaceDown) - Down(pad, GamepadButton.LeftFaceUp));
+                (Button(GameAction.SkateRight) ? 1f : 0f) - (Button(GameAction.SkateLeft) ? 1f : 0f),
+                (Button(GameAction.SkateDown) ? 1f : 0f) - (Button(GameAction.SkateUp) ? 1f : 0f));
             if (move.LengthSquared() > 1) move = Vector2.Normalize(move);
         }
-        bool a = IsGamepadButtonDown(pad, GamepadButton.RightFaceDown), y = IsGamepadButtonDown(pad, GamepadButton.RightFaceUp);
+        bool shoot = Button(GameAction.Shoot);
         return new DeviceState
         {
             Move = move,
-            Sprint = GetGamepadAxisMovement(pad, GamepadAxis.RightTrigger) > 0f,   // triggers rest at -1
-            Shoot = a,
-            Pass = IsGamepadButtonDown(pad, GamepadButton.RightFaceLeft),
-            Check = IsGamepadButtonDown(pad, GamepadButton.RightFaceRight),
-            Switch = y,
-            Line = IsGamepadButtonDown(pad, GamepadButton.LeftTrigger1),
-            Punch = a,
-            Block = IsGamepadButtonDown(pad, GamepadButton.RightTrigger1),
-            Accept = y,
-            Pause = IsGamepadButtonDown(pad, GamepadButton.MiddleRight),
+            Sprint = Button(GameAction.Sprint),
+            Shoot = shoot,
+            Pass = Button(GameAction.Pass),
+            Check = Button(GameAction.Check),
+            Switch = Button(GameAction.Switch),
+            Line = Button(GameAction.LineChange),
+            Punch = shoot,
+            Block = Button(GameAction.Block),
+            Accept = Button(GameAction.AcceptFight),
+            Pause = Button(GameAction.Pause),
+        };
+    }
+
+    /// <summary>Whether a pad button is held; the triggers also count through their axis, which rests at -1.</summary>
+    /// <param name="pad">The gamepad index.</param>
+    /// <param name="button">The button, or <see cref="GamepadButton.Unknown"/> for none.</param>
+    /// <returns>Whether it is held.</returns>
+    public static bool PadDown(int pad, GamepadButton button)
+    {
+        if (button == GamepadButton.Unknown || !IsGamepadAvailable(pad)) return false;
+        if (IsGamepadButtonDown(pad, button)) return true;
+        return button switch
+        {
+            GamepadButton.RightTrigger2 => GetGamepadAxisMovement(pad, GamepadAxis.RightTrigger) > 0f,
+            GamepadButton.LeftTrigger2 => GetGamepadAxisMovement(pad, GamepadAxis.LeftTrigger) > 0f,
+            _ => false,
         };
     }
 
@@ -138,15 +177,5 @@ internal static class InputDevices
         float length = v.Length();
         if (length < StickDeadZone) return Vector2.Zero;
         return v / length * Math.Min(1f, (length - StickDeadZone) / (1f - StickDeadZone));
-    }
-
-    static float Held(KeyboardKey a, KeyboardKey b)
-    {
-        return IsKeyDown(a) || IsKeyDown(b) ? 1f : 0f;
-    }
-
-    static float Down(int pad, GamepadButton button)
-    {
-        return IsGamepadButtonDown(pad, button) ? 1f : 0f;
     }
 }
