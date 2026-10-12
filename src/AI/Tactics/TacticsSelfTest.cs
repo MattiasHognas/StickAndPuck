@@ -133,7 +133,7 @@ public sealed class TacticsSelfTest : IScene
         into.BackAtExits += from.BackAtExits;
     }
 
-    static World Make(IReadOnlyList<ClubData> clubs, Settings settings, ClubTactics home, ClubTactics away)
+    internal static World Make(IReadOnlyList<ClubData> clubs, Settings settings, ClubTactics home, ClubTactics away)
     {
         var setup = Scenes.DefaultSetup(clubs);
         setup = setup with
@@ -162,7 +162,7 @@ public sealed class TacticsSelfTest : IScene
         }
     }
 
-    static ISystem[] Systems(World world, int seed)
+    internal static ISystem[] Systems(World world, int seed)
     {
 #pragma warning disable S2245 // fixed seeds so the checks repeat
         ISystem[] systems =

@@ -156,13 +156,11 @@ internal sealed class DefenceSystem : ISystem
         var target = plan.Duty == Duty.Contain ? spot : Read(world, plan, p, spot, view.Carrier, dt);
         // outside the own zone only the man on the puck goes to the carrier
         if (plan.Duty == Duty.Mark && view.Zone != DefenceZone.Own) target = Coverage.Room(target, view.Carrier);
-        var job = Positioning.Board(world).For(p.Id);
-        job.Job = Job.Requested;
-        job.Target = target;
         float far = Vector2.Distance(target, Flat(p.Position));
-        p.Command = plan.Duty == Duty.Contain
+        var move = plan.Duty == Duty.Contain
             ? Steering.Toward(p, target, 0.8f, sprint: true)
             : Steering.Toward(p, target, 1.6f, sprint: far > 6f);
+        AiCommand.Take(world, p, AiLayer.Defence, target, move, plan.Duty switch { Duty.Contain => "contain", Duty.Home => "stay home", _ => "mark" });
     }
 
     /// <summary>Where a defender reads his man to be: a smart one leads him by where he is skating.</summary>

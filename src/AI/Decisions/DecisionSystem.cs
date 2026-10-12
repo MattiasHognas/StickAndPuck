@@ -32,6 +32,11 @@ namespace StickAndPuck.AI;
 /// attacking blue line with a teammate already over it may hold up short of the line so he can
 /// tag up; a smart, unhurried one usually does, a poor or pressed one carries on in, offside.
 /// Neither care applies with the rule switched off (Arcade).</item>
+/// <item>W68: every write goes through <see cref="AiCommand"/>, which says who owns each field. Per
+/// skater, one branch of <see cref="Update"/> runs, in this order: a committed shot is held; a
+/// delayed pass goes; a carrier holds up at the line (unless special teams or tactics claimed him
+/// this step) and looks at the play; a receiver meets the pass; the chaser pounces; the crasher
+/// goes to the net; a presser hits. Candidate passes are weighed without touching anyone.</item>
 /// </list>
 /// </summary>
 internal sealed class DecisionSystem : ISystem
@@ -79,7 +84,7 @@ internal sealed class DecisionSystem : ISystem
             if (pk.Carrier == p.Id && brain.LatePass != null) { LatePass(world, p, brain); continue; }
             if (pk.Carrier == p.Id)
             {
-                HoldLine(world, p, brain);
+                if (!AiCommand.Held(world, p)) HoldLine(world, p, brain);   // W68: a dump taken wide stays wide
                 Carry(world, p, brain);
                 continue;
             }
@@ -157,7 +162,7 @@ internal sealed class DecisionSystem : ISystem
         if (world.Puck.Carrier != p.Id) { brain.ShootSteps = 0; return; }
         bool hold = brain.ShootSteps > 0;
         if (hold) brain.ShootSteps--;
-        p.Command = p.Command with { Move = brain.ShootAim, Shoot = hold, Sprint = false };
+        AiCommand.Act(world, p, p.Command with { Move = brain.ShootAim, Shoot = hold, Sprint = false }, "shot held");
     }
 
     /// <summary>The carrier's look at the play: carry on, shoot or pass, whichever is worth most.</summary>
@@ -223,9 +228,7 @@ internal sealed class DecisionSystem : ISystem
         // up the boards on his side, a little off them so the puck runs along the wall, never at the far net
         float side = MathF.Abs(at.Y) > 1f ? MathF.Sign(at.Y) : rng.NextSingle() < 0.5f ? -1f : 1f;
         var aim = Vector2.Normalize(new Vector2(end, side * (0.12f + 0.2f * rng.NextSingle())));
-        brain.ShootSteps = 3;   // a quick snap, a wrist shot's speed: plenty to go the length
-        brain.ShootAim = aim;
-        p.Command = p.Command with { Move = aim, Shoot = true, Sprint = false };
+        AiCommand.Shoot(world, p, AiLayer.Decisions, aim, 3, "clear");   // a quick snap, a wrist shot's speed: plenty to go the length
         var tally = Decisions.Tally(world, p.Side);
         tally.Clears++;
         return true;
@@ -266,7 +269,7 @@ internal sealed class DecisionSystem : ISystem
         // curl across the ice a couple of metres short of the line
         float across = MathF.Abs(at.Y) > 6f ? -MathF.Sign(at.Y) : at.Y >= 0 ? 1f : -1f;
         var spot = TeamShape.Inside(new Vector2(end * (RinkSpec.BlueLineX - 2.2f), at.Y + across * 4f), 1.5f);
-        p.Command = p.Command with { Move = Steering.Toward(p, spot, 1f).Move, Sprint = false };
+        AiCommand.Steer(world, p, AiLayer.Decisions, new PlayerCommand { Move = Steering.Toward(p, spot, 1f).Move }, "hold up at the line");
     }
 
     /// <summary>Now and then, a skater at the point with a clear lane and time winds up from distance, for a deflection or a rebound.</summary>
@@ -294,11 +297,10 @@ internal sealed class DecisionSystem : ISystem
     }
 
     /// <summary>The best pass the carrier sees, or null with nobody to pass to.</summary>
-    static PassOption? BestPass(World world, Player p, int end, Vector2 at, List<(Vector2 At, float Speed)> seen, int smart, bool cycling)
+    internal static PassOption? BestPass(World world, Player p, int end, Vector2 at, List<(Vector2 At, float Speed)> seen, int smart, bool cycling)
     {
         PassOption? best = null;
         float vision = Choices.Vision(smart);
-        var keep = p.Command;
         foreach (var mate in world.OnIce(p.Side))
         {
             if (mate == p || mate.IsGoalie || mate.Action == PlayerAction.Fallen) continue;
@@ -309,11 +311,8 @@ internal sealed class DecisionSystem : ISystem
             if (smart >= 50 && Choices.Offside(end, at, Flat(mate.Position))) continue;
             if (Cycle.ThroughNet(at, target)) continue;   // W37's cage stops a pass through it
 
-            // the stick has to point so puck handling picks this teammate
-            p.Command = keep with { Move = Vector2.Normalize(target - at) };
-            bool picked = PuckHandling.PickReceiver(world, p) == mate;
-            p.Command = keep;
-            if (!picked) continue;
+            // the stick has to point so puck handling picks this teammate; asked without touching his command
+            if (PuckHandling.PickReceiver(world, p, Vector2.Normalize(target - at)) != mate) continue;
 
             float success = Choices.LaneSuccess(at, target, speed, seen, smart);
             float value = success * Choices.SpotValue(end, target) * (0.5f + 0.5f * Choices.Room(target, seen)) - (1f - success) * (cycling ? Choices.CycleTurnover : 0.08f);
@@ -343,9 +342,7 @@ internal sealed class DecisionSystem : ISystem
         }
         if (!picksCorner || Vector2.Dot(aim, Vector2.Normalize(toNet)) < MathF.Cos(70f * MathF.PI / 180f)) aim = Vector2.Normalize(toNet);
 
-        brain.ShootSteps = slap ? 28 + rng.Next(22) : 0;
-        brain.ShootAim = aim;
-        p.Command = p.Command with { Move = aim, Shoot = true, Sprint = false };
+        AiCommand.Shoot(world, p, AiLayer.Decisions, aim, slap ? 28 + rng.Next(22) : 0, slap ? "slap shot" : "wrist shot");
     }
 
     /// <summary>Makes a pass; a fumbled execution holds it a beat too long, so the lane may close and the receiver skate on.</summary>
@@ -357,7 +354,7 @@ internal sealed class DecisionSystem : ISystem
             brain.PassAt = world.Time + 0.2f + 0.3f * rng.NextSingle();
             return;
         }
-        Release(p, brain, pass, at);
+        Release(world, p, brain, pass, at);
     }
 
     /// <summary>Lets a fumbled pass go once its beat is over, at the receiver as he is then, with the old read of the lane.</summary>
@@ -370,13 +367,13 @@ internal sealed class DecisionSystem : ISystem
         var at = Flat(world.Puck.Position);
         var (target, _) = PuckHandling.Lead(world.Puck.Position, pass.Receiver, p.Data.Traits.HockeyIq);
         if (Vector2.DistanceSquared(Flat(target), at) < 1f) return;
-        Release(p, brain, pass with { Target = Flat(target) }, at);
+        Release(world, p, brain, pass with { Target = Flat(target) }, at);
     }
 
-    static void Release(Player p, Brain brain, PassOption pass, Vector2 at)
+    static void Release(World world, Player p, Brain brain, PassOption pass, Vector2 at)
     {
         brain.PassTo = pass.Receiver.Id;
-        p.Command = p.Command with { Move = Vector2.Normalize(pass.Target - at), Pass = true };
+        AiCommand.Act(world, p, p.Command with { Move = Vector2.Normalize(pass.Target - at), Pass = true }, "pass");
     }
 
     /// <summary>The teammate a pass is meant for skates onto its line to meet it.</summary>
@@ -391,7 +388,7 @@ internal sealed class DecisionSystem : ISystem
         var dir = Vector2.Normalize(v);
         float along = Math.Max(0.5f, Vector2.Dot(blade - from, dir));
         var meet = TeamShape.Inside(from + dir * along, 0.6f);
-        p.Command = Steering.Toward(p, Steering.BodyForBlade(p, meet), 0.6f);
+        AiCommand.Steer(world, p, AiLayer.Decisions, Steering.Toward(p, Steering.BodyForBlade(p, meet), 0.6f), "meet the pass");
         return true;
     }
 
@@ -404,7 +401,7 @@ internal sealed class DecisionSystem : ISystem
         var pk = world.Puck;
         var puck = Flat(pk.Position);
         if (Flat(pk.Velocity).Length() > 4f || Vector2.Distance(puck, Flat(p.Position)) > 4f) return;
-        p.Command = Steering.Toward(p, TeamShape.Inside(puck, SkatingModel.BodyRadius), 1.5f);
+        AiCommand.Steer(world, p, AiLayer.Decisions, Steering.Toward(p, TeamShape.Inside(puck, SkatingModel.BodyRadius), 1.5f), "pounce");
     }
 
     /// <summary>After a shot, the forward of the shooting side nearest the net who is not chasing goes to the net for a rebound.</summary>
@@ -423,7 +420,7 @@ internal sealed class DecisionSystem : ISystem
     {
         int end = PuckHandling.AttackEnd(world, p.Side);
         float z = world.Puck.Position.Z > 0 ? -0.9f : 0.9f;
-        p.Command = Steering.Toward(p, new Vector2(end * (RinkSpec.GoalLineX - 2.4f), z), 0.8f, sprint: true);
+        AiCommand.Steer(world, p, AiLayer.Decisions, Steering.Toward(p, new Vector2(end * (RinkSpec.GoalLineX - 2.4f), z), 0.8f, sprint: true), "crash the net");
     }
 
     /// <summary>The skater pressing a carrier decides once per approach whether to hit, then skates through and checks.</summary>
@@ -444,10 +441,10 @@ internal sealed class DecisionSystem : ISystem
         if (world.Time > brain.HitUntil) return;
 
         var lead = carrier.Position + carrier.Velocity * 0.2f;
-        p.Command = Steering.Toward(p, Flat(lead), 0.1f, sprint: true);
+        AiCommand.Steer(world, p, AiLayer.Decisions, Steering.Toward(p, Flat(lead), 0.1f, sprint: true), "line up a hit");
         if (CheckingModel.Target(world, p) == carrier)
         {
-            p.Command = p.Command with { Check = true };
+            AiCommand.Act(world, p, p.Command with { Check = true }, "hit");
             brain.HitUntil = float.NegativeInfinity;
             board.Tally[(int)p.Side].Checks++;
         }

@@ -131,7 +131,7 @@ internal static class StandInPlay
             p.Position = new Vector3(spot.X, 0, spot.Y);
             p.Velocity = Vector3.Zero;
             p.Heading = end > 0 ? MathF.PI / 2 : -MathF.PI / 2;
-            p.Command = default;
+            if (p.Slot < 0) p.Command = default;   // W68: a human's command is the input system's, never the AI's
             p.Begin(PlayerAction.None);
         }
         var pk = world.Puck;

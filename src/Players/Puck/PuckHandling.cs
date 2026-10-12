@@ -146,7 +146,15 @@ public static class PuckHandling
     /// <returns>A unit vector on the ice (x, z).</returns>
     public static Vector2 Intent(Player p)
     {
-        var stick = p.Command.Move;
+        return Intent(p, p.Command.Move);
+    }
+
+    /// <summary>Gets the way a player would mean with the stick held this way: the stick when pushed, else the way the body faces.</summary>
+    /// <param name="p">The player.</param>
+    /// <param name="stick">A stick direction, read like <see cref="PlayerCommand.Move"/>.</param>
+    /// <returns>A unit vector on the ice (x, z).</returns>
+    public static Vector2 Intent(Player p, Vector2 stick)
+    {
         return stick.Length() > 0.3f ? Vector2.Normalize(stick) : Facing(p);
     }
 
@@ -159,7 +167,21 @@ public static class PuckHandling
     /// <returns>The receiver, or null to pass into space.</returns>
     public static Player? PickReceiver(World world, Player passer)
     {
-        var dir = Intent(passer);
+        return PickReceiver(world, passer, passer.Command.Move);
+    }
+
+    /// <summary>
+    /// Picks who a pass would go to with the stick held this way, the same way as
+    /// <see cref="PickReceiver(World, Player)"/> (same scoring, same ties) but without reading or
+    /// touching the passer's command, so the AI can weigh a pass it has not made.
+    /// </summary>
+    /// <param name="world">The match.</param>
+    /// <param name="passer">The passer.</param>
+    /// <param name="stick">The stick direction to judge, read like <see cref="PlayerCommand.Move"/>.</param>
+    /// <returns>The receiver, or null to pass into space.</returns>
+    public static Player? PickReceiver(World world, Player passer, Vector2 stick)
+    {
+        var dir = Intent(passer, stick);
         var from = Flat(Blade(passer));
         Player? best = null;
         float bestScore = float.MaxValue;

@@ -152,4 +152,7 @@ internal sealed class Brain
 
     /// <summary>Gets or sets until when this skater goes for a hit on the carrier.</summary>
     public float HitUntil { get; set; } = float.NegativeInfinity;
+
+    /// <summary>Gets or sets the step on which special teams or tactics last claimed this carrier's next action (W68, <see cref="AiCommand.Hold"/>).</summary>
+    public long HeldTick { get; set; } = long.MinValue;
 }
