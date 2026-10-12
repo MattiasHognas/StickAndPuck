@@ -23,15 +23,24 @@ internal sealed class StartScreen : MenuScreen
             read = true;
         }
         bool saved = save != null;
-        return
-        [
-            new MenuItem("CONTINUE SEASON", ScreenFlow.PlaySeasonGame, Enabled: saved),
-            new MenuItem("NEW SEASON", NewSeason),
-            new MenuItem("NEW GAME", () => ScreenFlow.Push(new ModeScreen())),
-            new MenuItem("STANDINGS", Standings, Enabled: saved),
-            new MenuItem("SETTINGS", () => ScreenFlow.Push(new SettingsScreen())),
-            new MenuItem("QUIT", ScreenFlow.Quit),
-        ];
+        List<MenuItem> items = [new MenuItem("CONTINUE SEASON", ScreenFlow.PlaySeasonGame, Enabled: saved)];
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem("SIM NEXT GAME", ScreenFlow.SimSeasonGame, Enabled: Season is { } s && HasNextGame(s)));    // W33, off with the SimGame setting
+        items.Add(new MenuItem("NEW SEASON", NewSeason));
+        items.Add(new MenuItem("NEW GAME", () => ScreenFlow.Push(new ModeScreen())));
+        items.Add(new MenuItem("STANDINGS", Standings, Enabled: saved));
+        items.Add(new MenuItem("SETTINGS", () => ScreenFlow.Push(new SettingsScreen())));
+        items.Add(new MenuItem("QUIT", ScreenFlow.Quit));
+        return items;
+    }
+
+    /// <summary>Gets the season to describe: the open one (a game simmed from here changes it), else the save read on opening.</summary>
+    SeasonState? Season => SeasonSession.Current ?? save;
+
+    /// <summary>Whether the human's club has a season or playoff game left, as <see cref="ScreenFlow.SeasonHasNextGame"/> asks of the open season.</summary>
+    static bool HasNextGame(SeasonState season)
+    {
+        if (!season.IsOver) return season.NextGame != null;
+        return season.Playoffs == null || season.Playoffs.UserSeries != null;
     }
 
     /// <inheritdoc/>
@@ -49,13 +58,13 @@ internal sealed class StartScreen : MenuScreen
         var (x, top) = art.Panel("", PanelW, h, 80);
         art.Menu(items, Selected, x, PanelW, top);
 
-        if (save != null)
+        if (Season is { } season)
         {
-            string club = ScreenFlow.Clubs.FirstOrDefault(c => string.Equals(c.Id, save.UserClub, StringComparison.Ordinal))?.Name ?? save.UserClub;
-            int played = save.Games.Count(g => g.Played && g.Involves(save.UserClub));
-            int total = save.Games.Count(g => g.Involves(save.UserClub));
-            string line = !save.IsOver ? $"{club} - GAME {played + 1} OF {total}"
-                : save.Playoffs is { Champion: not null } || save.Playoffs is { UserSeries: null } ? $"{club} - SEASON OVER"
+            string club = ScreenFlow.Clubs.FirstOrDefault(c => string.Equals(c.Id, season.UserClub, StringComparison.Ordinal))?.Name ?? season.UserClub;
+            int played = season.Games.Count(g => g.Played && g.Involves(season.UserClub));
+            int total = season.Games.Count(g => g.Involves(season.UserClub));
+            string line = !season.IsOver ? $"{club} - GAME {played + 1} OF {total}"
+                : season.Playoffs is { Champion: not null } || season.Playoffs is { UserSeries: null } ? $"{club} - SEASON OVER"
                 : $"{club} - PLAYOFFS";
             art.Centred(line, Game.Width / 2, 80 + h + 6, art.Text);
         }

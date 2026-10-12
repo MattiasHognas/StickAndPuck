@@ -83,6 +83,36 @@ internal sealed class ScreenArt
         Hud.DrawText(Fit(text), x, y, colour);
     }
 
+    /// <summary>Shortens text to a width, ending it with a dot when letters had to go.</summary>
+    /// <param name="text">The text.</param>
+    /// <param name="width">The widest it may be, in pixels.</param>
+    /// <returns>The text, fitted to the font and the width.</returns>
+    public string Clip(string text, int width)
+    {
+        text = Fit(text);
+        if (Hud.Measure(text) <= width) return text;
+        for (int n = text.Length - 1; n > 0; n--)
+        {
+            string cut = text[..n].TrimEnd() + ".";
+            if (Hud.Measure(cut) <= width) return cut;
+        }
+        return "";
+    }
+
+    /// <summary>Draws a 0 to 100 rating as a bar with its number on the right.</summary>
+    /// <param name="value">The rating.</param>
+    /// <param name="x">Left edge.</param>
+    /// <param name="y">Top of the text row the bar sits in.</param>
+    /// <param name="w">Width of the bar.</param>
+    /// <param name="ink">Bar colour.</param>
+    public void Bar(int value, int x, int y, int w, Color ink)
+    {
+        value = Math.Clamp(value, 0, 100);
+        DrawRectangle(x, y + 3, w, 5, Band);
+        DrawRectangle(x, y + 3, Math.Max(1, value * w / 100), 5, ink);
+        Left(value.ToString(System.Globalization.CultureInfo.InvariantCulture), x + w + 4, y, Text);
+    }
+
     /// <summary>
     /// Upper-cases text and swaps letters the pixel font lacks for their plain form (Á becomes A),
     /// keeping the Swedish Å, Ä, Ö and the É and Ü the font has.

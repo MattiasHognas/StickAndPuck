@@ -21,7 +21,9 @@ internal sealed class BracketScreen : MenuScreen
     {
         List<MenuItem> items = [new MenuItem("PLAY NEXT GAME", ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame())];
         if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem("SIM THIS GAME", ScreenFlow.SimSeasonGame, Enabled: ScreenFlow.CanSimGame()));
+        if (PlayoffSession.Current?.Champion != null) items.Add(new MenuItem("TROPHY", () => ScreenFlow.Push(TrophyScreen.Season())));
         items.Add(new MenuItem("TABLE", () => ScreenFlow.Replace(new StandingsScreen())));
+        items.Add(new MenuItem("SEASON STATS", () => ScreenFlow.Replace(new SeasonStatsScreen())));
         items.Add(new MenuItem("MAIN MENU", Back));
         return items;
     }
