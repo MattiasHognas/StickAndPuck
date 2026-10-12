@@ -13,6 +13,11 @@ namespace StickAndPuck.Rules;
 /// W23: at every faceoff the skaters on the ice are balanced to <see cref="Penalties.TargetSkaters"/>,
 /// which gives 4 on 3 after a penalty in 3 on 3 overtime and sends an extra attacker off once the
 /// goalie is back; a skater let out of the box in overtime plays on until that next whistle.
+/// W46: with <see cref="RuleSet.PenaltiesCarryIntoOvertime"/> the box keeps its penalties through
+/// the overtime break (calls still pending there are made), and only the shootout and the final
+/// empty it; the first overtime faceoff then takes the format's skaters as the full strength.
+/// Waiting third penalties show in the box with their clock standing; skaters kept in the box after
+/// their time go to the bench at the next stoppage.
 /// </summary>
 internal sealed class PenaltyRules : ISystem, IDisposable
 {
@@ -30,9 +35,18 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         if (!MatchFlow.IsRunning(world)) return;
         var book = Penalties.Book(world);
         var m = world.Match;
-        if (m.Phase is MatchPhase.Overtime or MatchPhase.Shootout or MatchPhase.Final)
+        if (m.Phase is MatchPhase.Shootout or MatchPhase.Final || (m.Phase == MatchPhase.Overtime && !world.Setup.Rules.PenaltiesCarryIntoOvertime))
         {
             EndOfRegulation(world, book);
+            book.LastPhase = m.Phase;
+            return;
+        }
+
+        if (m.Phase != MatchPhase.Play) Penalties.LetOutHeld(world, book);
+        if (m.Phase == MatchPhase.Overtime)
+        {
+            // the overtime break: the penalties carry on; a call still pending at the horn is made now
+            if (book.Delayed.Count > 0) Penalties.CallDelayed(world, book);
             book.LastPhase = m.Phase;
             return;
         }
@@ -63,7 +77,8 @@ internal sealed class PenaltyRules : ISystem, IDisposable
 
     /// <summary>
     /// The faceoff is set up: the first one of a period with an empty box reads the full strength
-    /// off the ice (5 in regulation, 3 or 5 in overtime); then each club's skaters are brought to
+    /// off the ice (5 in regulation, 3 or 5 in overtime); with penalties carried into overtime it is
+    /// the overtime format's skaters (W46); then each club's skaters are brought to
     /// <see cref="Penalties.TargetSkaters"/>, one on from the bench or one off to it, and placed again.
     /// </summary>
     static void AtFaceoff(World world, PenaltyBook book)
@@ -73,6 +88,11 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         {
             int most = BothSides.Max(side => world.OnIce(side).Count(p => !p.IsGoalie));
             book.BaseSkaters = Math.Clamp(most, PenaltyTuning.MinSkaters, PenaltyTuning.MaxSkaters);
+            book.BasePeriod = m.Period;
+        }
+        else if (book.BasePeriod != m.Period && m.Period > world.Setup.Periods && OvertimeFormat.Of(world.Setup).Skaters > 0)
+        {
+            book.BaseSkaters = Math.Clamp(OvertimeFormat.Of(world.Setup).Skaters, PenaltyTuning.MinSkaters, PenaltyTuning.MaxSkaters);
             book.BasePeriod = m.Period;
         }
 
@@ -109,7 +129,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         foreach (var p in m.Penalties.ToList())
         {
             float left = p.SecondsLeft - ran;
-            if (left <= 0.0001f) Penalties.Release(world, book, p, "served");
+            if (left <= 0.0001f) Penalties.End(world, book, p, "served");
             else m.Penalties[m.Penalties.IndexOf(p)] = p with { SecondsLeft = left };
         }
     }
@@ -123,8 +143,8 @@ internal sealed class PenaltyRules : ISystem, IDisposable
             var other = scorer == Side.Home ? Side.Away : Side.Home;
             if (book.Delayed.RemoveAll(d => d.Side == other) > 0) book.Log(world, "delayed call waved off by the goal");
             if (Penalties.Serving(world, scorer) < Penalties.Serving(world, other)
-                && world.Match.Penalties.Where(p => p.Side == other).MinBy(p => p.SecondsLeft) is { } shortest)
-                Penalties.Release(world, book, shortest, "power play goal");
+                && world.Match.Penalties.Where(p => p.Side == other && !Penalties.Substituted(world, p.PlayerId)).MinBy(p => p.SecondsLeft) is { } shortest)
+                Penalties.End(world, book, shortest, "power play goal");
             return;     // MatchRules counts one goal per step
         }
     }
@@ -168,21 +188,12 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         if (offender != null) Penalties.Signal(world, offender.Id, Infraction.Tripping);
     }
 
-    /// <summary>Penalties end with regulation (the overtime break) and before the shootout: skaters in the box go to the bench and delayed calls are dropped.</summary>
+    /// <summary>Penalties end before the shootout and with the match, and with regulation unless they carry into overtime: skaters in the box go to the bench and delayed calls are dropped.</summary>
     static void EndOfRegulation(World world, PenaltyBook book)
     {
-        book.Delayed.Clear();
-        var m = world.Match;
-        if (m.Penalties.Count == 0) return;
-        foreach (var p in m.Penalties)
-        {
-            var player = world.Players[p.PlayerId];
-            if (player.OnIce) continue;
-            var door = Lines.Squad.Door(player.Side);
-            player.Position = new System.Numerics.Vector3(door.X, 0, door.Y - 1.5f);
-        }
-        m.Penalties.Clear();
-        book.Log(world, "penalties end with regulation");
+        bool any = world.Match.Penalties.Count + book.Waiting.Count + book.Held.Count > 0;
+        Penalties.ClearBox(world, book);
+        if (any) book.Log(world, world.Match.Phase == MatchPhase.Overtime ? "penalties end with regulation" : "penalties end");
     }
 
     public void DrawHud(World world, RenderContext render)
@@ -199,6 +210,12 @@ internal sealed class PenaltyRules : ISystem, IDisposable
             {
                 string text = $"#{world.Players[p.PlayerId].Data.Number} {MatchFlow.ClockText(p.SecondsLeft)}";
                 Row(art, world.Setup.Club(side).Id, text, "panel_red", x, y, h, pad, crest, gap);
+                y += h + 1;
+            }
+            foreach (var p in Penalties.Waiting(world).Where(p => p.Side == side))
+            {
+                string text = $"#{world.Players[p.PlayerId].Data.Number} NEXT {MatchFlow.ClockText(p.SecondsLeft)}";
+                Row(art, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
                 y += h + 1;
             }
         }

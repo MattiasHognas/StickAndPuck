@@ -9,7 +9,7 @@ public static class PenaltyTuning
     /// <summary>The period length <see cref="MinorSeconds"/> belongs to.</summary>
     public const float FullPeriodSeconds = 20 * 60;
 
-    /// <summary>Most penalties a club serves at once; a call that would put it three short is waved off.</summary>
+    /// <summary>Most penalties a club serves at once; a further call waits in the box (W46) or, without stacking, is waved off.</summary>
     public const int MaxServing = 2;
 
     /// <summary>W23: a club never plays fewer skaters than this, whatever it serves (3 on 3 overtime stays 3 a side).</summary>
