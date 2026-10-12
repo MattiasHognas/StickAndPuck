@@ -122,8 +122,9 @@ internal sealed class PositioningSystem : ISystem
             Job.Shape => ShapeTarget(world, plan, p, OpenSpot(world, plan, p, step.Carrier, teamPhase, end, cycle, Read(pk, smart)), smart, dt),
             _ => at,
         };
-        if (plan.Job == Job.Shape && plan.Station != null) plan.Target = Cycle.AroundNet(at, plan.Target, end);
-        if (plan.Job != Job.Shape) { plan.Read = null; plan.Open = null; }
+        if (plan.Job == Job.Shape && plan.Open != null) plan.Job = Job.Support;
+        if (plan.Job is Job.Shape or Job.Support && plan.Station != null) plan.Target = Cycle.AroundNet(at, plan.Target, end);
+        if (plan.Job is not (Job.Shape or Job.Support)) { plan.Read = null; plan.Open = null; }
     }
 
     /// <summary>
@@ -177,15 +178,19 @@ internal sealed class PositioningSystem : ISystem
     static void Steer(World world, SkaterPlan plan, Player p)
     {
         var at = new Vector2(p.Position.X, p.Position.Z);
+        // W65: since W62 the cages are solid, so a skater whose way runs through a net heads for a
+        // post first instead of pushing into the cage, and does not ease off at that post
+        var target = Steering.AroundNets(at, plan.Target);
+        bool round = target != plan.Target;
         var command = plan.Job switch
         {
             Job.Idle => Steering.Toward(p, at),
-            Job.Chase or Job.Pressure => Steering.Toward(p, plan.Target, 0.8f, sprint: true),
-            Job.Carry when plan.Station != null => Steering.Toward(p, plan.Target, 1f),
-            Job.Carry => Steering.Toward(p, plan.Target, 1.5f, sprint: true),
-            Job.Requested => Steering.Toward(p, plan.Target, sprint: plan.RequestSprint),
-            Job.Faceoff => Steering.Toward(p, plan.Target, 1.5f),
-            _ => Steering.Toward(p, plan.Target, sprint: Vector2.Distance(plan.Target, at) > 12f),
+            Job.Chase or Job.Pressure => Steering.Toward(p, target, 0.8f, sprint: true),
+            Job.Carry when plan.Station != null => Steering.Toward(p, target, 1f),
+            Job.Carry => Steering.Toward(p, target, 1.5f, sprint: true),
+            Job.Requested => Steering.Toward(p, target, round ? 0.5f : Steering.Arrive, sprint: plan.RequestSprint),
+            Job.Faceoff => Steering.Toward(p, target, round ? 0.5f : 1.5f),
+            _ => Steering.Toward(p, target, round ? 0.5f : Steering.Arrive, sprint: Vector2.Distance(plan.Target, at) > 12f),
         };
         p.Command = command;
     }
@@ -343,13 +348,13 @@ internal sealed class PositioningSystem : ISystem
             foreach (var p in team)
             {
                 var plan = board.For(p.Id);
-                if (plan.Job != Job.Shape) continue;
+                if (plan.Job is not (Job.Shape or Job.Support)) continue;
                 var push = Vector2.Zero;
                 foreach (var mate in team)
                 {
                     if (mate == p) continue;
                     var other = board.For(mate.Id);
-                    var away = plan.Target - (other.Job == Job.Shape ? other.Target : new Vector2(mate.Position.X, mate.Position.Z));
+                    var away = plan.Target - (other.Job is Job.Shape or Job.Support ? other.Target : new Vector2(mate.Position.X, mate.Position.Z));
                     float d = away.Length();
                     if (d >= Spacing) continue;
                     var dir = d > 1e-3f ? away / d : new Vector2(MathF.Cos(p.Id), MathF.Sin(p.Id));
