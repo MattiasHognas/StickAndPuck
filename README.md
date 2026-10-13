@@ -4,6 +4,29 @@ A silly attempt at rendering 3D as pixel art in the form of a hockey game.
 
 ## Running the game
 
+### Controls
+
+| Action | Keyboard and mouse | Gamepad |
+|---|---|---|
+| Skate | Arrows or WASD | Left stick or d-pad |
+| Sprint | Shift | Right trigger |
+| Shoot (tap wrist shot, hold slap shot) | Space or left click | A |
+| Pass | E or right click | X |
+| Check | Q | B |
+| Switch player | C | Y |
+| Change line early | L | LB |
+| Block (in play and in a fight) | Left Ctrl | RB |
+| Accept a fight | F | Y |
+| Punch (when the marker is in the green) | Space | A |
+| Pause | Esc or P | Start |
+| Menus: move, pick, back | Arrows or WASD, Enter or Space, Esc or Backspace | D-pad or left stick, A, B |
+| Skip replay | Enter or Space | A or Start |
+| Toggle camera zoom (settings: camera zoom) | F6 | |
+| Swap kits (settings: swap kits) | Tab | |
+| Save screenshot.png | F12 | |
+
+In one-player scenes the keyboard and the first gamepad both control your player. In `versus` the keyboard plays home and the first gamepad plays away.
+
 ### Running
 
 - `dotnet run --project src/StickAndPuck.App` from the repo root (needs the .NET 11 SDK; global.json pins the version) builds and starts the game on the start screen.
@@ -86,29 +109,6 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `SAP_LINES_DEBUG=1`: energy panel showing each unit on the ice. Default: the settings screen's lines panel (off; on in `lines` and `goalieswap`).
 - `SAP_AI_TARGETS=1`: markers where each AI skater is heading in `positioning`. Default off.
 - `SAP_SFX=demo`: plays every event's sound in turn. Default off.
-
-### Controls
-
-| Action | Keyboard and mouse | Gamepad |
-|---|---|---|
-| Skate | Arrows or WASD | Left stick or d-pad |
-| Sprint | Shift | Right trigger |
-| Shoot (tap wrist shot, hold slap shot) | Space or left click | A |
-| Pass | E or right click | X |
-| Check | Q | B |
-| Switch player | C | Y |
-| Change line early | L | LB |
-| Block (in play and in a fight) | Left Ctrl | RB |
-| Accept a fight | F | Y |
-| Punch (when the marker is in the green) | Space | A |
-| Pause | Esc or P | Start |
-| Menus: move, pick, back | Arrows or WASD, Enter or Space, Esc or Backspace | D-pad or left stick, A, B |
-| Skip replay | Enter or Space | A or Start |
-| Toggle camera zoom (settings: camera zoom) | F6 | |
-| Swap kits (settings: swap kits) | Tab | |
-| Save screenshot.png | F12 | |
-
-In one-player scenes the keyboard and the first gamepad both control your player. In `versus` the keyboard plays home and the first gamepad plays away.
 
 ### Headless runs and tests
 
