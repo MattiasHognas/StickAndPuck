@@ -1,66 +1,39 @@
 using System.Numerics;
+using StickAndPuck.Core;
 using StickAndPuck.Lines;
 using StickAndPuck.Physics;
 using StickAndPuck.Rules;
 using StickAndPuck.Screens;
 using StickAndPuck.Season;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Core;
+namespace StickAndPuck.Tests.Core;
 
 /// <summary>
-/// SAP_SCENE=rulestest (W44): the rule presets and the player's changes, no window. Checks the
-/// presets, CUSTOM and back, that a change survives a restart (settings.json written and read
-/// again), the overtime switch on a match setup, scripted plays under each preset (icing hybrid,
-/// touch and off, offside on and off, goalie pull, penalties and fights), the arcade entries fixed
-/// to Arcade and a season keeping the rules in its save. Prints one line per check and exits with 0
-/// when all pass, 1 otherwise.
+/// The rule presets and the player's changes (W44). Checks the presets, CUSTOM and back, that a
+/// change survives a restart (settings.json written and read again), the overtime switch on a match
+/// setup, scripted plays under each preset (icing hybrid, touch and off, offside on and off, goalie
+/// pull, penalties and fights), the arcade entries fixed to Arcade and a season keeping the rules in
+/// its save. Formerly SAP_SCENE=rulestest.
 /// </summary>
-public sealed class RuleSetSelfTest : IScene
+public sealed class RuleSetTests : CheckedTest
 {
-    int failures;
+    static readonly MatchSetup Setup = WorldBuilder.DefaultSetup with { PeriodSeconds = 600 };
 
-    /// <inheritdoc/>
-    public string Name => "rulestest";
+    readonly string dir = Path.Combine(Path.GetTempPath(), $"sap_rulestest_{Environment.ProcessId}_{Guid.NewGuid():N}");
 
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Before(Test)]
+    public void MakeFolder() => Directory.CreateDirectory(dir);
+
+    [After(Test)]
+    public void CleanUp()
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 600 };
-        string dir = Path.Combine(Path.GetTempPath(), $"sap_rulestest_{Environment.ProcessId}");
-        Directory.CreateDirectory(dir);
-        var saved = ScreenFlow.Prefs;
-        try
-        {
-            Presets();
-            Choices();
-            Restart(Path.Combine(dir, "settings.json"));
-            Overtime(setup);
-            Icing(setup, settings);
-            Offside(setup, settings);
-            GoaliePulls(setup, settings);
-            PenaltiesAndFights(setup, settings);
-            ArcadeFixed(clubs);
-            SeasonKeepsRules(clubs, Path.Combine(dir, "season.json"));
-        }
-        finally
-        {
-            ScreenFlow.Prefs = saved;
-            SeasonSession.End();
-            Directory.Delete(dir, recursive: true);
-        }
-
-        Console.WriteLine(failures == 0 ? "RULESTEST: all checks passed" : $"RULESTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return new World(setup, settings);
+        SeasonSession.End();
+        Directory.Delete(dir, recursive: true);
     }
 
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
-    void Presets()
+    [Test]
+    public void Presets()
     {
         var shl = RuleSet.Shl;
         Check(shl is { Offside: true, Icing: IcingCall.Hybrid, GoaliePull: true, Overtime: OvertimeStyle.ThreeOnThree, PlayoffOvertime: OvertimeStyle.SuddenDeath, Penalties: true, Fights: true, Strictness: RefereeStrictness.Normal },
@@ -75,7 +48,8 @@ public sealed class RuleSetSelfTest : IScene
         Check(RuleRows.All.All(r => r.Values.All(v => string.Equals(r.Get(r.Set(RuleSet.Shl, v)), v, StringComparison.Ordinal))), "every value of every rule reads back as set");
     }
 
-    void Choices()
+    [Test]
+    public void Choices()
     {
         var offside = RuleRows.All.First(r => string.Equals(r.Key, nameof(RuleSet.Offside), StringComparison.Ordinal));
         var choice = RuleChoice.Of(RulePreset.Shl).With(offside, "Off");
@@ -93,8 +67,10 @@ public sealed class RuleSetSelfTest : IScene
         Check(RulesScreen.Cycle(RulePreset.Nhl, 1) == RulePreset.Shl && RulesScreen.Cycle(RulePreset.Shl, -1) == RulePreset.Nhl, "the preset row wraps");
     }
 
-    void Restart(string path)
+    [Test]
+    public void Restart()
     {
+        string path = Path.Combine(dir, "settings.json");
         var icing = RuleRows.All.First(r => string.Equals(r.Key, nameof(RuleSet.Icing), StringComparison.Ordinal));
         var prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Nhl).With(icing, "Touch") };
         ScreenPrefsFile.Write(prefs, path);
@@ -105,9 +81,10 @@ public sealed class RuleSetSelfTest : IScene
         Check(ScreenPrefsFile.Read(path).Rules.Resolve() == RuleSet.Shl, "a settings.json from before W44 plays SHL");
     }
 
-    void Overtime(MatchSetup setup)
+    [Test]
+    public void Overtime()
     {
-        var season = setup with { Overtime = OvertimeRule.Shl };
+        var season = Setup with { Overtime = OvertimeRule.Shl };
         Check(OvertimeFormat.Of(season.WithRules(RuleSet.Shl)) == OvertimeFormat.Shl, "SHL: a tie goes to 3 on 3, then a shootout");
         var shootout = RuleSet.Shl with { Overtime = OvertimeStyle.ShootoutOnly };
         Check(OvertimeFormat.Of(season.WithRules(shootout)) == OvertimeFormat.ShootoutOnly, "overtime switched to shootout only");
@@ -116,25 +93,26 @@ public sealed class RuleSetSelfTest : IScene
         var playoff = season with { OvertimeFormat = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = 90 } };
         Check(OvertimeFormat.Of(playoff.WithRules(RuleSet.Shl)) == playoff.OvertimeFormat, "a playoff game keeps its mode's sudden death format");
         Check(OvertimeFormat.Of(playoff.WithRules(RuleSet.Shl with { PlayoffOvertime = OvertimeStyle.ThreeOnThree })) == OvertimeFormat.Shl, "playoff overtime switched to 3 on 3 and a shootout");
-        var test = setup with { Overtime = OvertimeRule.None };
+        var test = Setup with { Overtime = OvertimeRule.None };
         Check(test.WithRules(RuleSet.Nhl) == test with { Rules = RuleSet.Nhl }, "a setup whose tie stands keeps it");
     }
 
-    void Icing(MatchSetup setup, Settings settings)
+    [Test]
+    public void Icing()
     {
-        Check(Iced(setup, settings, RuleSet.Shl, toucher: null) == 1, "SHL: hybrid icing is called on the race");
-        Check(Iced(setup, settings, RuleSet.Nhl, toucher: null) == 1, "NHL: hybrid icing is called on the race");
-        Check(Iced(setup, settings, RuleSet.Arcade, toucher: null) == 0, "Arcade: no icing");
+        Check(Iced(RuleSet.Shl, toucher: null) == 1, "SHL: hybrid icing is called on the race");
+        Check(Iced(RuleSet.Nhl, toucher: null) == 1, "NHL: hybrid icing is called on the race");
+        Check(Iced(RuleSet.Arcade, toucher: null) == 0, "Arcade: no icing");
         var touch = RuleSet.Shl with { Icing = IcingCall.Touch };
-        Check(Iced(setup, settings, touch, toucher: null) == 0, "touch icing waits on the next touch");
-        Check(Iced(setup, settings, touch, toucher: Side.Away) == 1, "touch icing: a defender touching first calls it");
-        Check(Iced(setup, settings, touch, toucher: Side.Home) == 0, "touch icing: an attacker touching first waves it off");
+        Check(Iced(touch, toucher: null) == 0, "touch icing waits on the next touch");
+        Check(Iced(touch, toucher: Side.Away) == 1, "touch icing: a defender touching first calls it");
+        Check(Iced(touch, toucher: Side.Home) == 0, "touch icing: an attacker touching first waves it off");
     }
 
     /// <summary>A dump from the home half over the away goal line, the away defender nearer the dot; returns the icing calls.</summary>
-    static int Iced(MatchSetup setup, Settings settings, RuleSet rules, Side? toucher)
+    static int Iced(RuleSet rules, Side? toucher)
     {
-        var w = Make(setup, settings, rules);
+        var w = Make(new Settings(), rules);
         var d = Skater(w, Side.Home, PlayingPosition.D);
         Skater(w, Side.Away, PlayingPosition.D).Position = new Vector3(22, 0, 10);
         Send(w, d, new Vector3(-10, 0, 5), new Vector3(30, 0, 0));
@@ -143,11 +121,12 @@ public sealed class RuleSetSelfTest : IScene
         return ev.Count(e => e.Kind == MatchEventKind.Icing);
     }
 
-    void Offside(MatchSetup setup, Settings settings)
+    [Test]
+    public void Offside()
     {
-        int Called(RuleSet rules)
+        static int Called(RuleSet rules)
         {
-            var w = Make(setup, settings, rules);
+            var w = Make(new Settings(), rules);
             var c = Skater(w, Side.Home, PlayingPosition.C);
             Skater(w, Side.Home, PlayingPosition.RW).Position = new Vector3(13, 0, 4);
             Send(w, c, new Vector3(2, 0, 4), new Vector3(14, 0, 0));
@@ -159,26 +138,31 @@ public sealed class RuleSetSelfTest : IScene
         Check(Called(RuleSet.Nhl with { Offside = false, Custom = true }) == 0, "offside switched off under NHL");
     }
 
-    void GoaliePulls(MatchSetup setup, Settings settings)
+    [Test]
+    public void GoaliePulls()
     {
-        Check(GoaliePull.Pull(Make(setup, settings, RuleSet.Shl), Side.Home), "SHL: a club may pull its goalie");
-        Check(!GoaliePull.Pull(Make(setup, settings, RuleSet.Shl with { GoaliePull = false }), Side.Home), "goalie pull switched off: the goalie stays");
+        Check(GoaliePull.Pull(Make(new Settings(), RuleSet.Shl), Side.Home), "SHL: a club may pull its goalie");
+        Check(!GoaliePull.Pull(Make(new Settings(), RuleSet.Shl with { GoaliePull = false }), Side.Home), "goalie pull switched off: the goalie stays");
     }
 
-    void PenaltiesAndFights(MatchSetup setup, Settings settings)
+    [Test]
+    public void PenaltiesAndFights()
     {
-        var on = Make(setup, settings, RuleSet.Shl);
+        var settings = new Settings();
+        var on = Make(settings, RuleSet.Shl);
         ScreenFlow.Apply(on, settings);
         Check(on.Settings is { Penalties: true, Fights: true }, "SHL: penalties and fights on");
-        var off = Make(setup, settings with { Penalties = true, Fights = true }, RuleSet.Arcade with { Penalties = false, Fights = false });
+        var off = Make(settings with { Penalties = true, Fights = true }, RuleSet.Arcade with { Penalties = false, Fights = false });
         ScreenFlow.Apply(off, off.Settings);
         Check(off.Settings is { Penalties: false, Fights: false }, "the match's rules switch penalties and fights off, whatever the old settings said");
         Check(!Penalties.Signal(off, Skater(off, Side.Home, PlayingPosition.C).Id, Infraction.Tripping), "with penalties off no call is made");
         Check(RuleSet.Arcade.StrictnessScale < 1 && Math.Abs(RuleSet.Shl.StrictnessScale - 1) < 1e-6 && (RuleSet.Shl with { Strictness = RefereeStrictness.Strict }).StrictnessScale > 1, "referee strictness scales the call chance");
     }
 
-    void ArcadeFixed(IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void ArcadeFixed()
     {
+        var clubs = WorldBuilder.Clubs;
         ScreenFlow.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Nhl).With(RuleRows.All[0], "Off") };
         Check(RulePicks.For(new MatchPlan(new ArcadeLivesMode(), [clubs[0]])) == RuleSet.Arcade
             && RulePicks.For(new MatchPlan(new ArcadeSuddenDeathMode(), [clubs[0]])) == RuleSet.Arcade
@@ -187,8 +171,11 @@ public sealed class RuleSetSelfTest : IScene
         Check(RulePicks.Fixed(new ExhibitionMode()) == null && RulePicks.Fixed(new ArcadeLivesMode()) == RuleSet.Arcade, "team select fixes the rules row for arcade only");
     }
 
-    void SeasonKeepsRules(IReadOnlyList<ClubData> clubs, string path)
+    [Test]
+    public void SeasonKeepsRules()
     {
+        var clubs = WorldBuilder.Clubs;
+        string path = Path.Combine(dir, "season.json");
         ScreenFlow.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Nhl) };
         SeasonSession.StartNew(clubs, clubs[0].Id, 7, path);
         var plan = new MatchPlan(null, []);
@@ -200,11 +187,9 @@ public sealed class RuleSetSelfTest : IScene
         Check(RulePicks.For(plan) == RuleSet.Nhl, "a continued season plays the rules from its save");
     }
 
-    static World Make(MatchSetup setup, Settings settings, RuleSet rules)
+    static World Make(Settings settings, RuleSet rules)
     {
-        var w = new World(setup.WithRules(rules), settings);
-        Scenes.AddStarters(w);
-        MatchFlow.Begin(w, log: false);
+        var w = new WorldBuilder().Setup(Setup).Rules(rules).Settings(settings).Build();
         Run(w, 10f, [new PuckPhysics(), new MatchRules()], until: x => x.Match.Phase == MatchPhase.Play);
         Park(w);
         return w;

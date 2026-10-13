@@ -19,7 +19,7 @@ public sealed class SpecialTeamsScene : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var kill = string.Equals(Environment.GetEnvironmentVariable("SAP_ST_KILL"), "home", StringComparison.OrdinalIgnoreCase) ? Side.Home : Side.Away;
-        var world = SpecialTeamsSelfTest.ShortHanded(clubs, settings, kill);
+        var world = SpecialTeamsSetup.ShortHanded(clubs, settings, kill);
         SpecialTeamsSystem.ShowSpots = true;
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_ST_WAIT"), "1", StringComparison.Ordinal)) Wait(world, kill == Side.Home ? Side.Away : Side.Home);
         return world;
@@ -29,7 +29,7 @@ public sealed class SpecialTeamsScene : IScene
     static void Wait(World world, Side pp)
     {
         int seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? s : 1;
-        var systems = SpecialTeamsSelfTest.Systems(world, seed, special: true, rules: true);
+        var systems = SpecialTeamsSetup.Systems(world, seed, special: true, rules: true);
         float inShape = 0;
         for (int i = 0; i < 120 / Game.Step && inShape < 2f; i++)
         {

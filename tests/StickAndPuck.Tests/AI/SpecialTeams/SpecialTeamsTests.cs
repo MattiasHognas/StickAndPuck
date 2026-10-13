@@ -1,46 +1,29 @@
 using System.Numerics;
+using StickAndPuck.AI;
 using StickAndPuck.Core;
-using StickAndPuck.Goalie;
-using StickAndPuck.Physics;
 using StickAndPuck.Players;
-using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
+using AiDecisions = StickAndPuck.AI.Decisions;
+using AiSpecialTeams = StickAndPuck.AI.SpecialTeams;
 
-namespace StickAndPuck.AI;
+namespace StickAndPuck.Tests.AI.SpecialTeams;
 
 /// <summary>
-/// SAP_SCENE=specialteamstest: headless checks for W22c, printed one per line; exits 0 when all
-/// pass. Checks the formation maths, then plays all-AI power plays (a skater of the short club
+/// W22c's special teams: the formation maths, then all-AI power plays (a skater of the short club
 /// sits in the box for the whole run, and a new power play starts every 100 s so both shapes come
-/// up) with special teams on and off, both clubs on the power play in turn. On, the power play
-/// holds its umbrella or 1-3-1 and the kill its box or diamond clearly closer than the
-/// even-strength AI does, and the kill clears the puck down the ice. aimatchtest runs the same
-/// power play check (<see cref="PowerPlay"/>). SAP_SEED picks the first seed (default 1).
+/// up) with special teams on and off, both clubs on the power play in turn. On, the power play holds
+/// its umbrella or 1-3-1 and the kill its box or diamond clearly closer than the even-strength AI
+/// does, and the kill clears the puck down the ice (<see cref="PowerPlay"/>, also run by the AI
+/// match tests). Formerly SAP_SCENE=specialteamstest.
 /// </summary>
-public sealed class SpecialTeamsSelfTest : IScene
+public sealed class SpecialTeamsTests : CheckedTest
 {
-    int failures;
+    /// <summary>The first seed (the scene's SAP_SEED fallback).</summary>
+    const int Seed = 1;
 
-    /// <inheritdoc/>
-    public string Name => "specialteamstest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        Maths();
-        int seed = int.Parse(Environment.GetEnvironmentVariable("SAP_SEED") ?? "1", System.Globalization.CultureInfo.InvariantCulture);
-        var world = PowerPlay(clubs, settings, seed, Check);
-        Console.WriteLine(failures == 0 ? "SPECIALTEAMSTEST: all checks passed" : $"SPECIALTEAMSTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return world;
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
-    void Maths()
+    /// <summary>The formation maths.</summary>
+    [Test]
+    public void Maths()
     {
         bool inside = true, inZone = true, apart = true;
         foreach (int end in new[] { -1, 1 })
@@ -80,9 +63,16 @@ public sealed class SpecialTeamsSelfTest : IScene
         Check(pair[0] == 0 && pair[2] == 1, "skaters take the spot nearest them, a defenceman the point");
     }
 
+    /// <summary>Power plays with special teams on and off, each club on the power play in turn.</summary>
+    [Test]
+    public void PowerPlayAndKill()
+    {
+        PowerPlay(WorldBuilder.Clubs, new Settings(), Seed, Check);
+    }
+
     /// <summary>
     /// Plays power plays with special teams on and off, each club on the power play in turn, and
-    /// checks the shapes and the clears. Used by this scene and by aimatchtest.
+    /// checks the shapes and the clears. Used by <see cref="PowerPlayAndKill"/> and by aimatchtest.
     /// </summary>
     /// <param name="clubs">The clubs.</param>
     /// <param name="settings">The settings.</param>
@@ -129,14 +119,14 @@ public sealed class SpecialTeamsSelfTest : IScene
     static World Run(IReadOnlyList<ClubData> clubs, Settings settings, Side pp, int seed, bool special, Result r)
     {
         var kill = pp == Side.Home ? Side.Away : Side.Home;
-        var world = ShortHanded(clubs, settings, kill);
-        var systems = Systems(world, seed, special, rules: true);
+        var world = SpecialTeamsSetup.ShortHanded(clubs, settings, kill);
+        var systems = SpecialTeamsSetup.Systems(world, seed, special, rules: true);
 
         int end = PuckHandling.AttackEnd(world, pp);
         int steps = (int)(6 * 60 / Game.Step), every = (int)(100 / Game.Step);
         for (int i = 0; i < steps && world.Match.Phase != MatchPhase.Final; i++)
         {
-            if (i > 0 && i % every == 0) SpecialTeams.Board(world).PowerPlay = null;   // the next power play picks its shape again
+            if (i > 0 && i % every == 0) AiSpecialTeams.Board(world).PowerPlay = null;   // the next power play picks its shape again
             world.Events.Clear();
             foreach (var s in systems) s.Update(world, Game.Step);
             world.Time += Game.Step; world.Tick++;
@@ -160,47 +150,16 @@ public sealed class SpecialTeamsSelfTest : IScene
         return world;
     }
 
-    /// <summary>A match at the opening faceoff with one skater of a club in the box for the whole period.</summary>
-    /// <param name="clubs">The clubs.</param>
-    /// <param name="settings">The settings.</param>
-    /// <param name="kill">The club a skater short.</param>
-    /// <returns>The match.</returns>
-    internal static World ShortHanded(IReadOnlyList<ClubData> clubs, Settings settings, Side kill)
-    {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 20 * 60, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
-        var world = new World(setup, settings);
-        Scenes.AddStarters(world);
-        MatchFlow.Begin(world, log: false);
-        var boxed = world.OnIce(kill).Where(p => !p.IsGoalie).OrderBy(p => p.Data.Position == PlayingPosition.C ? 0 : 1).First();
-        world.Match.Penalties.Add(new PenaltyState(boxed.Id, kill, Infraction.Hooking, setup.PeriodSeconds));
-        boxed.OnIce = false;
-        boxed.Position = Penalties.BoxDoor(kill) with { Z = RinkSpec.HalfWidth + 1.2f };
-        return world;
-    }
-
-    internal static ISystem[] Systems(World world, int seed, bool special, bool rules = false)
-    {
-#pragma warning disable S2245 // fixed seeds so the checks repeat
-        ISystem[] systems =
-        [
-            new PositioningSystem(new Random(seed)), new DefenceSystem(new Random(seed)), new SpecialTeamsSystem(new Random(seed), special), new DecisionSystem(new Random(seed)),
-            new SkatingSystem(), new CheckingSystem(new Random(seed)), new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), new MatchRules(),
-        ];
-#pragma warning restore S2245
-        foreach (var s in systems) if (s is not (PuckPhysics or GoalieSystem)) s.Start(world);
-        return rules ? [.. systems, new OffsideRule(), new IcingRule()] : systems;
-    }
-
     static void Add(World world, Side pp, Side kill, bool special, Result r)
     {
-        var p = SpecialTeams.Tally(world, pp);
-        var k = SpecialTeams.Tally(world, kill);
+        var p = AiSpecialTeams.Tally(world, pp);
+        var k = AiSpecialTeams.Tally(world, kill);
         if (special)
         {
             r.PowerPlays += p.PowerPlays; r.Entries += p.Entries; r.PpSeconds += p.Seconds; r.Umbrella += p.Umbrella; r.OneThreeOne += p.OneThreeOne;
             r.Box += k.Box; r.Diamond += k.Diamond; r.Clears += k.Clears; r.Flips += k.Flips; r.ClearedOut += k.ClearedOut;
         }
-        r.PpAttempts += Decisions.Tally(world, pp).Shots; r.KillAttempts += Decisions.Tally(world, kill).Shots;
+        r.PpAttempts += AiDecisions.Tally(world, pp).Shots; r.KillAttempts += AiDecisions.Tally(world, kill).Shots;
         r.PpShots += world.Match.Shots[(int)pp]; r.KillShots += world.Match.Shots[(int)kill];
         r.PpGoals += world.Match.Score[(int)pp]; r.KillGoals += world.Match.Score[(int)kill];
     }

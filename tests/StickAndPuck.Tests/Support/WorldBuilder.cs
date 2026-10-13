@@ -10,7 +10,7 @@ namespace StickAndPuck.Tests.Support;
 /// </summary>
 public sealed class WorldBuilder
 {
-    static readonly Lazy<IReadOnlyList<ClubData>> AllClubs = new(() => Core.Clubs.LoadAll());
+    static readonly Lazy<IReadOnlyList<ClubData>> AllClubs = new(() => StickAndPuck.Core.Clubs.LoadAll());
 
     MatchSetup setup = Scenes.DefaultSetup(Clubs);
     Settings settings = new();

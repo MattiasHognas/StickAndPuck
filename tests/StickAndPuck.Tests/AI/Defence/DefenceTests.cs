@@ -1,57 +1,30 @@
-using System.Globalization;
 using System.Numerics;
+using StickAndPuck.AI;
 using StickAndPuck.Core;
 using StickAndPuck.Goalie;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
+using AiDecisions = StickAndPuck.AI.Decisions;
 
-namespace StickAndPuck.AI;
+namespace StickAndPuck.Tests.AI.Defence;
 
 /// <summary>
-/// SAP_SCENE=defencetest: headless checks for W22b, one per line; exits 0 when all pass. Checks the
-/// coverage maths, then plays full all-AI matches (the aimatchtest system set) with the defence
-/// on and, for comparison, off, and checks the W22b "done when": 15 to 30 hits a side, no swarm
-/// on the carrier, and more passing lanes covered in the own zone. SAP_SEED picks the first seed
-/// (default 1); SAP_MATCHES how many matches to play (default 3).
+/// W22b's defence: the coverage maths, then full all-AI matches (the aimatchtest system set) with the
+/// defence on and, for comparison, off, checking the W22b "done when": 15 to 30 hits a side, no swarm
+/// on the carrier, and more passing lanes covered in the own zone. Formerly SAP_SCENE=defencetest.
 /// </summary>
-public sealed class DefenceSelfTest : IScene
+public sealed class DefenceTests : CheckedTest
 {
-    int failures;
+    /// <summary>The first match seed (the scene's SAP_SEED fallback).</summary>
+    const int Seed = 1;
 
-    /// <inheritdoc/>
-    public string Name => "defencetest";
+    /// <summary>How many matches to play each way (the scene's SAP_MATCHES fallback).</summary>
+    const int Matches = 3;
 
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        CoverageMaths();
-        int seed = Env("SAP_SEED", 1), matches = Env("SAP_MATCHES", 3);
-        World? last = null;
-        var on = new List<Stats>();
-        var off = new List<Stats>();
-        for (int i = 0; i < matches; i++)
-        {
-            var (w, s) = Match(clubs, settings, seed + i, defence: true);
-            last = w;
-            on.Add(s);
-            off.Add(Match(clubs, settings, seed + i, defence: false).Stats);
-            Console.WriteLine($"      seed {seed + i} defence on:  {s}");
-            Console.WriteLine($"      seed {seed + i} defence off: {off[^1]}");
-        }
-        Verdict(on, off);
-        Console.WriteLine(failures == 0 ? "DEFENCETEST: all checks passed" : $"DEFENCETEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return last ?? new World(Scenes.DefaultSetup(clubs), settings);
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
-    void CoverageMaths()
+    [Test]
+    public void CoverageMaths()
     {
         var net = Coverage.OwnNet(1);   // a side attacking +x defends the -x net
         Check(net.X < 0, "a side defends the net at the other end from the one it attacks");
@@ -80,6 +53,23 @@ public sealed class DefenceSelfTest : IScene
             "a carrier in front of the net gets hit more often than one at the point");
         Check(Coverage.HitPace(30, 0.5f) < 1f && Coverage.HitPace(2, 0.5f) > 1f, "a side well ahead of its usual hits holds back, one behind plays the body more");
         Check(Vector2.Distance(Coverage.Room(new Vector2(1f, 0), Vector2.Zero), Vector2.Zero) >= Coverage.CarrierRoom - 0.01f, "markers leave the carrier to the man on him");
+    }
+
+    /// <summary>The matches with the defence on and off feed one verdict, so they stay one test.</summary>
+    [Test]
+    public void DefenceOnAndOff()
+    {
+        var on = new List<Stats>();
+        var off = new List<Stats>();
+        for (int i = 0; i < Matches; i++)
+        {
+            var s = Match(Seed + i, defence: true);
+            on.Add(s);
+            off.Add(Match(Seed + i, defence: false));
+            Console.WriteLine($"      seed {Seed + i} defence on:  {s}");
+            Console.WriteLine($"      seed {Seed + i} defence off: {off[^1]}");
+        }
+        Verdict(on, off);
     }
 
     void Verdict(List<Stats> on, List<Stats> off)
@@ -130,12 +120,9 @@ public sealed class DefenceSelfTest : IScene
         }
     }
 
-    static (World World, Stats Stats) Match(IReadOnlyList<ClubData> clubs, Settings settings, int seed, bool defence)
+    static Stats Match(int seed, bool defence)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 20 * 60, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
-        var world = new World(setup, settings);
-        Scenes.AddStarters(world);
-        MatchFlow.Begin(world, log: false);
+        var world = new WorldBuilder().Setup(s => s with { PeriodSeconds = 20 * 60, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] }).Build();
         var systems = Systems(world, seed, defence);
         var meter = new Meter(world.Puck.Position);
         int steps = (int)(2 * 60 * 60 / Game.Step);
@@ -146,7 +133,7 @@ public sealed class DefenceSelfTest : IScene
             world.Time += Game.Step; world.Tick++;
             meter.Observe(world);
         }
-        return (world, meter.Finish(world));
+        return meter.Finish(world);
     }
 
     /// <summary>Watches a match step by step: hits, swarming, covered lanes and the net front.</summary>
@@ -211,8 +198,8 @@ public sealed class DefenceSelfTest : IScene
             stats.Lanes = zoneSteps == 0 ? 0 : (float)(lanes / zoneSteps);
             stats.NetFront = zoneSteps == 0 ? 0 : (float)netFront / zoneSteps;
             stats.ShotDistance = shots == 0 ? 0 : (float)(shotDistance / shots);
-            var h = Decisions.Tally(world, Side.Home);
-            var a = Decisions.Tally(world, Side.Away);
+            var h = AiDecisions.Tally(world, Side.Home);
+            var a = AiDecisions.Tally(world, Side.Away);
             stats.Passes = $"{h.Completed}/{h.Passes} and {a.Completed}/{a.Passes}, picked off {h.Intercepted}-{a.Intercepted}";
             return stats;
         }
@@ -244,10 +231,5 @@ public sealed class DefenceSelfTest : IScene
 #pragma warning restore S2245
         foreach (var s in systems) if (s is not (PuckPhysics or GoalieSystem)) s.Start(world);
         return [.. systems];
-    }
-
-    static int Env(string name, int fallback)
-    {
-        return int.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Integer, CultureInfo.InvariantCulture, out int v) ? v : fallback;
     }
 }

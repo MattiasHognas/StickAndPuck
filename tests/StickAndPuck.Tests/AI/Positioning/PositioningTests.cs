@@ -1,50 +1,33 @@
 using System.Numerics;
+using StickAndPuck.AI;
 using StickAndPuck.Core;
 using StickAndPuck.Goalie;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
+using AiDecisions = StickAndPuck.AI.Decisions;
+using AiPositioning = StickAndPuck.AI.Positioning;
 
-namespace StickAndPuck.AI;
+namespace StickAndPuck.Tests.AI.Positioning;
 
 /// <summary>
-/// SAP_SCENE=positioningtest: runs a full 5 on 5 period headless with positioning, skating, puck
-/// handling, the goalies, puck physics and W7a's match rules, prints one line per check and exits with 0 when all
-/// pass, 1 otherwise. Covers the W6a "done when": 5 on 5 holds shape through a period with no
+/// A full 5 on 5 period headless with positioning, skating, puck handling, the goalies, puck physics
+/// and W7a's match rules. Covers the W6a "done when": 5 on 5 holds shape through a period with no
 /// stuck players; plus that roles are one of each, that forwards stay onside, and that high
-/// positioning makes a difference.
+/// positioning makes a difference. Formerly SAP_SCENE=positioningtest.
 /// </summary>
-public sealed class PositioningSelfTest : IScene
+public sealed class PositioningTests : CheckedTest
 {
-    int failures;
+    static readonly MatchSetup Setup = WorldBuilder.DefaultSetup with { PeriodSeconds = 20 * 60, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
 
-    /// <inheritdoc/>
-    public string Name => "positioningtest";
+    static World Make() => new(Setup, new Settings());
 
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 20 * 60, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
-        World Make() => new(setup, settings);
+    [After(Test)]
+    public void StopStandInPlay() => StandInPlay.Stop();
 
-        RolesOneEach();
-        ShapeSpotsInside();
-        var period = Period(Make());
-        HockeyIq(Make);
-
-        StandInPlay.Stop();
-        Console.WriteLine(failures == 0 ? "POSITIONINGTEST: all checks passed" : $"POSITIONINGTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return period;
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
-    void RolesOneEach()
+    [Test]
+    public void RolesOneEach()
     {
         var world = new World(new MatchSetup { Home = new ClubData(), Away = new ClubData() }, new Settings());
         PlayingPosition[] positions = [PlayingPosition.D, PlayingPosition.D, PlayingPosition.C, PlayingPosition.RW, PlayingPosition.LW];
@@ -59,7 +42,8 @@ public sealed class PositioningSelfTest : IScene
         Check(Roles.Assign(allCentres.Take(3).ToList()).Values.Order().SequenceEqual([Role.Centre, Role.LeftDefence, Role.RightDefence]), "three skaters form a triangle");
     }
 
-    void ShapeSpotsInside()
+    [Test]
+    public void ShapeSpotsInside()
     {
         bool inside = true, onside = true, goalSide = true;
         foreach (int end in new[] { -1, 1 })
@@ -90,8 +74,10 @@ public sealed class PositioningSelfTest : IScene
     }
 
     /// <summary>Runs one 20 minute period of 5 on 5 and checks nobody gets stuck and the shapes hold.</summary>
-    World Period(World world)
+    [Test]
+    public void Period()
     {
+        var world = Make();
         Scenes.AddStarters(world);
         var systems = Systems(world, 7, new MatchRules());
         StandInPlay.Start(world, 7);
@@ -105,7 +91,6 @@ public sealed class PositioningSelfTest : IScene
             if (i % 30 == 0 && world.Match.Phase == MatchPhase.Play && world.Puck.Live) Sample(world, t);
         }
         Report(world, t);
-        return world;
     }
 
     /// <summary>What a period came to.</summary>
@@ -176,10 +161,10 @@ public sealed class PositioningSelfTest : IScene
             // stacked: any two teammates within a metre; a pile: three within two metres of one another
             if (team.Exists(a => team.Exists(b => b != a && Vector3.Distance(a.Position, b.Position) < 1.0f))) t.Stacked += 0.5f;
             if (team.Exists(a => team.Count(b => Vector3.Distance(a.Position, b.Position) < 2.0f) >= 3)) t.Piled += 0.5f;
-            foreach (var p in team.Where(p => Positioning.JobOf(world, p) == Job.Shape)) { t.Shaped++; t.AwaySum += Vector2.Distance(Positioning.IdealOf(world, p), new Vector2(p.Position.X, p.Position.Z)); }
+            foreach (var p in team.Where(p => AiPositioning.JobOf(world, p) == Job.Shape)) { t.Shaped++; t.AwaySum += Vector2.Distance(AiPositioning.IdealOf(world, p), new Vector2(p.Position.X, p.Position.Z)); }
             // offside: an attacking forward over the far blue line while the puck is still outside it
-            if (Positioning.PhaseOf(world, side) == TeamPhase.Attack && end * pk.Position.X < RinkSpec.BlueLineX
-                && team.Exists(p => !Roles.IsDefence(Positioning.RoleOf(world, p)) && Positioning.JobOf(world, p) is Job.Shape or Job.Support && end * p.Position.X > RinkSpec.BlueLineX + 0.5f))
+            if (AiPositioning.PhaseOf(world, side) == TeamPhase.Attack && end * pk.Position.X < RinkSpec.BlueLineX
+                && team.Exists(p => !Roles.IsDefence(AiPositioning.RoleOf(world, p)) && AiPositioning.JobOf(world, p) is Job.Shape or Job.Support && end * p.Position.X > RinkSpec.BlueLineX + 0.5f))
             {
                 t.Offside += 0.5f;
             }
@@ -192,7 +177,7 @@ public sealed class PositioningSelfTest : IScene
         float longestStill = t.LongestStill, stackSeconds = t.Stacked, pileSeconds = t.Piled, offsideSeconds = t.Offside;
         float meanAway = t.AwaySum / Math.Max(1, t.Shaped);
         float minutes = world.Setup.PeriodSeconds / 60f;
-        Console.WriteLine($"      period: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {Decisions.Tally(world, Side.Home).Shots}-{Decisions.Tally(world, Side.Away).Shots}, {touches} touches by {touchers} skaters, {StandInPlay.DeadPucks} dead pucks, longest still {longestStill:F1} s, stacked {stackSeconds:F0} s, piled {pileSeconds:F0} s, mean {meanAway:F1} m off the ideal spot, offside shape {offsideSeconds:F0} s");
+        Console.WriteLine($"      period: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {AiDecisions.Tally(world, Side.Home).Shots}-{AiDecisions.Tally(world, Side.Away).Shots}, {touches} touches by {touchers} skaters, {StandInPlay.DeadPucks} dead pucks, longest still {longestStill:F1} s, stacked {stackSeconds:F0} s, piled {pileSeconds:F0} s, mean {meanAway:F1} m off the ideal spot, offside shape {offsideSeconds:F0} s");
         Check(world.Match.Phase == MatchPhase.Intermission, $"a {minutes:F0} minute period runs through to the intermission under the match rules");
         Check(outsideCount == 0, "no skater leaves the rink or loses its position");
         Check(longestStill < 20f, $"nobody stands idle: longest without moving a metre is {longestStill:F1} s");
@@ -203,15 +188,16 @@ public sealed class PositioningSelfTest : IScene
         Check(meanAway < 4.5f, $"skaters hold shape: mean {meanAway:F1} m from their ideal spot");
         Check(offsideSeconds < 0.05f * minutes * 60 * 2, $"attacking forwards wait for the puck at the blue line ({offsideSeconds:F0} s over it early)");
         Check(StandInPlay.DeadPucks < minutes, $"play keeps going ({StandInPlay.DeadPucks} dead pucks in {minutes:F0} minutes)");
-        Check(Decisions.Tally(world, Side.Home).Shots + Decisions.Tally(world, Side.Away).Shots > 10, $"both sides get shots away ({Decisions.Tally(world, Side.Home).Shots}-{Decisions.Tally(world, Side.Away).Shots})");
+        Check(AiDecisions.Tally(world, Side.Home).Shots + AiDecisions.Tally(world, Side.Away).Shots > 10, $"both sides get shots away ({AiDecisions.Tally(world, Side.Home).Shots}-{AiDecisions.Tally(world, Side.Away).Shots})");
     }
 
     /// <summary>Smart skaters sit nearer their ideal spots than poor ones, over the same five minutes.</summary>
-    void HockeyIq(Func<World> make)
+    [Test]
+    public void HockeyIq()
     {
-        float Run(int smart)
+        static float Run(int smart)
         {
-            var world = make();
+            var world = Make();
             Scenes.AddStarters(world);
             foreach (var p in world.Players.ToList())
             {
@@ -229,8 +215,8 @@ public sealed class PositioningSelfTest : IScene
                 if (i % 30 != 0 || !world.Puck.Live) continue;
                 foreach (var p in world.Players)
                 {
-                    if (p.IsGoalie || Positioning.JobOf(world, p) != Job.Shape) continue;
-                    sum += Vector2.Distance(Positioning.IdealOf(world, p), new Vector2(p.Position.X, p.Position.Z));
+                    if (p.IsGoalie || AiPositioning.JobOf(world, p) != Job.Shape) continue;
+                    sum += Vector2.Distance(AiPositioning.IdealOf(world, p), new Vector2(p.Position.X, p.Position.Z));
                     n++;
                 }
             }

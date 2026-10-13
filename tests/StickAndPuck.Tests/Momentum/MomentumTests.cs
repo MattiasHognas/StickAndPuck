@@ -4,59 +4,33 @@ using StickAndPuck.Core;
 using StickAndPuck.Fights;
 using StickAndPuck.Goalie;
 using StickAndPuck.Lines;
+using StickAndPuck.Momentum;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
+using Boost = StickAndPuck.Momentum.Momentum;
 
-namespace StickAndPuck.Momentum;
+namespace StickAndPuck.Tests.Momentum;
 
 /// <summary>
-/// SAP_SCENE=momentumtest: headless checks for W29's momentum, one line per check; exits 0 when all
-/// pass. A goal fills the scoring club's boost and ends the other's, a big hit adds to it and a soft
-/// one does not, a fight won boosts the winner, the boost drains over about twenty seconds of live
-/// play (not while the puck is dead), gives the club's skaters a second wind, and swells the crowd
-/// louder than W12's crowd after a goal. Then a full all-AI match with lines and momentum running.
+/// W29's momentum: a goal fills the scoring club's boost and ends the other's, a big hit adds to it
+/// and a soft one does not, a fight won boosts the winner, the boost drains over about twenty seconds
+/// of live play (not while the puck is dead), gives the club's skaters a second wind, and swells the
+/// crowd louder than W12's crowd after a goal. Then a full all-AI match with lines and momentum
+/// running. Formerly SAP_SCENE=momentumtest.
 /// </summary>
-public sealed class MomentumSelfTest : IScene
+public sealed class MomentumTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "momentumtest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 600 };
-        World Make()
-        {
-            var w = new World(setup, settings with { Difficulty = Difficulty.Normal });
-            Scenes.AddStarters(w);
-            MatchFlow.Begin(w, log: false);
-            Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
-            return w;
-        }
-
-        Goals(Make());
-        Hits(Make());
-        Drain(Alone(Make()), Alone(Make()));
-        SecondWind(Make());
-        Crowd(Make());
-        FightWon(Make());
-        FullMatch(clubs, settings);
-
-        Console.WriteLine(failures == 0 ? "MOMENTUMTEST: all checks passed" : $"MOMENTUMTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
     static readonly System.Runtime.CompilerServices.ConditionalWeakTable<World, ISystem[]> Sets = new();
+
+    /// <summary>A 10 minute match at normal difficulty, run until the opening faceoff is dropped.</summary>
+    static World Make()
+    {
+        var w = new WorldBuilder().Setup(s => s with { PeriodSeconds = 600 }).Settings(s => s with { Difficulty = Difficulty.Normal }).Build();
+        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+        return w;
+    }
 
     // the match rules, the bench, fights and momentum; nobody skates on their own
     static ISystem[] Systems(World world)
@@ -96,45 +70,54 @@ public sealed class MomentumSelfTest : IScene
 
     static MatchEvent Hit(Side side, float strength) => new(MatchEventKind.Check, 0, side, -1, Vector3.Zero, strength);
 
-    void Goals(World w)
+    [Test]
+    public void Goals()
     {
+        var w = Make();
         Publish(w, Goal(Side.Home));
-        var s = Momentum.State(w);
-        Check(Momentum.Of(w, Side.Home) > 0.99f && s.Cause[0] == MomentumCause.Goal && Momentum.Leader(w) == Side.Home, "a goal fills the scoring club's boost");
+        var s = Boost.State(w);
+        Check(Boost.Of(w, Side.Home) > 0.99f && s.Cause[0] == MomentumCause.Goal && Boost.Leader(w) == Side.Home, "a goal fills the scoring club's boost");
         Publish(w, Goal(Side.Away));
-        Check(Momentum.Of(w, Side.Away) > 0.99f && Momentum.Of(w, Side.Home) == 0f, "a goal against ends the other club's boost");
+        Check(Boost.Of(w, Side.Away) > 0.99f && Boost.Of(w, Side.Home) == 0f, "a goal against ends the other club's boost");
     }
 
-    void Hits(World w)
+    [Test]
+    public void Hits()
     {
+        var w = Make();
         Publish(w, Hit(Side.Away, 1.0f));
-        Check(Momentum.Of(w, Side.Away) == 0f, "a soft check gives no boost");
+        Check(Boost.Of(w, Side.Away) == 0f, "a soft check gives no boost");
         Publish(w, Hit(Side.Away, 1.8f));
-        float one = Momentum.Of(w, Side.Away);
-        Check(Math.Abs(one - MomentumTuning.BigHit) < 0.01f && Momentum.State(w).Cause[1] == MomentumCause.BigHit, $"a big hit gives the hitter's club a small boost ({one:0.00})");
+        float one = Boost.Of(w, Side.Away);
+        Check(Math.Abs(one - MomentumTuning.BigHit) < 0.01f && Boost.State(w).Cause[1] == MomentumCause.BigHit, $"a big hit gives the hitter's club a small boost ({one:0.00})");
         Publish(w, Hit(Side.Away, 2f));
         Publish(w, Hit(Side.Away, 2f));
-        Check(Momentum.Of(w, Side.Away) is > 0.99f and <= 1f, "big hits add up, to a full boost at most");
+        Check(Boost.Of(w, Side.Away) is > 0.99f and <= 1f, "big hits add up, to a full boost at most");
     }
 
-    void Drain(World live, World dead)
+    [Test]
+    public void Drain()
     {
+        var live = Alone(Make());
+        var dead = Alone(Make());
         Publish(live, Goal(Side.Home));
         float start = live.Time;
         Run(live, x => x.Time - start >= MomentumTuning.Seconds / 2, Live);
-        float half = Momentum.Of(live, Side.Home);
+        float half = Boost.Of(live, Side.Home);
         Check(half is > 0.4f and < 0.6f, $"half the boost is gone after ten seconds of play ({half:0.00})");
         Run(live, x => x.Time - start >= MomentumTuning.Seconds + 0.1f, Live);
-        Check(Momentum.Of(live, Side.Home) == 0f && Momentum.Leader(live) == null, $"the boost is gone after twenty seconds of play ({Momentum.Of(live, Side.Home):0.00} and {Momentum.Of(live, Side.Away):0.00})");
+        Check(Boost.Of(live, Side.Home) == 0f && Boost.Leader(live) == null, $"the boost is gone after twenty seconds of play ({Boost.Of(live, Side.Home):0.00} and {Boost.Of(live, Side.Away):0.00})");
 
         Publish(dead, Goal(Side.Home));
         start = dead.Time;
         Run(dead, x => x.Time - start >= 10f, x => x.Puck.Live = false);
-        Check(Momentum.Of(dead, Side.Home) > 0.99f, "the boost waits while the puck is dead (goal celebration, faceoff)");
+        Check(Boost.Of(dead, Side.Home) > 0.99f, "the boost waits while the puck is dead (goal celebration, faceoff)");
     }
 
-    void SecondWind(World w)
+    [Test]
+    public void SecondWind()
     {
+        var w = Make();
         var home = w.OnIce(Side.Home).Where(p => !p.IsGoalie).ToList();
         var away = w.OnIce(Side.Away).Where(p => !p.IsGoalie).ToList();
         foreach (var p in home.Concat(away)) p.Energy = 0.6f;     // above the line change mark, so the same skaters stay on
@@ -145,11 +128,13 @@ public sealed class MomentumSelfTest : IScene
         Check(h > a + 0.2f, $"the boosted club gets a second wind: energy {h:0.00} against {a:0.00} after twenty seconds");
     }
 
-    void Crowd(World w)
+    [Test]
+    public void Crowd()
     {
+        var w = Make();
         Publish(w, Goal(Side.Home));
         float start = w.Time;
-        var s = Momentum.State(w);
+        var s = Boost.State(w);
         float first = s.CrowdVolume;
         Run(w, x => x.Time - start >= 8f);
         float w12 = 0.35f * w.Settings.Volume;
@@ -157,8 +142,10 @@ public sealed class MomentumSelfTest : IScene
         Check(s.CrowdVolume < first && MomentumSystem.CrowdVolume(0.3f, 1f) < MomentumSystem.CrowdVolume(1f, 1f), "the crowd quiets as the boost drains");
     }
 
-    void FightWon(World w)
+    [Test]
+    public void FightWon()
     {
+        var w = Make();
         var fights = Fighting.State(w);
         fights.ForceAccept = true;
         var checker = w.OnIce(Side.Away).First(p => p.Data.Position == PlayingPosition.C);
@@ -172,17 +159,15 @@ public sealed class MomentumSelfTest : IScene
             return;
         }
         var winner = w.Players[fight.Other(fight.Of(fight.LoserId)!).PlayerId].Side;
-        var s = Momentum.State(w);
-        Check(Momentum.Of(w, winner) >= MomentumTuning.FightWon - 0.01f && s.Cause[(int)winner] == MomentumCause.FightWon && s.Boosts[(int)winner] == 1,
-            $"winning a fight boosts the winner's club ({winner.ToString().ToLowerInvariant()}, {Momentum.Of(w, winner):0.00})");
+        var s = Boost.State(w);
+        Check(Boost.Of(w, winner) >= MomentumTuning.FightWon - 0.01f && s.Cause[(int)winner] == MomentumCause.FightWon && s.Boosts[(int)winner] == 1,
+            $"winning a fight boosts the winner's club ({winner.ToString().ToLowerInvariant()}, {Boost.Of(w, winner):0.00})");
     }
 
-    void FullMatch(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Test]
+    public void FullMatch()
     {
-        var setup = Scenes.DefaultSetup(clubs) with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
-        var world = new World(setup, settings);
-        Scenes.AddStarters(world);
-        MatchFlow.Begin(world, log: false);
+        var world = new WorldBuilder().Setup(s => s with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] }).Build();
 #pragma warning disable S2245 // fixed seed so the match repeats
         ISystem[] systems =
         [
@@ -199,11 +184,11 @@ public sealed class MomentumSelfTest : IScene
             foreach (var e in world.Events.Of(MatchEventKind.Goal))
             {
                 goals++;
-                if (e.Side is { } side && Momentum.Leader(world) == side && Momentum.Of(world, side) > 0.99f) boostedAfterGoal++;
+                if (e.Side is { } side && Boost.Leader(world) == side && Boost.Of(world, side) > 0.99f) boostedAfterGoal++;
             }
             world.Time += Game.Step; world.Tick++;
         }
-        var st = Momentum.State(world);
+        var st = Boost.State(world);
         Console.WriteLine($"      match {world.Match.Score[0]}-{world.Match.Score[1]}: boosts {st.Boosts[0]}-{st.Boosts[1]}, energy given back {st.Energy[0]:0.0} and {st.Energy[1]:0.0}, crowd swells {st.Swells}");
         Check(world.Match.Phase == MatchPhase.Final, "a full match with momentum plays out to the final");
         Check(goals > 0 && boostedAfterGoal == goals, $"every goal shows a full boost for the scorer ({boostedAfterGoal} of {goals})");
