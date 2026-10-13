@@ -30,8 +30,11 @@ public sealed class ChecksTests : CheckedTest
         return new WorldBuilder().Settings(s => s with { Switching = mode }).NoStarters().NotBegun().Build();
     }
 
+    /// <summary>Runs the systems for some seconds with no commands set.</summary>
+    List<MatchEvent> Run(World world, float seconds) => Run(world, seconds, (_, _) => { });
+
     /// <summary>Runs the systems for some seconds; <paramref name="each"/> sets commands before each step.</summary>
-    List<MatchEvent> Run(World world, float seconds, Action<World, int>? each = null)
+    List<MatchEvent> Run(World world, float seconds, Action<World, int> each)
     {
 #pragma warning disable S2245 // a fixed seed per run so the checks repeat
         ISystem[] systems =
@@ -47,7 +50,7 @@ public sealed class ChecksTests : CheckedTest
         for (int i = 0; i < steps; i++)
         {
             world.Events.Clear();
-            each?.Invoke(world, i);
+            each(world, i);
             foreach (var s in systems) s.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
             world.Time += Game.Step; world.Tick++;
@@ -55,9 +58,9 @@ public sealed class ChecksTests : CheckedTest
         return events;
     }
 
-    static Player Add(World w, Side side, Vector3 at, float heading = Right, Traits? traits = null)
+    static Player Add(World w, Side side, Vector3 at, float heading = Right, Maybe<Traits> traits = default)
     {
-        var p = w.AddPlayer(side, new PlayerData { Position = PlayingPosition.C, Traits = traits ?? new Traits() }, at);
+        var p = w.AddPlayer(side, new PlayerData { Position = PlayingPosition.C, Traits = traits.Or(new Traits()) }, at);
         p.Heading = heading;
         return p;
     }

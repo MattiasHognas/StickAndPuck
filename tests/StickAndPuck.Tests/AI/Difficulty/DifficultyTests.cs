@@ -32,7 +32,7 @@ public sealed class DifficultyTests : CheckedTest
         Check(DifficultyScale.Scale(t, Level.Normal) == t, "normal keeps the traits from the data files");
 
         var setup = WorldBuilder.DefaultSetup;     // the keyboard on the home club
-        Check(DifficultyScale.AiSide(setup) == Side.Away, "the difficulty applies to the club no human plays");
+        Check(DifficultyScale.AiSide(setup) == SideOrNone.Away, "the difficulty applies to the club no human plays");
         var scaled = new World(setup, new Settings { Difficulty = Level.Hard }).Setup;
         bool homeKept = ReferenceEquals(scaled.Home, setup.Home);
         bool awayRaised = scaled.Away.Roster.Zip(setup.Away.Roster).All(p => p.First.Traits.HockeyIq >= p.Second.Traits.HockeyIq)

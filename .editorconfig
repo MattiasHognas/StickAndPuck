@@ -144,21 +144,3 @@ dotnet_diagnostic.MA0158.severity = suggestion  # use System.Threading.Lock
 # No nulls (analyzers/StickAndPuck.Analyzers: the game project and the tests)
 # ---------------------------------------------------------------------------
 # SAP0001 nullable type, SAP0002 null literal, SAP0003 pattern on Maybe: errors by default in the analyzer.
-
-# TEMPORARY (W55 -> W99): these folders belong to the open W99 task and still use T?/null.
-# Remove these sections once W99 has merged and they are converted.
-[src/StickAndPuck.App/Players/Checks/**.cs]
-dotnet_diagnostic.SAP0001.severity = none
-dotnet_diagnostic.SAP0002.severity = none
-
-[src/StickAndPuck.App/AI/Difficulty/**.cs]
-dotnet_diagnostic.SAP0001.severity = none
-dotnet_diagnostic.SAP0002.severity = none
-
-[tests/StickAndPuck.Tests/Players/Checks/**.cs]
-dotnet_diagnostic.SAP0001.severity = none
-dotnet_diagnostic.SAP0002.severity = none
-
-[tests/StickAndPuck.Tests/AI/Difficulty/**.cs]
-dotnet_diagnostic.SAP0001.severity = none
-dotnet_diagnostic.SAP0002.severity = none

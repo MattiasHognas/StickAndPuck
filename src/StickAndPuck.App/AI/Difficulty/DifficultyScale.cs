@@ -12,15 +12,15 @@ namespace StickAndPuck.App.AI;
 /// </summary>
 public static class DifficultyScale
 {
-    /// <summary>Gets the AI club a difficulty applies to: the one side no human plays, or null when both or neither have a human.</summary>
+    /// <summary>Gets the AI club a difficulty applies to: the one side no human plays, or None when both or neither have a human.</summary>
     /// <param name="setup">The match setup.</param>
-    /// <returns>The AI club's side, or null.</returns>
-    public static Side? AiSide(MatchSetup setup)
+    /// <returns>The AI club's side, or None.</returns>
+    public static SideOrNone AiSide(MatchSetup setup)
     {
         bool home = setup.Inputs.Any(i => i.Device != InputDevice.None && i.Side == Side.Home);
         bool away = setup.Inputs.Any(i => i.Device != InputDevice.None && i.Side == Side.Away);
-        if (home == away) return null;
-        return home ? Side.Away : Side.Home;
+        if (home == away) return SideOrNone.None;
+        return home ? SideOrNone.Away : SideOrNone.Home;
     }
 
     /// <summary>Scales the AI club of a match by the difficulty.</summary>
@@ -29,7 +29,7 @@ public static class DifficultyScale
     /// <returns>The setup with the AI club's traits scaled, or the same setup on normal or with no single AI club.</returns>
     public static MatchSetup Apply(MatchSetup setup, Difficulty level)
     {
-        return AiSide(setup) is { } side ? Apply(setup, side, level) : setup;
+        return AiSide(setup).TryGetSide(out var side) ? Apply(setup, side, level) : setup;
     }
 
     /// <summary>Scales one club of a match by a difficulty; the difficulty test plays hard against easy this way.</summary>
