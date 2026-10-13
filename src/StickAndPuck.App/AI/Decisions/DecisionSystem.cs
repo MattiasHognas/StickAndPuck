@@ -94,14 +94,14 @@ internal sealed class DecisionSystem : ISystem
             if (!p.OnIce || p.IsGoalie || p.Slot >= 0 || p.Action is PlayerAction.Fallen or PlayerAction.Fight) continue;
             var brain = board.For(p.Id);
             if (brain.ShootSteps > 0 || (p.Action == PlayerAction.Shoot && pk.Carrier == p.Id)) { HoldShot(world, p, brain); continue; }
-            if (pk.Carrier == p.Id && brain.LatePass != null) { LatePass(world, p, brain); continue; }
+            if (pk.Carrier == p.Id && brain.LatePass.HasValue) { LatePass(world, p, brain); continue; }
             if (pk.Carrier == p.Id)
             {
                 if (!AiCommand.Held(world, p)) HoldLine(world, p, brain);   // W68: a dump taken wide stays wide
                 Carry(world, p, brain);
                 continue;
             }
-            brain.LatePass = null;
+            brain.LatePass = Maybe<PassOption>.None;
             if (MeetPass(world, board, p)) continue;
             if (Positioning.JobOf(world, p) == Job.Chase && pk.Carrier < 0) { Pounce(world, p); continue; }
             if (p.Id == crasher) { CrashNet(world, p); continue; }
@@ -135,8 +135,8 @@ internal sealed class DecisionSystem : ISystem
                 var passer = board.For(p.Id);
                 if (passer.PassTo >= 0 && passer.PassTo < world.Players.Count) Aimed(world, tally, world.Players[passer.PassTo]);
                 int to = passer.PassTo;
-                board.Meet = null;
-                if (to < 0 && PuckHandlingSystem.LastHumanPass(world) is { } human && human.Passer == p.Id && world.Time - human.At < 0.1f)
+                board.Meet = Maybe<HumanMeet>.None;
+                if (to < 0 && PuckHandlingSystem.LastHumanPass(world).TryGet(out var human) && human.Passer == p.Id && world.Time - human.At < 0.1f)
                 {
                     // W96: a human's pass has its receiver from puck handling
                     to = human.Receiver;
@@ -153,19 +153,19 @@ internal sealed class DecisionSystem : ISystem
         }
         board.LastCarrier = pk.Carrier;
 
-        if (board.Pass is not { } pass) { board.Meet = null; return; }
+        if (!board.Pass.TryGet(out var pass)) { board.Meet = Maybe<HumanMeet>.None; return; }
         if (pk.Carrier >= 0 && pk.Carrier < world.Players.Count)
         {
             var tally = board.Tally[(int)pass.Side];
             if (world.Players[pk.Carrier].Side == pass.Side) tally.Completed++;
             else tally.Intercepted++;
-            board.Pass = null;
-            board.Meet = null;
+            board.Pass = Maybe<InFlight>.None;
+            board.Meet = Maybe<HumanMeet>.None;
         }
         else if (!pk.Live || world.Time - pass.At > 3f || world.Match.Phase is not (MatchPhase.Play or MatchPhase.Overtime))
         {
-            board.Pass = null;
-            board.Meet = null;
+            board.Pass = Maybe<InFlight>.None;
+            board.Meet = Maybe<HumanMeet>.None;
         }
     }
 
@@ -204,7 +204,7 @@ internal sealed class DecisionSystem : ISystem
         float nearest = seen.Where(d => d.Speed > 5f).Select(d => Vector2.Distance(d.At, Flat(p.Position))).DefaultIfEmpty(99f).Min();
         bool pressed = nearest < 2.6f;
         float held = world.Time - brain.GotAt;
-        bool cycling = Positioning.StationOf(world, p) != null;
+        bool cycling = Positioning.StationOf(world, p).HasValue;
         bool camping = held > (cycling ? 5f : 3f) && p.Speed < 1.2f;   // stood still with the puck: time to let it go
 
         float carry = Choices.SpotValue(end, at) * (1f - Math.Min(0.35f, held / 12f)) * (camping ? 0.5f : 1f);
@@ -219,11 +219,12 @@ internal sealed class DecisionSystem : ISystem
 
         var pass = BestPass(world, p, end, at, seen, smart, cycling);
         if (Clear(world, p, brain, end, at, nearest, pass)) return;
-        float passValue = pass?.Value + wobble * PuckHandling.Gauss(rng) ?? float.MinValue;
+        float noise = wobble * PuckHandling.Gauss(rng);   // drawn with or without a pass
+        float passValue = pass.TryGet(out var option) ? option.Value + noise : float.MinValue;
 
         if (shoot > carry && shoot > passValue && shoot > (camping ? ShootFrom * 0.6f : ShootFrom)) Shoot(world, p, end, at, pressed);
         else if (PointShot(end, at, lane, pressed, held) && passValue < carry) Shoot(world, p, end, at, pressed);
-        else if (pass is { } best && (passValue > carry * 1.05f + 0.01f || (camping && held > 6f && (!cycling || best.Success > 0.35f))))
+        else if (pass.TryGet(out var best) && (passValue > carry * 1.05f + 0.01f || (camping && held > 6f && (!cycling || best.Success > 0.35f))))
             Pass(world, p, brain, best, at);
         else if (camping && held > 6f && Choices.ShotQuality(end, at) > (cycling ? 0.2f : 0f)) Shoot(world, p, end, at, pressed);   // pinned too long: get rid of it (in the cycle only from a real chance; else skate on)
     }
@@ -237,12 +238,12 @@ internal sealed class DecisionSystem : ISystem
     /// nothing to fear, so the odds are higher still. The penalty kill clears its own way (W22c).
     /// </summary>
     /// <returns>True when the carrier clears.</returns>
-    bool Clear(World world, Player p, Brain brain, int end, Vector2 at, float nearest, PassOption? pass)
+    bool Clear(World world, Player p, Brain brain, int end, Vector2 at, float nearest, Maybe<PassOption> pass)
     {
-        bool pinned = end * at.X < -RinkSpec.BlueLineX && nearest < 2.6f && (pass == null || pass.Value.Success < SafePass);
+        bool pinned = end * at.X < -RinkSpec.BlueLineX && nearest < 2.6f && (!pass.TryGet(out var option) || option.Success < SafePass);
         if (!pinned || Same(brain.ClearRun, brain.GotAt) || p.Slot >= 0) return false;
         brain.ClearRun = brain.GotAt;
-        if (Penalties.PowerPlay(world) is { } pp && pp != p.Side) return false;   // a killer clears with special teams
+        if (Penalties.PowerPlay(world).TryGetSide(out var pp) && pp != p.Side) return false;   // a killer clears with special teams
 
         var (outcome, iq) = Jitter.Roll(world, p, rng);
         float odds = Traits.Scale(iq, 0.12f, 0.015f) * (outcome == ReadOutcome.Fumble ? 2f : 1f) * (nearest < 1.4f ? 1.4f : 1f) * (world.Setup.Rules.Icing == IcingCall.Off ? 1.5f : 1f);
@@ -320,10 +321,10 @@ internal sealed class DecisionSystem : ISystem
         return seen;
     }
 
-    /// <summary>The best pass the carrier sees, or null with nobody to pass to.</summary>
-    internal static PassOption? BestPass(World world, Player p, int end, Vector2 at, List<(Vector2 At, float Speed)> seen, int smart, bool cycling)
+    /// <summary>The best pass the carrier sees, or None with nobody to pass to.</summary>
+    internal static Maybe<PassOption> BestPass(World world, Player p, int end, Vector2 at, List<(Vector2 At, float Speed)> seen, int smart, bool cycling)
     {
-        PassOption? best = null;
+        var best = Maybe<PassOption>.None;
         float vision = Choices.Vision(smart);
         foreach (var mate in world.OnIce(p.Side))
         {
@@ -340,7 +341,7 @@ internal sealed class DecisionSystem : ISystem
 
             float success = Choices.LaneSuccess(at, target, speed, seen, smart);
             float value = success * Choices.SpotValue(end, target) * (0.5f + 0.5f * Choices.Room(target, seen)) - (1f - success) * (cycling ? Choices.CycleTurnover : 0.08f);
-            if (best == null || value > best.Value.Value) best = new PassOption(mate, target, success, value);
+            if (!best.TryGet(out var top) || value > top.Value) best = new PassOption(mate, target, success, value);
         }
         return best;
     }
@@ -349,8 +350,8 @@ internal sealed class DecisionSystem : ISystem
     {
         var toNet = new Vector2(end * RinkSpec.GoalLineX, 0) - at;
         float distance = toNet.Length();
-        var goalie = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).FirstOrDefault(o => o.IsGoalie);
-        int side = goalie != null && StickAndPuck.App.Goalie.GoalieModel.WeakSide(goalie, end) is var weak and not 0 && rng.NextSingle() < p.Data.Traits.Iq ? weak : Choices.ShotSide(at, goalie?.Position.Z);
+        var goalie = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).FirstOrNone(o => o.IsGoalie);
+        int side = goalie.TryGet(out var keeper) && StickAndPuck.App.Goalie.GoalieModel.WeakSide(keeper, end) is var weak and not 0 && rng.NextSingle() < p.Data.Traits.Iq ? weak : Choices.ShotSide(at, goalie.Select(g => g.Position.Z));
         var roll = Jitter.Roll(world, p, rng).Outcome;
 
         // an accurate shooter points the stick at the side of the net to beat the goalie; anyone
@@ -384,10 +385,10 @@ internal sealed class DecisionSystem : ISystem
     /// <summary>Lets a fumbled pass go once its beat is over, at the receiver as he is then, with the old read of the lane.</summary>
     static void LatePass(World world, Player p, Brain brain)
     {
-        var pass = brain.LatePass!.Value;
-        if (p.Action != PlayerAction.None || !pass.Receiver.OnIce) { brain.LatePass = null; return; }
+        if (!brain.LatePass.TryGet(out var pass)) return;
+        if (p.Action != PlayerAction.None || !pass.Receiver.OnIce) { brain.LatePass = Maybe<PassOption>.None; return; }
         if (world.Time < brain.PassAt) return;
-        brain.LatePass = null;
+        brain.LatePass = Maybe<PassOption>.None;
         var at = Flat(world.Puck.Position);
         var (target, _) = PuckHandling.Lead(world.Puck.Position, pass.Receiver, p.Data.Traits.HockeyIq);
         if (Vector2.DistanceSquared(Flat(target), at) < 1f) return;
@@ -404,13 +405,13 @@ internal sealed class DecisionSystem : ISystem
     static bool MeetPass(World world, DecisionBoard board, Player p)
     {
         var pk = world.Puck;
-        if (board.Pass is not { } pass || pass.Receiver != p.Id || pk.Carrier >= 0) return false;
+        if (!board.Pass.TryGet(out var pass) || pass.Receiver != p.Id || pk.Carrier >= 0) return false;
         var v = Flat(pk.Velocity);
         if (v.Length() < 1.5f) return false;
         var from = Flat(pk.Position);
         var blade = Flat(PuckHandling.Blade(p));
         var dir = Vector2.Normalize(v);
-        float along = Intercept(p, blade, from, dir, v.Length()) ?? Math.Max(0.5f, Vector2.Dot(blade - from, dir));
+        float along = Intercept(p, blade, from, dir, v.Length()).TryGet(out float reach) ? reach : Math.Max(0.5f, Vector2.Dot(blade - from, dir));
         var meet = TeamShape.Inside(from + dir * along, 0.6f);
         AiCommand.Steer(world, p, AiLayer.Decisions, Steering.Toward(p, Steering.BodyForBlade(p, meet), 0.6f), "meet the pass");
         return true;
@@ -423,7 +424,7 @@ internal sealed class DecisionSystem : ISystem
     static void MeetForHuman(World world, DecisionBoard board)
     {
         var pk = world.Puck;
-        if (board.Meet is not { HandedBack: false } meet || board.Pass is not { } pass || pass.Receiver != meet.Receiver || pk.Carrier >= 0) return;
+        if (!board.Meet.TryGet(out var meet) || meet.HandedBack || !board.Pass.TryGet(out var pass) || pass.Receiver != meet.Receiver || pk.Carrier >= 0) return;
         var p = world.Players[meet.Receiver];
         if (p.Slot < 0 || !p.OnIce || p.Action is PlayerAction.Fallen or PlayerAction.Fight) return;   // an AI receiver meets it in the loop
         if (pk.LastTouch != pass.Passer) { meet.HandedBack = true; return; }   // one-timed, tipped or saved: the pass is over
@@ -439,7 +440,7 @@ internal sealed class DecisionSystem : ISystem
             return;
         }
 
-        var move = Receive(p, pk) ?? Steering.Toward(p, Steering.BodyForBlade(p, TeamShape.Inside(Flat(pk.Position), 0.6f)), 0.6f);
+        var move = Receive(p, pk).TryGet(out var receive) ? receive : Steering.Toward(p, Steering.BodyForBlade(p, TeamShape.Inside(Flat(pk.Position), 0.6f)), 0.6f);
         p.Command = p.Command with { Move = move.Move, Sprint = move.Sprint };
     }
 
@@ -448,15 +449,15 @@ internal sealed class DecisionSystem : ISystem
     /// where his blade drifts on his current skating, among those he can reach in time, and his
     /// body shifted so the blade, at the heading he has, sits on it. A receiver on the line stays
     /// put; one led by the pass skates on into it. Chasing the earliest point instead (as an AI
-    /// receiver does) turns him toward the puck and swings his blade off its line. Null when the
+    /// receiver does) turns him toward the puck and swings his blade off its line. None when the
     /// puck has all but stopped.
     /// </summary>
-    static PlayerCommand? Receive(Player p, Puck pk)
+    static Maybe<PlayerCommand> Receive(Player p, Puck pk)
     {
         const float step = 1 / 60f;
         var v = Flat(pk.Velocity);
         float speed = v.Length();
-        if (speed < 1.5f) return null;
+        if (speed < 1.5f) return Maybe<PlayerCommand>.None;
         var dir = v / speed;
         var puck = Flat(pk.Position);
         var blade = Flat(PuckHandling.Blade(p));
@@ -477,11 +478,11 @@ internal sealed class DecisionSystem : ISystem
 
     /// <summary>
     /// W66: the earliest point along the puck's slide the receiver's blade can reach before the puck
-    /// does, in metres from the puck, or null when he cannot get to it in time anywhere. Going to
+    /// does, in metres from the puck, or None when he cannot get to it in time anywhere. Going to
     /// the point across from where he stands instead braked him sideways while a pass led ahead of
     /// him ran on, so the more a smart passer led him the more passes he missed.
     /// </summary>
-    static float? Intercept(Player p, Vector2 blade, Vector2 from, Vector2 dir, float speed)
+    static Maybe<float> Intercept(Player p, Vector2 blade, Vector2 from, Vector2 dir, float speed)
     {
         const float step = 1 / 60f;
         float top = SkatingModel.TopSpeed(p.Data.Traits, p.Energy), along = 0f, t = 0f;
@@ -495,7 +496,7 @@ internal sealed class DecisionSystem : ISystem
                 return along;
             }
         }
-        return null;
+        return Maybe<float>.None;
     }
 
     /// <summary>
@@ -513,7 +514,7 @@ internal sealed class DecisionSystem : ISystem
     /// <summary>After a shot, the forward of the shooting side nearest the net who is not chasing goes to the net for a rebound.</summary>
     static int Crasher(World world, DecisionBoard board)
     {
-        if (board.Shot is not { } shot || world.Time - shot.At > 1.6f || world.Puck.Carrier >= 0) return -1;
+        if (!board.Shot.TryGet(out var shot) || world.Time - shot.At > 1.6f || world.Puck.Carrier >= 0) return -1;
         int end = PuckHandling.AttackEnd(world, shot.Side);
         var net = new Vector3(end * RinkSpec.GoalLineX, 0, 0);
         return world.OnIce(shot.Side)

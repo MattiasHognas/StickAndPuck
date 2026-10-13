@@ -74,8 +74,8 @@ public sealed record MatchSetup
     /// <summary>Gets how a tie after regulation is settled.</summary>
     public OvertimeRule Overtime { get; init; } = OvertimeRule.Shl;
 
-    /// <summary>Gets the mode's own overtime rules (W19), or null to play the format <see cref="Overtime"/> names.</summary>
-    public OvertimeFormat? OvertimeFormat { get; init; }
+    /// <summary>Gets the mode's own overtime rules (W19), or None to play the format <see cref="Overtime"/> names.</summary>
+    public Maybe<OvertimeFormat> OvertimeFormat { get; init; }
 
     /// <summary>Gets the rules the match is played by (W44), resolved when it starts; systems read their switches here.</summary>
     public RuleSet Rules { get; init; } = RuleSet.Shl;
@@ -92,12 +92,12 @@ public sealed record MatchSetup
     public MatchSetup WithRules(RuleSet rules)
     {
         var setup = this with { Rules = rules };
-        if (Overtime == OvertimeRule.None && OvertimeFormat == null) return setup;
-        if (OvertimeFormat != null)
+        if (Overtime == OvertimeRule.None && !OvertimeFormat.HasValue) return setup;
+        if (OvertimeFormat.TryGet(out var own))
         {
             return setup with
             {
-                OvertimeFormat = rules.PlayoffOvertime == OvertimeStyle.SuddenDeath && OvertimeFormat.UntilGoal ? OvertimeFormat : Format(rules.PlayoffOvertime),
+                OvertimeFormat = rules.PlayoffOvertime == OvertimeStyle.SuddenDeath && own.UntilGoal ? own : Format(rules.PlayoffOvertime),
             };
         }
         return rules.Overtime switch

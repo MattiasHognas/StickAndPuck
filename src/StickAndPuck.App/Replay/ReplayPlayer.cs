@@ -31,14 +31,14 @@ public enum ReplayStep
 public sealed class ReplayPlayer
 {
     readonly ReplayFile file;
-    readonly ScrubTarget? target;
+    readonly Maybe<ScrubTarget> target;
     readonly string path;
     readonly List<string> events = [];
     long firstMismatch = -1;
     int mismatches;
     string playedEnd = "";
 
-    ReplayPlayer(ReplayFile file, string path, World world, ScrubTarget? target, bool takeOver)
+    ReplayPlayer(ReplayFile file, string path, World world, Maybe<ScrubTarget> target, bool takeOver)
     {
         this.file = file;
         this.path = path;
@@ -63,7 +63,7 @@ public sealed class ReplayPlayer
     public bool Live { get; private set; }
 
     /// <summary>Gets a value indicating whether a SAP_AT moment was asked for.</summary>
-    public bool HasTarget => target != null;
+    public bool HasTarget => target.HasValue;
 
     /// <summary>Gets the file's header.</summary>
     public ReplayHeader Header => file.Header;
@@ -71,29 +71,29 @@ public sealed class ReplayPlayer
     /// <summary>Gets the devices before the first step.</summary>
     public InputFrame Start => file.Start;
 
-    /// <summary>Reads SAP_REPLAY and builds its match, or returns null when it is not set.</summary>
+    /// <summary>Reads SAP_REPLAY and builds its match, or returns None when it is not set.</summary>
     /// <param name="clubs">Every club.</param>
-    /// <returns>The player, or null.</returns>
-    public static ReplayPlayer? FromEnvironment(IReadOnlyList<ClubData> clubs)
+    /// <returns>The player, or None.</returns>
+    public static Maybe<ReplayPlayer> FromEnvironment(IReadOnlyList<ClubData> clubs)
     {
-        if (Environment.GetEnvironmentVariable("SAP_REPLAY") is not { Length: > 0 } name) return null;
+        if (Environment.GetEnvironmentVariable("SAP_REPLAY") is not { Length: > 0 } name) return Maybe<ReplayPlayer>.None;
         string path = AssetRoot.Output(name);
         var file = ReplayFile.Read(path);
         var h = file.Header;
         if (h.Version != ReplayHeader.CurrentVersion) throw new InvalidDataException($"{path} is replay version {h.Version}; this game reads version {ReplayHeader.CurrentVersion}");
-        var target = ScrubTarget.Parse(Environment.GetEnvironmentVariable("SAP_AT"));
+        var target = ScrubTarget.Parse(Environment.GetEnvironmentVariable("SAP_AT") ?? "");
         bool takeOver = string.Equals(Environment.GetEnvironmentVariable("SAP_TAKEOVER"), "1", StringComparison.Ordinal);
-        if (takeOver && target == null) throw new InvalidOperationException("SAP_TAKEOVER=1 needs SAP_AT, the moment to take over from");
+        if (takeOver && !target.HasValue) throw new InvalidOperationException("SAP_TAKEOVER=1 needs SAP_AT, the moment to take over from");
         SetVariables(h.Env);
-        Console.WriteLine($"SAP: replay: {path}: {h.Kind} {(string.Equals(h.Kind, "scene", StringComparison.Ordinal) ? h.Scene : $"{h.Setup?.Home} vs {h.Setup?.Away}")}, seed {h.Seed}, {file.LastTick + 1} steps, recorded on {h.Recorded}");
+        Console.WriteLine($"SAP: replay: {path}: {h.Kind} {(string.Equals(h.Kind, "scene", StringComparison.Ordinal) ? h.Scene : $"{h.Setup.Select(s => s.Home).Or("")} vs {h.Setup.Select(s => s.Away).Or("")}")}, seed {h.Seed}, {file.LastTick + 1} steps, recorded on {h.Recorded}");
 
         // the frames must be in place before the world is built: the screens read the devices as they start
         DeviceInput.Set(file.Start);
-        DeviceInput.Playback = tick => file.Inputs.TryGetValue(tick, out var f) ? f : null;
+        DeviceInput.Play(tick => file.Inputs.TryGetValue(tick, out var f) ? f : Maybe<InputFrame>.None);
         World world;
         if (string.Equals(h.Kind, "match", StringComparison.Ordinal))
         {
-            var setup = (h.Setup ?? throw new InvalidDataException("a match replay without its setup")).ToSetup(clubs);
+            var setup = (h.Setup.TryGet(out var stored) ? stored : throw new InvalidDataException("a match replay without its setup")).ToSetup(clubs);
             world = ScreenFlow.BeginReplay(clubs, ScreenPrefsFile.FromJson(h.Prefs), setup, h.Seed, h.Mode);
         }
         else
@@ -110,7 +110,7 @@ public sealed class ReplayPlayer
     /// <summary>Gets a value indicating whether to run steps as fast as possible without drawing them.</summary>
     /// <param name="headless">Whether the game runs headless.</param>
     /// <returns>True while running to the SAP_AT moment, or to the end of a headless check.</returns>
-    public bool FastForward(bool headless) => !Live && !Ended && ((target != null && !Reached) || (headless && target == null));
+    public bool FastForward(bool headless) => !Live && !Ended && ((target.HasValue && !Reached) || (headless && !target.HasValue));
 
     /// <summary>Checks the step that just ran against the recording.</summary>
     /// <param name="world">The world after the step.</param>
@@ -131,10 +131,10 @@ public sealed class ReplayPlayer
             }
             mismatches++;
         }
-        if (target != null && !Reached && target.Hit(world))
+        if (target.TryGet(out var at) && !Reached && at.Hit(world))
         {
             Reached = true;
-            Console.WriteLine($"SAP: replay: at {target} (step {tick})");
+            Console.WriteLine($"SAP: replay: at {at} (step {tick})");
             Console.WriteLine(StateDump.Of(world));
             return ReplayStep.Target;
         }
@@ -150,7 +150,7 @@ public sealed class ReplayPlayer
     public void TakeOver()
     {
         Live = true;
-        DeviceInput.Playback = null;
+        DeviceInput.StopPlaying();
         Console.WriteLine("SAP: replay: taken over; the devices play from here and a new replay records");
     }
 
@@ -198,10 +198,10 @@ public sealed class ReplayPlayer
         foreach (System.Collections.DictionaryEntry e in Environment.GetEnvironmentVariables())
         {
             if (e.Key is string k && k.StartsWith("SAP_", StringComparison.Ordinal) && !env.ContainsKey(k) && !ReplayRecorder.ControlVariables.Contains(k, StringComparer.Ordinal))
-                Environment.SetEnvironmentVariable(k, null);
+                Environment.SetEnvironmentVariable(k, "");    // an empty value removes the variable
         }
         foreach (var (k, v) in env) Environment.SetEnvironmentVariable(k, v);
-        Environment.SetEnvironmentVariable("SAP_SCREEN_KEYS", null);    // the scripted presses are in the frames
+        Environment.SetEnvironmentVariable("SAP_SCREEN_KEYS", "");    // the scripted presses are in the frames
     }
 }
 
@@ -211,11 +211,11 @@ public sealed class ReplayPlayer
 public sealed record ScrubTarget(int Period, double Clock)
 {
     /// <summary>Reads SAP_AT: "2:12:30" (period 2 at 12:30 on the clock), "2:750" (seconds) or "t3600" (step 3600).</summary>
-    /// <param name="text">The text, or null.</param>
-    /// <returns>The target, or null when there is no text.</returns>
-    public static ScrubTarget? Parse(string? text)
+    /// <param name="text">The text, "" when not set.</param>
+    /// <returns>The target, or None when there is no text.</returns>
+    public static Maybe<ScrubTarget> Parse(string text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return null;
+        if (string.IsNullOrWhiteSpace(text)) return Maybe<ScrubTarget>.None;
         var c = CultureInfo.InvariantCulture;
         if (text.StartsWith('t')) return new ScrubTarget(0, long.Parse(text[1..], c));
         string[] parts = text.Split(':');

@@ -22,8 +22,8 @@ internal sealed class ScreenSystem : ISystem, IDisposable
     readonly MenuInput input = new();
     readonly List<GoalLine> goals = [];
     readonly int[] score = new int[2];
-    ScreenArt? art;
-    Screen? lastTop;
+    Maybe<ScreenArt> art;
+    Maybe<Screen> lastTop;
     bool sawShootout;
     float finalAt = float.PositiveInfinity;
 
@@ -41,16 +41,17 @@ internal sealed class ScreenSystem : ISystem, IDisposable
     {
         if (!ScreenFlow.Active) return;
         var top = ScreenFlow.Top;
-        if (!ReferenceEquals(top, lastTop)) input.Swallow();    // a button still held from the last screen does not press here
+        bool same = top.TryGet(out var shown) ? lastTop.Is(last => ReferenceEquals(last, shown)) : !lastTop.HasValue;
+        if (!same) input.Swallow();    // a button still held from the last screen does not press here
         lastTop = top;
 
-        bool inMatch = ScreenFlow.Playing != null && MatchFlow.IsRunning(world);
-        world.Match.Paused = !inMatch || top != null;
-        var press = input.Next(top != null, dt);
-        if (top != null)
+        bool inMatch = ScreenFlow.Playing.HasValue && MatchFlow.IsRunning(world);
+        world.Match.Paused = !inMatch || top.HasValue;
+        var press = input.Next(top.HasValue, dt);
+        if (top.TryGet(out var screen))
         {
-            top.Update(world, press);
-            if (ScreenFlow.Top == null && inMatch) Resumed(world);
+            screen.Update(world, press);
+            if (!ScreenFlow.Top.HasValue && inMatch) Resumed(world);
             return;
         }
         if (!inMatch) return;
@@ -74,15 +75,15 @@ internal sealed class ScreenSystem : ISystem, IDisposable
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (art == null || ScreenFlow.Top is not { } top) return;
+        if (!art.TryGet(out var loaded) || !ScreenFlow.Top.TryGet(out var top)) return;
         if (top.Dims) ScreenArt.Dim();
-        top.Draw(art, world);
+        top.Draw(loaded, world);
     }
 
     public void Dispose()
     {
-        art?.Unload();
-        art = null;
+        if (art.TryGet(out var loaded)) loaded.Unload();
+        art = Maybe<ScreenArt>.None;
     }
 
     /// <summary>Back to play: nobody's buttons from the pause screen carry into the match.</summary>
@@ -140,6 +141,6 @@ internal sealed class ScreenSystem : ISystem, IDisposable
             decided = PeriodLabel(world);
         }
         return new MatchResult(world.Setup, m.Score[(int)Side.Home], m.Score[(int)Side.Away], m.Shots[(int)Side.Home], m.Shots[(int)Side.Away],
-            decided, lines, ScreenFlow.Playing!);
+            decided, lines, ScreenFlow.Playing.TryGet(out var plan) ? plan : throw new InvalidOperationException("the results of a match that was not started"));
     }
 }

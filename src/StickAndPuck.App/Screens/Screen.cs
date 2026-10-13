@@ -3,12 +3,72 @@ using StickAndPuck.App.Core;
 namespace StickAndPuck.App.Screens;
 
 /// <summary>One menu row.</summary>
-/// <param name="Label">The text.</param>
-/// <param name="Pick">What enter does, or null.</param>
-/// <param name="Value">The current value of a setting, shown on the right, or null.</param>
-/// <param name="Change">What left (-1) and right (+1) do to the value, or null.</param>
-/// <param name="Enabled">Whether the row can be picked.</param>
-internal sealed record MenuItem(string Label, Action? Pick = null, string? Value = null, Action<int>? Change = null, bool Enabled = true);
+internal sealed record MenuItem
+{
+    static readonly Action NoPick = () => { };
+    static readonly Action<int> NoChange = _ => { };
+
+    /// <summary>Initializes a new instance of the <see cref="MenuItem"/> class: a row that does nothing (a heading).</summary>
+    /// <param name="label">The text.</param>
+    /// <param name="enabled">Whether the row can be picked.</param>
+    public MenuItem(string label, bool enabled = true)
+        : this(label, NoPick, Maybe<string>.None, NoChange, enabled)
+    {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="MenuItem"/> class: a row enter picks.</summary>
+    /// <param name="label">The text.</param>
+    /// <param name="pick">What enter does.</param>
+    /// <param name="enabled">Whether the row can be picked.</param>
+    public MenuItem(string label, Action pick, bool enabled = true)
+        : this(label, pick, Maybe<string>.None, NoChange, enabled)
+    {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="MenuItem"/> class: a row enter picks, showing a value.</summary>
+    /// <param name="label">The text.</param>
+    /// <param name="pick">What enter does.</param>
+    /// <param name="value">The current value of a setting, shown on the right.</param>
+    /// <param name="enabled">Whether the row can be picked.</param>
+    public MenuItem(string label, Action pick, string value, bool enabled = true)
+        : this(label, pick, Maybe.Some(value), NoChange, enabled)
+    {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="MenuItem"/> class: a setting left and right change; enter steps it forward.</summary>
+    /// <param name="label">The text.</param>
+    /// <param name="value">The current value of the setting, shown on the right.</param>
+    /// <param name="change">What left (-1) and right (+1) do to the value.</param>
+    /// <param name="enabled">Whether the row can be picked.</param>
+    public MenuItem(string label, string value, Action<int> change, bool enabled = true)
+        : this(label, () => change(1), Maybe.Some(value), change, enabled)
+    {
+    }
+
+    MenuItem(string label, Action pick, Maybe<string> value, Action<int> change, bool enabled)
+    {
+        Label = label;
+        Pick = pick;
+        Value = value;
+        Change = change;
+        Enabled = enabled;
+    }
+
+    /// <summary>Gets the text.</summary>
+    public string Label { get; init; }
+
+    /// <summary>Gets what enter does: nothing on a heading, a step forward on a setting.</summary>
+    public Action Pick { get; init; }
+
+    /// <summary>Gets the current value of a setting, shown on the right, or None.</summary>
+    public Maybe<string> Value { get; init; }
+
+    /// <summary>Gets what left (-1) and right (+1) do to the value; nothing on other rows.</summary>
+    public Action<int> Change { get; init; }
+
+    /// <summary>Gets a value indicating whether the row can be picked.</summary>
+    public bool Enabled { get; init; }
+}
 
 /// <summary>One screen on <see cref="ScreenFlow"/>'s stack. Only the top screen gets the presses and draws.</summary>
 internal abstract class Screen
@@ -60,17 +120,15 @@ internal abstract class MenuScreen : Screen
         }
         else if (press.Contains(MenuButton.Left))
         {
-            items[Selected].Change?.Invoke(-1);
+            items[Selected].Change(-1);
         }
         else if (press.Contains(MenuButton.Right))
         {
-            items[Selected].Change?.Invoke(1);
+            items[Selected].Change(1);
         }
         else if (press.Contains(MenuButton.Accept))
         {
-            var item = items[Selected];
-            if (item.Pick != null) item.Pick();
-            else item.Change?.Invoke(1);
+            items[Selected].Pick();
         }
         else if (press.Contains(MenuButton.Back))
         {

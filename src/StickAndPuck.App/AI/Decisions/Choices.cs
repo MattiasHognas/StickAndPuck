@@ -198,11 +198,11 @@ public static class Choices
 
     /// <summary>Gets the side of the net to shoot at: away from where the goalie leans, else the far side.</summary>
     /// <param name="at">The shooter (x, z).</param>
-    /// <param name="goalieZ">The goalie's z, or null with no goalie.</param>
+    /// <param name="goalieZ">The goalie's z, or None with no goalie.</param>
     /// <returns>+1 for +z, -1 for -z.</returns>
-    public static int ShotSide(Vector2 at, float? goalieZ)
+    public static int ShotSide(Vector2 at, Maybe<float> goalieZ)
     {
-        if (goalieZ is { } g && MathF.Abs(g) > 0.15f) return g > 0 ? -1 : 1;
+        if (goalieZ.TryGet(out float g) && MathF.Abs(g) > 0.15f) return g > 0 ? -1 : 1;
         return at.Y > 0 ? -1 : 1;
     }
 

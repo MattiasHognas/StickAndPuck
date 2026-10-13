@@ -20,14 +20,14 @@ internal sealed class SeasonStatsScreen : MenuScreen
     static readonly string[] Views = [K.ViewPoints, K.ViewGoals, K.ViewAssists, K.ViewHits, K.ViewGoalies, K.ViewStars, K.ViewYourClub];
 
     int view;
-    bool playoffs = SeasonSession.Current?.Playoffs != null;
+    bool playoffs = SeasonSession.Current.Is(s => s.Playoffs.HasValue);
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        List<MenuItem> items = [new MenuItem(Text.Get(K.Show), Value: Text.Get(Views[view]), Change: d => view = ((view + d) % Views.Length + Views.Length) % Views.Length)];
-        if (SeasonSession.Current?.Playoffs != null) items.Add(new MenuItem(Text.Get(K.Games), Value: Text.Get(playoffs ? K.Playoffs : K.SeasonWord), Change: _ => playoffs = !playoffs));
-        items.Add(new MenuItem(Text.Get(SeasonSession.Current?.Playoffs != null ? K.Playoffs : K.TableItem), () => ScreenFlow.Replace(ScreenFlow.Overview())));
+        List<MenuItem> items = [new MenuItem(Text.Get(K.Show), value: Text.Get(Views[view]), change: d => view = ((view + d) % Views.Length + Views.Length) % Views.Length)];
+        if (SeasonSession.Current.Is(s => s.Playoffs.HasValue)) items.Add(new MenuItem(Text.Get(K.Games), value: Text.Get(playoffs ? K.Playoffs : K.SeasonWord), change: _ => playoffs = !playoffs));
+        items.Add(new MenuItem(Text.Get(SeasonSession.Current.Is(s => s.Playoffs.HasValue) ? K.Playoffs : K.TableItem), () => ScreenFlow.Replace(ScreenFlow.Overview())));
         items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
         return items;
     }
@@ -47,7 +47,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
     {
         var items = Items();
         int h = 5 + ScreenArt.Row + 2 + Line + (Rows * Line) + 4 + Line + 4 + (items.Count * ScreenArt.Row) + 4;
-        if (SeasonSession.Current is not { } season)
+        if (!SeasonSession.Current.TryGet(out var season))
         {
             var (px, ptop) = art.Panel(Text.Get(K.SeasonStats), PanelW, 60, 100);
             art.Centred(Text.Get(K.NoSeasonYet), Game.Width / 2, ptop, ScreenArt.Muted);
@@ -56,7 +56,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
         }
         var clubs = ScreenFlow.Clubs;
         season.Stats.CatchUp(season, clubs);
-        bool post = playoffs && season.Playoffs != null;
+        bool post = playoffs && season.Playoffs.HasValue;
         var table = post ? season.Stats.Playoffs : season.Stats.Regular;
         bool goalies = view == 4;
         var lines = Lines(table, season.UserClub);
@@ -82,7 +82,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
         }
 
         top += 4;
-        string star = season.Stats.LastAward is { } a
+        string star = season.Stats.LastAward.TryGet(out var a)
             ? Text.Format(K.StarLine, a.Label, Short(clubs, a.Club), a.Summary, Short(clubs, a.Home), a.HomeGoals, a.AwayGoals, Short(clubs, a.Away))
             : Text.Get(K.StarNobody);
         art.Centred(art.Clip(star, PanelW - 16), Game.Width / 2, top, art.Gold);
@@ -129,7 +129,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
     };
 
     static string Name(IReadOnlyList<ClubData> clubs, string id) =>
-        clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))?.Name ?? id;
+        clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).Select(c => c.Name).Or(id);
 
     static string Short(IReadOnlyList<ClubData> clubs, string id)
     {
@@ -184,7 +184,7 @@ internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScree
     }
 
     static string Name(IReadOnlyList<ClubData> clubs, string id) =>
-        clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))?.Name ?? id;
+        clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).Select(c => c.Name).Or(id);
 
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
 }
@@ -218,18 +218,18 @@ internal sealed class TrophyScreen : MenuScreen
     public static TrophyScreen Season()
     {
         var clubs = ScreenFlow.Clubs;
-        var season = SeasonSession.Current;
-        var playoffs = season?.Playoffs;
-        string champion = playoffs?.Champion ?? "";
+        var current = SeasonSession.Current;
+        var playoffs = current.TryGet(out var open) ? open.Playoffs : Maybe<PlayoffState>.None;
+        string champion = playoffs.TryGet(out var bracket) ? bracket.Champion.Or("") : "";
         List<(string, string)> lines = [];
-        if (playoffs is { Champion: not null })
+        if (playoffs.TryGet(out var decided) && decided.Champion.HasValue)
         {
-            var final = playoffs.Current.Series[0];
+            var final = decided.Current.Series[0];
             string other = string.Equals(final.High, champion, StringComparison.Ordinal) ? final.Low : final.High;
             int won = Math.Max(final.HighWins, final.LowWins), lost = Math.Min(final.HighWins, final.LowWins);
             lines.Add((Text.Get(K.TrophyFinal), Text.Format(K.TrophyFinalLine, won, lost, Name(clubs, other))));
         }
-        if (season != null)
+        if (current.TryGet(out var season))
         {
             season.Stats.CatchUp(season, clubs);    // games settled on paper are credited from their score
             var stats = season.Stats;
@@ -238,7 +238,7 @@ internal sealed class TrophyScreen : MenuScreen
             if (stats.Regular.Goalies(1).FirstOrDefault() is { } goalie) lines.Add((Text.Get(K.BestGoalie), Text.Format(K.BestGoalieLine, goalie.Label, Short(clubs, goalie.Club), goalie.Saves)));
             if (stats.Playoffs.Leaders(1).FirstOrDefault() is { } hero) lines.Add((Text.Get(K.PlayoffStar), Text.Format(K.TopScorerLine, hero.Label, Short(clubs, hero.Club), hero.Points)));
             string user = Name(clubs, season.UserClub);
-            lines.Add((Text.Get(K.YourClub), string.Equals(season.UserClub, champion, StringComparison.Ordinal) ? Text.Get(K.ChampionsShout) : Text.Format(playoffs is { UserQualified: false } ? K.MissedPlayoffs : K.WentOut, user)));
+            lines.Add((Text.Get(K.YourClub), string.Equals(season.UserClub, champion, StringComparison.Ordinal) ? Text.Get(K.ChampionsShout) : Text.Format(playoffs.Is(p => !p.UserQualified) ? K.MissedPlayoffs : K.WentOut, user)));
         }
         return new TrophyScreen(Text.Get(K.ShlChampions), champion, Name(clubs, champion), lines,
         [
@@ -321,7 +321,7 @@ internal sealed class TrophyScreen : MenuScreen
     }
 
     static string Name(IReadOnlyList<ClubData> clubs, string id) =>
-        clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))?.Name ?? id;
+        clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).Select(c => c.Name).Or(id);
 
     static string Short(IReadOnlyList<ClubData> clubs, string id)
     {
@@ -366,7 +366,7 @@ internal sealed class ArcadeBoardScreen : MenuScreen
         {
             var r = records[i];
             var ink = i + 1 == place ? art.Gold : art.Text;
-            string name = clubs.FirstOrDefault(c => string.Equals(c.Id, r.Club, StringComparison.Ordinal))?.Name ?? r.Club;
+            string name = clubs.FirstOrNone(c => string.Equals(c.Id, r.Club, StringComparison.Ordinal)).Select(c => c.Name).Or(r.Club);
             art.Right(N(i + 1), x + 18, top, ink);
             if (r.Champion) art.Hud.DrawIcon("star", x + 251, top + 2);
             art.Left(art.Clip(name, 118), x + 24, top, ink);
@@ -385,8 +385,8 @@ internal sealed class ArcadeBoardScreen : MenuScreen
     /// <summary>The board: the open run's, else the save's; the place is the run just finished, or 0.</summary>
     static (IReadOnlyList<ArcadeRecord> Records, int Place) Board()
     {
-        var run = ArcadeSession.Current ?? ArcadeSave.Read(ArcadeSession.SavePath.Length > 0 ? ArcadeSession.SavePath : null);
-        if (run == null) return ([], 0);
+        var open = ArcadeSession.Current.HasValue ? ArcadeSession.Current : ArcadeSave.Read(ArcadeSession.SavePath.Length > 0 ? ArcadeSession.SavePath : ArcadeSave.DefaultPath);
+        if (!open.TryGet(out var run)) return ([], 0);
         return (run.Records, run.IsOver ? run.Place : 0);
     }
 

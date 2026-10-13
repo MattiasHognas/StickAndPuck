@@ -21,7 +21,7 @@ internal sealed class StatsSystem : ISystem
 
     public void Update(World world, float dt)
     {
-        if (!ReferenceEquals(world, tracker.World))
+        if (!tracker.World.TryGet(out var followed) || !ReferenceEquals(world, followed))
         {
             finished = false;
             catchUp = true;
@@ -29,7 +29,7 @@ internal sealed class StatsSystem : ISystem
         if (catchUp)
         {
             catchUp = false;
-            if (SeasonSession.Current is { } s && s.Stats.CatchUp(s, SeasonSession.Clubs) > 0) SeasonSession.Unsaved = true;
+            if (SeasonSession.Current.TryGet(out var s) && s.Stats.CatchUp(s, SeasonSession.Clubs) > 0) SeasonSession.Unsaved = true;
         }
         if (finished) return;
 
@@ -39,26 +39,26 @@ internal sealed class StatsSystem : ISystem
         catchUp = true;
         var sheet = tracker.Finish();
         MatchStats.Last = sheet;
-        string star = sheet.PlayerOfGame is { } p ? $"{p.Label} ({p.Club}) {(p.IsGoalie ? $"{p.Saves} saves" : $"{p.Goals}G {p.Assists}A")}" : "nobody";
+        string star = sheet.PlayerOfGame.TryGet(out var p) ? $"{p.Label} ({p.Club}) {(p.IsGoalie ? $"{p.Saves} saves" : $"{p.Goals}G {p.Assists}A")}" : "nobody";
         Console.WriteLine($"SAP: stats: {sheet.Home} {sheet.HomeGoals}-{sheet.AwayGoals} {sheet.Away}, player of the game {star}");
 
-        if (SeasonSession.Current is { } season && Matches(world, SeasonSession.Playing?.Home, SeasonSession.Playing?.Away))
+        if (SeasonSession.Current.TryGet(out var season) && SeasonSession.Playing.TryGet(out var game) && Matches(world, game.Home, game.Away))
         {
-            season.Stats.Credit(SeasonStats.GameKey(SeasonSession.Playing!.Number), sheet);
+            season.Stats.Credit(SeasonStats.GameKey(game.Number), sheet);
         }
-        else if (SeasonSession.Current is { Playoffs: { } playoffs } && PlayoffSession.Playing is { } series && Matches(world, series.NextHome, series.NextAway))
+        else if (SeasonSession.Current.TryGet(out var current) && current.Playoffs.TryGet(out var playoffs) && PlayoffSession.Playing.TryGet(out var series) && Matches(world, series.NextHome, series.NextAway))
         {
             int round = playoffs.Rounds.Count - 1;
             int index = playoffs.Current.Series.IndexOf(series);
-            if (index >= 0) SeasonSession.Current.Stats.Credit(SeasonStats.PlayoffKey(round, index, series.Games.Count), sheet);
+            if (index >= 0) current.Stats.Credit(SeasonStats.PlayoffKey(round, index, series.Games.Count), sheet);
         }
-        else if (ArcadeSession.Current is { } run && ArcadeSession.Playing is { } playing && Matches(world, playing.Home.Id, playing.Away.Id))
+        else if (ArcadeSession.Current.TryGet(out var run) && ArcadeSession.Playing.TryGet(out var playing) && Matches(world, playing.Home.Id, playing.Away.Id))
         {
             run.Credit(sheet);
         }
     }
 
-    static bool Matches(World world, string? home, string? away)
+    static bool Matches(World world, string home, string away)
     {
         return string.Equals(home, world.Setup.Home.Id, StringComparison.Ordinal) && string.Equals(away, world.Setup.Away.Id, StringComparison.Ordinal);
     }

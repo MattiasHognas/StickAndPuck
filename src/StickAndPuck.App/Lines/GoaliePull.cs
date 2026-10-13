@@ -26,18 +26,18 @@ public static class GoaliePull
     /// <returns>True while the net is empty.</returns>
     public static bool IsPulled(World world, Side side)
     {
-        return Bench.Board(world).PulledGoalie[(int)side] != null;
+        return Bench.Board(world).PulledGoalie[(int)side].HasValue;
     }
 
     /// <summary>Gets the extra attacker who came on for the goalie, if he is still on the ice.</summary>
     /// <param name="world">The match.</param>
     /// <param name="side">The club.</param>
-    /// <returns>The skater, or null.</returns>
-    public static Player? ExtraAttacker(World world, Side side)
+    /// <returns>The skater, or None.</returns>
+    public static Maybe<Player> ExtraAttacker(World world, Side side)
     {
         var b = Bench.Board(world);
         int id = b.ExtraAttacker[(int)side];
-        return id >= 0 && id < world.Players.Count && world.Players[id].OnIce ? world.Players[id] : null;
+        return id >= 0 && id < world.Players.Count && world.Players[id].OnIce ? world.Players[id] : Maybe<Player>.None;
     }
 
     /// <summary>Gets how long before the end of the last period the AI pulls its goalie when trailing: two minutes, shortened with the period.</summary>
@@ -59,15 +59,14 @@ public static class GoaliePull
     public static bool Pull(World world, Side side)
     {
         if (!world.Setup.Rules.GoaliePull || !MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || IsPulled(world, side)) return false;
-        var goalie = world.OnIce(side).FirstOrDefault(p => p.IsGoalie);
-        if (goalie == null) return false;
+        if (world.OnIce(side).FirstOrDefault(p => p.IsGoalie) is not { } goalie) return false;
         var b = Bench.Board(world);
         Bench.SendOff(world, goalie);
         var extra = Bench.SendOn(world, side, Group.Forwards, onTheFly: true);
         b.PulledGoalie[(int)side] = goalie;
-        b.ExtraAttacker[(int)side] = extra?.Id ?? -1;
+        b.ExtraAttacker[(int)side] = extra.Select(static e => e.Id).Or(-1);
         b.Last[(int)side] = ("EXTRA", world.Time);
-        Log(world, $"{world.Setup.Club(side).ShortName} pulls {goalie.Data.LastName}" + (extra != null ? $", {extra.Data.LastName} comes on" : string.Empty));
+        Log(world, $"{world.Setup.Club(side).ShortName} pulls {goalie.Data.LastName}" + (extra.TryGet(out var e) ? $", {e.Data.LastName} comes on" : string.Empty));
         return true;
     }
 
@@ -78,12 +77,11 @@ public static class GoaliePull
     public static bool Return(World world, Side side)
     {
         var b = Bench.Board(world);
-        var goalie = b.PulledGoalie[(int)side];
-        if (goalie == null) return false;
-        b.PulledGoalie[(int)side] = null;
+        if (!b.PulledGoalie[(int)side].TryGet(out var goalie)) return false;
+        b.PulledGoalie[(int)side] = Maybe<Player>.None;
         // the extra attacker goes off, or whoever took his place in a line change since
         int skaters = world.OnIce(side).Count(p => !p.IsGoalie);
-        if (Bench.Surplus(world, side, skaters - 1) is { } extra) Bench.SendOff(world, extra);
+        if (Bench.Surplus(world, side, skaters - 1).TryGet(out var extra)) Bench.SendOff(world, extra);
         b.ExtraAttacker[(int)side] = -1;
         int end = FaceoffFormation.DefendedEnd(world.Match, side);
         goalie.OnIce = true;

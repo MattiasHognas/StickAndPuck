@@ -46,7 +46,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
         foreach (var p in Skaters(world))
         {
             var (clip, frame) = poses.GetValueOrDefault(p.Id, (-1, 0f));
-            if (p.Action == PlayerAction.Fight && Fights.Fighting.Pose(world, p) is { } fight && Find(fight.Clip) is >= 0 and var fc)
+            if (p.Action == PlayerAction.Fight && Fights.Fighting.Pose(world, p).TryGet(out var fight) && Find(fight.Clip) is >= 0 and var fc)
             {
                 // W15: fight clips come from the fight; loops wrap here, one-shots hold their last frame in Pose
                 frame = fight.Seconds * ClipFps;
@@ -54,7 +54,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
                 poses[p.Id] = (fc, frame);
                 continue;
             }
-            if (Rules.Celebration.Pose(world, p) is { } pose && Find(pose.Clip) is >= 0 and var pc)
+            if (Rules.Celebration.Pose(world, p).TryGet(out var pose) && Find(pose.Clip) is >= 0 and var pc)
             {
                 // W40: the end-of-game celebration poses the winners and the losers the same way
                 frame = pose.Seconds * ClipFps;

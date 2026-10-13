@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace StickAndPuck.Analyzers;
 
@@ -29,8 +30,17 @@ public sealed class NoNullsAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    /// <summary>A property or { } pattern on a Maybe: it tests the struct, which always matches, not the value inside.</summary>
+    public static readonly DiagnosticDescriptor PatternOnMaybe = new(
+        "SAP0003",
+        "Pattern on Maybe",
+        "An empty or property pattern on Maybe<T> tests the struct, which always matches: use TryGet, HasValue or Is",
+        "StickAndPuck",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     /// <inheritdoc />
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(NullableType, NullLiteral);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(NullableType, NullLiteral, PatternOnMaybe);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -43,5 +53,13 @@ public sealed class NoNullsAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(
             c => c.ReportDiagnostic(Diagnostic.Create(NullLiteral, c.Node.GetLocation())),
             SyntaxKind.NullLiteralExpression);
+        context.RegisterOperationAction(
+            c =>
+            {
+                var pattern = (IRecursivePatternOperation)c.Operation;
+                if (pattern.InputType is INamedTypeSymbol { Name: "Maybe", Arity: 1 })
+                    c.ReportDiagnostic(Diagnostic.Create(PatternOnMaybe, pattern.Syntax.GetLocation()));
+            },
+            OperationKind.RecursivePattern);
     }
 }

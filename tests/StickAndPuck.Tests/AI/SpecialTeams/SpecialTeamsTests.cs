@@ -126,7 +126,7 @@ public sealed class SpecialTeamsTests : CheckedTest
         int steps = (int)(6 * 60 / Game.Step), every = (int)(100 / Game.Step);
         for (int i = 0; i < steps && world.Match.Phase != MatchPhase.Final; i++)
         {
-            if (i > 0 && i % every == 0) AiSpecialTeams.Board(world).PowerPlay = null;   // the next power play picks its shape again
+            if (i > 0 && i % every == 0) AiSpecialTeams.Board(world).PowerPlay = SideOrNone.None;   // the next power play picks its shape again
             world.Events.Clear();
             foreach (var s in systems) s.Update(world, Game.Step);
             world.Time += Game.Step; world.Tick++;

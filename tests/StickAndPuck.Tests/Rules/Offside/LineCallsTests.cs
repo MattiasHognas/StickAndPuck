@@ -129,9 +129,9 @@ public sealed class LineCallsTests : CheckedTest
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(13, 0, 4);
         Send(w, c, new Vector3(2, 0, 4), new Vector3(14, 0, 0));
-        Side? pending = null;
-        var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, x => pending ??= OffsideRule.Pending(x), 3);
-        Check(pending == Side.Home, "the pass over the line makes an offside pending for home");
+        var pending = SideOrNone.None;
+        var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, x => { if (!pending.IsSet()) pending = OffsideRule.Pending(x); }, 3);
+        Check(pending == SideOrNone.Home, "the pass over the line makes an offside pending for home");
         var off = ev.OfType<OffsideCalled>().ToList();
         Check(off.Count == 1 && off[0].Attacker == Side.Home, "the winger touching it is called offside, home's offence");
         Check(Count<WhistleBlown>(ev) == 1, "one whistle");
@@ -147,12 +147,12 @@ public sealed class LineCallsTests : CheckedTest
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(13, 0, -8);
         Send(w, c, new Vector3(2, 0, 4), new Vector3(12, 0, 0));
-        Run(w, x => OffsideRule.Pending(x) != null, null, 2);
-        Check(OffsideRule.Pending(w) == Side.Home, "a dump-in past an offside winger is pending");
+        Run(w, x => OffsideRule.Pending(x) != SideOrNone.None, null, 2);
+        Check(OffsideRule.Pending(w) == SideOrNone.Home, "a dump-in past an offside winger is pending");
         w.Puck.Velocity = Vector3.Zero;
         rw.Position = new Vector3(RinkSpec.BlueLineX + 0.2f, 0, -8);   // a skate on the line
         var ev = RunFor(w, 0.2f);
-        Check(OffsideRule.Pending(w) == null, "tagging up at the blue line waves it off");
+        Check(OffsideRule.Pending(w) == SideOrNone.None, "tagging up at the blue line waves it off");
         rw.Position = w.Puck.Position + new Vector3(0.5f, 0, 0);
         ev.AddRange(RunFor(w, 0.5f, x => x.Puck.Carrier = rw.Id));
         Check(Count<OffsideCalled>(ev) == 0 && w.Match.Phase == MatchPhase.Play, "after tagging up he may play the puck");
@@ -168,10 +168,10 @@ public sealed class LineCallsTests : CheckedTest
         var d = Skater(w, Side.Away, PlayingPosition.D);
         rw.Position = new Vector3(13, 0, -8);
         Send(w, c, new Vector3(2, 0, 4), new Vector3(12, 0, 0));
-        Run(w, x => OffsideRule.Pending(x) != null, null, 2);
+        Run(w, x => OffsideRule.Pending(x) != SideOrNone.None, null, 2);
         Send(w, d, w.Puck.Position, new Vector3(-15, 0, 0));
         Run(w, x => x.Puck.Position.X < 3, null, 2);
-        Check(OffsideRule.Pending(w) == null, "the defence clearing the zone waves the offside off");
+        Check(OffsideRule.Pending(w) == SideOrNone.None, "the defence clearing the zone waves the offside off");
         w.Puck.Velocity = Vector3.Zero;
         var ev = RunFor(w, 0.3f, x => x.Puck.Carrier = rw.Id);
         Check(Count<OffsideCalled>(ev) == 0, "and no call follows");
@@ -187,7 +187,7 @@ public sealed class LineCallsTests : CheckedTest
         rw.Position = new Vector3(13, 0, -8);
         Send(w, d, new Vector3(2, 0, 4), new Vector3(12, 0, 0));
         var ev = Run(w, x => x.Puck.Position.X > 10, null, 2);
-        Check(OffsideRule.Pending(w) == null, "a puck the defence sends in is not offside");
+        Check(OffsideRule.Pending(w) == SideOrNone.None, "a puck the defence sends in is not offside");
         w.Puck.Velocity = Vector3.Zero;
         rw.Position = w.Puck.Position;
         ev.AddRange(RunFor(w, 0.3f, x => x.Puck.Carrier = rw.Id));

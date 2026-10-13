@@ -17,7 +17,7 @@ namespace StickAndPuck.App.Rules;
 /// a goal (published by physics) is counted once and followed by a centre faceoff;
 /// each period end publishes PeriodEnd; after regulation a tie hands over to W7c by setting
 /// <see cref="MatchPhase.Overtime"/> or <see cref="MatchPhase.Shootout"/>; otherwise MatchEnd is
-/// published once with the winner as Side (null for a tie) and the phase becomes Final.
+/// published once (MatchWon with the winner, or MatchTied) and the phase becomes Final.
 /// A goal in a period after regulation is sudden death.
 /// </remarks>
 public static class MatchFlow
@@ -120,8 +120,8 @@ public static class MatchFlow
     /// </summary>
     static void Draw(World world, FlowState s)
     {
-        Player? Centre(Side side) => world.OnIce(side).Where(p => !p.IsGoalie).MinBy(p => Vector3.DistanceSquared(p.Position, s.Dot));
-        if (Centre(Side.Home) is not { } home || Centre(Side.Away) is not { } away) return;
+        Maybe<Player> Centre(Side side) => Maybe.From<Player>(world.OnIce(side).Where(p => !p.IsGoalie).MinBy(p => Vector3.DistanceSquared(p.Position, s.Dot)));
+        if (!Centre(Side.Home).TryGet(out var home) || !Centre(Side.Away).TryGet(out var away)) return;
         static float Skill(Player p) => 0.5f + Traits.Unit(p.Data.Traits.PuckControl) + 0.5f * p.Data.Traits.Iq;
         float h = Skill(home), a = Skill(away);
         var winner = s.Dice.NextSingle() * (h + a) < h ? home : away;
@@ -194,5 +194,5 @@ internal sealed class FlowState
     public float Held { get; set; }
 
     /// <summary>Gets or sets the end-of-game celebration (W40), from the horn of a decided game.</summary>
-    public Celebration.CelebrationState? Celebration { get; set; }
+    public Maybe<Celebration.CelebrationState> Celebration { get; set; }
 }

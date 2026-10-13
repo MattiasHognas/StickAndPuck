@@ -78,7 +78,7 @@ public sealed class MomentumTests : CheckedTest
         var w = Make();
         Publish(w, Goal(w, Side.Home));
         var s = Boost.State(w);
-        Check(Boost.Of(w, Side.Home) > 0.99f && s.Cause[0] == MomentumCause.Goal && Boost.Leader(w) == Side.Home, "a goal fills the scoring club's boost");
+        Check(Boost.Of(w, Side.Home) > 0.99f && s.Cause[0] == MomentumCause.Goal && Boost.Leader(w) == SideOrNone.Home, "a goal fills the scoring club's boost");
         Publish(w, Goal(w, Side.Away));
         Check(Boost.Of(w, Side.Away) > 0.99f && Boost.Of(w, Side.Home) == 0f, "a goal against ends the other club's boost");
     }
@@ -108,7 +108,7 @@ public sealed class MomentumTests : CheckedTest
         float half = Boost.Of(live, Side.Home);
         Check(half is > 0.4f and < 0.6f, $"half the boost is gone after ten seconds of play ({half:0.00})");
         Run(live, x => x.Time - start >= MomentumTuning.Seconds + 0.1f, Live);
-        Check(Boost.Of(live, Side.Home) == 0f && Boost.Leader(live) == null, $"the boost is gone after twenty seconds of play ({Boost.Of(live, Side.Home):0.00} and {Boost.Of(live, Side.Away):0.00})");
+        Check(Boost.Of(live, Side.Home) == 0f && Boost.Leader(live) == SideOrNone.None, $"the boost is gone after twenty seconds of play ({Boost.Of(live, Side.Home):0.00} and {Boost.Of(live, Side.Away):0.00})");
 
         Publish(dead, Goal(dead, Side.Home));
         start = dead.Time;
@@ -154,13 +154,13 @@ public sealed class MomentumTests : CheckedTest
         var victim = w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.C);
         Fighting.Offer(w, checker.Id, victim.Id);
         Fight? fight = null;
-        Run(w, x => fight is { LoserId: >= 0 }, x => fight ??= Fighting.Current(x), 40);
+        Run(w, x => fight is { LoserId: >= 0 }, x => { if (fight == null && Fighting.Current(x).TryGet(out var f)) fight = f; }, 40);
         if (fight is not { LoserId: >= 0 })
         {
             Check(false, "a fight is won");
             return;
         }
-        var winner = w.Players[fight.Other(fight.Of(fight.LoserId)!).PlayerId].Side;
+        var winner = w.Players[fight.Other(fight.Of(fight.LoserId).TryGet(out var loser) ? loser : throw new InvalidOperationException("the loser is in the fight")).PlayerId].Side;
         var s = Boost.State(w);
         Check(Boost.Of(w, winner) >= MomentumTuning.FightWon - 0.01f && s.Cause[(int)winner] == MomentumCause.FightWon && s.Boosts[(int)winner] == 1,
             $"winning a fight boosts the winner's club ({winner.ToString().ToLowerInvariant()}, {Boost.Of(w, winner):0.00})");
@@ -186,7 +186,7 @@ public sealed class MomentumTests : CheckedTest
             foreach (var e in world.Events.Of<GoalScored>())
             {
                 goals++;
-                if (e.Side is { } side && Boost.Leader(world) == side && Boost.Of(world, side) > 0.99f) boostedAfterGoal++;
+                if (e.Side is { } side && Boost.Leader(world).Is(side) && Boost.Of(world, side) > 0.99f) boostedAfterGoal++;
             }
             world.Time += Game.Step; world.Tick++;
         }

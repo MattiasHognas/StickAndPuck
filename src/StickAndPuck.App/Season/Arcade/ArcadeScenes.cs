@@ -23,16 +23,15 @@ public sealed class ArcadeScene : IScene
     {
         var run = ArcadeScenes.Open(clubs);
         bool human = !string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "0", StringComparison.Ordinal);
-        var setup = ArcadeSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None);
-        if (setup == null)
+        if (ArcadeSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup })
         {
             Console.WriteLine($"SAP: the arcade run is over ({(run.Champion ? "champions" : $"{run.Stage} club(s) beaten")}); SAP_ARCADE=new starts another");
             return ArcadeScenes.SummaryWorld(clubs, settings);
         }
 
         Console.WriteLine($"SAP: arcade stage {run.Stage + 1} of {run.Opponents.Count}, {run.LivesLeft} of {run.StartLives} lives: {setup.Home.Name} vs {setup.Away.Name}");
-        if (SeasonScenes.Seconds("SAP_PERIOD") is { } period) setup = setup with { PeriodSeconds = period };
-        if (SeasonScenes.Seconds("SAP_OT") is { } ot) OvertimeRules.PeriodSeconds = ot;
+        if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
+        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) OvertimeRules.PeriodSeconds = ot;
         var world = new World(setup, settings);
         Scenes.AddStarters(world);
         var side = setup.Inputs[0].Side;
@@ -63,20 +62,20 @@ internal static class ArcadeScenes
     public static ArcadeRun Open(IReadOnlyList<ClubData> clubs)
     {
         bool fresh = string.Equals(Environment.GetEnvironmentVariable("SAP_ARCADE"), "new", StringComparison.OrdinalIgnoreCase);
-        if (!fresh && ArcadeSession.Continue(clubs) is { } saved)
+        if (!fresh && ArcadeSession.Continue(clubs).TryGet(out var saved))
         {
             Console.WriteLine($"SAP: arcade run continued from {ArcadeSession.SavePath}, {saved.Games.Count} game(s) played");
             return saved;
         }
 
         string club = Environment.GetEnvironmentVariable("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
-        var rule = Environment.GetEnvironmentVariable("SAP_ARCADE_RULE") switch
+        var rule = (Environment.GetEnvironmentVariable("SAP_ARCADE_RULE") ?? "") switch
         {
-            null or "" or "lives" or "3" => ArcadeRule.ThreeLives,
+            "" or "lives" or "3" => ArcadeRule.ThreeLives,
             "suddendeath" or "1" => ArcadeRule.SuddenDeath,
             var other => throw new InvalidOperationException($"SAP_ARCADE_RULE={other}: use suddendeath or lives"),
         };
-        int? seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? s : null;
+        var seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
         var run = ArcadeSession.StartNew(clubs, club, rule, seed);
         Console.WriteLine($"SAP: new arcade run for {club} ({rule}), {run.Opponents.Count} clubs to beat, saved to {ArcadeSession.SavePath}");
         return run;

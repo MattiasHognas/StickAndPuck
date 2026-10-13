@@ -103,7 +103,7 @@ public sealed class Replay
 
     static float TestGoalTime()
     {
-        string? s = Environment.GetEnvironmentVariable("SAP_REPLAY_AT");
+        string s = Environment.GetEnvironmentVariable("SAP_REPLAY_AT") ?? "";
         return float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out float t) ? t : float.PositiveInfinity;
     }
 

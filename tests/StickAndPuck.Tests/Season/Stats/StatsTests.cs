@@ -119,7 +119,7 @@ public sealed class StatsTests : CheckedTest
         r.W.Match.Score[0] = 4;
         r.W.Match.Score[1] = 1;
         var done = r.Tracker.Finish();
-        Check(done.PlayerOfGame is { } star && star.Number == r.A.Data.Number && star.Side == Side.Home, $"player of the game is the hat-trick scorer ({done.PlayerOfGame?.Label})");
+        Check(done.PlayerOfGame.OrNull() is { } star && star.Number == r.A.Data.Number && star.Side == Side.Home, $"player of the game is the hat-trick scorer ({done.PlayerOfGame.OrNull()?.Label})");
         Check(done.Lines.Count == r.W.Players.Count && done.Lines.Count(l => l.Played) == r.W.Players.Count(p => p.OnIce), "every dressed player has a line, the ones on the ice played");
     }
 
@@ -131,7 +131,7 @@ public sealed class StatsTests : CheckedTest
         quiet.Lines.Add(new MatchStatLine { Club = "h", Side = Side.Home, Number = 9, Name = "S", Position = PlayingPosition.C, Played = true, Goals = 1, Shots = 2 });
         quiet.Lines.Add(new MatchStatLine { Club = "h", Side = Side.Home, Number = 1, Name = "G", Position = PlayingPosition.G, Played = true, Saves = 30 });
         quiet.PickPlayerOfGame();
-        Check(quiet.PlayerOfGame?.Number == 1, "a 30-save shutout is player of the game over a single goal");
+        Check(quiet.PlayerOfGame.OrNull()?.Number == 1, "a 30-save shutout is player of the game over a single goal");
     }
 
     [Test]
@@ -148,7 +148,7 @@ public sealed class StatsTests : CheckedTest
         Check(sheet.Lines.All(l => !l.IsGoalie || l.Saves == 0 || l.Played), "only the goalie who played makes saves");
         Check(sheet.Lines.Count(l => l.IsGoalie && l.Played) == 2, "one goalie a side plays");
         Check(sheet.Lines.Where(l => l.IsGoalie).Sum(l => l.Saves) > 20, "the goalies make a night's saves");
-        Check(sheet.PlayerOfGame != null, $"a player of the game is picked ({sheet.PlayerOfGame?.Label})");
+        Check(sheet.PlayerOfGame.OrNull() != null, $"a player of the game is picked ({sheet.PlayerOfGame.OrNull()?.Label})");
         var again = SyntheticStats.Sheet(clubs[0], clubs[1], result, 77);
         Check(again.Lines.Select(l => (l.Number, l.Goals, l.Assists, l.Shots)).SequenceEqual(sheet.Lines.Select(l => (l.Number, l.Goals, l.Assists, l.Shots))), "the same seed gives the same lines");
 
@@ -179,8 +179,8 @@ public sealed class StatsTests : CheckedTest
     {
         string user = clubs[2].Id;
         var season = SeasonSession.StartNew(clubs, user, seed: 11, path: path);
-        var setup = SeasonSession.NextSetup()!;
-        var game = SeasonSession.Playing!;
+        var setup = SeasonSession.NextSetup().OrNull()!;
+        var game = SeasonSession.Playing.OrNull()!;
         var (w, step) = Rink(setup, settings, new StatsSystem(), new ScheduleSystem(), new AutosaveSystem());
         var side = Same(game.Home, user) ? Side.Home : Side.Away;
         var a = Skater(w, side, 0);
@@ -192,8 +192,8 @@ public sealed class StatsTests : CheckedTest
         Check(season.Stats.Regular.Players.Count == 0, "nothing is credited before MatchEnd");
         w.Match.Phase = MatchPhase.Final;
         step(x => x.Events.Publish(new MatchWon(x.Time, side)));
-        var line = season.Stats.Regular.Find(user, a.Data.Number);
-        Check(line is { Goals: 2, Games: 1 } && season.Stats.Regular.Find(user, b.Data.Number)?.Assists == 1, "MatchEnd credits the played game from the event log");
+        var line = season.Stats.Regular.Find(user, a.Data.Number).OrNull();
+        Check(line is { Goals: 2, Games: 1 } && season.Stats.Regular.Find(user, b.Data.Number).OrNull()?.Assists == 1, "MatchEnd credits the played game from the event log");
         Check(season.Stats.Credited.Contains(SeasonStats.GameKey(game.Number)) && season.Stats.Awards.Count == 1 && season.Stats.Awards[0].Number == a.Data.Number, "the game is marked credited and its player of the game kept");
         Check(season.Games.Count(g => g.Played) == 7 && season.Stats.Regular.GamesCredited == 1, "the round's other games are settled but not yet credited in the same step");
         step(null);    // the step after: catch-up credits the six paper games and asks for another save
@@ -203,9 +203,9 @@ public sealed class StatsTests : CheckedTest
 
         // restart: the lines come back from the save
         SeasonSession.End();
-        var resumed = SeasonSession.Continue(clubs, path);
+        var resumed = SeasonSession.Continue(clubs, path).OrNull();
         Check(resumed != null && resumed.Stats.Regular.GamesCredited == 7 && resumed.Stats.Credited.Count == 7, "the stats read back after a restart");
-        var back = resumed!.Stats.Regular.Find(user, a.Data.Number);
+        var back = resumed!.Stats.Regular.Find(user, a.Data.Number).OrNull();
         Check(back is { Goals: 2, Assists: 0, Games: 1, Stars: 1 } && Same(back.Name, a.Data.LastName), $"the scorer's line survives the reload ({back?.Label} {back?.Goals}G, {back?.Stars} star)");
         Check(resumed.Stats.Awards.Count == 7 && Same(resumed.Stats.Awards[0].Game, SeasonStats.GameKey(game.Number)), "the awards survive the reload");
         Check(resumed.Stats.CatchUp(resumed, clubs) == 0, "nothing is credited twice");
@@ -219,10 +219,10 @@ public sealed class StatsTests : CheckedTest
         string json = File.ReadAllText(path);
         int at = json.IndexOf("\"stats\"", StringComparison.Ordinal);
         Check(at > 0, "the save carries the stats");
-        var season = SeasonSave.Read(path)!;
+        var season = SeasonSave.Read(path).OrNull()!;
         season.Stats = new SeasonStats();
         SeasonSave.Write(season, path);
-        var resumed = SeasonSession.Continue(clubs, path)!;
+        var resumed = SeasonSession.Continue(clubs, path).OrNull()!;
         Check(resumed.Stats.Regular.GamesCredited == 0, "an old save reads with empty stats");
         var w = new World(WorldBuilder.DefaultSetup, new Settings());
         new StatsSystem().Update(w, Game.Step);
@@ -236,17 +236,17 @@ public sealed class StatsTests : CheckedTest
     {
         string user = clubs[4].Id;
         var run = ArcadeSession.StartNew(clubs, user, ArcadeRule.SuddenDeath, 3, path);
-        var setup = ArcadeSession.NextSetup()!;
+        var setup = ArcadeSession.NextSetup().OrNull()!;
         var (w, step) = Rink(setup, settings, new StatsSystem(), new ArcadeSystem());
         var a = Skater(w, Side.Home, 0);
         step(x => { x.Puck.LastTouch = a.Id; x.Match.Score[0]++; x.Events.Publish(new GoalScored(x.Time, Side.Home, a.Id, default, 0)); });
         w.Match.Phase = MatchPhase.Final;
         step(x => x.Events.Publish(new MatchWon(x.Time, Side.Home)));
-        Check(run.Stats.Find(user, a.Data.Number) is { Goals: 1, Games: 1 } && run.Awards.Count == 1, "an arcade game credits the run's stats and its player of the game");
+        Check(run.Stats.Find(user, a.Data.Number).OrNull() is { Goals: 1, Games: 1 } && run.Awards.Count == 1, "an arcade game credits the run's stats and its player of the game");
         Check(run.Games.Count == 1 && run.Records.Count == 0, "a run still going is not on the board");
 
         // lose the next game: sudden death ends the run, which goes on the board and is saved
-        setup = ArcadeSession.NextSetup()!;
+        setup = ArcadeSession.NextSetup().OrNull()!;
         (w, step) = Rink(setup, settings, new StatsSystem(), new ArcadeSystem());
         w.Match.Score[(int)setup.Inputs[0].Side == 0 ? 1 : 0] = 2;
         w.Match.Phase = MatchPhase.Final;
@@ -255,8 +255,8 @@ public sealed class StatsTests : CheckedTest
         Check(run.Records[0].TopPoints == 1 && run.Records[0].TopScorer.Contains(a.Data.LastName, StringComparison.Ordinal), $"the record names the run's top scorer ({run.Records[0].TopScorer})");
 
         ArcadeSession.End();
-        var reloaded = ArcadeSession.Continue(clubs, path)!;
-        Check(reloaded.Records.Count == 1 && reloaded.Stats.Find(user, a.Data.Number)?.Goals == 1 && reloaded.Awards.Count == 2, "the board, the lines and the two games' awards read back from arcade.json");
+        var reloaded = ArcadeSession.Continue(clubs, path).OrNull()!;
+        Check(reloaded.Records.Count == 1 && reloaded.Stats.Find(user, a.Data.Number).OrNull()?.Goals == 1 && reloaded.Awards.Count == 2, "the board, the lines and the two games' awards read back from arcade.json");
 
         // a new run keeps the board; a better run ranks above
         var next = ArcadeSession.StartNew(clubs, user, ArcadeRule.ThreeLives, 4, path);

@@ -130,14 +130,14 @@ internal sealed class TacticsBoard
     /// <summary>Gets or sets the carrier and run with the puck whose zone entry was weighed, so a run is weighed once.</summary>
     public (int Player, float GotAt) Weighed { get; set; } = (-1, 0f);
 
-    /// <summary>Gets or sets the dump the carrier is setting up, or null.</summary>
-    public DumpPlan? Dump { get; set; }
+    /// <summary>Gets or sets the dump the carrier is setting up, or None.</summary>
+    public Maybe<DumpPlan> Dump { get; set; }
 
     /// <summary>Gets or sets the side whose dump is being chased, and until when.</summary>
-    public ChaseWatch? Chasing { get; set; }
+    public Maybe<ChaseWatch> Chasing { get; set; }
 
-    /// <summary>Gets or sets the side that last carried the puck.</summary>
-    public Side? Owner { get; set; }
+    /// <summary>Gets or sets the side that last carried the puck, or None before anyone has.</summary>
+    public SideOrNone Owner { get; set; }
 
     /// <summary>Gets or sets when that side got the puck.</summary>
     public float OwnedSince { get; set; }

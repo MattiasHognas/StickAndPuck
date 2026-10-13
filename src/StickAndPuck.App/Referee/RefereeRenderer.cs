@@ -48,8 +48,8 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         if (!loaded) return;
         int want = r.Speed > 0.6f && skate >= 0 ? skate : idle;
         // W14: the call's signal for a moment after the whistle, the raised arm while a call is delayed
-        if (r.Announced is { } called && time - called.Time < SignalSeconds && Find(called.Infraction) is >= 0 and var signal) want = signal;
-        else if (r.Call != null && armUp >= 0) want = armUp;
+        if (r.Announced.TryGet(out var called) && time - called.Time < SignalSeconds && Find(called.Infraction) is >= 0 and var signal) want = signal;
+        else if (r.Call.HasValue && armUp >= 0) want = armUp;
         if (want != clip) { clip = want; frame = 0; }
         frame += dt * ClipFps;
     }

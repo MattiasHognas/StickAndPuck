@@ -41,14 +41,14 @@ public sealed class HudScene : IScene
 /// <summary>Publishes the hud scene's one event on the first step.</summary>
 internal static class HudDemo
 {
-    /// <summary>Gets or sets the banner the hud scene shows, or null outside it.</summary>
-    public static string? Message { get; set; }
+    /// <summary>Gets or sets the banner the hud scene shows, or empty outside it.</summary>
+    public static string Message { get; set; } = "";
 
     /// <summary>Publishes the chosen event on the first step.</summary>
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (Message == null || world.Tick != 0) return;
+        if (Message.Length == 0 || world.Tick != 0) return;
         int scorer = world.OnIce(Side.Home).First(p => !p.IsGoalie).Id;
         int other = world.OnIce(Side.Away).First(p => !p.IsGoalie).Id;
         var at = world.Puck.Position;
@@ -64,7 +64,7 @@ internal static class HudDemo
             return;
         }
 
-        MatchEvent? e = Message switch
+        var e = Message switch
         {
             "goal" or "firstgoal" => new GoalScored(world.Time, Side.Home, scorer, at, 0),
             "shutout" or "final" => new MatchWon(world.Time, Side.Home),
@@ -72,8 +72,8 @@ internal static class HudDemo
             "tie" => new MatchTied(world.Time),
             "offside" => new OffsideCalled(world.Time, Side.Home, at),
             "icing" => new IcingCalled(world.Time, Side.Away, other, at),
-            _ => null,
+            _ => Maybe<MatchEvent>.None,
         };
-        if (e != null) world.Events.Publish(e);
+        if (e.TryGet(out var ev)) world.Events.Publish(ev);
     }
 }

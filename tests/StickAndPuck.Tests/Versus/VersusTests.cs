@@ -53,7 +53,7 @@ public sealed class VersusTests : CheckedTest
     {
         var clubs = WorldBuilder.Clubs;
         var picks = clubs.Count > 1 ? new[] { clubs[1], clubs[0] } : new[] { clubs[0], clubs[0] };
-        var setup = new VersusMode().Setup(new GameModeStart(clubs, picks, InputDevice.KeyboardMouse));
+        var setup = new VersusMode().Setup(new GameModeStart(clubs, picks, InputDevice.KeyboardMouse)).TryGet(out var made) ? made : null;
         Check(setup != null && setup.Home == picks[0] && setup.Away == picks[1], "player one's pick is the home club, player two's the visitors");
         Check(setup != null && setup.Inputs.Count(s => s.Device != InputDevice.None) == 2 && setup.Inputs[0].Side != setup.Inputs[1].Side,
             "the setup has two human slots on opposite clubs");
@@ -68,7 +68,7 @@ public sealed class VersusTests : CheckedTest
         var world = new World(setup, new Settings());
         Scenes.AddStarters(world);
         VersusMode.AssignSlots(world);
-        var first = (world.Controlled(0), world.Controlled(1));
+        var first = (Held(world, 0), Held(world, 1));
         Check(first.Item1 is { Side: Side.Home, IsGoalie: false } && first.Item2 is { Side: Side.Away, IsGoalie: false },
             "at the faceoff player one controls a home skater and player two an away skater");
         Check(first.Item1?.Data.Position == PlayingPosition.C && first.Item2?.Data.Position == PlayingPosition.C, "both start on their centre");
@@ -101,7 +101,7 @@ public sealed class VersusTests : CheckedTest
         Check(!overwritten, "the AI never overwrites a human's command");
         Check(!crossed, "control switching keeps each player on their own club");
         Check(carried[0] > 0 && carried[1] > 0, "both humans get the puck during the period");
-        Check(world.Controlled(0) != null && world.Controlled(1) != null, "both slots still control a skater at the final");
+        Check(world.Controlled(0).HasValue && world.Controlled(1).HasValue, "both slots still control a skater at the final");
     }
 
     /// <summary>What the scripted humans did over the match.</summary>
@@ -116,7 +116,7 @@ public sealed class VersusTests : CheckedTest
         {
             for (int slot = 0; slot < 2; slot++)
             {
-                if (world.Controlled(slot) is not { } me) continue;
+                if (!world.Controlled(slot).TryGet(out var me)) continue;
                 if (me.Side != setup.Inputs[slot].Side) Crossed = true;
                 var (carrying, shot) = Drive(world, me);
                 if (carrying) Carried[slot]++;
@@ -128,7 +128,7 @@ public sealed class VersusTests : CheckedTest
         {
             for (int slot = 0; slot < 2; slot++)
             {
-                if (world.Controlled(slot) is not { } me || world.Match.Phase != MatchPhase.Play) continue;
+                if (!world.Controlled(slot).TryGet(out var me) || world.Match.Phase != MatchPhase.Play) continue;
                 if (me.Command.Move == Vector2.Zero && me.Action == PlayerAction.None && Vector3.Distance(me.Position, world.Puck.Position) > 1f) Overwritten = true;
                 starts[slot] ??= me.Position;
                 Moved[slot] = Math.Max(Moved[slot], Vector3.Distance(starts[slot]!.Value, me.Position));
@@ -156,12 +156,15 @@ public sealed class VersusTests : CheckedTest
         var world = new WorldBuilder().Setup(s => s with { Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse) }).NotBegun().Build();
         VersusMode.AssignSlots(world);
         var input = new InputSystem();
-        var one = world.Controlled(0)!;
-        var two = world.Controlled(1)!;
+        var one = Held(world, 0)!;
+        var two = Held(world, 1)!;
         one.Command = new PlayerCommand { Move = Vector2.UnitX, Shoot = true };
         two.Command = new PlayerCommand { Move = Vector2.UnitX, Pass = true };
         input.Update(world, Game.Step);
         Check(one.Command.Move == Vector2.Zero && !one.Command.Shoot && two.Command.Move == Vector2.Zero && !two.Command.Pass,
             "the input system writes both slots' devices to their players every step");
     }
+
+    /// <summary>The player a slot controls, or null.</summary>
+    static Player? Held(World world, int slot) => world.Controlled(slot).TryGet(out var p) ? p : null;
 }

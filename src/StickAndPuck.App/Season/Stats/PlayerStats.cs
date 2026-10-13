@@ -158,7 +158,7 @@ public sealed record PlayerOfGameAward(string Game, string Home, string Away, in
 
 /// <summary>
 /// Every player's totals over a run of games, and the leaders. W33's leaders page reads
-/// <see cref="Leaders"/> and <see cref="Goalies"/>; the season keeps one of these for the regular
+/// <see cref="Leaders(int)"/> and <see cref="Goalies"/>; the season keeps one of these for the regular
 /// season and one for the playoffs, the arcade run one per run.
 /// </summary>
 public sealed class StatTable
@@ -177,22 +177,19 @@ public sealed class StatTable
     /// <returns>The line.</returns>
     public PlayerStats Line(string club, int number, string name, PlayingPosition position)
     {
-        var line = Players.Find(p => p.Is(club, number));
-        if (line == null)
-        {
-            line = new PlayerStats { Club = club, Number = number, Name = name, Position = position };
-            Players.Add(line);
-        }
-        return line;
+        if (Players.FirstOrNone(p => p.Is(club, number)).TryGet(out var line)) return line;
+        var added = new PlayerStats { Club = club, Number = number, Name = name, Position = position };
+        Players.Add(added);
+        return added;
     }
 
-    /// <summary>Gets a player's line, or null when they have none yet.</summary>
+    /// <summary>Gets a player's line, or None when they have none yet.</summary>
     /// <param name="club">The club id.</param>
     /// <param name="number">The jersey number.</param>
-    /// <returns>The line or null.</returns>
-    public PlayerStats? Find(string club, int number)
+    /// <returns>The line or None.</returns>
+    public Maybe<PlayerStats> Find(string club, int number)
     {
-        return Players.Find(p => p.Is(club, number));
+        return Players.FirstOrNone(p => p.Is(club, number));
     }
 
     /// <summary>Adds a match's lines to the totals.</summary>
@@ -200,17 +197,22 @@ public sealed class StatTable
     public void Add(MatchStatSheet sheet)
     {
         foreach (var line in sheet.Lines) Line(line.Club, line.Number, line.Name, line.Position).Add(line);
-        if (sheet.PlayerOfGame is { } star) Line(star.Club, star.Number, star.Name, star.Position).Stars++;
+        if (sheet.PlayerOfGame.TryGet(out var star)) Line(star.Club, star.Number, star.Name, star.Position).Stars++;
         GamesCredited++;
     }
 
+    /// <summary>Gets the scoring leaders of every club: by points, then goals, then fewer games, then name.</summary>
+    /// <param name="count">How many.</param>
+    /// <returns>The leaders, best first.</returns>
+    public IReadOnlyList<PlayerStats> Leaders(int count = 10) => Leaders(count, Maybe<string>.None);
+
     /// <summary>Gets the scoring leaders: by points, then goals, then fewer games, then name.</summary>
     /// <param name="count">How many.</param>
-    /// <param name="club">Only this club's players, or null for every club.</param>
+    /// <param name="club">Only this club's players, or None for every club.</param>
     /// <returns>The leaders, best first.</returns>
-    public IReadOnlyList<PlayerStats> Leaders(int count = 10, string? club = null)
+    public IReadOnlyList<PlayerStats> Leaders(int count, Maybe<string> club)
     {
-        return Players.Where(p => !p.IsGoalie && (club == null || string.Equals(p.Club, club, StringComparison.Ordinal)) && p.Points > 0)
+        return Players.Where(p => !p.IsGoalie && club.Select(only => string.Equals(p.Club, only, StringComparison.Ordinal)).Or(true) && p.Points > 0)
             .OrderByDescending(p => p.Points).ThenByDescending(p => p.Goals).ThenBy(p => p.Games).ThenBy(p => p.Name, StringComparer.Ordinal)
             .Take(count).ToList();
     }

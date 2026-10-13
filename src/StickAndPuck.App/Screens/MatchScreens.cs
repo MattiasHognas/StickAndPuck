@@ -70,14 +70,14 @@ internal sealed class ResultsScreen(MatchResult result) : MenuScreen
         if (plan.Season)
         {
             List<MenuItem> items = [];
-            if (PlayoffSession.Current?.Champion != null) items.Add(new MenuItem(Text.Get(K.Champions), () => ScreenFlow.Replace(TrophyScreen.Season())));
+            if (PlayoffSession.Current.Is(p => p.Champion.HasValue)) items.Add(new MenuItem(Text.Get(K.Champions), () => ScreenFlow.Replace(TrophyScreen.Season())));
             items.Add(new MenuItem(Text.Get(K.Standings), () => ScreenFlow.Replace(ScreenFlow.Overview())));
             if (ScreenFlow.CanSimGame()) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame));
             items.Add(new MenuItem(Text.Get(K.SeasonStats), () => ScreenFlow.Replace(new SeasonStatsScreen())));
             items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
             return items;
         }
-        if (plan.Mode is ArcadeMode && ArcadeSession.Current is { IsOver: true } run)
+        if (plan.Mode.Is(m => m is ArcadeMode) && ArcadeSession.Current.TryGet(out var run) && run.IsOver)
         {
             List<MenuItem> items = [];
             if (run.Champion) items.Add(new MenuItem(Text.Get(K.Trophy), () => ScreenFlow.Replace(TrophyScreen.Arcade(run))));
@@ -85,9 +85,9 @@ internal sealed class ResultsScreen(MatchResult result) : MenuScreen
             items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
             return items;
         }
-        if (plan.Mode is { HasNextGame: true } mode)
+        if (plan.Mode.TryGet(out var mode) && mode.HasNextGame)
             return [new MenuItem(Text.Get(K.NextGame), () => ScreenFlow.PlayMode(mode, plan.Picks)), new MenuItem(Text.Get(K.MainMenu), Back)];
-        if (plan.Mode is ExhibitionMode exhibition)
+        if (plan.Mode.TryGet(out var played) && played is ExhibitionMode exhibition)
             return [new MenuItem(Text.Get(K.PlayAgain), () => ScreenFlow.PlayMode(exhibition, plan.Picks)), new MenuItem(Text.Get(K.MainMenu), Back)];
         return [new MenuItem(Text.Get(K.MainMenu), Back)];
     }
@@ -102,11 +102,11 @@ internal sealed class ResultsScreen(MatchResult result) : MenuScreen
     public override void Draw(ScreenArt art, World world)
     {
         var items = Items();
-        string? status = result.Plan.Mode?.Status;
-        var star = MatchStats.Last is { PlayerOfGame: { } p } last && string.Equals(last.Home, result.Setup.Home.Id, StringComparison.Ordinal) && string.Equals(last.Away, result.Setup.Away.Id, StringComparison.Ordinal) ? p : null;
+        var status = result.Plan.Mode.TryGet(out var mode) ? mode.Status : Maybe<string>.None;
+        var star = MatchStats.Last.TryGet(out var last) && last.PlayerOfGame.TryGet(out var p) && string.Equals(last.Home, result.Setup.Home.Id, StringComparison.Ordinal) && string.Equals(last.Away, result.Setup.Away.Id, StringComparison.Ordinal) ? p : Maybe<MatchStatLine>.None;
         var home = result.Goals.Where(g => g.Side == Side.Home).ToList();
         var away = result.Goals.Where(g => g.Side == Side.Away).ToList();
-        int extra = 5 + ScreenArt.Row + 2 + 24 + 14 + 6 + 6 + (star != null ? 14 : 0) + (status != null ? 14 : 0) + (items.Count * ScreenArt.Row) + 6;
+        int extra = 5 + ScreenArt.Row + 2 + 24 + 14 + 6 + 6 + (star.HasValue ? 14 : 0) + (status.HasValue ? 14 : 0) + (items.Count * ScreenArt.Row) + 6;
         int fits = Math.Max(2, (Game.Height - 8 - extra) / Line);
         int rows = Math.Max(1, Math.Min(Math.Max(home.Count, away.Count), fits));
         int h = extra + (rows * Line);
@@ -131,14 +131,14 @@ internal sealed class ResultsScreen(MatchResult result) : MenuScreen
         Column(art, home, x + 12, colW, top, rows);
         Column(art, away, cx + 8, colW, top, rows);
         top += (rows * Line) + 6;
-        if (star != null)
+        if (star.TryGet(out var shown))
         {
-            art.Centred(star.IsGoalie ? Text.Format(K.PlayerOfGameSaves, star.Label, star.Saves) : Text.Format(K.PlayerOfGamePoints, star.Label, star.Goals, star.Assists), cx, top, art.Gold);
+            art.Centred(shown.IsGoalie ? Text.Format(K.PlayerOfGameSaves, shown.Label, shown.Saves) : Text.Format(K.PlayerOfGamePoints, shown.Label, shown.Goals, shown.Assists), cx, top, art.Gold);
             top += 14;
         }
-        if (status != null)
+        if (status.HasValue)
         {
-            art.Centred(status, cx, top, art.Gold);
+            art.Centred(status.Or(""), cx, top, art.Gold);
             top += 14;
         }
         art.Menu(items, Selected, x + 80, PanelW - 160, top);
@@ -184,10 +184,10 @@ internal sealed class StandingsScreen : MenuScreen
     public override IReadOnlyList<MenuItem> Items()
     {
         var season = SeasonSession.Current;
-        string play = Text.Get(season is { IsOver: true, Playoffs: null } ? K.StartPlayoffsItem : K.PlayNextGame);
-        List<MenuItem> items = [new MenuItem(play, ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame())];
-        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimThisGame), ScreenFlow.SimSeasonGame, Enabled: ScreenFlow.CanSimGame()));
-        if (season?.Playoffs != null) items.Add(new MenuItem(Text.Get(K.Playoffs), () => ScreenFlow.Replace(new BracketScreen())));
+        string play = Text.Get(season.Is(s => s.IsOver && !s.Playoffs.HasValue) ? K.StartPlayoffsItem : K.PlayNextGame);
+        List<MenuItem> items = [new MenuItem(play, ScreenFlow.PlaySeasonGame, enabled: ScreenFlow.SeasonHasNextGame())];
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimThisGame), ScreenFlow.SimSeasonGame, enabled: ScreenFlow.CanSimGame()));
+        if (season.Is(s => s.Playoffs.HasValue)) items.Add(new MenuItem(Text.Get(K.Playoffs), () => ScreenFlow.Replace(new BracketScreen())));
         items.Add(new MenuItem(Text.Get(K.SeasonStats), () => ScreenFlow.Replace(new SeasonStatsScreen())));
         items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
         return items;
@@ -196,7 +196,7 @@ internal sealed class StandingsScreen : MenuScreen
     /// <inheritdoc/>
     public override void Draw(ScreenArt art, World world)
     {
-        if (SeasonSession.Current is not { } season) return;
+        if (!SeasonSession.Current.TryGet(out var season)) return;
         var clubs = ScreenFlow.Clubs;
         var table = season.Table;
         var items = Items();
@@ -219,7 +219,7 @@ internal sealed class StandingsScreen : MenuScreen
         }
 
         top += 4;
-        string next = season.NextGame is { } g
+        string next = season.NextGame.TryGet(out var g)
             ? Text.Format(K.NextMatch, Name(clubs, g.Home), Name(clubs, g.Away))
             : Text.Get(season.IsOver ? K.RegularSeasonOver : K.WaitingForRound);
         art.Centred(next, Game.Width / 2, top, art.Gold);
@@ -235,13 +235,13 @@ internal sealed class StandingsScreen : MenuScreen
     /// <returns>The round, 1 to <see cref="SeasonState.Rounds"/>.</returns>
     public static int Round(SeasonState season)
     {
-        int round = season.NextGame?.Round ?? season.CurrentRound;
+        int round = season.NextGame.TryGet(out var next) ? next.Round : season.CurrentRound;
         return Math.Clamp(round + 1, 1, Math.Max(1, season.Rounds));
     }
 
     static string Name(IReadOnlyList<ClubData> clubs, string id)
     {
-        return clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))?.Name ?? id;
+        return clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).Select(c => c.Name).Or(id);
     }
 
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);

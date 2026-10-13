@@ -64,7 +64,7 @@ internal static class CommandFixtures
         }
         finally
         {
-            AiCommand.Watch = null;
+            AiCommand.Watch = AiCommand.Unwatched;
         }
     }
 

@@ -17,9 +17,9 @@ internal sealed class BracketScreen : MenuScreen
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        List<MenuItem> items = [new MenuItem(Text.Get(K.PlayNextGame), ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame())];
-        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimThisGame), ScreenFlow.SimSeasonGame, Enabled: ScreenFlow.CanSimGame()));
-        if (PlayoffSession.Current?.Champion != null) items.Add(new MenuItem(Text.Get(K.Trophy), () => ScreenFlow.Push(TrophyScreen.Season())));
+        List<MenuItem> items = [new MenuItem(Text.Get(K.PlayNextGame), ScreenFlow.PlaySeasonGame, enabled: ScreenFlow.SeasonHasNextGame())];
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimThisGame), ScreenFlow.SimSeasonGame, enabled: ScreenFlow.CanSimGame()));
+        if (PlayoffSession.Current.Is(p => p.Champion.HasValue)) items.Add(new MenuItem(Text.Get(K.Trophy), () => ScreenFlow.Push(TrophyScreen.Season())));
         items.Add(new MenuItem(Text.Get(K.TableItem), () => ScreenFlow.Replace(new StandingsScreen())));
         items.Add(new MenuItem(Text.Get(K.SeasonStats), () => ScreenFlow.Replace(new SeasonStatsScreen())));
         items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
@@ -29,7 +29,7 @@ internal sealed class BracketScreen : MenuScreen
     /// <inheritdoc/>
     public override void Draw(ScreenArt art, World world)
     {
-        if (PlayoffSession.Current is not { } playoffs) return;
+        if (!PlayoffSession.Current.TryGet(out var playoffs)) return;
         var clubs = ScreenFlow.Clubs;
         int rows = 4 * 3;
         var items = Items();
@@ -39,9 +39,10 @@ internal sealed class BracketScreen : MenuScreen
         for (int r = 0; r < PlayoffState.RoundCount; r++)
         {
             int cx = x + 10 + (r * Column);
-            var round = r < playoffs.Rounds.Count ? playoffs.Rounds[r] : null;
-            art.Left(PlayoffState.RoundTitle(r), cx, top, round == null ? ScreenArt.Muted : art.Text);
-            if (round == null) continue;
+            bool drawn = r < playoffs.Rounds.Count;
+            art.Left(PlayoffState.RoundTitle(r), cx, top, !drawn ? ScreenArt.Muted : art.Text);
+            if (!drawn) continue;
+            var round = playoffs.Rounds[r];
             int gap = round.Series.Count <= 1 ? 0 : (rows * Line - (2 * Line)) / (round.Series.Count - 1);
             gap = Math.Min(gap, 3 * Line);
             for (int s = 0; s < round.Series.Count; s++)
@@ -63,7 +64,7 @@ internal sealed class BracketScreen : MenuScreen
     static void DrawSide(ScreenArt art, int seed, string club, int wins, PlayoffSeries series, string user, IReadOnlyList<ClubData> clubs, int x, int y)
     {
         var ink = string.Equals(club, user, StringComparison.Ordinal) ? art.Gold : art.Text;
-        if (series.IsOver && !string.Equals(series.Winner, club, StringComparison.Ordinal)) ink = ScreenArt.Muted;
+        if (series.IsOver && !series.Winner.Is(w => string.Equals(w, club, StringComparison.Ordinal))) ink = ScreenArt.Muted;
         art.Right(N(seed), x + 10, y, ink);
         art.Left(Short(clubs, club), x + 16, y, ink);
         art.Right(N(wins), x + 76, y, ink);
@@ -71,10 +72,10 @@ internal sealed class BracketScreen : MenuScreen
 
     static string Footer(PlayoffState playoffs, IReadOnlyList<ClubData> clubs)
     {
-        if (playoffs.Champion is { } champion) return Text.Format(K.ShlChampionsOf, Name(clubs, champion));
+        if (playoffs.IsOver) return Text.Format(K.ShlChampionsOf, Name(clubs, playoffs.Champion.Or("")));
         string user = Name(clubs, playoffs.UserClub);
         if (!playoffs.UserQualified) return Text.Format(K.MissedPlayoffs, user);
-        if (playoffs.UserSeries is { } s)
+        if (playoffs.UserSeries.TryGet(out var s))
         {
             string other = Name(clubs, string.Equals(s.High, playoffs.UserClub, StringComparison.Ordinal) ? s.Low : s.High);
             return Text.Format(K.NextPlayoffGame, playoffs.CurrentTitle, s.Games.Count + 1, other);
@@ -90,7 +91,7 @@ internal sealed class BracketScreen : MenuScreen
 
     static string Name(IReadOnlyList<ClubData> clubs, string id)
     {
-        return clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))?.Name ?? id;
+        return clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).Select(c => c.Name).Or(id);
     }
 
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);

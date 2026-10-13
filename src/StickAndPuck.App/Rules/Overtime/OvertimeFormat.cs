@@ -30,8 +30,8 @@ public sealed record OvertimeFormat
     /// <summary>Gets the skaters per club in overtime; 0 plays no overtime period.</summary>
     public int Skaters { get; init; }
 
-    /// <summary>Gets the length of one overtime period in game seconds, or null for <see cref="OvertimeRules.PeriodSeconds"/> (the SHL 5 minutes, which scenes shorten).</summary>
-    public float? PeriodSeconds { get; init; }
+    /// <summary>Gets the length of one overtime period in game seconds, or None for <see cref="OvertimeRules.PeriodSeconds"/> (the SHL 5 minutes, which scenes shorten).</summary>
+    public Maybe<float> PeriodSeconds { get; init; }
 
     /// <summary>Gets a value indicating whether overtime periods go on until a goal (true) or stop after one (false).</summary>
     public bool UntilGoal { get; init; }
@@ -44,7 +44,7 @@ public sealed record OvertimeFormat
     /// <returns>The format.</returns>
     public static OvertimeFormat Of(MatchSetup setup)
     {
-        return setup.OvertimeFormat ?? From(setup.Overtime);
+        return setup.OvertimeFormat.TryGet(out var own) ? own : From(setup.Overtime);
     }
 
     /// <summary>Gets the preset an <see cref="OvertimeRule"/> names.</summary>
@@ -60,12 +60,12 @@ public sealed record OvertimeFormat
         };
     }
 
-    /// <summary>Gets what follows a tie: another overtime period, the shootout, or null when the tie stands.</summary>
+    /// <summary>Gets what follows a tie: another overtime period, the shootout, or None when the tie stands.</summary>
     /// <param name="overtimePeriodsPlayed">Overtime periods played so far, 0 right after regulation.</param>
-    /// <returns>The next phase, or null for a draw.</returns>
-    public MatchPhase? AfterTie(int overtimePeriodsPlayed)
+    /// <returns>The next phase, or None for a draw.</returns>
+    public Maybe<MatchPhase> AfterTie(int overtimePeriodsPlayed)
     {
         if (Skaters > 0 && (overtimePeriodsPlayed == 0 || UntilGoal)) return MatchPhase.Overtime;
-        return HasShootout ? MatchPhase.Shootout : null;
+        return HasShootout ? MatchPhase.Shootout : Maybe<MatchPhase>.None;
     }
 }

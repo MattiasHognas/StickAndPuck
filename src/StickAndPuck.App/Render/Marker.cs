@@ -39,7 +39,7 @@ public static class Marker
         for (int slot = 0; slot < MatchSetup.Slots && slot < world.Setup.Inputs.Count; slot++)
         {
             if (world.Setup.Inputs[slot].Device == InputDevice.None) continue;
-            if (world.Controlled(slot) is not { OnIce: true } p) continue;
+            if (!world.Controlled(slot).TryGet(out var p) || !p.OnIce) continue;
             DrawOne(p.Position, p.Heading, Colour(slot));
         }
     }

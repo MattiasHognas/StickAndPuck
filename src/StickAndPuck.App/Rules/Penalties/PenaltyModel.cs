@@ -32,22 +32,22 @@ public static class PenaltyModel
     /// <param name="check">The check.</param>
     /// <param name="again">True when the checker hit the same skater within <see cref="PenaltyTuning.RoughingWindow"/> (W47).</param>
     /// <param name="afterWhistle">True when the hit came after play stopped (W47).</param>
-    /// <returns>The foul it may be, or null for a clean hit or an unknown target.</returns>
-    public static Foul? Judge(World world, CheckLanded check, bool again = false, bool afterWhistle = false)
+    /// <returns>The foul it may be, or None for a clean hit or an unknown target.</returns>
+    public static Maybe<Foul> Judge(World world, CheckLanded check, bool again = false, bool afterWhistle = false)
     {
         var checker = world.Players[check.CheckerId];
         var target = world.Players
             .Where(p => p.Side != check.Side && p.OnIce && !p.IsGoalie)
             .MinBy(p => Vector3.DistanceSquared(p.Position, check.Position));
-        if (target == null || Vector3.Distance(target.Position, check.Position) > 1f) return null;
+        if (target is not { } || Vector3.Distance(target.Position, check.Position) > 1f) return Maybe<Foul>.None;
 
         var pk = world.Puck;
         bool downed = target.Action == PlayerAction.Fallen && target.ActionTime < 0.1f;
         bool carrying = pk.Carrier == target.Id || (downed && pk.Carrier < 0 && pk.LastTouch == target.Id);
         bool behind = FromBehind(checker.Position, target);
-        if (Worse(world.Setup.Rules, world.Puck, check, target, carrying, behind, again, afterWhistle) is { } worse)
+        if (Worse(world.Setup.Rules, world.Puck, check, target, carrying, behind, again, afterWhistle).TryGet(out var worse))
             return new Foul(checker.Id, worse.Infraction, worse.Chance * Discipline(checker));
-        if (afterWhistle) return null;
+        if (afterWhistle) return Maybe<Foul>.None;
 
         string infraction;
         float chance;
@@ -60,18 +60,18 @@ public static class PenaltyModel
     }
 
     /// <summary>W47's calls on a check that come before W14's, each only with its switch on.</summary>
-    static (string Infraction, float Chance)? Worse(RuleSet rules, Puck pk, CheckLanded check, Player target, bool carrying, bool behind, bool again, bool afterWhistle)
+    static Maybe<(string Infraction, float Chance)> Worse(RuleSet rules, Puck pk, CheckLanded check, Player target, bool carrying, bool behind, bool again, bool afterWhistle)
     {
         bool hard = check.Strength >= CheckingModel.HardHit;
         bool boards = BoardsDistance(target.Position) < PenaltyTuning.BoardsReach;
-        if (afterWhistle) return rules.Roughing ? (Infraction.Roughing, PenaltyTuning.LateHitChance) : null;
+        if (afterWhistle) return rules.Roughing ? (Infraction.Roughing, PenaltyTuning.LateHitChance) : Maybe<(string Infraction, float Chance)>.None;
         if (rules.Boarding && hard && behind && boards) return (Infraction.Boarding, PenaltyTuning.BoardingChance);
         if (rules.PenaltySeverity == PenaltySeverity.Full && hard && behind && !boards) return (Infraction.CheckingFromBehind, PenaltyTuning.FromBehindChance);
         if (rules.Roughing && again) return (Infraction.Roughing, PenaltyTuning.RoughingChance);
         if (rules.CrossChecking && hard && carrying && !behind) return (Infraction.CrossChecking, PenaltyTuning.CrossCheckChance);
         bool farFromPuck = pk.LastTouch != target.Id && Vector3.Distance(pk.Position with { Y = 0 }, target.Position with { Y = 0 }) > PenaltyTuning.InterferenceReach;
         if (rules.Interference && !hard && !carrying && farFromPuck) return (Infraction.Interference, PenaltyTuning.InterferenceChance);
-        return null;
+        return Maybe<(string Infraction, float Chance)>.None;
     }
 
     /// <summary>

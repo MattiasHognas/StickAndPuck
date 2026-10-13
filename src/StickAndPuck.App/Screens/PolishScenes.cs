@@ -51,8 +51,8 @@ internal static class PolishScenes
         string path = TestPath(SeasonSave.DefaultPath, name);
         SeasonSession.StartNew(clubs, Club(clubs), Seed(), path);
         int settled = 0;
-        while (settled < games && SeasonSession.SimCurrentGame() != null) settled++;    // one at a time, as "sim this game" does
-        Console.WriteLine($"SAP: screens: test season in {path}, {SeasonSession.Current!.Games.Count(g => g.Played)} games played");
+        while (settled < games && SeasonSession.SimCurrentGame().HasValue) settled++;    // one at a time, as "sim this game" does
+        Console.WriteLine($"SAP: screens: test season in {path}, {SeasonSession.Current.Select(s => s.Games.Count(g => g.Played)).Or(0)} games played");
     }
 
     /// <summary>A fresh test season settled on paper to the end of the playoffs, so there is a champion.</summary>
@@ -60,7 +60,7 @@ internal static class PolishScenes
     public static void Champions(IReadOnlyList<ClubData> clubs)
     {
         Season(clubs, "trophy-test.json", int.MaxValue);
-        Console.WriteLine($"SAP: screens: champions {PlayoffSession.Current?.Champion}");
+        Console.WriteLine($"SAP: screens: champions {(PlayoffSession.Current.TryGet(out var playoffs) ? playoffs.Champion.Or("") : "")}");
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ internal static class PolishScenes
     static ArcadeRun Run(IReadOnlyList<ClubData> clubs, string club, ArcadeRule rule, string path, int wins)
     {
         var run = ArcadeSession.StartNew(clubs, club, rule, Seed(), path);
-        for (int game = 0; !run.IsOver && ArcadeSession.NextSetup(InputDevice.None) != null; game++)
+        for (int game = 0; !run.IsOver && ArcadeSession.NextSetup(InputDevice.None) is NextMatch.Play; game++)
         {
             bool win = run.Stage < wins && game != 3;    // one loss on the way
             int mine = win ? 3 + (game % 3) : 1, theirs = win ? game % 3 : 2 + (game % 2);

@@ -30,11 +30,26 @@ public static class DeviceInput
     /// <summary>Gets the frame the current step reads.</summary>
     public static InputFrame Current { get; private set; } = InputFrame.Empty;
 
-    /// <summary>Gets or sets where frames come from while a replay plays: the frame for a step, or null to keep the last one. Null reads the devices.</summary>
-    public static Func<long, InputFrame?>? Playback { get; set; }
+    /// <summary>Gets where frames come from while a replay plays: the frame for a step, or None to keep the last one.</summary>
+    static Func<long, Maybe<InputFrame>> playback = _ => Maybe<InputFrame>.None;
 
     /// <summary>Gets a value indicating whether a replay supplies the frames.</summary>
-    public static bool Playing => Playback != null;
+    public static bool Playing { get; private set; }
+
+    /// <summary>Lets a replay supply the frames from now on.</summary>
+    /// <param name="frames">The frame for a step, or None to keep the last one.</param>
+    public static void Play(Func<long, Maybe<InputFrame>> frames)
+    {
+        playback = frames;
+        Playing = true;
+    }
+
+    /// <summary>Goes back to reading the devices.</summary>
+    public static void StopPlaying()
+    {
+        playback = _ => Maybe<InputFrame>.None;
+        Playing = false;
+    }
 
     /// <summary>Notes this drawn frame's presses, so the next step sees them even when this frame runs no step.</summary>
     public static void Poll()
@@ -54,9 +69,9 @@ public static class DeviceInput
     /// <param name="tick">The step about to run.</param>
     public static void Step(long tick)
     {
-        if (Playback != null)
+        if (Playing)
         {
-            if (Playback(tick) is { } played) Current = played;
+            if (playback(tick).TryGet(out var played)) Current = played;
             else Current = Current.Held();    // presses last one step
             return;
         }

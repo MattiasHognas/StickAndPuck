@@ -36,7 +36,7 @@ internal sealed class PuckPhysics : ISystem, IDisposable
     float releasedAt = float.NegativeInfinity;
     int scored;         // the end whose net the current goal was published for (-1, +1), or 0
     int inNet;          // the end whose net holds the puck because it came in through the mouth, or 0
-    Vector3? lastPosition;
+    Maybe<Vector3> lastPosition;
 
     public void Start(World world)
     {
@@ -91,7 +91,7 @@ internal sealed class PuckPhysics : ISystem, IDisposable
     void Track(Puck pk)
     {
         var p = pk.Position;
-        if (lastPosition is not { } last || Vector3.Distance(last, p) > PuckTuning.TeleportDistance)
+        if (!lastPosition.TryGet(out var last) || Vector3.Distance(last, p) > PuckTuning.TeleportDistance)
         {
             inNet = PuckMotion.InsideNet(p, 1) ? 1 : PuckMotion.InsideNet(p, -1) ? -1 : 0;
             return;
@@ -112,15 +112,15 @@ internal sealed class PuckPhysics : ISystem, IDisposable
     /// <summary>Publishes the hardest board and post hit of the step, and makes a body hit the last touch.</summary>
     static void Publish(World world, List<PuckImpact> impacts)
     {
-        PuckImpact? boards = null, post = null;
+        Maybe<PuckImpact> boards = Maybe<PuckImpact>.None, post = Maybe<PuckImpact>.None;
         foreach (var i in impacts)
         {
             switch (i.Kind)
             {
-                case PuckHit.Boards or PuckHit.Glass when i.Speed > (boards?.Speed ?? PuckTuning.EventSpeed):
+                case PuckHit.Boards or PuckHit.Glass when i.Speed > boards.Select(static b => b.Speed).Or(PuckTuning.EventSpeed):
                     boards = i;
                     break;
-                case PuckHit.Post when i.Speed > (post?.Speed ?? PuckTuning.EventSpeed):
+                case PuckHit.Post when i.Speed > post.Select(static b => b.Speed).Or(PuckTuning.EventSpeed):
                     post = i;
                     break;
                 case PuckHit.Body:
@@ -130,8 +130,8 @@ internal sealed class PuckPhysics : ISystem, IDisposable
                     break;
             }
         }
-        if (boards is { } b) world.Events.Publish(new PuckHitBoards(world.Time, b.Position, b.Speed));
-        if (post is { } p) world.Events.Publish(new PuckHitPost(world.Time, p.Position, p.Speed));
+        if (boards.TryGet(out var b)) world.Events.Publish(new PuckHitBoards(world.Time, b.Position, b.Speed));
+        if (post.TryGet(out var p)) world.Events.Publish(new PuckHitPost(world.Time, p.Position, p.Speed));
     }
 
     /// <summary>A goal counts once, when the whole puck is over the line, inside a net it came into through the mouth, while the puck is live.</summary>
@@ -145,19 +145,19 @@ internal sealed class PuckPhysics : ISystem, IDisposable
         // the net at -x belongs to the club defending the left end; the other club scores there
         var defender = end < 0 ? world.Match.DefendsLeft : Other(world.Match.DefendsLeft);
         var scorer = Other(defender);
-        if (Scorer(world, scorer) is { } id) world.Events.Publish(new GoalScored(world.Time, scorer, id, pk.Position, pk.Velocity.Length()));
+        if (Scorer(world, scorer).TryGet(out int id)) world.Events.Publish(new GoalScored(world.Time, scorer, id, pk.Position, pk.Velocity.Length()));
         else Console.WriteLine($"SAP: puck: a goal for {scorer}, which has no players, publishes no event");
     }
 
-    /// <summary>The last touch, or when that is no player, the scoring club's nearest on-ice skater (any player of the club as a last resort); null when the club has none.</summary>
-    static int? Scorer(World world, Side scorer)
+    /// <summary>The last touch, or when that is no player, the scoring club's nearest on-ice skater (any player of the club as a last resort); None when the club has none.</summary>
+    static Maybe<int> Scorer(World world, Side scorer)
     {
         var pk = world.Puck;
         if (pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count) return pk.LastTouch;
         var club = world.Players.Where(p => p.Side == scorer).ToList();
         var skaters = club.Where(p => p.OnIce && !p.IsGoalie).ToList();
         var pool = skaters.Count > 0 ? skaters : club;
-        return pool.MinBy(p => Vector3.DistanceSquared(p.Position, pk.Position))?.Id;
+        return pool.MinBy(p => Vector3.DistanceSquared(p.Position, pk.Position)) is { } nearest ? nearest.Id : Maybe<int>.None;
     }
 
     static Side Other(Side side)

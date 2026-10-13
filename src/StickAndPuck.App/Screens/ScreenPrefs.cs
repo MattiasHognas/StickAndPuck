@@ -54,10 +54,15 @@ internal static class ScreenPrefsFile
             ? Path.GetFullPath(p)
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "settings.json");
 
+    /// <summary>Reads the saved settings from <see cref="DefaultPath"/>, or the defaults when there is no readable file.</summary>
+    /// <returns>The settings.</returns>
+    public static ScreenPrefs Read() => Read(DefaultPath);
+
     /// <summary>Reads the saved settings, or the defaults when there is no readable file.</summary>
-    public static ScreenPrefs Read(string? path = null)
+    /// <param name="path">The file.</param>
+    /// <returns>The settings.</returns>
+    public static ScreenPrefs Read(string path)
     {
-        path ??= DefaultPath;
         try
         {
             if (File.Exists(path) && JsonSerializer.Deserialize<ScreenPrefs>(File.ReadAllText(path), Json) is { } prefs)
@@ -80,13 +85,20 @@ internal static class ScreenPrefsFile
     /// <returns>The settings.</returns>
     public static ScreenPrefs FromJson(string json) => JsonSerializer.Deserialize<ScreenPrefs>(json, Json) ?? new ScreenPrefs();
 
+    /// <summary>Writes the settings to <see cref="DefaultPath"/>; a failure is logged, never fatal.</summary>
+    /// <param name="prefs">The settings.</param>
+    public static void Write(ScreenPrefs prefs)
+    {
+        if (DeviceInput.Playing) return;    // W67: a replay's menus never touch the saved settings (nor create the default folder)
+        Write(prefs, DefaultPath);
+    }
+
     /// <summary>Writes the settings; a failure is logged, never fatal.</summary>
     /// <param name="prefs">The settings.</param>
-    /// <param name="path">The file, or null for the default.</param>
-    public static void Write(ScreenPrefs prefs, string? path = null)
+    /// <param name="path">The file.</param>
+    public static void Write(ScreenPrefs prefs, string path)
     {
         if (DeviceInput.Playing) return;    // W67: a replay's menus never touch the saved settings
-        path ??= DefaultPath;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

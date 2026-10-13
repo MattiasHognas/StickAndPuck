@@ -28,7 +28,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
 {
     static readonly Side[] BothSides = [Side.Home, Side.Away];
 
-    HudArt? art;
+    Maybe<HudArt> art;
 
     public void Start(World world)
     {
@@ -67,7 +67,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         {
             Script(world, book);
             if (world.Settings.Penalties) Watch(world, book, dt);
-            if (book.Delayed.Count > 0 && Touched(world, book) is { } offender)
+            if (book.Delayed.Count > 0 && Touched(world, book).TryGetSide(out var offender))
             {
                 MatchFlow.Whistle(world, Penalties.FaceoffDot(world, offender));
                 Penalties.CallDelayed(world, book);
@@ -114,13 +114,13 @@ internal sealed class PenaltyRules : ISystem, IDisposable
             int on = world.OnIce(side).Count(p => !p.IsGoalie);
             for (; on < target; on++)
             {
-                if (Lines.Bench.SendOn(world, side, Lines.Group.Forwards, onTheFly: false) is not { } added) break;
+                if (!Lines.Bench.SendOn(world, side, Lines.Group.Forwards, onTheFly: false).TryGet(out var added)) break;
                 changed = true;
                 book.Log(world, $"{Penalties.Name(world, added)} comes on, {target} skaters");
             }
             for (; on > target; on--)
             {
-                if (Lines.Bench.Surplus(world, side, target) is not { } off) break;
+                if (!Lines.Bench.Surplus(world, side, target).TryGet(out var off)) break;
                 Lines.Bench.SendOff(world, off);
                 changed = true;
                 book.Log(world, $"{Penalties.Name(world, off)} goes off, {target} skaters");
@@ -190,7 +190,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
     {
         foreach (var check in world.Events.Of<CheckLanded>().ToList())
         {
-            if (PenaltyModel.Judge(world, check, Again(world, book, check)) is { } foul) Roll(world, book, foul, check.Strength);
+            if (PenaltyModel.Judge(world, check, Again(world, book, check)).TryGet(out var foul)) Roll(world, book, foul, check.Strength);
         }
         foreach (var foul in PenaltyModel.Chases(world, dt).ToList()) Roll(world, book, foul, 0);
         foreach (var foul in PenaltyModel.Holds(world, dt).ToList()) Roll(world, book, foul, 0);
@@ -201,7 +201,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
     {
         foreach (var check in world.Events.Of<CheckLanded>().ToList())
         {
-            if (PenaltyModel.Judge(world, check, afterWhistle: true) is { } foul) Roll(world, book, foul, check.Strength, afterWhistle: true);
+            if (PenaltyModel.Judge(world, check, afterWhistle: true).TryGet(out var foul)) Roll(world, book, foul, check.Strength, afterWhistle: true);
         }
     }
 
@@ -211,7 +211,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         var target = world.Players
             .Where(p => p.Side != check.Side && p.OnIce && !p.IsGoalie)
             .MinBy(p => System.Numerics.Vector3.DistanceSquared(p.Position, check.Position));
-        if (target == null) return false;
+        if (target is not { }) return false;
         bool again = book.LastHit.TryGetValue(check.CheckerId, out var last) && last.Target == target.Id && world.Time - last.Time < PenaltyTuning.RoughingWindow;
         book.LastHit[check.CheckerId] = (target.Id, world.Time);
         return again;
@@ -225,13 +225,13 @@ internal sealed class PenaltyRules : ISystem, IDisposable
     }
 
     /// <summary>Gets the offending club once it touches the puck: it carries it, or last played it.</summary>
-    static Side? Touched(World world, PenaltyBook book)
+    static SideOrNone Touched(World world, PenaltyBook book)
     {
         var pk = world.Puck;
         int touch = pk.Carrier >= 0 ? pk.Carrier : pk.LastTouch;
-        if (touch < 0 || touch >= world.Players.Count) return null;
+        if (touch < 0 || touch >= world.Players.Count) return SideOrNone.None;
         var side = world.Players[touch].Side;
-        return book.Delayed.Exists(d => d.Side == side) ? side : null;
+        return book.Delayed.Exists(d => d.Side == side) ? side.OrNone() : SideOrNone.None;
     }
 
     /// <summary>The penalty scene's scripted call: a few seconds after the opening drop, once away has the puck, the home skater nearest it trips someone (or boards him, W47).</summary>
@@ -245,7 +245,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         var offender = world.OnIce(Side.Home)
             .Where(p => !p.IsGoalie && p.Id != world.Puck.Carrier)
             .MinBy(p => System.Numerics.Vector3.DistanceSquared(p.Position, world.Puck.Position));
-        if (offender != null) Penalties.Signal(world, offender.Id, book.ScriptCall.Infraction, book.ScriptCall.Severity);
+        if (offender is { } called) Penalties.Signal(world, called.Id, book.ScriptCall.Infraction, book.ScriptCall.Severity);
     }
 
     /// <summary>Penalties end before the shootout and with the match, and with regulation unless they carry into overtime: skaters in the box go to the bench and delayed calls are dropped.</summary>
@@ -258,41 +258,41 @@ internal sealed class PenaltyRules : ISystem, IDisposable
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (art == null || !MatchFlow.IsRunning(world)) return;
+        if (!art.TryGet(out var hud) || !MatchFlow.IsRunning(world)) return;
         var m = world.Match;
         if (m.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final) return;
         const int h = 20, pad = 3, crest = 16, gap = 4;
         int y = HudSystem.PenaltyTop;
-        int x = art.BugPosition.X;
+        int x = hud.BugPosition.X;
         foreach (var side in BothSides)
         {
             foreach (var p in m.Penalties.Where(p => p.Side == side).OrderBy(p => p.SecondsLeft))
             {
                 string text = Text.Format(Penalties.Ejected(world, p.PlayerId) ? K.PenaltyBoxGm : K.PenaltyBoxRow, world.Players[p.PlayerId].Data.Number, MatchFlow.ClockText(p.SecondsLeft));
-                Row(art, world.Setup.Club(side).Id, text, "panel_red", x, y, h, pad, crest, gap);
+                Row(hud, world.Setup.Club(side).Id, text, "panel_red", x, y, h, pad, crest, gap);
                 y += h + 1;
             }
             foreach (var p in Penalties.Waiting(world).Where(p => p.Side == side))
             {
                 string text = Text.Format(K.PenaltyBoxNext, world.Players[p.PlayerId].Data.Number, MatchFlow.ClockText(p.SecondsLeft));
-                Row(art, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
+                Row(hud, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
                 y += h + 1;
             }
             foreach (var p in Penalties.Misconducts(world).Where(p => p.Side == side))
             {
                 string text = Text.Format(K.PenaltyBoxMisc, world.Players[p.PlayerId].Data.Number, MatchFlow.ClockText(p.SecondsLeft));
-                Row(art, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
+                Row(hud, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
                 y += h + 1;
             }
         }
         foreach (var d in Penalties.Delayed(world))
         {
-            Row(art, world.Setup.Club(d.Side).Id, Text.Get(K.Delayed), "panel", x, y, h, pad, crest, gap);
+            Row(hud, world.Setup.Club(d.Side).Id, Text.Get(K.Delayed), "panel", x, y, h, pad, crest, gap);
             y += h + 1;
         }
         foreach (var side in BothSides.Where(side => Lines.GoaliePull.IsPulled(world, side)))
         {
-            Row(art, world.Setup.Club(side).Id, Text.Get(K.ExtraAttacker), "panel_gold", x, y, h, pad, crest, gap);
+            Row(hud, world.Setup.Club(side).Id, Text.Get(K.ExtraAttacker), "panel_gold", x, y, h, pad, crest, gap);
             y += h + 1;
         }
     }
@@ -308,7 +308,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
 
     public void Dispose()
     {
-        art?.Unload();
-        art = null;
+        if (art.TryGet(out var hud)) hud.Unload();
+        art = Maybe<HudArt>.None;
     }
 }

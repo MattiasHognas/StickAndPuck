@@ -301,8 +301,8 @@ public sealed class DecisionsTests : CheckedTest
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Rules = rules ?? RuleSet.Shl, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
         var world = new World(setup, settings);
         Scenes.AddStarters(world);
-        DecisionScenes.SetHockeyIq(world, Side.Home, smartHome);
-        DecisionScenes.SetHockeyIq(world, Side.Away, smartAway);
+        DecisionScenes.SetHockeyIq(world, Side.Home, smartHome is { } home ? home : Maybe<int>.None);
+        DecisionScenes.SetHockeyIq(world, Side.Away, smartAway is { } away ? away : Maybe<int>.None);
         MatchFlow.Begin(world, log: false);
         return world;
     }

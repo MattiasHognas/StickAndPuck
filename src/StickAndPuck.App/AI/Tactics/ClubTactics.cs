@@ -63,10 +63,10 @@ public enum PowerPlayShape
 /// <summary>Maps a club's power play choice to W22c's formation.</summary>
 internal static class PowerPlayShapes
 {
-    public static Formation? Formation(PowerPlayShape shape) => shape switch
+    public static Maybe<Formation> Formation(PowerPlayShape shape) => shape switch
     {
         PowerPlayShape.Umbrella => AI.Formation.Umbrella,
         PowerPlayShape.OneThreeOne => AI.Formation.OneThreeOne,
-        _ => null,
+        _ => Maybe<Formation>.None,
     };
 }

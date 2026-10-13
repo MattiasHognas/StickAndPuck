@@ -245,7 +245,7 @@ public sealed class ChecksTests : CheckedTest
         {
             float t = i * 0.08f;
             them.Command = new PlayerCommand { Move = new Vector2(SimMath.Cos(t), SimMath.Sin(t)) };
-            int now = x.Controlled(0)?.Id ?? -1;
+            int now = x.Controlled(0).OrNull()?.Id ?? -1;
             if (now != last) switches++;
             last = now;
         });
@@ -287,7 +287,7 @@ public sealed class ChecksTests : CheckedTest
         human.Slot = 0;
         Give(w, human);
         Run(w, 0.6f, (x, i) => checker.Command = new PlayerCommand { Check = i == 0, Move = Vector2.UnitX });
-        Check(human.Action == PlayerAction.Fallen && w.Controlled(0) is { } c && c != human && c.Side == Side.Home,
+        Check(human.Action == PlayerAction.Fallen && w.Controlled(0).OrNull() is { } c && c != human && c.Side == Side.Home,
             "Auto: a knocked-down human's control goes to a teammate on their feet");
         _ = mate;
     }

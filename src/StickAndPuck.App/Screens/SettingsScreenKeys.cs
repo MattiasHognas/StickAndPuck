@@ -19,8 +19,8 @@ internal sealed class KeyMappingScreen : MenuScreen
 
     readonly HashSet<KeyboardKey> heldKeys = [];
     readonly HashSet<(int Pad, GamepadButton Button)> heldButtons = [];
-    World? world;
-    GameAction? listening;
+    Maybe<World> world;
+    Maybe<GameAction> listening;
     int first;
 
     static Settings Saved => ScreenFlow.Prefs.Settings;
@@ -31,7 +31,7 @@ internal sealed class KeyMappingScreen : MenuScreen
         var items = new List<MenuItem>();
         foreach (var action in KeyBindings.All)
             items.Add(new MenuItem(Label(action), () => Listen(action)));
-        items.Add(new MenuItem(Text.Get(K.ResetDefaults), Reset, Enabled: Saved.Keys.Count > 0));
+        items.Add(new MenuItem(Text.Get(K.ResetDefaults), Reset, enabled: Saved.Keys.Count > 0));
         items.Add(new MenuItem(Text.Get(K.Back), Back));
         return items;
     }
@@ -41,7 +41,7 @@ internal sealed class KeyMappingScreen : MenuScreen
     {
         this.world = world;
         world.Match.Paused = true;
-        if (listening is { } action) Capture(action);
+        if (listening.TryGet(out var action)) Capture(action);
         else base.Update(world, press);
     }
 
@@ -72,7 +72,7 @@ internal sealed class KeyMappingScreen : MenuScreen
             art.Left(item.Label, x + 18, y, ink);
             if (i >= KeyBindings.All.Count) continue;
             var binding = KeyBindings.Of(settings, KeyBindings.All[i]);
-            if (on && listening != null)
+            if (on && listening.HasValue)
             {
                 art.Left(Text.Get(K.PressAKey), keysX, y, art.Gold);
                 art.Right(Text.Get(K.OrButton), right, y, art.Gold);
@@ -82,13 +82,13 @@ internal sealed class KeyMappingScreen : MenuScreen
             art.Right(KeyBindings.ButtonName(binding.Button), right, y, ink);
         }
         if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
-        art.Hint(Text.Get(listening != null ? K.HintListening : K.HintKeys));
+        art.Hint(Text.Get(listening.HasValue ? K.HintListening : K.HintKeys));
     }
 
     /// <inheritdoc/>
     protected override void Back()
     {
-        if (world != null) ScreenFlow.ApplySettings(world);
+        if (world.TryGet(out var onShow)) ScreenFlow.ApplySettings(onShow);
         Console.WriteLine($"SAP: screens: key mapping saved, {Saved.Keys.Count} rebound");
         ScreenFlow.Pop();
     }
@@ -128,7 +128,7 @@ internal sealed class KeyMappingScreen : MenuScreen
     {
         if (MenuInput.IsScripted)
         {
-            listening = null;    // a headless script cannot press a key, so the row only shows it waits
+            listening = Maybe<GameAction>.None;    // a headless script cannot press a key, so the row only shows it waits
             return;
         }
         foreach (var key in AllKeys)
@@ -157,7 +157,7 @@ internal sealed class KeyMappingScreen : MenuScreen
     /// <summary>Stops waiting. The menu input saw the key go down on this same step, so it is not taken as a press later.</summary>
     void Done()
     {
-        listening = null;
+        listening = Maybe<GameAction>.None;
     }
 
     static List<(int Pad, GamepadButton Button)> Buttons()
@@ -181,6 +181,6 @@ internal sealed class KeyMappingScreen : MenuScreen
     void Set(Settings settings)
     {
         ScreenFlow.Prefs = ScreenFlow.Prefs with { Settings = settings };
-        if (world != null) ScreenFlow.Apply(world, ScreenFlow.Settings);
+        if (world.TryGet(out var onShow)) ScreenFlow.Apply(onShow, ScreenFlow.Settings);
     }
 }

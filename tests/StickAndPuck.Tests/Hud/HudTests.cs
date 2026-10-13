@@ -48,29 +48,29 @@ public sealed class HudTests : CheckedTest
         var scorer = w.OnIce(Side.Away).First(p => !p.IsGoalie);
         w.Events.Publish(new GoalScored(w.Time, Side.Away, scorer.Id, default, 0));
         hud.Update(w);
-        Check(hud.Current is { Title: "GOAL!" } g && string.Equals(g.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal) && string.Equals(g.Crest, w.Setup.Away.Id, StringComparison.Ordinal),
+        Check(Shown(hud) is { Title: "GOAL!" } g && string.Equals(g.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal) && string.Equals(g.Crest, w.Setup.Away.Id, StringComparison.Ordinal),
             "a goal shows GOAL! with the scorer and the scoring club's crest");
 
         var home = w.OnIce(Side.Home).First(p => !p.IsGoalie);
         w.Events.Clear();
         w.Events.Publish(new GoalScored(w.Time, Side.Away, home.Id, default, 0));
         hud.Update(w);
-        Check(string.Equals(hud.Current?.Detail, w.Setup.Away.Name, StringComparison.Ordinal), "an own goal names the club, not the defender");
+        Check(string.Equals(Shown(hud)?.Detail, w.Setup.Away.Name, StringComparison.Ordinal), "an own goal names the club, not the defender");
 
         w.Events.Clear();
         w.Time += HudMessages.GoalSeconds + 0.1f;
         hud.Update(w);
-        Check(hud.Current == null, "the goal banner goes away");
+        Check(Shown(hud) == null, "the goal banner goes away");
 
         w.Events.Publish(new IcingCalled(w.Time, Side.Home, home.Id, default));
         hud.Update(w);
-        Check(hud.Current is { Title: "ICING" } ic && string.Equals(ic.Detail, w.Setup.Home.Name, StringComparison.Ordinal) && string.Equals(ic.Crest, w.Setup.Home.Id, StringComparison.Ordinal),
+        Check(Shown(hud) is { Title: "ICING" } ic && string.Equals(ic.Detail, w.Setup.Home.Name, StringComparison.Ordinal) && string.Equals(ic.Crest, w.Setup.Home.Id, StringComparison.Ordinal),
             "icing names the club that iced the puck");
 
         w.Events.Clear();
         w.Events.Publish(new FightStarted(w.Time, Side.Home, home.Id, default));
         hud.Update(w);
-        Check(string.Equals(hud.Current?.Title, "ICING", StringComparison.Ordinal), "events the HUD does not announce leave the banner alone");
+        Check(string.Equals(Shown(hud)?.Title, "ICING", StringComparison.Ordinal), "events the HUD does not announce leave the banner alone");
     }
 
     [Test]
@@ -90,17 +90,17 @@ public sealed class HudTests : CheckedTest
         }
 
         Goal(Side.Home, scorer.Id);
-        Check(hud.Current is { Title: "GOAL!" } g1 && g1.Lines.Count == 1 && string.Equals(g1.Lines[0], "FIRST GOAL OF THE SEASON", StringComparison.Ordinal),
+        Check(Shown(hud) is { Title: "GOAL!" } g1 && g1.Lines.Count == 1 && string.Equals(g1.Lines[0], "FIRST GOAL OF THE SEASON", StringComparison.Ordinal),
             "a club's first goal of the season gets a note on the goal banner");
         Goal(Side.Away, other.Id);
-        Check(hud.Current is { Title: "GOAL!" } g2 && g2.Lines.Count == 0, "a club that has scored this season gets no note");
+        Check(Shown(hud) is { Title: "GOAL!" } g2 && g2.Lines.Count == 0, "a club that has scored this season gets no note");
         Goal(Side.Home, scorer.Id);
-        Check(hud.Current is { Title: "GOAL!" }, "two goals are not a hat trick");
+        Check(Shown(hud) is { Title: "GOAL!" }, "two goals are not a hat trick");
         Goal(Side.Home, scorer.Id);
-        Check(hud.Current is { Title: "HAT TRICK!" } h && string.Equals(h.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal), "the third goal by one player shows HAT TRICK!");
+        Check(Shown(hud) is { Title: "HAT TRICK!" } h && string.Equals(h.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal), "the third goal by one player shows HAT TRICK!");
         Goal(Side.Home, scorer.Id);
-        Check(hud.Current is { Title: "GOAL!" }, "the fourth is a plain goal again");
-        HudMessages.SeasonGoals = (_, _) => null;
+        Check(Shown(hud) is { Title: "GOAL!" }, "the fourth is a plain goal again");
+        HudMessages.SeasonGoals = (_, _) => Maybe<int>.None;
 
         // 4-1 home: the game winner is home's second goal
         Check(Final(w, hud, Side.Home) is { Title: "FINAL" } f && f.Lines.Count == 1 && string.Equals(f.Lines[0], $"GAME-WINNING GOAL #{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal),
@@ -133,12 +133,15 @@ public sealed class HudTests : CheckedTest
             "a goal the tally never saw names no game winner");
     }
 
+    /// <summary>Gets the banner showing now, or null.</summary>
+    static HudMessage? Shown(HudMessages hud) => hud.Current.TryGet(out var m) ? m : null;
+
     static HudMessage? Final(World w, HudMessages hud, Side winner)
     {
         w.Events.Clear();
         w.Events.Publish(new MatchWon(w.Time, winner));
         hud.Update(w);
-        return hud.Current;
+        return Shown(hud);
     }
 
     [Test]
@@ -146,18 +149,18 @@ public sealed class HudTests : CheckedTest
     {
         var w = Make();
         w.Match.Phase = MatchPhase.Play;
-        Check(HudSystem.PowerPlayText(w) == null, "even strength shows no PP tag");
+        Check(HudSystem.PowerPlayText(w).Length == 0, "even strength shows no PP tag");
         var away = w.OnIce(Side.Away).First(p => !p.IsGoalie);
         w.Match.Penalties.Add(new PenaltyState(away.Id, Side.Away, "tripping", 120));
         Check(string.Equals(HudSystem.PowerPlayText(w), "PP 5V4", StringComparison.Ordinal), "one penalty reads PP 5V4");
         var home = w.OnIce(Side.Home).First(p => !p.IsGoalie);
         w.Match.Penalties.Add(new PenaltyState(home.Id, Side.Home, "hooking", 120));
-        Check(HudSystem.PowerPlayText(w) == null, "coincidental minors are even strength");
+        Check(HudSystem.PowerPlayText(w).Length == 0, "coincidental minors are even strength");
         var away2 = w.OnIce(Side.Away).Where(p => !p.IsGoalie).Skip(1).First();
         w.Match.Penalties.Add(new PenaltyState(away2.Id, Side.Away, "slashing", 120));
         Check(string.Equals(HudSystem.PowerPlayText(w), "PP 4V3", StringComparison.Ordinal), "two against one reads PP 4V3");
         w.Match.Phase = MatchPhase.Shootout;
-        Check(HudSystem.PowerPlayText(w) == null, "no PP tag in the shootout");
+        Check(HudSystem.PowerPlayText(w).Length == 0, "no PP tag in the shootout");
     }
 
     [Test]
@@ -182,8 +185,8 @@ public sealed class HudTests : CheckedTest
             }
             foreach (var s in systems) s.Update(w, Game.Step);
             hud.Update(w);
-            if (hud.Current is { } m) seen.Add(m.Title);
-            if (w.Match.Phase == MatchPhase.Intermission && hud.Current?.Title.StartsWith("END OF", StringComparison.Ordinal) != true) periodHeld = false;
+            if (Shown(hud) is { } m) seen.Add(m.Title);
+            if (w.Match.Phase == MatchPhase.Intermission && Shown(hud)?.Title.StartsWith("END OF", StringComparison.Ordinal) != true) periodHeld = false;
             w.Time += Game.Step;
             w.Tick++;
         }
@@ -191,7 +194,7 @@ public sealed class HudTests : CheckedTest
         Check(seen.Contains("GOAL!"), "a real goal from physics shows the goal banner");
         Check(seen.Contains("END OF PERIOD 1") && seen.Contains("END OF PERIOD 2"), "period ends show");
         Check(periodHeld, "the period banner stays up through the intermission");
-        Check(hud.Current is { Title: "FINAL", Panel: "panel_red" } f && f.Detail.EndsWith(w.Setup.Away.ShortName, StringComparison.Ordinal) && string.Equals(f.Crest, w.Setup.Home.Id, StringComparison.Ordinal),
+        Check(Shown(hud) is { Title: "FINAL", Panel: "panel_red" } f && f.Detail.EndsWith(w.Setup.Away.ShortName, StringComparison.Ordinal) && string.Equals(f.Crest, w.Setup.Home.Id, StringComparison.Ordinal),
             "the final banner shows the score and the winner's crest and stays up");
     }
 }

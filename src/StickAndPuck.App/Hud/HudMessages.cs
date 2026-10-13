@@ -9,15 +9,17 @@ namespace StickAndPuck.App.Hud;
 /// <param name="Panel">"panel", "panel_gold" or "panel_red".</param>
 /// <param name="Title">The big first line.</param>
 /// <param name="Detail">The second line, or empty.</param>
-/// <param name="Crest">The club id whose crest sits left of the text, or null.</param>
+/// <param name="Crest">The club id whose crest sits left of the text, or empty for none.</param>
 /// <param name="Until">World time the banner goes away; infinity keeps it up.</param>
-/// <param name="Icon">An icon from the icon sheet drawn left of the title, or null.</param>
-/// <param name="Notes">Extra gold lines under the detail: game-winning goal, shutout, first goal of the season.</param>
+/// <param name="Icon">An icon from the icon sheet drawn left of the title, or empty for none.</param>
 /// <param name="Intermission">True for an end-of-period banner, which stays up for the whole intermission.</param>
-internal sealed record HudMessage(string Panel, string Title, string Detail, string? Crest, float Until, string? Icon = null, IReadOnlyList<string>? Notes = null, bool Intermission = false)
+internal sealed record HudMessage(string Panel, string Title, string Detail, string Crest, float Until, string Icon = "", bool Intermission = false)
 {
-    /// <summary>Gets the extra lines, never null.</summary>
-    public IReadOnlyList<string> Lines => Notes ?? [];
+    /// <summary>Gets the extra gold lines under the detail: game-winning goal, shutout, first goal of the season.</summary>
+    public IReadOnlyList<string> Notes { get; init; } = [];
+
+    /// <summary>Gets the extra lines.</summary>
+    public IReadOnlyList<string> Lines => Notes;
 }
 
 /// <summary>
@@ -43,13 +45,13 @@ internal sealed class HudMessages
     readonly List<(Side Side, int PlayerId)> goals = [];
 
     /// <summary>
-    /// Gets or sets how many goals a club has scored earlier this season, or null outside season mode.
+    /// Gets or sets how many goals a club has scored earlier this season, or None outside season mode.
     /// The default reads the season being played; the hud scene swaps in a fake.
     /// </summary>
-    public static Func<World, Side, int?> SeasonGoals { get; set; } = SeasonGoalsBefore;
+    public static Func<World, Side, Maybe<int>> SeasonGoals { get; set; } = SeasonGoalsBefore;
 
-    /// <summary>Gets the banner showing now, or null.</summary>
-    public HudMessage? Current { get; private set; }
+    /// <summary>Gets the banner showing now, or None.</summary>
+    public Maybe<HudMessage> Current { get; private set; }
 
     /// <summary>Gets the goals of this match so far, in order: the scoring club and the scorer (-1 when unknown).</summary>
     public IReadOnlyList<(Side Side, int PlayerId)> Goals => goals;
@@ -61,23 +63,23 @@ internal sealed class HudMessages
         foreach (var e in world.Events.Current)
         {
             var next = For(world, e);
-            if (next != null) Current = next;
+            if (next.HasValue) Current = next;
         }
-        if (Current != null && world.Time >= Current.Until && !Held(world, Current)) Current = null;
+        if (Current.TryGet(out var shown) && world.Time >= shown.Until && !Held(world, shown)) Current = Maybe<HudMessage>.None;
     }
 
     /// <summary>Clears the banner and the goal tally, for a new match.</summary>
     public void Clear()
     {
-        Current = null;
+        Current = Maybe<HudMessage>.None;
         goals.Clear();
     }
 
-    /// <summary>Builds the banner for one event, or null for events the HUD does not announce. Goals and the final are tallied.</summary>
+    /// <summary>Builds the banner for one event, or None for events the HUD does not announce. Goals and the final are tallied.</summary>
     /// <param name="world">The match state.</param>
     /// <param name="e">The event.</param>
-    /// <returns>The banner, or null.</returns>
-    public HudMessage? For(World world, MatchEvent e)
+    /// <returns>The banner, or None.</returns>
+    public Maybe<HudMessage> For(World world, MatchEvent e)
     {
         var m = world.Match;
         string Short(Side s) => world.Setup.Club(s).ShortName;
@@ -88,23 +90,23 @@ internal sealed class HudMessages
                 return Goal(world, goal);
             case PeriodEnded end:
                 string title = end.Period > world.Setup.Periods ? Text.Get(K.EndOfOvertime) : Text.Format(K.EndOfPeriod, end.Period);
-                return new("panel", title, Score(), null, e.Time + PeriodSeconds, Intermission: true);
+                return new HudMessage("panel", title, Score(), "", e.Time + PeriodSeconds, Intermission: true);
             case MatchWon won:
-                return new("panel_red", Text.Get(K.Final), Score(), world.Setup.Club(won.Winner).Id, float.PositiveInfinity, Notes: FinalNotes(world, won.Winner));
+                return new HudMessage("panel_red", Text.Get(K.Final), Score(), world.Setup.Club(won.Winner).Id, float.PositiveInfinity) { Notes = FinalNotes(world, won.Winner) };
             case MatchTied:
-                return new("panel_red", Text.Get(K.FinalTie), Score(), null, float.PositiveInfinity);
+                return new HudMessage("panel_red", Text.Get(K.FinalTie), Score(), "", float.PositiveInfinity);
             case OffsideCalled:
-                return new("panel", Text.Get(K.Offside), "", null, e.Time + CallSeconds, "whistle");
+                return new HudMessage("panel", Text.Get(K.Offside), "", "", e.Time + CallSeconds, "whistle");
             case IcingCalled icing:
                 // the club that iced the puck, by name, with its crest
-                return new("panel", Text.Get(K.Icing), world.Setup.Club(icing.Offender).Name, world.Setup.Club(icing.Offender).Id, e.Time + CallSeconds);
+                return new HudMessage("panel", Text.Get(K.Icing), world.Setup.Club(icing.Offender).Name, world.Setup.Club(icing.Offender).Id, e.Time + CallSeconds);
             case PenaltyCalled penalty:
                 // W14: the infraction and minutes, then the player
                 var called = m.Penalties.FindLast(p => p.PlayerId == penalty.PlayerId);
                 var who = world.Players[penalty.PlayerId].Data;
-                return new("panel_red", Text.Format(K.PenaltyBanner, Infraction.Label(called?.Infraction), MatchFlow.ClockText(penalty.Seconds)), Text.Format(K.PlayerTag, who.Number, who.LastName), world.Setup.Club(penalty.Side).Id, e.Time + CallSeconds + 1);
+                return new HudMessage("panel_red", Text.Format(K.PenaltyBanner, Infraction.Label(called is { } served ? served.Infraction : ""), MatchFlow.ClockText(penalty.Seconds)), Text.Format(K.PlayerTag, who.Number, who.LastName), world.Setup.Club(penalty.Side).Id, e.Time + CallSeconds + 1);
             default:
-                return null;
+                return Maybe<HudMessage>.None;
         }
     }
 
@@ -121,19 +123,19 @@ internal sealed class HudMessages
     {
         var scorer = e.Side;
         int clubBefore = goals.Count(g => g.Side == scorer);
-        int? seasonBefore = SeasonGoals(world, scorer);
-        int player = Scorer(world, e)?.Id ?? -1;
+        var seasonBefore = SeasonGoals(world, scorer);
+        int player = Scorer(world, e).TryGet(out var p) ? p.Id : -1;
         goals.Add((scorer, player));
 
         string club = world.Setup.Club(scorer).Id;
         string detail = ScorerText(world, e);
-        List<string>? notes = clubBefore == 0 && seasonBefore == 0 ? [Text.Get(K.FirstGoalOfSeason)] : null;
+        List<string> notes = clubBefore == 0 && seasonBefore == 0 ? [Text.Get(K.FirstGoalOfSeason)] : [];
         string title = Text.Get(GoalsBy(player) == HatTrick ? K.HatTrick : K.Goal);
-        return new("panel_gold", title, detail, club, e.Time + GoalSeconds, Notes: notes);
+        return new("panel_gold", title, detail, club, e.Time + GoalSeconds) { Notes = notes };
     }
 
     /// <summary>The final's extra lines: the game-winning goal and a shutout, when the events say so.</summary>
-    List<string>? FinalNotes(World world, Side w)
+    List<string> FinalNotes(World world, Side w)
     {
         var m = world.Match;
         var loser = w == Side.Home ? Side.Away : Side.Home;
@@ -151,28 +153,28 @@ internal sealed class HudMessages
 
         if (m.Score[(int)loser] == 0 && world.OnIce(w).FirstOrDefault(p => p.IsGoalie) is { } goalie)
             notes.Add(Text.Format(K.Shutout, goalie.Data.Number, goalie.Data.LastName));
-        return notes.Count > 0 ? notes : null;
+        return notes;
     }
 
-    /// <summary>Gets the scorer when the event names a player on the scoring club, else null (an own goal).</summary>
-    static Player? Scorer(World world, GoalScored e)
+    /// <summary>Gets the scorer when the event names a player on the scoring club, else None (an own goal).</summary>
+    static Maybe<Player> Scorer(World world, GoalScored e)
     {
         var p = world.Players[e.ScorerId];
-        return p.Side == e.Side ? p : null;
+        return p.Side == e.Side ? p : Maybe<Player>.None;
     }
 
     /// <summary>Gets "#12 SURNAME" for the scorer, or the club name when nobody on that club touched it last.</summary>
     static string ScorerText(World world, GoalScored e)
     {
-        return Scorer(world, e) is { } p ? Text.Format(K.PlayerTag, p.Data.Number, p.Data.LastName) : world.Setup.Club(e.Side).Name;
+        return Scorer(world, e).TryGet(out var p) ? Text.Format(K.PlayerTag, p.Data.Number, p.Data.LastName) : world.Setup.Club(e.Side).Name;
     }
 
-    /// <summary>Goals a club scored in the season's earlier games, or null when this match is not a season game.</summary>
-    static int? SeasonGoalsBefore(World world, Side side)
+    /// <summary>Goals a club scored in the season's earlier games, or None when this match is not a season game.</summary>
+    static Maybe<int> SeasonGoalsBefore(World world, Side side)
     {
-        if (SeasonSession.Current is not { } season || SeasonSession.Playing == null) return null;
+        if (!SeasonSession.Current.TryGet(out var season) || !SeasonSession.Playing.HasValue) return Maybe<int>.None;
         string club = world.Setup.Club(side).Id;
-        return season.PlayedBy(club).Sum(g => string.Equals(g.Home, club, StringComparison.Ordinal) ? g.Result!.HomeGoals : g.Result!.AwayGoals);
+        return season.PlayedBy(club).Sum(g => g.Result.Select(r => string.Equals(g.Home, club, StringComparison.Ordinal) ? r.HomeGoals : r.AwayGoals).Or(0));
     }
 
     /// <summary>An end-of-period banner stays up for the whole intermission.</summary>

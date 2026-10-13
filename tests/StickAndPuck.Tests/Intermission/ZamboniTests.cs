@@ -61,9 +61,9 @@ public sealed class ZamboniTests : CheckedTest
         IntermissionSystem.Drive? last = null;
         Run(world, system, w => w.Match.Phase == MatchPhase.Final, 200f, w =>
         {
-            if (system.Current is { } d && d != last) { drives++; last = d; }
-            if (system.Current is { Finished: false } && firstOut < 0) firstOut = w.Time;
-            if (system.Current is { Finished: true } && firstGone < 0) firstGone = w.Time;
+            if (system.Current.TryGet(out var d) && d != last) { drives++; last = d; }
+            if (system.Current.Is(x => !x.Finished) && firstOut < 0) firstOut = w.Time;
+            if (system.Current.Is(x => x.Finished) && firstGone < 0) firstGone = w.Time;
             if (w.Match.Period == 2 && w.Match.Phase == MatchPhase.Faceoff && secondPeriod < 0) secondPeriod = w.Time;
         });
         Check(world.Match.Phase == MatchPhase.Final, "the match plays through to the final");
@@ -79,13 +79,13 @@ public sealed class ZamboniTests : CheckedTest
         var world = Make();
         bool press = false;
         var system = new IntermissionSystem(() => press);
-        Run(world, system, w => system.Current != null, 20f);
+        Run(world, system, w => system.Current.HasValue, 20f);
         float start = world.Time;
         Run(world, system, w => w.Time - start > 3f, 5f);
         press = true;
-        Run(world, system, w => system.Current?.Finished == true, 1f);
+        Run(world, system, w => system.Current.Is(x => x.Finished), 1f);
         press = false;
-        Check(system.Current is { Skipped: true }, "enter skips the Zamboni");
+        Check(system.Current.Is(x => x.Skipped), "enter skips the Zamboni");
         float skipped = world.Time;
         Run(world, system, w => w.Match.Period == 2 && w.Match.Phase == MatchPhase.Faceoff, 10f);
         Check(world.Match.Period == 2 && world.Time - skipped < 3f, $"after a skip period 2 starts {world.Time - skipped:F1} s later");

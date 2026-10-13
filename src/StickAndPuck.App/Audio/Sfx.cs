@@ -88,7 +88,7 @@ internal static class SfxTable
             Sfx.Fight => new("fight.wav", 0.6f, 1.0f, Spatial: false),
             Sfx.LineChange => new("linechange.wav", 0.4f, 0.3f, Spatial: false),
             Sfx.Final => new("final.wav", 0.6f, 2.0f, Spatial: false),
-            _ => throw new ArgumentOutOfRangeException(nameof(sfx), sfx, message: null),
+            _ => throw new ArgumentOutOfRangeException(nameof(sfx), sfx, "unknown sound"),
         };
     }
 }

@@ -55,7 +55,7 @@ public enum Difficulty
 /// <summary>
 /// Player options from the settings screen, with the defaults from the plan's Decisions. Every
 /// switch lives here (W20); systems only read them from <see cref="World.Settings"/>.
-/// <see cref="FromEnvironment"/> lays the SAP_* variables over them for headless runs.
+/// <see cref="FromEnvironment()"/> lays the SAP_* variables over them for headless runs.
 /// </summary>
 public sealed record Settings
 {
@@ -119,42 +119,46 @@ public sealed record Settings
     /// SAP_MATCH_DEBUG, SAP_LINES_DEBUG and SAP_LANGUAGE. A variable that is unset or empty changes nothing, so
     /// the saved settings stay in charge; a bad value is an error, like SAP_LIGHTING always was.
     /// </summary>
-    /// <param name="saved">The saved settings, or null for the defaults.</param>
     /// <returns>The settings to run with.</returns>
-    public static Settings FromEnvironment(Settings? saved = null)
+    public static Settings FromEnvironment() => FromEnvironment(new Settings());
+
+    /// <summary>Lays the SAP_* overrides over saved settings, as <see cref="FromEnvironment()"/> does over the defaults.</summary>
+    /// <param name="saved">The saved settings.</param>
+    /// <returns>The settings to run with.</returns>
+    public static Settings FromEnvironment(Settings saved)
     {
-        var s = saved ?? new Settings();
-        if (Flag("SAP_CAMERA_ZOOM") is { } zoom) s = s with { CameraZoom = zoom };
-        if (Flag("SAP_CONTROL_MARKER") is { } marker) s = s with { ControlMarker = marker };
-        if (Flag("SAP_SIM_GAME") is { } sim) s = s with { SimGame = sim };
-        if (Flag("SAP_AUTO_DEKE") is { } deke) s = s with { AutoDeke = deke };
-        if (Flag("SAP_ONE_TIMERS") is { } oneTimers) s = s with { OneTimers = oneTimers };
-        if (Flag("SAP_SWAP_KITS") is { } swap) s = s with { SwapKits = swap };
-        if (Flag("SAP_FPS") is { } fps) s = s with { FpsLine = fps };
-        if (Flag("SAP_MATCH_DEBUG") is { } match) s = s with { MatchDebug = match };
-        if (Flag("SAP_LINES_DEBUG") is { } lines) s = s with { LinesDebug = lines };
-        if (Choice<LightingMood>("SAP_LIGHTING") is { } mood) s = s with { Lighting = mood };
-        if (Choice<Difficulty>("SAP_DIFFICULTY") is { } level) s = s with { Difficulty = level };
-        if (Choice<Language>("SAP_LANGUAGE") is { } language) s = s with { Language = language };
+        var s = saved;
+        if (Flag("SAP_CAMERA_ZOOM").TryGet(out bool zoom)) s = s with { CameraZoom = zoom };
+        if (Flag("SAP_CONTROL_MARKER").TryGet(out bool marker)) s = s with { ControlMarker = marker };
+        if (Flag("SAP_SIM_GAME").TryGet(out bool sim)) s = s with { SimGame = sim };
+        if (Flag("SAP_AUTO_DEKE").TryGet(out bool deke)) s = s with { AutoDeke = deke };
+        if (Flag("SAP_ONE_TIMERS").TryGet(out bool oneTimers)) s = s with { OneTimers = oneTimers };
+        if (Flag("SAP_SWAP_KITS").TryGet(out bool swap)) s = s with { SwapKits = swap };
+        if (Flag("SAP_FPS").TryGet(out bool fps)) s = s with { FpsLine = fps };
+        if (Flag("SAP_MATCH_DEBUG").TryGet(out bool match)) s = s with { MatchDebug = match };
+        if (Flag("SAP_LINES_DEBUG").TryGet(out bool lines)) s = s with { LinesDebug = lines };
+        if (Choice<LightingMood>("SAP_LIGHTING").TryGet(out var mood)) s = s with { Lighting = mood };
+        if (Choice<Difficulty>("SAP_DIFFICULTY").TryGet(out var level)) s = s with { Difficulty = level };
+        if (Choice<Language>("SAP_LANGUAGE").TryGet(out var language)) s = s with { Language = language };
         return s;
     }
 
     /// <summary>Reads a 0/1 variable; "on", "off", "true" and "false" work too.</summary>
-    static bool? Flag(string name)
+    static Maybe<bool> Flag(string name)
     {
-        return Environment.GetEnvironmentVariable(name)?.Trim().ToLowerInvariant() switch
+        return (Environment.GetEnvironmentVariable(name) ?? "").Trim().ToLowerInvariant() switch
         {
-            null or "" => null,
+            "" => Maybe<bool>.None,
             "1" or "on" or "true" or "yes" => true,
             "0" or "off" or "false" or "no" => false,
             var other => throw new InvalidOperationException($"{name}={other}: use 0 or 1"),
         };
     }
 
-    static T? Choice<T>(string name)
+    static Maybe<T> Choice<T>(string name)
         where T : struct, Enum
     {
-        if (Environment.GetEnvironmentVariable(name) is not { Length: > 0 } value) return null;
+        if (Environment.GetEnvironmentVariable(name) is not { Length: > 0 } value) return Maybe<T>.None;
         if (Enum.TryParse<T>(value.Trim(), ignoreCase: true, out var parsed)) return parsed;
         throw new InvalidOperationException($"{name}={value}: use {string.Join(", ", Enum.GetNames<T>()).ToLowerInvariant()}");
     }

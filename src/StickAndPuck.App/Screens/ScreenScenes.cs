@@ -38,7 +38,7 @@ public sealed class StartScene : IScene
                 ModeScreen.Choose(new ExhibitionMode());
                 break;
             case "standings":
-                if (SeasonSession.Continue(clubs) == null) SeasonSession.StartNew(clubs, Scenes.DefaultSetup(clubs).Home.Id, 1);
+                if (!SeasonSession.Continue(clubs).HasValue) SeasonSession.StartNew(clubs, Scenes.DefaultSetup(clubs).Home.Id, 1);
                 ScreenFlow.Push(new StandingsScreen());
                 break;
             case "bracket":
@@ -48,13 +48,13 @@ public sealed class StartScene : IScene
                 break;
             case "results":
                 ScreenFlow.PlayMode(new ExhibitionMode(), []);
-                var setup = ScreenFlow.TakeNextWorld()!.Setup;
-                ScreenFlow.ShowResults(new MatchResult(setup, 4, 3, 31, 24, "OT", SampleGoals(setup), ScreenFlow.Playing ?? new MatchPlan(new ExhibitionMode(), [])));
-                world = ScreenFlow.TakeNextWorld()!;
+                var setup = Taken().Setup;
+                ScreenFlow.ShowResults(new MatchResult(setup, 4, 3, 31, 24, "OT", SampleGoals(setup), ScreenFlow.Playing.TryGet(out var plan) ? plan : new MatchPlan(new ExhibitionMode(), [])));
+                world = Taken();
                 break;
             case "pause":
                 ScreenFlow.PlayMode(new ExhibitionMode(), []);
-                world = ScreenFlow.TakeNextWorld()!;
+                world = Taken();
                 world.Match.Phase = MatchPhase.Play;
                 ScreenFlow.Push(new PauseScreen());
                 break;
@@ -67,6 +67,9 @@ public sealed class StartScene : IScene
         Console.WriteLine($"SAP: screens: {screen}");
         return world;
     }
+
+    /// <summary>The world a screen just asked for; the scenes only take one after starting a match or showing results.</summary>
+    static World Taken() => ScreenFlow.TakeNextWorld().TryGet(out var next) ? next : throw new InvalidOperationException("the screens built no world");
 
     static List<GoalLine> SampleGoals(MatchSetup setup)
     {

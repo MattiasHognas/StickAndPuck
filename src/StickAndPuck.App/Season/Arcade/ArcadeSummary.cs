@@ -21,7 +21,7 @@ internal static class ArcadeSummary
     /// <param name="clubs">Every club, for names.</param>
     public static void Draw(HudArt art, ArcadeRun run, IReadOnlyList<ClubData> clubs)
     {
-        string Name(string id) => clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))?.Name ?? id;
+        string Name(string id) => clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).Select(c => c.Name).Or(id);
 
         var best = run.IsOver ? run.Records.Take(BestShown).ToList() : [];
         int rows = run.Games.Count + 4 + (run.IsOver ? 0 : 1) + (best.Count > 0 ? best.Count + 1 : 0);
@@ -52,7 +52,7 @@ internal static class ArcadeSummary
             top += Line;
         }
 
-        if (!run.IsOver) art.DrawText(Text.Format(run.NextAtHome ? K.NextVs : K.NextAt, Name(run.NextOpponent!)), left, top, art.Score);
+        if (!run.IsOver) art.DrawText(Text.Format(run.NextAtHome ? K.NextVs : K.NextAt, Name(run.NextOpponent.Or(""))), left, top, art.Score);
         if (best.Count == 0) return;
 
         // W25: the best runs so far, this one marked

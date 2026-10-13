@@ -76,8 +76,8 @@ public static class AiCommand
     /// <summary>Gets or sets a value indicating whether owner changes are printed (SAP_AI_TRACE=1 sets it).</summary>
     public static bool Trace { get; set; } = string.Equals(Environment.GetEnvironmentVariable("SAP_AI_TRACE"), "1", StringComparison.Ordinal);
 
-    /// <summary>Gets or sets a hook that sees every AI write as it happens, for the W68 fixtures.</summary>
-    internal static Action<Player, AiIntent>? Watch { get; set; }
+    /// <summary>Gets or sets a hook that sees every AI write as it happens, for the W68 fixtures (a no-op by default).</summary>
+    internal static Action<Player, AiIntent> Watch { get; set; } = Unwatched;
 
     /// <summary>Gets who last wrote a skater's command, and why.</summary>
     /// <param name="world">The match.</param>
@@ -163,7 +163,7 @@ public static class AiCommand
     {
         var brain = Decisions.Board(world).For(p.Id);
         brain.NextThink = Math.Max(brain.NextThink, world.Time + 0.2f);
-        brain.LatePass = null;
+        brain.LatePass = Maybe<PassOption>.None;
         brain.HeldTick = world.Tick;
     }
 
@@ -191,8 +191,16 @@ public static class AiCommand
         if (p.Slot >= 0) return false;
         var intent = new AiIntent(layer, reason, world.Tick);
         Intents.GetValue(world, _ => [])[p.Id] = intent;
-        Watch?.Invoke(p, intent);
+        Watch(p, intent);
         return true;
+    }
+
+    /// <summary>The default <see cref="Watch"/>: sees nothing.</summary>
+    /// <param name="p">The skater.</param>
+    /// <param name="intent">The write.</param>
+    internal static void Unwatched(Player p, AiIntent intent)
+    {
+        // nobody is watching: a fixture sets its own hook
     }
 
     /// <summary>Prints who had a skater at the end of the last step he was written, when that changed.</summary>

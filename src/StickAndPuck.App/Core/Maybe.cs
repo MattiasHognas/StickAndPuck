@@ -16,6 +16,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>
 
     Maybe(T value)
     {
+        ArgumentNullException.ThrowIfNull(value);    // a test comparing a Maybe with null fails loudly instead of quietly
         this.value = value;
         HasValue = true;
     }
@@ -50,7 +51,7 @@ public readonly struct Maybe<T> : IEquatable<Maybe<T>>
     /// <summary>Gets the value when present.</summary>
     /// <param name="result">The value, or the type's default when absent.</param>
     /// <returns>True when present.</returns>
-    public bool TryGet([MaybeNullWhen(false)] out T result)
+    public bool TryGet(out T result)
     {
         result = value;
         return HasValue;
@@ -96,7 +97,31 @@ public static class Maybe
     public static Maybe<T> Some<T>(T value)
         where T : notnull => Maybe<T>.Some(value);
 
-    /// <summary>Converts a reference an outside API may leave unset (JSON, the runtime) at the boundary.</summary>
+    /// <summary>Gets the first item that passes a test, in place of FirstOrDefault and Find.</summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="source">The items.</param>
+    /// <param name="test">The test.</param>
+    /// <returns>The first match, or None.</returns>
+    public static Maybe<T> FirstOrNone<T>(this IEnumerable<T> source, Func<T, bool> test)
+        where T : notnull
+    {
+        foreach (var item in source)
+            if (test(item)) return item;
+        return Maybe<T>.None;
+    }
+
+    /// <summary>Gets the first item, in place of FirstOrDefault.</summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="source">The items.</param>
+    /// <returns>The first item, or None when there are none.</returns>
+    public static Maybe<T> FirstOrNone<T>(this IEnumerable<T> source)
+        where T : notnull
+    {
+        using var items = source.GetEnumerator();
+        return items.MoveNext() ? items.Current : Maybe<T>.None;
+    }
+
+    /// <summary>Converts a reference an outside API may leave unset (JSON, the runtime) at the boundary; give <typeparamref name="T"/> explicitly.</summary>
     /// <typeparam name="T">The value type.</typeparam>
     /// <param name="value">The reference, possibly unset.</param>
     /// <returns>Some value, or None.</returns>

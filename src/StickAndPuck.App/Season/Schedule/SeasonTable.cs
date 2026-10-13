@@ -39,7 +39,7 @@ internal static class SeasonTable
             var r = table[i];
             top += Line;
             var ink = string.Equals(r.ClubId, season.UserClub, StringComparison.Ordinal) ? art.Score : art.Text;
-            string name = clubs.FirstOrDefault(c => string.Equals(c.Id, r.ClubId, StringComparison.Ordinal))?.Name ?? r.ClubId;
+            string name = clubs.FirstOrNone(c => string.Equals(c.Id, r.ClubId, StringComparison.Ordinal)).Select(c => c.Name).Or(r.ClubId);
             art.DrawText(Num(i + 1), x + Pad + 4, top, ink);
             art.DrawText(name, x + Pad + 22, top, ink);
             string[] cells = [Num(r.Played), Num(r.Wins), Num(r.OvertimeWins), Num(r.OvertimeLosses), Num(r.Losses), $"{r.GoalsFor}-{r.GoalsAgainst}", Num(r.Points)];

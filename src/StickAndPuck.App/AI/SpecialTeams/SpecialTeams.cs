@@ -82,10 +82,10 @@ public static class SpecialTeams
     /// <summary>Gets a skater's spot in his club's special teams shape this step.</summary>
     /// <param name="world">The match.</param>
     /// <param name="p">The skater.</param>
-    /// <returns>The spot (x, z), or null.</returns>
-    public static Vector2? SpotOf(World world, Player p)
+    /// <returns>The spot (x, z), or None.</returns>
+    public static Maybe<Vector2> SpotOf(World world, Player p)
     {
-        return Board(world).Spots[(int)p.Side].TryGetValue(p.Id, out var spot) ? spot : null;
+        return Board(world).Spots[(int)p.Side].TryGetValue(p.Id, out var spot) ? spot : Maybe<Vector2>.None;
     }
 
     internal static SpecialTeamsBoard Board(World world)
@@ -110,8 +110,8 @@ internal sealed class SpecialTeamsBoard
     /// <summary>Gets each side's pairing of player id to spot index, kept between steps.</summary>
     public Dictionary<int, int>[] Pairing { get; } = [[], []];
 
-    /// <summary>Gets or sets the club on the current power play, or null.</summary>
-    public Side? PowerPlay { get; set; }
+    /// <summary>Gets or sets the club on the current power play, or None.</summary>
+    public SideOrNone PowerPlay { get; set; }
 
     /// <summary>Gets or sets the shape this power play plays.</summary>
     public Formation PpShape { get; set; } = Formation.Umbrella;
@@ -129,7 +129,7 @@ internal sealed class SpecialTeamsBoard
     public float ClearAt { get; set; }
 
     /// <summary>Gets or sets the last clear still being watched to see it leave the zone.</summary>
-    public ClearWatch? Clearing { get; set; }
+    public Maybe<ClearWatch> Clearing { get; set; }
 
     public SpotPlan For(int id)
     {
@@ -154,7 +154,7 @@ internal sealed class SpotPlan
     public float ErrorUntil { get; set; } = float.NegativeInfinity;
 
     /// <summary>Gets or sets the open ice this power play skater last read around his spot.</summary>
-    public Vector2? Open { get; set; }
+    public Maybe<Vector2> Open { get; set; }
 
     /// <summary>Gets or sets when he reads it again.</summary>
     public float OpenNext { get; set; }

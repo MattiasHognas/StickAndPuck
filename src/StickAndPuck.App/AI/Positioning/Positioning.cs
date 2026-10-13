@@ -27,7 +27,7 @@ public static class Positioning
     /// <returns>The role; centre for anyone positioning has not seen yet.</returns>
     public static Role RoleOf(World world, Player p)
     {
-        return Board(world).Get(p.Id)?.Role ?? Role.Centre;
+        return Board(world).Get(p.Id).TryGet(out var plan) ? plan.Role : Role.Centre;
     }
 
     /// <summary>Gets what a skater is doing this step.</summary>
@@ -36,7 +36,7 @@ public static class Positioning
     /// <returns>The job.</returns>
     public static Job JobOf(World world, Player p)
     {
-        return Board(world).Get(p.Id)?.Job ?? Job.Idle;
+        return Board(world).Get(p.Id).TryGet(out var plan) ? plan.Job : Job.Idle;
     }
 
     /// <summary>Gets where a skater is heading this step, after the hockey IQ read and spacing.</summary>
@@ -45,7 +45,7 @@ public static class Positioning
     /// <returns>The target on the ice (x, z).</returns>
     public static Vector2 TargetOf(World world, Player p)
     {
-        return Board(world).Get(p.Id)?.Target ?? new Vector2(p.Position.X, p.Position.Z);
+        return Board(world).Get(p.Id).TryGet(out var plan) ? plan.Target : new Vector2(p.Position.X, p.Position.Z);
     }
 
     /// <summary>Gets the ideal spot for a skater's role this step, from where the puck is now, before hockey IQ reads or blurs it.</summary>
@@ -54,16 +54,16 @@ public static class Positioning
     /// <returns>The spot on the ice (x, z).</returns>
     public static Vector2 IdealOf(World world, Player p)
     {
-        return Board(world).Get(p.Id)?.Ideal ?? new Vector2(p.Position.X, p.Position.Z);
+        return Board(world).Get(p.Id).TryGet(out var plan) ? plan.Ideal : new Vector2(p.Position.X, p.Position.Z);
     }
 
     /// <summary>Gets a skater's station in his side's attacking-zone cycle (W22a).</summary>
     /// <param name="world">The match.</param>
     /// <param name="p">The skater.</param>
-    /// <returns>The station, or null when he is not cycling.</returns>
-    public static Station? StationOf(World world, Player p)
+    /// <returns>The station, or None when he is not cycling.</returns>
+    public static Maybe<Station> StationOf(World world, Player p)
     {
-        return Board(world).Get(p.Id)?.Station;
+        return Board(world).Get(p.Id).TryGet(out var plan) ? plan.Station : Maybe<Station>.None;
     }
 
     /// <summary>Gets whether a side is cycling the puck in the attacking zone this step (W22a).</summary>
@@ -141,9 +141,9 @@ internal sealed class PositioningBoard
     /// <summary>Gets the on-ice skaters the roles were handed out to, so they are only redone after a change.</summary>
     public string Lineup { get; set; } = "";
 
-    public SkaterPlan? Get(int id)
+    public Maybe<SkaterPlan> Get(int id)
     {
-        return plans.GetValueOrDefault(id);
+        return plans.TryGetValue(id, out var plan) ? plan : Maybe<SkaterPlan>.None;
     }
 
     public SkaterPlan For(int id)
@@ -167,7 +167,7 @@ internal sealed class SkaterPlan
     public Vector2 Target { get; set; }
 
     /// <summary>Gets or sets the shape spot as this skater reads it: it trails the ideal spot, slower for poor positioning.</summary>
-    public Vector2? Read { get; set; }
+    public Maybe<Vector2> Read { get; set; }
 
     /// <summary>Gets or sets this skater's misjudgement of its spot; bigger for poor positioning.</summary>
     public Vector2 Error { get; set; }
@@ -175,16 +175,16 @@ internal sealed class SkaterPlan
     /// <summary>Gets or sets when the misjudgement is next re-rolled.</summary>
     public float ErrorUntil { get; set; } = float.NegativeInfinity;
 
-    /// <summary>Gets or sets the skater's cycle station this step, or null (W22a).</summary>
-    public Station? Station { get; set; }
+    /// <summary>Gets or sets the skater's cycle station this step, or None (W22a).</summary>
+    public Maybe<Station> Station { get; set; }
 
-    /// <summary>Gets or sets the spot this skater last read as open for a pass, or null (W22a).</summary>
-    public Vector2? Open { get; set; }
+    /// <summary>Gets or sets the spot this skater last read as open for a pass, or None (W22a).</summary>
+    public Maybe<Vector2> Open { get; set; }
 
     /// <summary>Gets or sets when the skater next reads where to get open.</summary>
     public float OpenNext { get; set; }
 
-    public Vector2? Request { get; set; }
+    public Maybe<Vector2> Request { get; set; }
 
     public bool RequestSprint { get; set; }
 

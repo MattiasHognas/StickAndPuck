@@ -171,16 +171,16 @@ public sealed class MatchTests : CheckedTest
     /// <summary>W40: after the horn of a decided game the winners gather and celebrate, the losers slump or leave, then the final.</summary>
     void Celebrates(World w, Side winner)
     {
-        Check(w.Match.Phase == MatchPhase.Stopped && Celebration.Winner(w) == winner, "the horn starts the winners' celebration before the final");
+        Check(w.Match.Phase == MatchPhase.Stopped && Celebration.Winner(w) == winner.OrNone(), "the horn starts the winners' celebration before the final");
         RunFor(w, MatchTuning.CelebrationSeconds - 1.5f);
         var pile = w.OnIce(winner).Where(p => !p.IsGoalie).Select(p => p.Position).ToList();
         var centre = pile.Aggregate(Vector3.Zero, (a, b) => a + b) / pile.Count;
         Check(pile.All(p => Vector3.Distance(p, centre) < 2.5f), "the winning skaters gather in a pile");
-        Check(w.OnIce(winner).Where(p => !p.IsGoalie).All(p => string.Equals(Celebration.Pose(w, p)?.Clip, "celebrate", StringComparison.Ordinal)), "every winning skater plays the celebrate clip");
+        Check(w.OnIce(winner).Where(p => !p.IsGoalie).All(p => Celebration.Pose(w, p).Is(c => string.Equals(c.Clip, "celebrate", StringComparison.Ordinal))), "every winning skater plays the celebrate clip");
         var losers = w.Players.Where(p => p.OnIce && !p.IsGoalie && p.Side != winner).ToList();
-        Check(losers.All(p => Celebration.Pose(w, p)?.Clip is "fall" or "block" || (Celebration.Pose(w, p) == null && p.Speed > 1f && p.Velocity.Z < 0)),
+        Check(losers.All(p => Celebration.Pose(w, p).Is(c => c.Clip is "fall" or "block") || (!Celebration.Pose(w, p).HasValue && p.Speed > 1f && p.Velocity.Z < 0)),
             "every losing skater is down on the ice, or trudging to the bench or there with his head down");
-        Check(losers.Count(p => string.Equals(Celebration.Pose(w, p)?.Clip, "fall", StringComparison.Ordinal)) == Math.Min(2, losers.Count), "the two losers nearest the pile drop to the ice");
+        Check(losers.Count(p => Celebration.Pose(w, p).Is(c => string.Equals(c.Clip, "fall", StringComparison.Ordinal))) == Math.Min(2, losers.Count), "the two losers nearest the pile drop to the ice");
         Check(w.Players.Where(p => p.OnIce && p.IsGoalie && p.Side != winner).All(g => Celebration.Slumps(w, g)), "the losing goalie slumps");
         Check(w.Match.Phase == MatchPhase.Stopped && !w.Puck.Live, "the final waits for the celebration");
         var ev = RunFor(w, 2);

@@ -76,10 +76,10 @@ public sealed class PixelFrame : IDisposable
         SetShaderValue(Toon, GetShaderLocation(Toon, "lightDir"), new Vector3(-0.45f, 0.75f, 0.5f), ShaderUniformDataType.Vec3);
         SetShaderValue(Toon, GetShaderLocation(Toon, "bandWidth"), Dither ? BandWidth : 0f, ShaderUniformDataType.Float);
         SetShaderValue(Toon, GetShaderLocation(Toon, "rink"), new Vector3(RinkSpec.HalfLength, RinkSpec.HalfWidth, RinkSpec.CornerRadius), ShaderUniformDataType.Vec3);
-        Mask = LoadShader(null, "shaders/mask.fs");
+        Mask = FragmentShader("shaders/mask.fs");
         SetShaderValue(Mask, GetShaderLocation(Mask, "nearPlane"), (float)Rlgl.GetCullDistanceNear(), ShaderUniformDataType.Float);
         SetShaderValue(Mask, GetShaderLocation(Mask, "farPlane"), (float)Rlgl.GetCullDistanceFar(), ShaderUniformDataType.Float);
-        Post = LoadShader(null, "shaders/post.fs");
+        Post = FragmentShader("shaders/post.fs");
         var palette = Palette.Current;
         SetShaderValueV(Post, GetShaderLocation(Post, "palette"), palette.ToArray(), ShaderUniformDataType.Vec3, palette.Count);
         SetShaderValue(Post, GetShaderLocation(Post, "paletteSize"), palette.Count, ShaderUniformDataType.Int);
@@ -90,6 +90,13 @@ public sealed class PixelFrame : IDisposable
         texelLoc = GetShaderLocation(Post, "texel");
         innerLoc = GetShaderLocation(Post, "innerDepth");
         originLoc = GetShaderLocation(Post, "ditherOrigin");
+    }
+
+    /// <summary>Loads a fragment shader over raylib's default vertex shader, which raylib picks for a missing (zero) vertex path.</summary>
+    static unsafe Shader FragmentShader(string fsPath)
+    {
+        byte[] path = System.Text.Encoding.UTF8.GetBytes(fsPath + "\0");
+        fixed (byte* fs = path) return LoadShader((sbyte*)0, (sbyte*)fs);
     }
 
     static RenderTexture2D Target(int w, int h)

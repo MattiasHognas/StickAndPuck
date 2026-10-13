@@ -32,7 +32,7 @@ public static class Standings
         var rows = clubIds.ToDictionary(id => id, id => new StandingRow(id, 0, 0, 0, 0, 0, 0, 0, 0), StringComparer.Ordinal);
         foreach (var g in games)
         {
-            if (g.Result is not { } r) continue;
+            if (!g.Result.TryGet(out var r)) continue;
             if (rows.TryGetValue(g.Home, out var home)) rows[g.Home] = Add(home, r.HomeGoals, r.AwayGoals, r.HomePoints, r.Kind);
             if (rows.TryGetValue(g.Away, out var away)) rows[g.Away] = Add(away, r.AwayGoals, r.HomeGoals, r.AwayPoints, r.Kind);
         }

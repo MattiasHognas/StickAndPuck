@@ -73,7 +73,7 @@ public sealed class LinesTests : CheckedTest
         var w = Make();
         foreach (var side in new[] { Side.Home, Side.Away })
         {
-            var squad = Bench.SquadOf(w, side)!;
+            var squad = Bench.SquadOf(w, side).Or(null!);
             int roster = w.Setup.Club(side).Roster.Count;
             Check(w.Players.Count(p => p.Side == side) == roster && w.OnIce(side).Count() == 6,
                 $"{side}: whole roster of {roster} in the match, 6 on the ice");
@@ -141,18 +141,18 @@ public sealed class LinesTests : CheckedTest
         var w = Make(b => b.Human());
         Phase(w, MatchPhase.Play);
         PuckUpIce(w, Side.Home);
-        var squad = Bench.SquadOf(w, Side.Home)!;
+        var squad = Bench.SquadOf(w, Side.Home).Or(null!);
         var first = squad.Lines[0].Members.ToList();
-        var human = w.Controlled(0)!;
+        var human = w.Controlled(0).OrNull()!;
         SetEnergy(first, 0.35f);
         var events = Run(w, 12, until: world => first.TrueForAll(p => !p.OnIce));
         var on = On(w, Side.Home, Group.Forwards);
         Check(first.TrueForAll(p => !p.OnIce), "tired line 1 goes to the bench on the fly");
-        Check(on.Count == 3 && on.All(p => squad.UnitOf(p) is { Number: > 1 }), $"a fresh line comes on ({Bench.OnIceUnit(w, Side.Home, Group.Forwards)?.Name})");
+        Check(on.Count == 3 && on.All(p => squad.UnitOf(p).Is(u => u.Number > 1)), $"a fresh line comes on ({Bench.OnIceUnit(w, Side.Home, Group.Forwards).Select(u => u.Name).Or("")})");
         Check(On(w, Side.Home, Group.Defence).Count == 2 && squad.Pairs[0].Members.All(p => p.OnIce), "the defence pair stays on");
         Check(events.Count(e => e is LineChanged { Side: Side.Home }) == 1, "one LineChange event");
         Check(!human.OnIce || human.Slot < 0, "the human was taken off the leaving centre");
-        Check(w.Controlled(0) is { OnIce: true }, "and controls a skater on the ice");
+        Check(w.Controlled(0).OrNull() is { OnIce: true }, "and controls a skater on the ice");
         var roles = Roles.Assign([.. w.OnIce(Side.Home).Where(p => !p.IsGoalie)]);
         Check(roles.Values.Distinct().Count() == 5, "the new five get five different roles");
         Check(on.Exists(p => p.Data.Position == PlayingPosition.C) && roles[on.First(p => p.Data.Position == PlayingPosition.C).Id] == Role.Centre,
@@ -164,7 +164,7 @@ public sealed class LinesTests : CheckedTest
     {
         var w = Make();
         Phase(w, MatchPhase.Play);
-        var first = Bench.SquadOf(w, Side.Home)!.Lines[0].Members.ToList();
+        var first = Bench.SquadOf(w, Side.Home).Or(null!).Lines[0].Members.ToList();
         int end = FaceoffFormation.DefendedEnd(w.Match, Side.Home);
         Run(w, 3, world =>
         {
@@ -187,7 +187,7 @@ public sealed class LinesTests : CheckedTest
         var w = Make(b => b.Human());
         Phase(w, MatchPhase.Play);
         Run(w, 0.1f);
-        var squad = Bench.SquadOf(w, Side.Home)!;
+        var squad = Bench.SquadOf(w, Side.Home).Or(null!);
         var pair = squad.Pairs[0].Members.ToList();
         var line = squad.Lines[0].Members.ToList();
         SetEnergy(pair, 0.6f);
@@ -199,7 +199,7 @@ public sealed class LinesTests : CheckedTest
         Check(pair.TrueForAll(p => !p.OnIce) && line.TrueForAll(p => !p.OnIce), "a tiring line and pair change at the faceoff");
         Check(On(w, Side.Home, Group.Forwards).Count == 3 && On(w, Side.Home, Group.Defence).Count == 2, "still five skaters");
         Check(events.Count(e => e is LineChanged) == 2, "one LineChange per group");
-        Check(w.Controlled(0) is { OnIce: true, Data.Position: PlayingPosition.C }, "the human moves to the new centre");
+        Check(w.Controlled(0).OrNull() is { OnIce: true, Data.Position: PlayingPosition.C }, "the human moves to the new centre");
         Check(On(w, Side.Away, Group.Forwards).All(p => p.Energy > 0.9f), "the fresh away line stays on");
     }
 
@@ -209,16 +209,16 @@ public sealed class LinesTests : CheckedTest
         var w = Make(b => b.Settings(s => s with { Lines = LineChanges.Manual }).Human());
         Phase(w, MatchPhase.Play);
         PuckUpIce(w, Side.Home);
-        var line = Bench.SquadOf(w, Side.Home)!.Lines[0].Members.ToList();
-        var away = Bench.SquadOf(w, Side.Away)!.Lines[0].Members.ToList();
+        var line = Bench.SquadOf(w, Side.Home).Or(null!).Lines[0].Members.ToList();
+        var away = Bench.SquadOf(w, Side.Away).Or(null!).Lines[0].Members.ToList();
         Run(w, 3, world => { SetEnergy(line, 0.3f); SetEnergy(away, 0.3f); PuckUpIce(world, Side.Home); });
         Check(line.TrueForAll(p => p.OnIce), "manual: the human's tired line waits for the button");
         Check(Bench.IsChanging(w, Side.Away) || away.TrueForAll(p => !p.OnIce), "the AI club still changes by itself");
         bool pressed = false;
         Run(w, 12, world =>
         {
-            if (!pressed && world.Controlled(0) is { } me) { me.Command = me.Command with { ChangeLine = true }; pressed = true; }
-            else if (world.Controlled(0) is { } me2)
+            if (!pressed && world.Controlled(0).OrNull() is { } me) { me.Command = me.Command with { ChangeLine = true }; pressed = true; }
+            else if (world.Controlled(0).OrNull() is { } me2)
             {
                 me2.Command = me2.Command with { ChangeLine = false };
             }
@@ -231,7 +231,7 @@ public sealed class LinesTests : CheckedTest
     {
         var w = Make();
         Phase(w, MatchPhase.Play);
-        var squad = Bench.SquadOf(w, Side.Away)!;
+        var squad = Bench.SquadOf(w, Side.Away).Or(null!);
         var starter = squad.Goalies[0];
         var backup = squad.Goalies[1];
         for (int goal = 0; goal < LinesTuning.GoalieGoals; goal++)
@@ -255,14 +255,14 @@ public sealed class LinesTests : CheckedTest
             }
             Phase(w, MatchPhase.Play);
         }
-        Check(Bench.SquadOf(w, Side.Home)!.Goalies[0].OnIce, "the scoring club keeps its goalie");
+        Check(Bench.SquadOf(w, Side.Home).Or(null!).Goalies[0].OnIce, "the scoring club keeps its goalie");
     }
 
     [Test]
     public void NoSwapForSpreadGoals()
     {
         var w = Make();
-        var starter = Bench.SquadOf(w, Side.Away)!.Goalies[0];
+        var starter = Bench.SquadOf(w, Side.Away).Or(null!).Goalies[0];
         float gap = LinesTuning.GoalieSpell * w.Setup.PeriodSeconds / 2 + 5;
         for (int goal = 0; goal < LinesTuning.GoalieGoals + 1; goal++)
         {
@@ -283,7 +283,7 @@ public sealed class LinesTests : CheckedTest
         var w = Make();
         Phase(w, MatchPhase.Play);
         PuckUpIce(w, Side.Home);
-        var squad = Bench.SquadOf(w, Side.Home)!;
+        var squad = Bench.SquadOf(w, Side.Home).Or(null!);
         SetEnergy(squad.Lines[0].Members, 0.3f);
         Run(w, 12, until: _ => squad.Lines[0].Members.All(p => !p.OnIce));
         Phase(w, MatchPhase.Intermission);
@@ -334,7 +334,7 @@ public sealed class LinesTests : CheckedTest
         var goalie = w.OnIce(Side.Home).First(p => p.IsGoalie);
         var benchForward = w.Players.Where(p => p.Side == Side.Home && !p.OnIce && Squad.GroupOf(p) == Group.Forwards).ToList();
         bool pulled = GoaliePull.Pull(w, Side.Home);
-        var extra = GoaliePull.ExtraAttacker(w, Side.Home);
+        var extra = GoaliePull.ExtraAttacker(w, Side.Home).Or(null!);
         Check(pulled && !goalie.OnIce && extra != null && benchForward.Contains(extra) && extra.OnIce && w.OnIce(Side.Home).Count(p => !p.IsGoalie) == 6,
             "pulling the goalie: he goes to the bench and a forward from the bench comes on, six skaters");
         Check(Vector2.Distance(new Vector2(extra!.Position.X, extra.Position.Z), Squad.Door(Side.Home)) < 1f, "the extra attacker steps out of the bench door");
@@ -352,7 +352,7 @@ public sealed class LinesTests : CheckedTest
         Run(w, 0.1f);
         Check(!GoaliePull.IsPulled(w, Side.Home) && goalie.OnIce && w.OnIce(Side.Home).Count(p => !p.IsGoalie) == 5,
             "at the whistle the goalie is back and the extra attacker is off: five skaters");
-        Check(w.Controlled(0) is { OnIce: true, Side: Side.Home }, "the human still controls a skater on the ice");
+        Check(w.Controlled(0).OrNull() is { OnIce: true, Side: Side.Home }, "the human still controls a skater on the ice");
     }
 
     /// <summary>
@@ -409,7 +409,7 @@ public sealed class LinesTests : CheckedTest
     {
         var w = Make(b => b.Human().Rules(RuleSet.Shl));
         Phase(w, MatchPhase.Play);
-        var line = Bench.SquadOf(w, Side.Home)!.Lines[0].Members.ToList();
+        var line = Bench.SquadOf(w, Side.Home).Or(null!).Lines[0].Members.ToList();
         IcingRule.HoldLines(w, Side.Home);
         Bench.RequestChange(w, Side.Home);
         SetEnergy(line, 0.3f);

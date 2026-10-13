@@ -36,7 +36,7 @@ public sealed class PlayoffBracketScene : IScene
     {
         PlayoffScenes.OpenTestSeason(clubs);
         PlayoffSession.Open();
-        if (PlayoffSession.Current is { } playoffs) PlayoffSystem.Log(playoffs);
+        if (PlayoffSession.Current.TryGet(out var playoffs)) PlayoffSystem.Log(playoffs);
         return PlayoffScenes.BracketWorld(clubs, settings);
     }
 }
@@ -54,21 +54,25 @@ internal static class PlayoffScenes
     public static World Play(IReadOnlyList<ClubData> clubs, Settings settings, bool human)
     {
         // SAP_OT shortens the playoff overtime periods too, for watching one; the setup below carries it
-        if (SeasonScenes.Seconds("SAP_OT") is { } overtime)
+        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float overtime))
             PlayoffSession.Rules = PlayoffSession.Rules with { Overtime = PlayoffSession.Rules.Overtime with { PeriodSeconds = overtime } };
-        var playoffs = PlayoffSession.Open();
-        var setup = PlayoffSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None);
-        if (playoffs == null || setup == null)
+        var opened = PlayoffSession.Open();
+        var next = PlayoffSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None);
+        if (!opened.TryGet(out var playoffs))
         {
-            Console.WriteLine(playoffs == null ? "SAP: the regular season is not over yet" : "SAP: the human's club has no playoff game left; showing the bracket");
-            if (playoffs != null) PlayoffSystem.Log(playoffs);
+            Console.WriteLine("SAP: the regular season is not over yet");
+            return BracketWorld(clubs, settings);
+        }
+        if (next is not NextMatch.Play { Setup: var setup } || !PlayoffSession.Playing.TryGet(out var series))
+        {
+            Console.WriteLine("SAP: the human's club has no playoff game left; showing the bracket");
+            PlayoffSystem.Log(playoffs);
             return BracketWorld(clubs, settings);
         }
 
-        var series = PlayoffSession.Playing!;
         Console.WriteLine($"SAP: playoff {playoffs.Current.Name} game {series.Games.Count + 1}: {setup.Home.Name} vs {setup.Away.Name}, series {series.High} {series.HighWins}-{series.LowWins} {series.Low}");
-        if (SeasonScenes.Seconds("SAP_PERIOD") is { } period) setup = setup with { PeriodSeconds = period };
-        if (SeasonScenes.Seconds("SAP_OT") is { } ot) OvertimeRules.PeriodSeconds = ot;
+        if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
+        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) OvertimeRules.PeriodSeconds = ot;
         var world = new World(setup, settings);
         Scenes.AddStarters(world);
         var side = setup.Inputs[0].Side;
@@ -91,20 +95,21 @@ internal static class PlayoffScenes
     {
         string path = Environment.GetEnvironmentVariable("SAP_SAVE") is { Length: > 0 }
             ? SeasonSave.DefaultPath
-            : Path.Combine(Path.GetDirectoryName(SeasonSave.DefaultPath)!, "playoffs-test.json");
+            : Path.Combine(Path.GetDirectoryName(SeasonSave.DefaultPath) ?? "", "playoffs-test.json");
         bool fresh = string.Equals(Environment.GetEnvironmentVariable("SAP_SEASON"), "new", StringComparison.OrdinalIgnoreCase);
-        if (fresh || SeasonSession.Continue(clubs, path) == null)
-        {
-            string club = Environment.GetEnvironmentVariable("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
-            int? seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? s : null;
-            SeasonSession.StartNew(clubs, club, seed, path);
-        }
-
-        var season = SeasonSession.Current!;
+        var season = !fresh && SeasonSession.Continue(clubs, path).TryGet(out var saved) ? saved : StartTestSeason(clubs, path);
         int settled = SettleSeason();
         if (settled > 0) SeasonSave.Write(season, path);
         int place = season.Table.ToList().FindIndex(r => string.Equals(r.ClubId, season.UserClub, StringComparison.Ordinal)) + 1;
         Console.WriteLine($"SAP: playoff test season in {path}: {season.UserClub} finished {place} of {season.Clubs.Count}{(settled > 0 ? $", {settled} of the human's games settled on paper" : "")}");
+    }
+
+    /// <summary>Starts the playoff test season at its own save (SAP_CLUB, SAP_SEED as in the season scene).</summary>
+    static SeasonState StartTestSeason(IReadOnlyList<ClubData> clubs, string path)
+    {
+        string club = Environment.GetEnvironmentVariable("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
+        var seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
+        return SeasonSession.StartNew(clubs, club, seed, path);
     }
 
     /// <summary>Settles the human's remaining regular season games on paper, and with them the rest of the season.</summary>
@@ -112,10 +117,9 @@ internal static class PlayoffScenes
     public static int SettleSeason()
     {
         int count = 0;
-        while (SeasonSession.NextSetup(InputDevice.None) is { } setup)
+        while (SeasonSession.NextSetup(InputDevice.None) is NextMatch.Play { Setup: var setup } && SeasonSession.Playing.TryGet(out var game) && SeasonSession.Current.TryGet(out var season))
         {
-            var game = SeasonSession.Playing!;
-            SeasonSession.Finish(QuickSim.Play(setup.Home, setup.Away, SeasonSession.Current!.GameSeed(game.Number)));
+            SeasonSession.Finish(QuickSim.Play(setup.Home, setup.Away, season.GameSeed(game.Number)));
             count++;
         }
         SeasonSession.Unsaved = false;

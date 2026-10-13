@@ -14,10 +14,10 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
     /// <summary>Seconds after the final before the stand-in table shows.</summary>
     const float TableDelay = 4;
 
-    World? watching;
+    Maybe<World> watching;
     bool sawShootout;
     float finishedAt = float.PositiveInfinity;
-    HudArt? art;
+    Maybe<HudArt> art;
 
     /// <summary>Gets or sets a value indicating whether the table always shows (the seasontable scene).</summary>
     public static bool ShowTable { get; set; }
@@ -26,12 +26,12 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
 
     public void Start(World world)
     {
-        if (SeasonSession.Current != null) art = HudArt.Load();
+        if (SeasonSession.Current.HasValue) art = HudArt.Load();
     }
 
     public void Update(World world, float dt)
     {
-        if (!ReferenceEquals(world, watching))
+        if (!watching.TryGet(out var seen) || !ReferenceEquals(world, seen))
         {
             watching = world;
             sawShootout = false;
@@ -39,8 +39,7 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
         }
         if (world.Match.Phase == MatchPhase.Shootout) sawShootout = true;
 
-        var game = SeasonSession.Playing;
-        if (game == null || !string.Equals(game.Home, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(game.Away, world.Setup.Away.Id, StringComparison.Ordinal)) return;
+        if (!SeasonSession.Playing.TryGet(out var game) || !string.Equals(game.Home, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(game.Away, world.Setup.Away.Id, StringComparison.Ordinal)) return;
         if (!world.Events.Of<MatchEnded>().Any()) return;
 
         var m = world.Match;
@@ -53,13 +52,13 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (art == null || SeasonSession.Current is not { } season) return;
-        if (ShowTable || world.Time - finishedAt >= TableDelay) SeasonTable.Draw(art, season, SeasonSession.Clubs);
+        if (!art.TryGet(out var hud) || !SeasonSession.Current.TryGet(out var season)) return;
+        if (ShowTable || world.Time - finishedAt >= TableDelay) SeasonTable.Draw(hud, season, SeasonSession.Clubs);
     }
 
     public void Dispose()
     {
-        art?.Unload();
-        art = null;
+        if (art.TryGet(out var loaded)) loaded.Unload();
+        art = Maybe<HudArt>.None;
     }
 }

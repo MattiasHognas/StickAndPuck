@@ -26,7 +26,7 @@ public sealed class ShootoutState
     public int Rounds { get; internal set; } = 3;
 
     /// <summary>Gets the winner once the shootout is decided.</summary>
-    public Side? Winner { get; internal set; }
+    public SideOrNone Winner { get; internal set; }
 
     /// <summary>Gets the goals a club has scored in the shootout.</summary>
     /// <param name="side">The club.</param>
@@ -46,19 +46,19 @@ public sealed class ShootoutState
 
     /// <summary>Gets the winner if the attempts so far decide it: one club out of reach within the rounds, or ahead after an even sudden death round.</summary>
     /// <param name="rounds">Shooters per club before sudden death.</param>
-    /// <returns>The winner, or null while it goes on.</returns>
-    public Side? Decided(int rounds)
+    /// <returns>The winner, or None while it goes on.</returns>
+    public SideOrNone Decided(int rounds)
     {
         int hg = Goals(Side.Home), ag = Goals(Side.Away), ht = Taken(Side.Home), at = Taken(Side.Away);
         if (ht <= rounds && at <= rounds)
         {
-            if (hg > ag + (rounds - at)) return Side.Home;
-            if (ag > hg + (rounds - ht)) return Side.Away;
-            return null;
+            if (hg > ag + (rounds - at)) return SideOrNone.Home;
+            if (ag > hg + (rounds - ht)) return SideOrNone.Away;
+            return SideOrNone.None;
         }
 
-        if (ht != at || hg == ag) return null;
-        return hg > ag ? Side.Home : Side.Away;
+        if (ht != at || hg == ag) return SideOrNone.None;
+        return hg > ag ? SideOrNone.Home : SideOrNone.Away;
     }
 
     internal void Add(ShootoutShot shot)

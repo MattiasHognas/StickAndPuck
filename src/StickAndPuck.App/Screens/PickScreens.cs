@@ -44,7 +44,7 @@ internal sealed class ModeScreen : MenuScreen
             }
             int index = picks.Count;
             string heading = mode.PickHeading(index);
-            ScreenFlow.Push(new TeamSelectScreen(heading, index > 0 ? picks[0] : null, club =>
+            ScreenFlow.Push(new TeamSelectScreen(heading, index > 0 ? picks[0] : Maybe<ClubData>.None, club =>
             {
                 picks.RemoveRange(index, picks.Count - index);    // back from a later pick and pick again
                 picks.Add(club);
@@ -63,10 +63,10 @@ internal sealed class ModeScreen : MenuScreen
 /// saved with the settings. A mode fixed to a preset (arcade) shows it greyed out.
 /// </summary>
 /// <param name="heading">What is being picked.</param>
-/// <param name="taken">A club already picked, shown greyed and skipped.</param>
+/// <param name="taken">A club already picked, shown greyed and skipped, or None.</param>
 /// <param name="picked">What to do with the pick.</param>
-/// <param name="fixedRules">The rules the mode always plays, or null when the player picks.</param>
-internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<ClubData> picked, RuleSet? fixedRules = null) : Screen
+/// <param name="fixedRules">The rules the mode always plays, or None when the player picks.</param>
+internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Action<ClubData> picked, Maybe<RuleSet> fixedRules = default) : Screen
 {
     const int ColW = 150, RowH = 20, PanelW = (ColW * 2) + 24, StrengthH = 40;
 
@@ -131,12 +131,12 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
         DrawRules(art, x, top + (Rows * RowH) + 4);
         DrawStrengths(art, Clubs[selected], x, top + (Rows * RowH) + 4 + RowH);
         string hint = Text.Get(!onRules ? K.HintMenu
-            : fixedRules != null ? K.HintOwnRules : K.HintPickRules);
+            : fixedRules.HasValue ? K.HintOwnRules : K.HintPickRules);
         art.Hint(hint);
     }
 
     /// <summary>Gets the rules the match will play: the mode's own, or the player's choice.</summary>
-    RuleSet Rules => fixedRules ?? RulePicks.Choice.Resolve();
+    RuleSet Rules => fixedRules.TryGet(out var rules) ? rules : RulePicks.Choice.Resolve();
 
     /// <summary>The RULES row: up goes back to the clubs, left and right pick a preset unless the mode fixes it.</summary>
     void RulesRow(IReadOnlySet<MenuButton> press)
@@ -150,7 +150,7 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
         {
             ScreenFlow.Pop();
         }
-        else if (dir != 0 && fixedRules == null)
+        else if (dir != 0 && !fixedRules.HasValue)
         {
             var choice = ScreenFlow.Prefs.Rules;
             RulesScreen.Pick(choice.Custom ? choice.Preset : RulesScreen.Cycle(choice.Preset, dir));    // from CUSTOM the first press goes back to its preset
@@ -161,14 +161,14 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
 
     void DrawRules(ScreenArt art, int x, int y)
     {
-        var ink = fixedRules != null ? ScreenArt.Muted : onRules ? art.Gold : art.Text;
+        var ink = fixedRules.HasValue ? ScreenArt.Muted : onRules ? art.Gold : art.Text;
         if (onRules)
         {
             DrawRectangle(x + 10, y - 2, PanelW - 20, RowH - 4, new Color(0x42, 0x32, 0x36, 0xff));
             art.Hud.DrawIcon("arrow_right", x + 12, y + 2);
         }
         art.Left(Text.Get(K.Rules), x + 24, y, ink);
-        art.Right(onRules && fixedRules == null ? $"< {Rules.Name} >" : Rules.Name, x + PanelW - 14, y, ink);
+        art.Right(onRules && !fixedRules.HasValue ? $"< {Rules.Name} >" : Rules.Name, x + PanelW - 14, y, ink);
     }
 
     /// <summary>W33: the selected club's strengths as bars in two columns, and how it plays.</summary>

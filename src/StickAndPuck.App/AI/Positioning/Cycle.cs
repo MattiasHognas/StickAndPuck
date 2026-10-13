@@ -133,20 +133,20 @@ public static class Cycle
     /// <param name="world">The match.</param>
     /// <param name="board">Positioning's state.</param>
     /// <param name="side">The club.</param>
-    /// <param name="carrier">The puck carrier, or null.</param>
+    /// <param name="onPuck">The puck carrier, or None.</param>
     /// <param name="play">Whether play is on.</param>
     /// <param name="rng">Randomness for the turn timing.</param>
     /// <param name="dt">The step.</param>
-    internal static void Update(World world, PositioningBoard board, Side side, Player? carrier, bool play, Random rng, float dt)
+    internal static void Update(World world, PositioningBoard board, Side side, Maybe<Player> onPuck, bool play, Random rng, float dt)
     {
         var state = board.Cycle[(int)side];
         int end = PuckHandling.AttackEnd(world, side);
         var puck = new Vector2(world.Puck.Position.X, world.Puck.Position.Z);
         var forwards = world.OnIce(side).Where(p => !p.IsGoalie && !Roles.IsDefence(board.For(p.Id).Role)).ToList();
 
-        bool ours = carrier?.Side == side;
+        bool ours = onPuck.TryGet(out var holder) && holder.Side == side;
         if (ours) state.GraceUntil = world.Time + Grace;
-        bool on = play && forwards.Count >= 2 && InZone(end, puck) && (ours || (carrier == null && world.Time < state.GraceUntil));
+        bool on = play && forwards.Count >= 2 && InZone(end, puck) && (ours || (!onPuck.HasValue && world.Time < state.GraceUntil));
         if (!on)
         {
             state.Active = false;
@@ -154,9 +154,9 @@ public static class Cycle
             return;
         }
 
-        if (!state.Active) Begin(world, state, forwards, carrier, end, puck, rng);
+        if (!state.Active) Begin(world, state, forwards, onPuck, end, puck, rng);
         state.Tally.Seconds += dt;
-        if (carrier == null) return;
+        if (!onPuck.TryGet(out var carrier)) return;
         if (end * carrier.Position.X > RinkSpec.GoalLineX) state.Tally.BehindNet += dt;
 
         // the corner support goes to the side the puck is worked along
@@ -186,16 +186,16 @@ public static class Cycle
         state.NextTurn = world.Time + TurnEvery(forwards, rng);
     }
 
-    static void Begin(World world, CycleState state, List<Player> forwards, Player? carrier, int end, Vector2 puck, Random rng)
+    static void Begin(World world, CycleState state, List<Player> forwards, Maybe<Player> carrier, int end, Vector2 puck, Random rng)
     {
         state.Active = true;
         state.Tally.Entries++;
         state.CornerSide = MathF.Abs(puck.Y) > 0.5f ? MathF.Sign(puck.Y) : 1f;
-        state.LastCarrier = carrier?.Id ?? -1;
+        state.LastCarrier = carrier.TryGet(out var holder) ? holder.Id : -1;
         state.NextTurn = world.Time + TurnEvery(forwards, rng);
         state.Stations.Clear();
         var free = new List<Station> { Station.Corner, Station.Slot, Station.BehindNet };
-        var order = forwards.OrderBy(p => p == carrier ? 0 : 1).ToList();
+        var order = forwards.OrderBy(p => carrier.Is(c => c == p) ? 0 : 1).ToList();
         foreach (var p in order)
         {
             if (free.Count == 0) break;

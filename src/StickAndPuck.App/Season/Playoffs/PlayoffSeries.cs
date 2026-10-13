@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
@@ -50,13 +51,13 @@ public sealed class PlayoffSeries
     [JsonIgnore]
     public int LowWins => Games.Count - HighWins;
 
-    /// <summary>Gets the winner's club id, or null while the series is open.</summary>
+    /// <summary>Gets the winner's club id, or None while the series is open.</summary>
     [JsonIgnore]
-    public string? Winner => HighWins >= WinsNeeded ? High : LowWins >= WinsNeeded ? Low : null;
+    public Maybe<string> Winner => HighWins >= WinsNeeded ? High : LowWins >= WinsNeeded ? Low : Maybe<string>.None;
 
     /// <summary>Gets a value indicating whether one club has won the series.</summary>
     [JsonIgnore]
-    public bool IsOver => Winner != null;
+    public bool IsOver => Winner.HasValue;
 
     /// <summary>Gets the club at home in the next game.</summary>
     [JsonIgnore]

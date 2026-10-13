@@ -31,14 +31,14 @@ public static class Game
         Text.Use(Settings.FromEnvironment().Language);
         Console.WriteLine($"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}");
         var replay = ReplayPlayer.FromEnvironment(clubs);
-        var world = replay?.World ?? Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
+        var world = replay.TryGet(out var played) ? played.World : Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
         var loop = new Loop
         {
             Headless = string.Equals(Environment.GetEnvironmentVariable("SAP_SCREENSHOT"), "1", StringComparison.Ordinal),
             Frames = FrameRecorder.FromEnvironment(),
             Replay = replay,
             Limit = long.TryParse(Environment.GetEnvironmentVariable("SAP_STEPS"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
-            Recorder = replay is { TakeOverAtTarget: true } ? replay.TakeOverRecorder() : replay == null ? ReplayRecorder.Begin(world, RecordedScene()) : null,
+            Recorder = replay.TryGet(out var r) ? (r.TakeOverAtTarget ? r.TakeOverRecorder() : Maybe<ReplayRecorder>.None) : ReplayRecorder.Begin(world, RecordedScene()),
         };
         ReplayRecorder.OpenChecksums();
 
@@ -56,20 +56,20 @@ public static class Game
             loop.Frame(world, systems);
 
             // W11: a screen started a match or went back to the menus; the new world gets fresh systems
-            if (ScreenFlow.TakeNextWorld() is { } next)
+            if (ScreenFlow.TakeNextWorld().TryGet(out var next))
             {
-                if (replay is { Live: false }) break;    // the replayed match is over
-                loop.Recorder?.Finish(world);
-                loop.Recorder = ReplayRecorder.Begin(next, null);
+                if (replay.Is(p => !p.Live)) break;    // the replayed match is over
+                if (loop.Recorder.TryGet(out var recorder)) recorder.Finish(world);
+                loop.Recorder = ReplayRecorder.Begin(next, "");
                 (world, systems) = (next, Restart(next, systems));
             }
 
-            Draw(world, systems, pixel, render, showFps: loop.Frames == null && world.Settings.FpsLine);
+            Draw(world, systems, pixel, render, showFps: !loop.Frames.HasValue && world.Settings.FpsLine);
             if (loop.AfterDraw(world, systems.Count)) break;
         }
 
         loop.ReportOnce(world);    // a recording that went on to the menus or a quit ends the loop before its last step
-        loop.Recorder?.Finish(world);
+        if (loop.Recorder.TryGet(out var last)) last.Finish(world);
         ReplayRecorder.CloseChecksums();
         foreach (var s in systems.OfType<IDisposable>()) s.Dispose();
         pixel.Dispose();
@@ -78,11 +78,11 @@ public static class Game
         Environment.ExitCode = loop.ExitCode;
     }
 
-    /// <summary>The SAP_SCENE to note in a scene's replay, or null for the screens, which record their own matches.</summary>
-    static string? RecordedScene()
+    /// <summary>The SAP_SCENE to note in a scene's replay, or "" for the screens, which record their own matches.</summary>
+    static string RecordedScene()
     {
         string scene = Environment.GetEnvironmentVariable("SAP_SCENE") is { Length: > 0 } s ? s : Scenes.Default;
-        return string.Equals(scene, Scenes.Default, StringComparison.OrdinalIgnoreCase) ? null : scene;
+        return string.Equals(scene, Scenes.Default, StringComparison.OrdinalIgnoreCase) ? "" : scene;
     }
 
     /// <summary>Runs one fixed step of every system on the world.</summary>
@@ -106,14 +106,14 @@ public static class Game
 
         public bool Headless { get; init; }
 
-        public FrameRecorder? Frames { get; init; }
+        public Maybe<FrameRecorder> Frames { get; init; }
 
-        public ReplayPlayer? Replay { get; init; }
+        public Maybe<ReplayPlayer> Replay { get; init; }
 
         /// <summary>Gets the steps SAP_STEPS asks for: run that many as fast as possible, then quit (0: no limit).</summary>
         public long Limit { get; init; }
 
-        public ReplayRecorder? Recorder { get; set; }
+        public Maybe<ReplayRecorder> Recorder { get; set; }
 
         public int ExitCode { get; private set; }
 
@@ -121,21 +121,21 @@ public static class Game
         public void Frame(World world, IReadOnlyList<ISystem> systems)
         {
             DeviceInput.Poll();
-            bool frozen = Replay is { Ended: true, Live: false };    // a replay that played out holds its last frame
-            bool fast = Replay?.FastForward(Headless) == true || (Limit > 0 && Replay == null);
-            int steps = frozen ? 0 : clock.Steps(GetFrameTime(), lockstep: Headless || Frames != null, fast);
+            bool frozen = Replay.Is(r => r is { Ended: true, Live: false });    // a replay that played out holds its last frame
+            bool fast = Replay.Is(r => r.FastForward(Headless)) || (Limit > 0 && !Replay.HasValue);
+            int steps = frozen ? 0 : clock.Steps(GetFrameTime(), lockstep: Headless || Frames.HasValue, fast);
             if (Limit > 0) steps = (int)Math.Min(steps, Limit - world.Tick);
             for (int i = 0; i < steps; i++)
             {
                 StepWorld(world, systems);
                 ulong sum = WorldChecksum.Of(world);
-                if (Recorder != null || Replay != null) ReplayRecorder.LogChecksum(world.Tick - 1, sum);    // the recorded or replayed match only
-                Recorder?.AfterStep(world, sum);
-                var step = Replay?.AfterStep(world, sum) ?? ReplayStep.Next;
+                if (Recorder.HasValue || Replay.HasValue) ReplayRecorder.LogChecksum(world.Tick - 1, sum);    // the recorded or replayed match only
+                if (Recorder.TryGet(out var recorder)) recorder.AfterStep(world, sum);
+                var step = Replay.TryGet(out var replay) ? replay.AfterStep(world, sum) : ReplayStep.Next;
                 if (step == ReplayStep.Target)
                 {
                     scrubShot = true;
-                    if (Replay!.TakeOverAtTarget) Replay.TakeOver();
+                    if (Replay.TryGet(out var scrubbed) && scrubbed.TakeOverAtTarget) scrubbed.TakeOver();
                     break;
                 }
                 if (step == ReplayStep.End) break;
@@ -147,9 +147,9 @@ public static class Game
         /// <returns>True when it printed now.</returns>
         public bool ReportOnce(World world)
         {
-            if (Replay == null || reported) return false;
+            if (!Replay.TryGet(out var replay) || reported) return false;
             reported = true;
-            ExitCode = Replay.Report(world);
+            ExitCode = replay.Report(world);
             return true;
         }
 
@@ -161,10 +161,10 @@ public static class Game
                 scrubShot = false;
                 AssetRoot.SaveScreen("replay_at.png");
                 Console.WriteLine($"SAP: replay: replay_at.png saved");
-                if (Headless && Replay is { Live: false }) return true;
+                if (Headless && Replay.Is(r => !r.Live)) return true;
             }
-            if (Replay is { Ended: true } && ReportOnce(world) && Headless) return true;
-            if (Frames?.Save(world) == true) return true;
+            if (Replay.Is(r => r.Ended) && ReportOnce(world) && Headless) return true;
+            if (Frames.Is(f => f.Save(world))) return true;
             if (Limit > 0 && world.Tick >= Limit)
             {
                 Console.WriteLine($"SAP: {world.Tick} steps run (SAP_STEPS); {StateDump.Of(world).Split('\n')[1]}");
@@ -173,7 +173,7 @@ public static class Game
 
             // F12 saves a frame; SAP_SCREENSHOT=1 saves one after a second and quits (headless checks)
             if (IsKeyPressed(KeyboardKey.F12)) AssetRoot.SaveScreen("screenshot.png");
-            if (Headless && Replay == null && Limit == 0 && world.Time >= 1f)
+            if (Headless && !Replay.HasValue && Limit == 0 && world.Time >= 1f)
             {
                 AssetRoot.SaveScreen("screenshot.png");
                 Console.WriteLine($"SAP: {world.Tick} steps of {systemCount} systems, {world.Players.Count} players, screenshot.png saved");

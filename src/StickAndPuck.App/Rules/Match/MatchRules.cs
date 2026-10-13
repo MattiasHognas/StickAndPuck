@@ -118,7 +118,7 @@ internal sealed class MatchRules : ISystem
             m.Phase = MatchPhase.Intermission;
             s.Timer = MatchTuning.IntermissionSeconds;
         }
-        else if (tied && OvertimeFormat.Of(world.Setup).AfterTie(m.Period - world.Setup.Periods) is { } next)
+        else if (tied && OvertimeFormat.Of(world.Setup).AfterTie(m.Period - world.Setup.Periods).TryGet(out var next))
         {
             // a tie: W7c sets up the overtime skaters and calls StartPeriod, or runs the shootout, as the mode's format says
             m.Phase = next;
@@ -134,9 +134,9 @@ internal sealed class MatchRules : ISystem
     {
         var m = world.Match;
         world.Puck.Live = false;
-        Side? winner = m.Score[0] > m.Score[1] ? Side.Home : m.Score[1] > m.Score[0] ? Side.Away : null;
+        var winner = m.Score[0] > m.Score[1] ? SideOrNone.Home : m.Score[1] > m.Score[0] ? SideOrNone.Away : SideOrNone.None;
         m.Phase = Celebration.Begin(world, s, winner) ? MatchPhase.Stopped : MatchPhase.Final;
-        world.Events.Publish(winner is { } w ? new MatchWon(world.Time, w) : new MatchTied(world.Time));
+        world.Events.Publish(winner.TryGetSide(out var w) ? new MatchWon(world.Time, w) : new MatchTied(world.Time));
         Log(world, s, "final");
     }
 

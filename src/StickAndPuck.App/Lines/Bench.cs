@@ -12,13 +12,13 @@ public static class Bench
 {
     static readonly ConditionalWeakTable<World, LinesBoard> Boards = [];
 
-    /// <summary>Gets a club's squad, or null in a world without the match flow.</summary>
+    /// <summary>Gets a club's squad, or None in a world without the match flow.</summary>
     /// <param name="world">The match.</param>
     /// <param name="side">The club.</param>
     /// <returns>The squad.</returns>
-    public static Squad? SquadOf(World world, Side side)
+    public static Maybe<Squad> SquadOf(World world, Side side)
     {
-        return Boards.TryGetValue(world, out var b) ? b.Squads[(int)side] : null;
+        return Boards.TryGetValue(world, out var b) ? b.Squads[(int)side] : Maybe<Squad>.None;
     }
 
     /// <summary>Gets whether a club has a change on the fly under way: skaters heading for the bench.</summary>
@@ -27,7 +27,7 @@ public static class Bench
     /// <returns>True while skaters are leaving.</returns>
     public static bool IsChanging(World world, Side side)
     {
-        return Boards.TryGetValue(world, out var b) && b.Changing[(int)side] != null;
+        return Boards.TryGetValue(world, out var b) && b.Changing[(int)side].HasValue;
     }
 
     /// <summary>Gets whether a skater is on the way to the bench.</summary>
@@ -36,7 +36,7 @@ public static class Bench
     /// <returns>True while they leave.</returns>
     public static bool IsLeaving(World world, Player p)
     {
-        return Boards.TryGetValue(world, out var b) && b.Changing[(int)p.Side] is { } c && c.Swaps.Exists(s => !s.Done && s.Out == p);
+        return Boards.TryGetValue(world, out var b) && b.Changing[(int)p.Side].TryGet(out var c) && c.Swaps.Exists(s => !s.Done && s.Out == p);
     }
 
     /// <summary>Gets the mean energy of a club's forwards or defencemen on the ice.</summary>
@@ -54,11 +54,10 @@ public static class Bench
     /// <param name="world">The match.</param>
     /// <param name="side">The club.</param>
     /// <param name="group">Forwards or defence.</param>
-    /// <returns>The unit, or null.</returns>
-    public static Unit? OnIceUnit(World world, Side side, Group group)
+    /// <returns>The unit, or None.</returns>
+    public static Maybe<Unit> OnIceUnit(World world, Side side, Group group)
     {
-        var squad = SquadOf(world, side);
-        return squad?.Units(group).MaxBy(u => u.Members.Count(m => m.OnIce));
+        return SquadOf(world, side).TryGet(out var squad) ? Maybe.From<Unit>(squad.Units(group).MaxBy(u => u.Members.Count(m => m.OnIce))) : Maybe<Unit>.None;
     }
 
     /// <summary>
@@ -82,15 +81,17 @@ public static class Bench
     /// <param name="side">The club.</param>
     /// <param name="group">The group wanted first.</param>
     /// <param name="onTheFly">True in play, false while play is stopped.</param>
-    /// <returns>The skater, or null with nobody left on the bench.</returns>
-    public static Player? SendOn(World world, Side side, Group group, bool onTheFly)
+    /// <returns>The skater, or None with nobody left on the bench.</returns>
+    public static Maybe<Player> SendOn(World world, Side side, Group group, bool onTheFly)
     {
-        var on = world.Players
+        if (world.Players
             .Where(p => p.Side == side && !p.OnIce && !p.IsGoalie && !Rules.Penalties.InBox(world, p.Id))
             .OrderByDescending(p => Squad.GroupOf(p) == group)
             .ThenByDescending(p => p.Energy)
-            .FirstOrDefault();
-        if (on == null) return null;
+            .FirstOrDefault() is not { } on)
+        {
+            return Maybe<Player>.None;
+        }
         var door = Squad.Door(side);
         on.OnIce = true;
         on.Position = new Vector3(door.X, 0, door.Y + (onTheFly ? 0.4f : 1.5f));
@@ -109,8 +110,8 @@ public static class Bench
         if (!p.OnIce) return;
         if (p.Slot >= 0)
         {
-            var to = world.OnIce(p.Side).Where(o => o != p && !o.IsGoalie && o.Slot < 0).MinBy(o => Vector3.DistanceSquared(o.Position, world.Puck.Position));
-            if (to != null) to.Slot = p.Slot;
+            if (world.OnIce(p.Side).Where(o => o != p && !o.IsGoalie && o.Slot < 0).MinBy(o => Vector3.DistanceSquared(o.Position, world.Puck.Position)) is { } to)
+                to.Slot = p.Slot;
             p.Slot = -1;
         }
         var door = Squad.Door(p.Side);
@@ -120,7 +121,7 @@ public static class Bench
         p.Command = default;
         p.Begin(PlayerAction.None);
         if (world.Puck.Carrier == p.Id) world.Puck.Carrier = -1;
-        if (Boards.TryGetValue(world, out var b) && b.Changing[(int)p.Side] is { } change)
+        if (Boards.TryGetValue(world, out var b) && b.Changing[(int)p.Side].TryGet(out var change))
             foreach (var s in change.Swaps.Where(s => s.Out == p || s.In == p)) s.Done = true;
     }
 
@@ -132,16 +133,16 @@ public static class Bench
     /// <param name="world">The match.</param>
     /// <param name="side">The club.</param>
     /// <param name="target">The skaters the club should have.</param>
-    /// <returns>The skater, or null with nobody on the ice.</returns>
-    public static Player? Surplus(World world, Side side, int target)
+    /// <returns>The skater, or None with nobody on the ice.</returns>
+    public static Maybe<Player> Surplus(World world, Side side, int target)
     {
-        if (GoaliePull.ExtraAttacker(world, side) is { } extra) return extra;
+        if (GoaliePull.ExtraAttacker(world, side).TryGet(out var extra)) return extra;
         var skaters = world.OnIce(side).Where(p => !p.IsGoalie).ToList();
         int defenceWanted = target >= 4 ? 2 : Math.Max(0, target - 1);
         int defence = skaters.Count(p => Squad.GroupOf(p) == Group.Defence);
         var group = defence > defenceWanted ? Group.Defence : Group.Forwards;
-        return skaters.Where(p => Squad.GroupOf(p) == group).OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault()
-            ?? skaters.OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault();
+        return Maybe.From<Player>(skaters.Where(p => Squad.GroupOf(p) == group).OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault()
+            ?? skaters.OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault());
     }
 
     /// <summary>
@@ -154,11 +155,11 @@ public static class Bench
     public static void Eject(World world, Player p)
     {
         SendOff(world, p);
-        if (SquadOf(world, p.Side) is not { } squad) return;
+        if (!SquadOf(world, p.Side).TryGet(out var squad)) return;
         var unit = squad.UnitOf(p);
         var up = squad.Remove(p);
-        if (unit != null && Rules.MatchFlow.State(world).Log)
-            Console.WriteLine($"LINES: {world.Setup.Club(p.Side).ShortName} {unit.Name} refilled{(up == null ? " short" : $" with {up.Data.LastName}")}");
+        if (unit.TryGet(out var refilled) && Rules.MatchFlow.State(world).Log)
+            Console.WriteLine($"LINES: {world.Setup.Club(p.Side).ShortName} {refilled.Name} refilled{(up.TryGet(out var mover) ? $" with {mover.Data.LastName}" : " short")}");
     }
 
     internal static IEnumerable<Player> OnIce(World world, Side side, Group group)
@@ -175,10 +176,10 @@ public static class Bench
 /// <summary>The bench's state for one match.</summary>
 internal sealed class LinesBoard
 {
-    public Squad?[] Squads { get; } = new Squad?[2];
+    public Maybe<Squad>[] Squads { get; } = new Maybe<Squad>[2];
 
     /// <summary>Gets each club's change on the fly, if one is under way.</summary>
-    public ShiftChange?[] Changing { get; } = new ShiftChange?[2];
+    public Maybe<ShiftChange>[] Changing { get; } = new Maybe<ShiftChange>[2];
 
     /// <summary>Gets the groups that change at the next faceoff, indexed by side then group.</summary>
     public bool[,] Pending { get; } = new bool[2, 2];
@@ -189,8 +190,8 @@ internal sealed class LinesBoard
     /// <summary>Gets the clubs whose backup goalie comes in at the next faceoff.</summary>
     public bool[] GoalieSwap { get; } = new bool[2];
 
-    /// <summary>Gets each club's pulled goalie (W23), or null while he is in the net.</summary>
-    public Player?[] PulledGoalie { get; } = new Player?[2];
+    /// <summary>Gets each club's pulled goalie (W23), or None while he is in the net.</summary>
+    public Maybe<Player>[] PulledGoalie { get; } = new Maybe<Player>[2];
 
     /// <summary>Gets the id of the extra attacker who came on for each club's goalie, or -1.</summary>
     public int[] ExtraAttacker { get; } = [-1, -1];

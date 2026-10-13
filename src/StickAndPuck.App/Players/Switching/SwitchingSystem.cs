@@ -34,26 +34,26 @@ internal sealed class SwitchingSystem : ISystem
         ChecksDemo.Update(world);
         var inputs = world.Setup.Inputs;
         var pk = world.Puck;
-        var carrier = pk.Carrier >= 0 && pk.Carrier < world.Players.Count ? world.Players[pk.Carrier] : null;
+        var carrier = pk.Carrier >= 0 && pk.Carrier < world.Players.Count ? world.Players[pk.Carrier] : Maybe<Player>.None;
         var mode = world.Settings.Switching;
 
         for (int slot = 0; slot < MatchSetup.Slots && slot < inputs.Count; slot++)
         {
             if (inputs[slot].Device == InputDevice.None) continue;
             var side = inputs[slot].Side;
-            var me = world.Controlled(slot);
-            bool defence = carrier != null && carrier.Side != side;
+            var controlled = world.Controlled(slot);
+            bool defence = carrier.TryGet(out var held) && held.Side != side;
             bool newDefence = defence && !defending[slot];
             defending[slot] = defence;
 
-            if (me == null) continue;   // a scene with no human player is left to itself
+            if (!controlled.TryGet(out var me)) continue;   // a scene with no human player is left to itself
 
-            Player? want = null;
+            var want = Maybe<Player>.None;
             if (me.Command.SwitchPlayer)
             {
                 if (carrier != me) want = Nearest(world, side, slot, me);
             }
-            else if (mode != ControlSwitching.Manual && carrier is { IsGoalie: false } c && c.Side == side && c != me && c.Slot < 0)
+            else if (mode != ControlSwitching.Manual && carrier.TryGet(out var c) && !c.IsGoalie && c.Side == side && c != me && c.Slot < 0)
             {
                 want = c;
             }
@@ -63,17 +63,16 @@ internal sealed class SwitchingSystem : ISystem
             }
             else if (mode == ControlSwitching.Auto && defence)
             {
-                var near = Nearest(world, side, slot, null);
-                if (near != null && near != me && (newDefence ||
+                if (Nearest(world, side, slot, Maybe<Player>.None).TryGet(out var near) && near != me && (newDefence ||
                     (world.Time - switchedAt[slot] >= Settle && ToPuck(world, near) + Nearer < ToPuck(world, me))))
                 {
                     want = near;
                 }
             }
 
-            if (want != null && want != me)
+            if (want.TryGet(out var to) && to != me)
             {
-                Move(me, want, slot);
+                Move(me, to, slot);
                 switchedAt[slot] = world.Time;
             }
         }
@@ -83,15 +82,15 @@ internal sealed class SwitchingSystem : ISystem
     /// <param name="world">The match.</param>
     /// <param name="side">The slot's club.</param>
     /// <param name="slot">The slot.</param>
-    /// <param name="except">A player to leave out, usually the one already controlled.</param>
-    /// <returns>The player, or null when there is none.</returns>
-    internal static Player? Nearest(World world, Side side, int slot, Player? except)
+    /// <param name="except">A player to leave out, usually the one already controlled; None leaves nobody out.</param>
+    /// <returns>The player, or None when there is none.</returns>
+    internal static Maybe<Player> Nearest(World world, Side side, int slot, Maybe<Player> except)
     {
         return world.Players
             .Where(p => p.Side == side && p.OnIce && !p.IsGoalie && p != except && (p.Slot < 0 || p.Slot == slot))
             .OrderBy(p => p.Action == PlayerAction.Fallen)
             .ThenBy(p => ToPuck(world, p))
-            .FirstOrDefault();
+            .FirstOrNone();
     }
 
     static float ToPuck(World world, Player p)

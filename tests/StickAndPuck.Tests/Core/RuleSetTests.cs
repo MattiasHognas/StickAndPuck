@@ -168,7 +168,7 @@ public sealed class RuleSetTests : CheckedTest
             && RulePicks.For(new MatchPlan(new ArcadeSuddenDeathMode(), [clubs[0]])) == RuleSet.Arcade
             && RulePicks.For(new MatchPlan(new ArcadeContinueMode(), [])) == RuleSet.Arcade, "every arcade entry plays the Arcade preset, whatever the player picked");
         Check(RulePicks.For(new MatchPlan(new ExhibitionMode(), clubs.Take(2).ToList())) is { Preset: RulePreset.Nhl, Offside: false, Custom: true }, "an exhibition plays the player's choice");
-        Check(RulePicks.Fixed(new ExhibitionMode()) == null && RulePicks.Fixed(new ArcadeLivesMode()) == RuleSet.Arcade, "team select fixes the rules row for arcade only");
+        Check(!RulePicks.Fixed(new ExhibitionMode()).HasValue && RulePicks.Fixed(new ArcadeLivesMode()) == RuleSet.Arcade, "team select fixes the rules row for arcade only");
     }
 
     [Test]
@@ -178,11 +178,11 @@ public sealed class RuleSetTests : CheckedTest
         string path = Path.Combine(dir, "season.json");
         ScreenFlow.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Nhl) };
         SeasonSession.StartNew(clubs, clubs[0].Id, 7, path);
-        var plan = new MatchPlan(null, []);
+        var plan = MatchPlan.SeasonGame();
         Check(RulePicks.For(plan) == RuleSet.Nhl, "a new season plays the rules picked when it starts");
         ScreenFlow.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Arcade) };
         Check(RulePicks.For(plan) == RuleSet.Nhl, "a later change in the settings leaves the running season alone");
-        Check(SeasonSave.Read(path)?.Rules == RuleSet.Nhl, "the season save stores the resolved rules");
+        Check(SeasonSave.Read(path).Is(s => s.Rules == RuleSet.Nhl), "the season save stores the resolved rules");
         SeasonSession.Continue(clubs, path);
         Check(RulePicks.For(plan) == RuleSet.Nhl, "a continued season plays the rules from its save");
     }

@@ -22,16 +22,16 @@ public static class ShootoutOrder
         return Math.Max(1, setup.Rules.ShootoutShooters);
     }
 
-    /// <summary>Gets the club that shoots first, or null when a human home club is to choose.</summary>
+    /// <summary>Gets the club that shoots first, or None when a human home club is to choose.</summary>
     /// <param name="setup">The match setup.</param>
-    /// <returns>The first club, or null while home chooses.</returns>
-    public static Side? First(MatchSetup setup)
+    /// <returns>The first club, or None while home chooses.</returns>
+    public static SideOrNone First(MatchSetup setup)
     {
         return setup.Rules.ShootoutFirst switch
         {
-            ShootoutFirst.Home => Side.Home,
-            ShootoutFirst.HomeChooses => HomeHuman(setup) is null ? Side.Home : null,
-            _ => Side.Away,
+            ShootoutFirst.Home => SideOrNone.Home,
+            ShootoutFirst.HomeChooses => HomeHuman(setup) == InputDevice.None ? SideOrNone.Home : SideOrNone.None,
+            _ => SideOrNone.Away,
         };
     }
 
@@ -45,25 +45,27 @@ public static class ShootoutOrder
         return so.Taken(Side.Home) == so.Taken(Side.Away) ? first : second;
     }
 
-    /// <summary>Gets the home club's human device, or null when the AI plays home.</summary>
+    /// <summary>Gets the home club's human device, or <see cref="InputDevice.None"/> when the AI plays home.</summary>
     /// <param name="setup">The match setup.</param>
     /// <returns>The device.</returns>
-    public static InputDevice? HomeHuman(MatchSetup setup)
+    public static InputDevice HomeHuman(MatchSetup setup)
     {
         foreach (var input in setup.Inputs)
             if (input.Device != InputDevice.None && input.Side == Side.Home) return input.Device;
-        return null;
+        return InputDevice.None;
     }
 
     /// <summary>Reads the home human's pick this step: shoot for first, pass for second.</summary>
     /// <param name="world">The match.</param>
-    /// <returns>The club the home human sends first, or null with no pick yet.</returns>
-    internal static Side? Pick(World world)
+    /// <returns>The club the home human sends first, or None with no pick yet.</returns>
+    internal static SideOrNone Pick(World world)
     {
-        if (!IsWindowReady() || HomeHuman(world.Setup) is not { } device) return null;
-        if (Pressed(world.Settings, device, GameAction.Shoot)) return Side.Home;
-        if (Pressed(world.Settings, device, GameAction.Pass)) return Side.Away;
-        return null;
+        if (!IsWindowReady()) return SideOrNone.None;
+        var device = HomeHuman(world.Setup);
+        if (device == InputDevice.None) return SideOrNone.None;
+        if (Pressed(world.Settings, device, GameAction.Shoot)) return SideOrNone.Home;
+        if (Pressed(world.Settings, device, GameAction.Pass)) return SideOrNone.Away;
+        return SideOrNone.None;
     }
 
     static bool Pressed(Settings settings, InputDevice device, GameAction action)

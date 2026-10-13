@@ -46,7 +46,7 @@ public static partial class Text
     /// <param name="key">One of <see cref="Keys"/>.</param>
     /// <param name="args">The values, numbers formatted with the invariant culture.</param>
     /// <returns>The text.</returns>
-    public static string Format(string key, params object?[] args) => string.Format(CultureInfo.InvariantCulture, Get(key), args);
+    public static string Format(string key, params object[] args) => string.Format(CultureInfo.InvariantCulture, Get(key), args);
 
     /// <summary>Gets a language's own name for itself, as the settings screen shows it.</summary>
     /// <param name="language">The language.</param>
@@ -69,8 +69,8 @@ public static partial class Text
 
     static string Lookup(Language language, string key)
     {
-        if (Table(language).TryGetValue(key, out string? text)) return text;
-        if (language != Language.English && Table(Language.English).TryGetValue(key, out text)) return text;
+        if (Table(language).GetValueOrDefault(key) is { } text) return text;
+        if (language != Language.English && Table(Language.English).GetValueOrDefault(key) is { } english) return english;
         return key;
     }
 

@@ -61,7 +61,7 @@ public sealed class Referee
     /// when it sees tripping, hooking or slashing; the referee clears it at the next whistle or
     /// faceoff. A2 adds the arm-up and call clips the renderer will play for it.
     /// </summary>
-    public RefereeCall? Call { get; private set; }
+    public Maybe<RefereeCall> Call { get; private set; }
 
     /// <summary>Gets the referee of a world.</summary>
     /// <param name="world">The match state.</param>
@@ -78,11 +78,11 @@ public sealed class Referee
     public static void Signal(World world, string infraction, int playerId)
     {
         var r = Of(world);
-        r.Call ??= new RefereeCall(infraction, playerId, world.Time);
+        if (!r.Call.HasValue) r.Call = new RefereeCall(infraction, playerId, world.Time);
     }
 
     /// <summary>Gets the penalty the referee last called at a stoppage; the renderer shows its signal for a moment (W14).</summary>
-    public RefereeCall? Announced { get; private set; }
+    public Maybe<RefereeCall> Announced { get; private set; }
 
     /// <summary>W14's hook: the referee calls a penalty at the stoppage and shows its signal.</summary>
     /// <param name="world">The match state.</param>
@@ -96,7 +96,7 @@ public sealed class Referee
     /// <summary>Clears the signalled call once play has stopped.</summary>
     internal void ClearCall()
     {
-        Call = null;
+        Call = Maybe<RefereeCall>.None;
     }
 
     /// <summary>Gets the spot the referee drops the puck from: just behind the dot, toward the far boards.</summary>

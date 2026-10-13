@@ -62,7 +62,7 @@ public sealed class AimedPassTests : CheckedTest
         for (int i = 0; i < steps; i++)
         {
             w.Events.Clear();
-            if (w.Controlled(0) is { } human) human.Command = input(i);
+            if (w.Controlled(0).OrNull() is { } human) human.Command = input(i);
             foreach (var s in systems)
             {
                 s.Update(w, Game.Step);
@@ -227,7 +227,7 @@ public sealed class AimedPassTests : CheckedTest
         a.Slot = 0;
         Give(w, a);
 
-        Check(PuckHandling.PickReceiver(w, a, Vector2.UnitX) == null, "nobody is in the 70° cone of the stick");
+        Check(!PuckHandling.PickReceiver(w, a, Vector2.UnitX).HasValue, "nobody is in the 70° cone of the stick");
         Check(PuckHandling.PickOpen(w, a) == open, "the pick skips a nearer covered teammate for the nearest open one");
         var keep = marker.Position;
         var openAt = open.Position;
@@ -237,7 +237,7 @@ public sealed class AimedPassTests : CheckedTest
         Check(PuckHandling.PickOpen(w, a) == open, "an opponent in the lane to him makes him covered too");
         marker.Position = keep;
         open.Position = new Vector3(-45, 0, -6);
-        Check(PuckHandling.PickOpen(w, a) == null, "with the open teammate past 40 m, nobody is open: the pass goes into space");
+        Check(!PuckHandling.PickOpen(w, a).HasValue, "with the open teammate past 40 m, nobody is open: the pass goes into space");
         open.Position = openAt;
 
         int got = -1;
