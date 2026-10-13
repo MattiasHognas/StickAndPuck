@@ -59,7 +59,12 @@ public static class Coverage
     public static DefenceZone ZoneOf(int attackEnd, Vector2 carrier)
     {
         float a = attackEnd * carrier.X;
-        return a < -Blue ? DefenceZone.Own : a > Blue ? DefenceZone.Forecheck : DefenceZone.Neutral;
+        return a switch
+        {
+            < -Blue => DefenceZone.Own,
+            > Blue => DefenceZone.Forecheck,
+            _ => DefenceZone.Neutral,
+        };
     }
 
     /// <summary>Gets how dangerous an attacker without the puck is: high in the slot and in front of the net, low at the points and behind the net.</summary>

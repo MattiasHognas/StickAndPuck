@@ -48,8 +48,12 @@ public static class Jitter
         var roll = Roll(rng, p.Data.Traits.HockeyIq);
         var tally = Decisions.Tally(world, p.Side);
         tally.Rolls++;
-        if (roll.Outcome == ReadOutcome.Fumble) tally.Fumbles++;
-        else if (roll.Outcome == ReadOutcome.Lucky) tally.Lucky++;
+        switch (roll.Outcome)
+        {
+            case ReadOutcome.Fumble: tally.Fumbles++; break;
+            case ReadOutcome.Lucky: tally.Lucky++; break;
+            default: break;
+        }
         if (p.Data.Traits.HockeyIq >= 95)
         {
             tally.StarRolls++;

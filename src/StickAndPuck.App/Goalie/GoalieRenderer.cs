@@ -46,7 +46,7 @@ internal sealed unsafe class GoalieRenderer : IDisposable
     {
         if (!loaded) return;
         var (clip, frame) = poses.GetValueOrDefault(g.Id, (-1, 0f));
-        int hand = !slump && now < state.HandPoseUntil ? (state.HandPose > 0 ? glove : state.HandPose < 0 ? blocker : -1) : -1;
+        int hand = !slump && now < state.HandPoseUntil ? state.HandPose switch { > 0 => glove, < 0 => blocker, _ => -1 } : -1;
         int want = hand >= 0 ? hand : (state.Down || slump) && butterfly >= 0 ? butterfly : ready;
         if (want != clip) { clip = want; frame = 0; }
         frame += dt * ClipFps;

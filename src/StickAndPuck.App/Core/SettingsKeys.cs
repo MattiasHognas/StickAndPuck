@@ -112,7 +112,12 @@ public static class KeyBindings
     public static string KeysName(KeyBinding binding)
     {
         string k = KeyName(binding.Key), a = KeyName(binding.Alt);
-        return binding.Alt == KeyboardKey.Null ? k : binding.Key == KeyboardKey.Null ? a : $"{k}/{a}";
+        return (binding.Alt, binding.Key) switch
+        {
+            (KeyboardKey.Null, _) => k,
+            (_, KeyboardKey.Null) => a,
+            _ => $"{k}/{a}",
+        };
     }
 
     /// <summary>A short upper-case name of a keyboard key.</summary>

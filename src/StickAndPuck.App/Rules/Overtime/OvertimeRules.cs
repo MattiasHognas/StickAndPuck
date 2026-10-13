@@ -58,8 +58,12 @@ internal sealed partial class OvertimeRules : ISystem
     {
         if (!MatchFlow.IsRunning(world)) return;
         var s = world.Overtime.Get(() => new OvertimeState());
-        if (world.Match.Phase == MatchPhase.Overtime) Overtime(world, s, dt);
-        else if (world.Match.Phase == MatchPhase.Shootout) ShootoutStep(world, s, dt);
+        switch (world.Match.Phase)
+        {
+            case MatchPhase.Overtime: Overtime(world, s, dt); break;
+            case MatchPhase.Shootout: ShootoutStep(world, s, dt); break;
+            default: break;
+        }
     }
 
     public void DrawHud(World world, RenderContext render)

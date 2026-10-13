@@ -50,7 +50,12 @@ internal sealed class LightingSystem : ISystem
     {
         var cue = cues.Current();
         var look = world.Look;
-        look.IceBand = cue.Flash ? FlashBand : cue.Bands ? preset.IceBand : preset.IceBand with { A = 0 };
+        look.IceBand = (cue.Flash, cue.Bands) switch
+        {
+            (true, _) => FlashBand,
+            (_, true) => preset.IceBand,
+            _ => preset.IceBand with { A = 0 },
+        };
         look.Glass = cue.Flash ? FlashGlass : preset.Glass;
         look.Ice = Dimmed(preset.Ice, cue.Tone);
         look.Scratch = Dimmed(preset.Scratch, cue.Tone);
