@@ -25,7 +25,7 @@ internal sealed class CameraSystem : ISystem
 
     public void Start(World world)
     {
-        string zoom = Environment.GetEnvironmentVariable("SAP_CAMERA_ZOOM") ?? "";
+        string zoom = Env.Get("SAP_CAMERA_ZOOM");
         if (zoom is "0" or "1") world.Settings = world.Settings with { CameraZoom = string.Equals(zoom, "1", StringComparison.Ordinal) };
         follow.Cut(world);
         world.Camera = follow.Camera;

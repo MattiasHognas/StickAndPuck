@@ -1,3 +1,4 @@
+using StickAndPuck.App.Core;
 namespace StickAndPuck.App.Lines;
 
 /// <summary>W13: how fast skaters tire and rest, and when lines and goalies change. Energy runs from 1 (fresh) to 0 (spent).</summary>
@@ -67,7 +68,7 @@ public static class LinesTuning
 
     static float EnvPace()
     {
-        return float.TryParse(Environment.GetEnvironmentVariable("SAP_FATIGUE"), System.Globalization.NumberStyles.Float,
+        return float.TryParse(Env.Get("SAP_FATIGUE"), System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out float pace) && pace > 0 ? pace : 1f;
     }
 }

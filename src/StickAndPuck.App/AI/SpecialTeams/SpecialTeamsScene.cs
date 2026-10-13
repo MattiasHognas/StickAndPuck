@@ -18,17 +18,17 @@ public sealed class SpecialTeamsScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        var kill = string.Equals(Environment.GetEnvironmentVariable("SAP_ST_KILL"), "home", StringComparison.OrdinalIgnoreCase) ? Side.Home : Side.Away;
+        var kill = string.Equals(Env.Get("SAP_ST_KILL"), "home", StringComparison.OrdinalIgnoreCase) ? Side.Home : Side.Away;
         var world = SpecialTeamsSetup.ShortHanded(clubs, settings, kill);
         SpecialTeamsSystem.ShowSpots = true;
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_ST_WAIT"), "1", StringComparison.Ordinal)) Wait(world, kill == Side.Home ? Side.Away : Side.Home);
+        if (Env.Is("SAP_ST_WAIT", "1")) Wait(world, kill == Side.Home ? Side.Away : Side.Home);
         return world;
     }
 
     /// <summary>Plays the match off screen until the power play has been in its shape for two seconds, or two minutes have gone.</summary>
     static void Wait(World world, Side pp)
     {
-        int seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? s : 1;
+        int seed = int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? s : 1;
         var systems = SpecialTeamsSetup.Systems(world, seed, special: true, rules: true);
         float inShape = 0;
         for (int i = 0; i < 120 / Game.Step && inShape < 2f; i++)

@@ -15,11 +15,11 @@ public static class Pregame
 {
 
     /// <summary>Gets a value indicating whether SAP_WARMUP=0 turned the warm-up off.</summary>
-    public static bool Disabled => string.Equals(Environment.GetEnvironmentVariable("SAP_WARMUP"), "0", StringComparison.Ordinal);
+    public static bool Disabled => Env.Is("SAP_WARMUP", "0");
 
     /// <summary>Gets the seconds after which the warm-up starts the game by itself (SAP_WARMUP=seconds), or infinity.</summary>
     public static float AutoStartSeconds =>
-        float.TryParse(Environment.GetEnvironmentVariable("SAP_WARMUP"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0
+        float.TryParse(Env.Get("SAP_WARMUP"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0
             ? s
             : float.PositiveInfinity;
 

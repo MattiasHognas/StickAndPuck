@@ -1,4 +1,3 @@
-using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
 
@@ -20,10 +19,10 @@ public sealed class FightScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        float period = Env("SAP_PERIOD").TryGet(out float p) && p > 0 ? p : 20 * 60;
+        float period = Env.Float("SAP_PERIOD").TryGet(out float p) && p > 0 ? p : 20 * 60;
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = period }, settings with { Fights = true });
         Scenes.AddStarters(world);
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
+        if (Env.Is("SAP_AI_HUMAN", "1")
             && world.OnIce(Side.Home).FirstOrDefault(x => x.Data.Position == PlayingPosition.C) is { } centre)
         {
             centre.Slot = 0;
@@ -34,12 +33,7 @@ public sealed class FightScene : IScene
         MatchFlow.Drop(world);
         var s = Fighting.State(world);
         s.ScriptAfterDrop = 0.25f;
-        if (Env("SAP_FIGHT_CHANCE").TryGet(out float chance) && chance >= 0) s.OfferChance = chance;
+        if (Env.Float("SAP_FIGHT_CHANCE").TryGet(out float chance) && chance >= 0) s.OfferChance = chance;
         return world;
-    }
-
-    static Maybe<float> Env(string name)
-    {
-        return float.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : Maybe<float>.None;
     }
 }

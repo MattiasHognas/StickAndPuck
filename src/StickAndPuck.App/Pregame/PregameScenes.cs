@@ -28,7 +28,7 @@ public sealed class WarmupScene : IScene
 
     static float MatchScenesPeriod()
     {
-        return float.TryParse(Environment.GetEnvironmentVariable("SAP_PERIOD"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float s) && s > 0
+        return float.TryParse(Env.Get("SAP_PERIOD"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float s) && s > 0
             ? s
             : 20 * 60;
     }

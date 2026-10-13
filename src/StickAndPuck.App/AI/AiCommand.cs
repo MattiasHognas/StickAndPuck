@@ -71,7 +71,7 @@ public static class AiCommand
 {
 
     /// <summary>Gets or sets a value indicating whether owner changes are printed (SAP_AI_TRACE=1 sets it).</summary>
-    public static bool Trace { get; set; } = string.Equals(Environment.GetEnvironmentVariable("SAP_AI_TRACE"), "1", StringComparison.Ordinal);
+    public static bool Trace { get; set; } = Env.Is("SAP_AI_TRACE", "1");
 
     /// <summary>Gets or sets a hook that sees every AI write as it happens, for the W68 fixtures (a no-op by default).</summary>
     internal static Action<Player, AiIntent> Watch { get; set; } = Unwatched;

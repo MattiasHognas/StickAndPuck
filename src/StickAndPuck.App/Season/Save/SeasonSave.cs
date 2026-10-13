@@ -23,7 +23,7 @@ public static class SeasonSave
 
     /// <summary>Gets the save file path: SAP_SAVE, or season.json in the user's settings folder.</summary>
     public static string DefaultPath =>
-        Environment.GetEnvironmentVariable("SAP_SAVE") is { Length: > 0 } p
+        Env.Get("SAP_SAVE") is { Length: > 0 } p
             ? Path.GetFullPath(p)
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "season.json");
 

@@ -1,4 +1,3 @@
-using System.Globalization;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules;
@@ -22,18 +21,18 @@ public sealed class PenaltyScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        float period = Env("SAP_PERIOD").TryGet(out float s) && s > 0 ? s : 20 * 60;
+        float period = Env.Float("SAP_PERIOD").TryGet(out float s) && s > 0 ? s : 20 * 60;
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = period }, settings);
         Scenes.AddStarters(world);
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
+        if (Env.Is("SAP_AI_HUMAN", "1")
             && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
         {
             centre.Slot = 0;
         }
 
-        if (Env("SAP_PENALTY_STRICT").TryGet(out float strict) && strict >= 0) Penalties.Strictness = strict;
+        if (Env.Float("SAP_PENALTY_STRICT").TryGet(out float strict) && strict >= 0) Penalties.Strictness = strict;
         MatchFlow.Begin(world);
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_PENALTY_OT"), "1", StringComparison.Ordinal))
+        if (Env.Is("SAP_PENALTY_OT", "1"))
         {
             Lines.LinesSystem.SetUp(world);
             OvertimeRules.ThreeOnThree(world);
@@ -44,15 +43,10 @@ public sealed class PenaltyScene : IScene
             MatchFlow.SetUpFaceoff(world, RinkSpec.CentreDot);
         }
         Penalties.Book(world).ScriptAfterDrop = 2f;
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_PENALTY_MAJOR"), "1", StringComparison.Ordinal))
+        if (Env.Is("SAP_PENALTY_MAJOR", "1"))
             Penalties.Book(world).ScriptCall = (Infraction.Boarding, Severity.MajorAndGameMisconduct);
-        if (Env("SAP_PENALTY_SKIP").TryGet(out float skip) && skip > 0) PenaltyScenes.FastForward(world, skip);
+        if (Env.Float("SAP_PENALTY_SKIP").TryGet(out float skip) && skip > 0) PenaltyScenes.FastForward(world, skip);
         return world;
-    }
-
-    static Maybe<float> Env(string name)
-    {
-        return float.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : Maybe<float>.None;
     }
 }
 

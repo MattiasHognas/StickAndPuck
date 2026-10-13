@@ -20,7 +20,7 @@ public sealed class TacticsScene : IScene
     {
         ClubData Pick(string variable, string fallback, ClubData other)
         {
-            string id = Environment.GetEnvironmentVariable(variable) is { Length: > 0 } v ? v : fallback;
+            string id = Env.Get(variable) is { Length: > 0 } v ? v : fallback;
             return clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase)) ?? clubs.FirstOrDefault(c => c != other) ?? clubs[0];
         }
         var setup = Scenes.DefaultSetup(clubs);
@@ -28,7 +28,7 @@ public sealed class TacticsScene : IScene
         var away = Pick("SAP_AWAY", "lulea", home);
         home = home with { Tactics = Override(home.Tactics, "SAP_TACTICS_HOME") };
         away = away with { Tactics = Override(away.Tactics, "SAP_TACTICS_AWAY") };
-        float period = float.TryParse(Environment.GetEnvironmentVariable("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : 20 * 60;
+        float period = float.TryParse(Env.Get("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : 20 * 60;
         var world = new World(setup with { Home = home, Away = away, PeriodSeconds = period }, settings);
         Scenes.AddStarters(world);
         MatchFlow.Begin(world);
@@ -38,6 +38,6 @@ public sealed class TacticsScene : IScene
 
     static ClubTactics Override(ClubTactics tactics, string variable)
     {
-        return Enum.TryParse<Forecheck>(Environment.GetEnvironmentVariable(variable), ignoreCase: true, out var f) ? tactics with { Forecheck = f } : tactics;
+        return Enum.TryParse<Forecheck>(Env.Get(variable), ignoreCase: true, out var f) ? tactics with { Forecheck = f } : tactics;
     }
 }

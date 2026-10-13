@@ -13,7 +13,7 @@ internal static partial class Rumble
 {
     const int Pads = 2;
 
-    static readonly bool Off = string.Equals(Environment.GetEnvironmentVariable("SAP_RUMBLE"), "0", StringComparison.Ordinal);
+    static readonly bool Off = Env.Is("SAP_RUMBLE", "0");
     static readonly Maybe<IRumbler>[] Rumblers = new Maybe<IRumbler>[Pads];
     static readonly string[] Opened = [.. Enumerable.Repeat(string.Empty, Pads)];   // "" for none: a pad's name is never empty
 

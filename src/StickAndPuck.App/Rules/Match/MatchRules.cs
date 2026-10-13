@@ -12,7 +12,7 @@ namespace StickAndPuck.App.Rules;
 internal sealed class MatchRules : ISystem
 {
     /// <summary>Gets or sets a value indicating whether the plain score and clock line is drawn; SAP_MATCH_DEBUG=1 turns it on.</summary>
-    public static bool ShowLine { get; set; } = string.Equals(Environment.GetEnvironmentVariable("SAP_MATCH_DEBUG"), "1", StringComparison.Ordinal);
+    public static bool ShowLine { get; set; } = Env.Is("SAP_MATCH_DEBUG", "1");
 
     public void Update(World world, float dt)
     {

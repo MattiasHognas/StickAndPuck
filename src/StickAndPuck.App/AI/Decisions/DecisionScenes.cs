@@ -21,12 +21,12 @@ public sealed class AiMatchScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        float period = float.TryParse(Environment.GetEnvironmentVariable("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : 20 * 60;
+        float period = float.TryParse(Env.Get("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : 20 * 60;
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = period }, settings);
         Scenes.AddStarters(world);
-        DecisionScenes.SetHockeyIq(world, Side.Home, Env("SAP_IQ_HOME"));
-        DecisionScenes.SetHockeyIq(world, Side.Away, Env("SAP_IQ_AWAY"));
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
+        DecisionScenes.SetHockeyIq(world, Side.Home, Iq("SAP_IQ_HOME"));
+        DecisionScenes.SetHockeyIq(world, Side.Away, Iq("SAP_IQ_AWAY"));
+        if (Env.Is("SAP_AI_HUMAN", "1")
             && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
         {
             centre.Slot = 0;
@@ -37,9 +37,9 @@ public sealed class AiMatchScene : IScene
         return world;
     }
 
-    static Maybe<int> Env(string name)
+    static Maybe<int> Iq(string name)
     {
-        return int.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Integer, CultureInfo.InvariantCulture, out int v) ? Math.Clamp(v, 0, 100) : Maybe<int>.None;
+        return Env.Int(name).TryGet(out int v) ? Math.Clamp(v, 0, 100) : Maybe<int>.None;
     }
 }
 

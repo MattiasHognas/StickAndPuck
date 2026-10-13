@@ -59,7 +59,7 @@ internal sealed class SpecialTeamsSystem : ISystem
     }
 
     /// <summary>Gets or sets whether the spots are drawn on the ice (SAP_ST_SPOTS=1 sets it).</summary>
-    public static bool ShowSpots { get; set; } = string.Equals(Environment.GetEnvironmentVariable("SAP_ST_SPOTS"), "1", StringComparison.Ordinal);
+    public static bool ShowSpots { get; set; } = Env.Is("SAP_ST_SPOTS", "1");
 
     public void Update(World world, float dt)
     {

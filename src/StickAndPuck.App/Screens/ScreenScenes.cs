@@ -22,7 +22,7 @@ public sealed class StartScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        string screen = Environment.GetEnvironmentVariable("SAP_SCREEN") is { Length: > 0 } s ? s.ToLowerInvariant() : "start";
+        string screen = Env.Get("SAP_SCREEN") is { Length: > 0 } s ? s.ToLowerInvariant() : "start";
         var world = ScreenFlow.Begin(clubs, new StartScreen());
         switch (screen)
         {

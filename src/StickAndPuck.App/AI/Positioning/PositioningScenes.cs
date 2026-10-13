@@ -17,10 +17,10 @@ public sealed class PositioningScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        float period = float.TryParse(Environment.GetEnvironmentVariable("SAP_PERIOD"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float s) && s > 0 ? s : 20 * 60;
+        float period = float.TryParse(Env.Get("SAP_PERIOD"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float s) && s > 0 ? s : 20 * 60;
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = period }, settings);
         Scenes.AddStarters(world);
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
+        if (Env.Is("SAP_AI_HUMAN", "1")
             && world.OnIce(Side.Home).FirstOrDefault(p => !p.IsGoalie) is { } centre)
         {
             centre.Slot = 0;
@@ -29,7 +29,7 @@ public sealed class PositioningScene : IScene
         StandInPlay.Start(world);
         MatchFlow.Begin(world, log: false);
         StandInPlay.FollowCamera = true;
-        StandInPlay.ShowTargets = string.Equals(Environment.GetEnvironmentVariable("SAP_AI_TARGETS"), "1", StringComparison.Ordinal);
+        StandInPlay.ShowTargets = Env.Is("SAP_AI_TARGETS", "1");
         return world;
     }
 }

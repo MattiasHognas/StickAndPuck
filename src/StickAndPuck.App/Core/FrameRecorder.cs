@@ -24,9 +24,9 @@ internal sealed class FrameRecorder
     /// <returns>The recorder, or None.</returns>
     public static Maybe<FrameRecorder> FromEnvironment()
     {
-        if (!float.TryParse(Environment.GetEnvironmentVariable("SAP_RECORD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds) || seconds <= 0)
+        if (!float.TryParse(Env.Get("SAP_RECORD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds) || seconds <= 0)
             return Maybe<FrameRecorder>.None;
-        string folder = Environment.GetEnvironmentVariable("SAP_FRAMES") is { Length: > 0 } f ? f : "frames";
+        string folder = Env.Get("SAP_FRAMES") is { Length: > 0 } f ? f : "frames";
         return new FrameRecorder(seconds, AssetRoot.Output(folder));
     }
 

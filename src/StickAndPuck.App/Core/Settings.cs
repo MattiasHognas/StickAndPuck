@@ -146,7 +146,7 @@ public sealed record Settings
     /// <summary>Reads a 0/1 variable; "on", "off", "true" and "false" work too.</summary>
     static Maybe<bool> Flag(string name)
     {
-        return (Environment.GetEnvironmentVariable(name) ?? "").Trim().ToLowerInvariant() switch
+        return Env.Get(name).Trim().ToLowerInvariant() switch
         {
             "" => Maybe<bool>.None,
             "1" or "on" or "true" or "yes" => true,
@@ -158,7 +158,7 @@ public sealed record Settings
     static Maybe<T> Choice<T>(string name)
         where T : struct, Enum
     {
-        if (Environment.GetEnvironmentVariable(name) is not { Length: > 0 } value) return Maybe<T>.None;
+        if (Env.Get(name) is not { Length: > 0 } value) return Maybe<T>.None;
         if (Enum.TryParse<T>(value.Trim(), ignoreCase: true, out var parsed)) return parsed;
         throw new InvalidOperationException($"{name}={value}: use {string.Join(", ", Enum.GetNames<T>()).ToLowerInvariant()}");
     }

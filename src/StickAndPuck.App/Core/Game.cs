@@ -34,10 +34,10 @@ public static class Game
         var world = replay.TryGet(out var played) ? played.World : Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
         var loop = new Loop
         {
-            Headless = string.Equals(Environment.GetEnvironmentVariable("SAP_SCREENSHOT"), "1", StringComparison.Ordinal),
+            Headless = Env.Is("SAP_SCREENSHOT", "1"),
             Frames = FrameRecorder.FromEnvironment(),
             Replay = replay,
-            Limit = long.TryParse(Environment.GetEnvironmentVariable("SAP_STEPS"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
+            Limit = long.TryParse(Env.Get("SAP_STEPS"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
             Recorder = replay.TryGet(out var r) ? (r.TakeOverAtTarget ? r.TakeOverRecorder() : Maybe<ReplayRecorder>.None) : ReplayRecorder.Begin(world, RecordedScene()),
         };
         ReplayRecorder.OpenChecksums();
@@ -81,7 +81,7 @@ public static class Game
     /// <summary>The SAP_SCENE to note in a scene's replay, or "" for the screens, which record their own matches.</summary>
     static string RecordedScene()
     {
-        string scene = Environment.GetEnvironmentVariable("SAP_SCENE") is { Length: > 0 } s ? s : Scenes.Default;
+        string scene = Env.Get("SAP_SCENE") is { Length: > 0 } s ? s : Scenes.Default;
         return string.Equals(scene, Scenes.Default, StringComparison.OrdinalIgnoreCase) ? "" : scene;
     }
 

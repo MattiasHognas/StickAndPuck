@@ -26,7 +26,7 @@ public sealed class ReplayTests : CheckedTest
     const string SeedValues = "610514733 1889226249 14";
     const string MatchSum = "83d7773a46ad20ec";
 
-    readonly bool print = string.Equals(Environment.GetEnvironmentVariable("SAP_REPLAYTEST_PRINT"), "1", StringComparison.Ordinal);
+    readonly bool print = Env.Is("SAP_REPLAYTEST_PRINT", "1");
 
     [Test]
     public void Maths()

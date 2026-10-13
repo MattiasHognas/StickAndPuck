@@ -124,9 +124,9 @@ public static class Gamepads
 
     static void LoadMappings()
     {
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_PAD_MAPPINGS"), "0", StringComparison.Ordinal)) return;
+        if (Env.Is("SAP_PAD_MAPPINGS", "0")) return;
         var sources = new List<(string From, string Text)> { ("the game", BuiltInMappings) };
-        if (Environment.GetEnvironmentVariable("SDL_GAMECONTROLLERCONFIG") is { Length: > 0 } env) sources.Add(("SDL_GAMECONTROLLERCONFIG", env));
+        if (Env.Get("SDL_GAMECONTROLLERCONFIG") is { Length: > 0 } env) sources.Add(("SDL_GAMECONTROLLERCONFIG", env));
         string config = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StickAndPuck");
         foreach (string folder in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory(), config }.Distinct())
         {

@@ -22,7 +22,7 @@ public sealed class LinesScene : IScene
     {
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period(20 * 60) }, settings);
         Scenes.AddStarters(world);
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
+        if (Env.Is("SAP_AI_HUMAN", "1")
             && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
         {
             centre.Slot = 0;
@@ -40,7 +40,7 @@ public sealed class LinesScene : IScene
     /// <returns>The period in seconds.</returns>
     internal static float Period(float fallback)
     {
-        return float.TryParse(Environment.GetEnvironmentVariable("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : fallback;
+        return float.TryParse(Env.Get("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : fallback;
     }
 }
 
@@ -81,7 +81,7 @@ public sealed class GoaliePullScene : IScene
     {
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = LinesScene.Period(300) }, settings);
         Scenes.AddStarters(world);
-        if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
+        if (Env.Is("SAP_AI_HUMAN", "1")
             && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre)
         {
             centre.Slot = 0;
@@ -91,7 +91,7 @@ public sealed class GoaliePullScene : IScene
         world.Match.Score[1] = 1;
         MatchFlow.StartPeriod(world, world.Setup.Periods, GoaliePull.PullSeconds(world) + 8f);
         LinesSystem.ShowPanel = true;
-        if (float.TryParse(Environment.GetEnvironmentVariable("SAP_PENALTY_SKIP"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float skip) && skip > 0)
+        if (float.TryParse(Env.Get("SAP_PENALTY_SKIP"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float skip) && skip > 0)
             PenaltyScenes.FastForward(world, skip);
         return world;
     }
@@ -103,7 +103,7 @@ internal static class LinesScenes
     /// <summary>Fast fatigue (unless SAP_FATIGUE says otherwise) and the panel on.</summary>
     public static void Demo()
     {
-        if (Environment.GetEnvironmentVariable("SAP_FATIGUE") is not { Length: > 0 }) LinesTuning.Pace = 6f;
+        if (Env.Get("SAP_FATIGUE") is not { Length: > 0 }) LinesTuning.Pace = 6f;
         LinesSystem.ShowPanel = true;
     }
 }

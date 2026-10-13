@@ -22,7 +22,7 @@ public sealed class SeasonScene : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var season = SeasonScenes.Open(clubs);
-        bool human = !string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "0", StringComparison.Ordinal);
+        bool human = !Env.Is("SAP_HUMAN", "0");
         if (SeasonSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup } || !SeasonSession.Playing.TryGet(out var game))
             return PlayoffScenes.Play(clubs, settings, human);
 
@@ -58,15 +58,15 @@ internal static class SeasonScenes
     /// <summary>Continues the save, or starts a new season when there is none or SAP_SEASON=new.</summary>
     public static SeasonState Open(IReadOnlyList<ClubData> clubs)
     {
-        bool fresh = string.Equals(Environment.GetEnvironmentVariable("SAP_SEASON"), "new", StringComparison.OrdinalIgnoreCase);
+        bool fresh = string.Equals(Env.Get("SAP_SEASON"), "new", StringComparison.OrdinalIgnoreCase);
         if (!fresh && SeasonSession.Continue(clubs).TryGet(out var saved))
         {
             Console.WriteLine($"SAP: season continued from {SeasonSession.SavePath}, {saved.Games.Count(g => g.Played)} of {saved.Games.Count} games played");
             return saved;
         }
 
-        string club = Environment.GetEnvironmentVariable("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
-        var seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
+        string club = Env.Get("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
+        var seed = int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
         var season = SeasonSession.StartNew(clubs, club, seed);
         Console.WriteLine($"SAP: new season for {club}, {season.Games.Count} games in {season.Rounds} rounds, saved to {SeasonSession.SavePath}");
         return season;
@@ -84,6 +84,6 @@ internal static class SeasonScenes
     /// <summary>Reads a positive number of seconds from an environment variable, or None.</summary>
     public static Maybe<float> Seconds(string variable)
     {
-        return float.TryParse(Environment.GetEnvironmentVariable(variable), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : Maybe<float>.None;
+        return float.TryParse(Env.Get(variable), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : Maybe<float>.None;
     }
 }

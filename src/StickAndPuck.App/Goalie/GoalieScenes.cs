@@ -23,7 +23,7 @@ public sealed class GoalieScene : IScene
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         var data = world.Setup.Away.Roster.FirstOrDefault(p => p.Position == PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.G };
-        if (int.TryParse(Environment.GetEnvironmentVariable("SAP_GOALIE_REFLEXES"), System.Globalization.CultureInfo.InvariantCulture, out int reflexes))
+        if (int.TryParse(Env.Get("SAP_GOALIE_REFLEXES"), System.Globalization.CultureInfo.InvariantCulture, out int reflexes))
             data = data with { Traits = data.Traits with { GoalieReflexes = reflexes } };
         var g = world.AddPlayer(Side.Away, data, new Vector3(RinkSpec.GoalLineX - 1f, 0, 0));
         g.Heading = -MathF.PI / 2;

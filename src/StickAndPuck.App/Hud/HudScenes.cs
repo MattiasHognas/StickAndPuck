@@ -24,7 +24,7 @@ public sealed class HudScene : IScene
         m.Period = 2;
         m.Clock = 734.4f;
         HudSystem.ShowAlways = true;
-        HudDemo.Message = Environment.GetEnvironmentVariable("SAP_HUD_MESSAGE") is { Length: > 0 } s ? s : "goal";
+        HudDemo.Message = Env.Get("SAP_HUD_MESSAGE") is { Length: > 0 } s ? s : "goal";
         if (string.Equals(HudDemo.Message, "intro", StringComparison.Ordinal)) m.Phase = MatchPhase.Intro;
         if (string.Equals(HudDemo.Message, "shutout", StringComparison.Ordinal)) m.Score[1] = 0;
         if (string.Equals(HudDemo.Message, "firstgoal", StringComparison.Ordinal))

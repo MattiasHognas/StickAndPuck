@@ -47,7 +47,7 @@ public sealed class PixelFrame : IDisposable
     const float DitherGap = 0.18f;
 
     /// <summary>Gets whether dithering is on: SAP_DITHER=0 turns it off, for before and after captures.</summary>
-    public static bool Dither { get; } = !string.Equals(Environment.GetEnvironmentVariable("SAP_DITHER"), "0", StringComparison.Ordinal);
+    public static bool Dither { get; } = !Env.Is("SAP_DITHER", "0");
 
     readonly RenderTexture2D[] scenes, masks;
     readonly RenderTexture2D hud;

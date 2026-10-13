@@ -37,7 +37,7 @@ namespace StickAndPuck.App.Lines;
 internal sealed class LinesSystem : ISystem
 {
     /// <summary>Gets or sets a value indicating whether the energy panel is drawn; SAP_LINES_DEBUG=1 turns it on.</summary>
-    public static bool ShowPanel { get; set; } = string.Equals(Environment.GetEnvironmentVariable("SAP_LINES_DEBUG"), "1", StringComparison.Ordinal);
+    public static bool ShowPanel { get; set; } = Env.Is("SAP_LINES_DEBUG", "1");
 
     static readonly Side[] BothSides = [Side.Home, Side.Away];
     static readonly Group[] BothGroups = [Group.Forwards, Group.Defence];

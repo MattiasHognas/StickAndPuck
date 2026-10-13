@@ -47,7 +47,7 @@ internal sealed class MenuInput
     /// <summary>Reads SAP_SCREEN_KEYS once.</summary>
     public static void LoadScript()
     {
-        if (script.HasValue || Environment.GetEnvironmentVariable("SAP_SCREEN_KEYS") is not { Length: > 0 } keys) return;
+        if (script.HasValue || Env.Get("SAP_SCREEN_KEYS") is not { Length: > 0 } keys) return;
         var queue = new Queue<string>(keys.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries));
         script = queue;
         Console.WriteLine($"SAP: screens: {queue.Count} scripted presses");

@@ -330,7 +330,7 @@ internal static class ScreenFlow
     /// <summary>The period length from the settings; SAP_PERIOD=seconds overrides it for quick checks.</summary>
     static float PeriodSeconds()
     {
-        return float.TryParse(Environment.GetEnvironmentVariable("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0
+        return float.TryParse(Env.Get("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0
             ? s
             : Prefs.PeriodMinutes * 60f;
     }
@@ -338,7 +338,7 @@ internal static class ScreenFlow
     /// <summary>The human's device; SAP_HUMAN=0 lets the AI play both clubs.</summary>
     static InputDevice Device()
     {
-        return string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "0", StringComparison.Ordinal) ? InputDevice.None : Prefs.Controls;
+        return Env.Is("SAP_HUMAN", "0") ? InputDevice.None : Prefs.Controls;
     }
 
     /// <summary>Leaves season, playoff and arcade mode, so their systems record nothing until a mode opens its save again.</summary>

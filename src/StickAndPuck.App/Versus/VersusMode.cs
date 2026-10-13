@@ -62,7 +62,7 @@ public sealed class VersusMode : IGameMode
     /// <returns>A device different from player one's.</returns>
     public static InputDevice SecondDevice(InputDevice playerOne)
     {
-        var wanted = (Environment.GetEnvironmentVariable("SAP_VERSUS_P2") ?? "").ToLowerInvariant() switch
+        var wanted = Env.Get("SAP_VERSUS_P2").ToLowerInvariant() switch
         {
             "keyboard" or "kb" or "keyboardmouse" => InputDevice.KeyboardMouse,
             "pad1" or "gamepad1" or "gamepad" => InputDevice.Gamepad1,

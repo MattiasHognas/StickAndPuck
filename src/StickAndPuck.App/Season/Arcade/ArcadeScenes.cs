@@ -22,7 +22,7 @@ public sealed class ArcadeScene : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var run = ArcadeScenes.Open(clubs);
-        bool human = !string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "0", StringComparison.Ordinal);
+        bool human = !Env.Is("SAP_HUMAN", "0");
         if (ArcadeSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup })
         {
             Console.WriteLine($"SAP: the arcade run is over ({(run.Champion ? "champions" : $"{run.Stage} club(s) beaten")}); SAP_ARCADE=new starts another");
@@ -61,21 +61,21 @@ internal static class ArcadeScenes
     /// <summary>Continues the save, or starts a new run when there is none or SAP_ARCADE=new.</summary>
     public static ArcadeRun Open(IReadOnlyList<ClubData> clubs)
     {
-        bool fresh = string.Equals(Environment.GetEnvironmentVariable("SAP_ARCADE"), "new", StringComparison.OrdinalIgnoreCase);
+        bool fresh = string.Equals(Env.Get("SAP_ARCADE"), "new", StringComparison.OrdinalIgnoreCase);
         if (!fresh && ArcadeSession.Continue(clubs).TryGet(out var saved))
         {
             Console.WriteLine($"SAP: arcade run continued from {ArcadeSession.SavePath}, {saved.Games.Count} game(s) played");
             return saved;
         }
 
-        string club = Environment.GetEnvironmentVariable("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
-        var rule = (Environment.GetEnvironmentVariable("SAP_ARCADE_RULE") ?? "") switch
+        string club = Env.Get("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
+        var rule = (Env.Get("SAP_ARCADE_RULE")) switch
         {
             "" or "lives" or "3" => ArcadeRule.ThreeLives,
             "suddendeath" or "1" => ArcadeRule.SuddenDeath,
             var other => throw new InvalidOperationException($"SAP_ARCADE_RULE={other}: use suddendeath or lives"),
         };
-        var seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
+        var seed = int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
         var run = ArcadeSession.StartNew(clubs, club, rule, seed);
         Console.WriteLine($"SAP: new arcade run for {club} ({rule}), {run.Opponents.Count} clubs to beat, saved to {ArcadeSession.SavePath}");
         return run;

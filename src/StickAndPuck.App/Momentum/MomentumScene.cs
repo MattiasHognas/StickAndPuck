@@ -21,7 +21,7 @@ public sealed class MomentumScene : IScene
         Scenes.AddStarters(world);
         MatchFlow.Begin(world);
         MatchFlow.StartPeriod(world, 1, setup.PeriodSeconds);
-        var side = string.Equals(Environment.GetEnvironmentVariable("SAP_MOMENTUM_SIDE"), "away", StringComparison.OrdinalIgnoreCase) ? Side.Away : Side.Home;
+        var side = string.Equals(Env.Get("SAP_MOMENTUM_SIDE"), "away", StringComparison.OrdinalIgnoreCase) ? Side.Away : Side.Home;
         Momentum.Boost(world, side, MomentumCause.Goal);
         return world;
     }

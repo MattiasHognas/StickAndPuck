@@ -54,7 +54,7 @@ internal sealed class TacticsSystem : ISystem
     }
 
     /// <summary>Gets or sets a value indicating whether the tactics line is drawn on the HUD without the match debug setting.</summary>
-    public static bool ShowLine { get; set; } = string.Equals(Environment.GetEnvironmentVariable("SAP_TACTICS_LINE"), "1", StringComparison.Ordinal);
+    public static bool ShowLine { get; set; } = Env.Is("SAP_TACTICS_LINE", "1");
 
     public void Update(World world, float dt)
     {

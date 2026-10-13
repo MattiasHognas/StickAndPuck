@@ -76,13 +76,13 @@ public sealed class ReplayPlayer
     /// <returns>The player, or None.</returns>
     public static Maybe<ReplayPlayer> FromEnvironment(IReadOnlyList<ClubData> clubs)
     {
-        if (Environment.GetEnvironmentVariable("SAP_REPLAY") is not { Length: > 0 } name) return Maybe<ReplayPlayer>.None;
+        if (Env.Get("SAP_REPLAY") is not { Length: > 0 } name) return Maybe<ReplayPlayer>.None;
         string path = AssetRoot.Output(name);
         var file = ReplayFile.Read(path);
         var h = file.Header;
         if (h.Version != ReplayHeader.CurrentVersion) throw new InvalidDataException($"{path} is replay version {h.Version}; this game reads version {ReplayHeader.CurrentVersion}");
-        var target = ScrubTarget.Parse(Environment.GetEnvironmentVariable("SAP_AT") ?? "");
-        bool takeOver = string.Equals(Environment.GetEnvironmentVariable("SAP_TAKEOVER"), "1", StringComparison.Ordinal);
+        var target = ScrubTarget.Parse(Env.Get("SAP_AT"));
+        bool takeOver = Env.Is("SAP_TAKEOVER", "1");
         if (takeOver && !target.HasValue) throw new InvalidOperationException("SAP_TAKEOVER=1 needs SAP_AT, the moment to take over from");
         SetVariables(h.Env);
         Console.WriteLine($"SAP: replay: {path}: {h.Kind} {(string.Equals(h.Kind, "scene", StringComparison.Ordinal) ? h.Scene : $"{h.Setup.Select(s => s.Home).Or("")} vs {h.Setup.Select(s => s.Away).Or("")}")}, seed {h.Seed}, {file.LastTick + 1} steps, recorded on {h.Recorded}");
@@ -98,7 +98,7 @@ public sealed class ReplayPlayer
         }
         else
         {
-            Environment.SetEnvironmentVariable("SAP_SCENE", h.Scene);
+            Env.Set("SAP_SCENE", h.Scene);
             world = Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
             world.Seed = h.Seed;
         }
@@ -159,7 +159,7 @@ public sealed class ReplayPlayer
     public ReplayRecorder TakeOverRecorder()
     {
         string name = Path.GetFileNameWithoutExtension(path) + "_takeover.sapreplay";
-        string to = Environment.GetEnvironmentVariable("SAP_REPLAY_OUT") is { Length: > 0 } o && !string.Equals(o, "0", StringComparison.Ordinal)
+        string to = Env.Get("SAP_REPLAY_OUT") is { Length: > 0 } o && !string.Equals(o, "0", StringComparison.Ordinal)
             ? AssetRoot.Output(o)
             : Path.Combine(Path.GetDirectoryName(path) ?? ".", name);
         return ReplayRecorder.Begin(file.Header, file.Start, to);
@@ -195,13 +195,13 @@ public sealed class ReplayPlayer
     /// <summary>Sets the SAP_* variables the match ran with, and clears every other one that could change the match.</summary>
     static void SetVariables(IReadOnlyDictionary<string, string> env)
     {
-        foreach (System.Collections.DictionaryEntry e in Environment.GetEnvironmentVariables())
+        foreach (var (k, _) in Env.Sap)
         {
-            if (e.Key is string k && k.StartsWith("SAP_", StringComparison.Ordinal) && !env.ContainsKey(k) && !ReplayRecorder.ControlVariables.Contains(k, StringComparer.Ordinal))
-                Environment.SetEnvironmentVariable(k, "");    // an empty value removes the variable
+            if (!env.ContainsKey(k) && !ReplayRecorder.ControlVariables.Contains(k, StringComparer.Ordinal))
+                Env.Set(k, "");    // an empty value removes the variable
         }
-        foreach (var (k, v) in env) Environment.SetEnvironmentVariable(k, v);
-        Environment.SetEnvironmentVariable("SAP_SCREEN_KEYS", "");    // the scripted presses are in the frames
+        foreach (var (k, v) in env) Env.Set(k, v);
+        Env.Set("SAP_SCREEN_KEYS", "");    // the scripted presses are in the frames
     }
 }
 

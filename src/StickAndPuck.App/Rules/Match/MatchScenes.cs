@@ -51,7 +51,7 @@ internal static class MatchScenes
     /// <summary>Builds an exhibition between the default clubs with both starting lineups and begins the match flow.</summary>
     public static World Exhibition(IReadOnlyList<ClubData> clubs, Settings settings, float periodSeconds)
     {
-        if (float.TryParse(Environment.GetEnvironmentVariable("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0)
+        if (float.TryParse(Env.Get("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0)
             periodSeconds = s;
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = periodSeconds };
         var world = new World(setup, settings);
@@ -126,7 +126,7 @@ public sealed class CelebrationScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        float clock = float.TryParse(Environment.GetEnvironmentVariable("SAP_CLOCK"), NumberStyles.Float, CultureInfo.InvariantCulture, out float c) && c > 0 ? c : 4;
+        float clock = float.TryParse(Env.Get("SAP_CLOCK"), NumberStyles.Float, CultureInfo.InvariantCulture, out float c) && c > 0 ? c : 4;
         var setup = Scenes.DefaultSetup(clubs) with
         {
             PeriodSeconds = 60,
@@ -135,7 +135,7 @@ public sealed class CelebrationScene : IScene
         var world = new World(setup, settings);
         Scenes.AddStarters(world);
         MatchFlow.Begin(world);
-        bool away = string.Equals(Environment.GetEnvironmentVariable("SAP_WINNER"), "away", StringComparison.Ordinal);
+        bool away = Env.Is("SAP_WINNER", "away");
         world.Match.Period = setup.Periods;
         world.Match.Clock = clock;
         world.Match.Score[0] = away ? 2 : 3;

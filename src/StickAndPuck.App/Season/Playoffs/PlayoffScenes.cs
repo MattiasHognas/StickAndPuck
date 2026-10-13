@@ -45,7 +45,7 @@ public sealed class PlayoffBracketScene : IScene
 internal static class PlayoffScenes
 {
     /// <summary>Gets a value indicating whether a human plays (SAP_HUMAN=0 lets the AI play both sides).</summary>
-    public static bool Human => !string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "0", StringComparison.Ordinal);
+    public static bool Human => !Env.Is("SAP_HUMAN", "0");
 
     /// <summary>
     /// Plays the human's next playoff game of the season in <see cref="SeasonSession"/>, starting the
@@ -93,10 +93,10 @@ internal static class PlayoffScenes
     /// <summary>Opens (or starts) the playoff test season and settles whatever is left of its regular season.</summary>
     public static void OpenTestSeason(IReadOnlyList<ClubData> clubs)
     {
-        string path = Environment.GetEnvironmentVariable("SAP_SAVE") is { Length: > 0 }
+        string path = Env.Get("SAP_SAVE") is { Length: > 0 }
             ? SeasonSave.DefaultPath
             : Path.Combine(Path.GetDirectoryName(SeasonSave.DefaultPath) ?? "", "playoffs-test.json");
-        bool fresh = string.Equals(Environment.GetEnvironmentVariable("SAP_SEASON"), "new", StringComparison.OrdinalIgnoreCase);
+        bool fresh = string.Equals(Env.Get("SAP_SEASON"), "new", StringComparison.OrdinalIgnoreCase);
         var season = !fresh && SeasonSession.Continue(clubs, path).TryGet(out var saved) ? saved : StartTestSeason(clubs, path);
         int settled = SettleSeason();
         if (settled > 0) SeasonSave.Write(season, path);
@@ -107,8 +107,8 @@ internal static class PlayoffScenes
     /// <summary>Starts the playoff test season at its own save (SAP_CLUB, SAP_SEED as in the season scene).</summary>
     static SeasonState StartTestSeason(IReadOnlyList<ClubData> clubs, string path)
     {
-        string club = Environment.GetEnvironmentVariable("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
-        var seed = int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
+        string club = Env.Get("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
+        var seed = int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
         return SeasonSession.StartNew(clubs, club, seed, path);
     }
 

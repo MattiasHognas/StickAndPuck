@@ -21,7 +21,7 @@ public static class ArcadeSave
 
     /// <summary>Gets the save file path: SAP_ARCADE_SAVE, or arcade.json in the user's settings folder.</summary>
     public static string DefaultPath =>
-        Environment.GetEnvironmentVariable("SAP_ARCADE_SAVE") is { Length: > 0 } p
+        Env.Get("SAP_ARCADE_SAVE") is { Length: > 0 } p
             ? Path.GetFullPath(p)
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "arcade.json");
 

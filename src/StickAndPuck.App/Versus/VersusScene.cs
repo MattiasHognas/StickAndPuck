@@ -17,13 +17,13 @@ public sealed class VersusScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        bool ai = string.Equals(Environment.GetEnvironmentVariable("SAP_HUMAN"), "0", StringComparison.Ordinal);
+        bool ai = Env.Is("SAP_HUMAN", "0");
         var setup = Scenes.DefaultSetup(clubs) with
         {
             Inputs = VersusMode.Inputs(ai ? InputDevice.None : InputDevice.KeyboardMouse),
             Overtime = OvertimeRule.Shl,
         };
-        if (float.TryParse(Environment.GetEnvironmentVariable("SAP_PERIOD"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float s) && s > 0)
+        if (float.TryParse(Env.Get("SAP_PERIOD"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float s) && s > 0)
             setup = setup with { PeriodSeconds = s };
         var world = new World(setup, settings);
         Scenes.AddStarters(world);

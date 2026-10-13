@@ -42,7 +42,7 @@ public static class Scenes
     /// <returns>The world to run.</returns>
     public static World CreateFromEnvironment(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        string name = Environment.GetEnvironmentVariable("SAP_SCENE") is { Length: > 0 } s ? s : Default;
+        string name = Env.Get("SAP_SCENE") is { Length: > 0 } s ? s : Default;
         var all = All();
         if (!all.TryGetValue(name, out var scene))
             throw new InvalidOperationException($"SAP_SCENE={name} is not a scene. Scenes: {string.Join(", ", all.Keys.Order(StringComparer.Ordinal))}");
@@ -66,7 +66,7 @@ public static class Scenes
 
     static Maybe<ClubData> Pick(IReadOnlyList<ClubData> clubs, string variable)
     {
-        string id = Environment.GetEnvironmentVariable(variable) ?? "";
+        string id = Env.Get(variable);
         if (id.Length == 0) return Maybe<ClubData>.None;
         return clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException($"{variable}={id} is not a club id");

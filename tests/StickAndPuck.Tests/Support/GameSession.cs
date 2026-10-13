@@ -1,3 +1,4 @@
+using StickAndPuck.App.Core;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Hud;
 using StickAndPuck.App.Intermission;
@@ -28,8 +29,8 @@ public static class GameSession
     public static void Start()
     {
         Directory.SetCurrentDirectory(AppContext.BaseDirectory);
-        foreach (string name in Environment.GetEnvironmentVariables().Keys.Cast<string>().Where(n => n.StartsWith("SAP_", StringComparison.Ordinal) && !string.Equals(n, PrintGoldens, StringComparison.Ordinal)).ToList())
-            Environment.SetEnvironmentVariable(name, "");
+        foreach (var (name, _) in Env.Sap.Where(v => !string.Equals(v.Key, PrintGoldens, StringComparison.Ordinal)))
+            Env.Set(name, "");
 
         Keep(() => Penalties.Strictness, v => Penalties.Strictness = v);
         Keep(() => OvertimeRules.PeriodSeconds, v => OvertimeRules.PeriodSeconds = v);
