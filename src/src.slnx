@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="StickAndPuck.App/StickAndPuck.App.csproj" />
+  <Project Path="StickAndPuck.Tests/StickAndPuck.Tests.csproj" />
+</Solution>

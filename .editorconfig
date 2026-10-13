@@ -101,7 +101,7 @@ dotnet_diagnostic.S138.severity = none
 
 # File name must match type: systems split one partial class over topic files
 dotnet_diagnostic.MA0048.severity = none
-# Type named like its namespace's last segment (namespace StickAndPuck.Camera + class Camera...)
+# Type named like its namespace's last segment (namespace StickAndPuck.App.Camera + class Camera...)
 dotnet_diagnostic.MA0049.severity = none
 # Loop to LINQ: the sim runs 60 Hz loops; LINQ allocates
 dotnet_diagnostic.S3267.severity = none

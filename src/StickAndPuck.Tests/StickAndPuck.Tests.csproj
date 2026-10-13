@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- W52: the former SAP_SCENE self-tests, run with dotnet test (TUnit on Microsoft.Testing.Platform) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>15</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>StickAndPuck.Tests</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591;NETSDK1057</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" Version="1.73.19" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../StickAndPuck.App/StickAndPuck.App.csproj" />
+  </ItemGroup>
+
+</Project>
