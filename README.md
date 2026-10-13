@@ -6,8 +6,8 @@ A silly attempt at rendering 3D as pixel art in the form of a hockey game.
 
 ### Running
 
-- `dotnet run` from the repo root (needs the .NET 11 SDK; global.json pins the version) builds and starts the game on the start screen.
-- Settings are environment variables in front of the command, for example `SAP_SCENE=match SAP_HOME=frolunda SAP_AWAY=djurgarden dotnet run`. On Windows PowerShell: `$env:SAP_SCENE="match"; dotnet run`.
+- `dotnet run --project src/StickAndPuck.App` from the repo root (needs the .NET 11 SDK; global.json pins the version) builds and starts the game on the start screen.
+- Settings are environment variables in front of the command, for example `SAP_SCENE=match SAP_HOME=frolunda SAP_AWAY=djurgarden dotnet run --project src/StickAndPuck.App`. On Windows PowerShell: `$env:SAP_SCENE="match"; dotnet run --project src/StickAndPuck.App`.
 - Release builds: download from the GitHub Releases page. `StickAndPuck-vX.Y.Z-linux-x64` needs `chmod +x` before it runs; `StickAndPuck-vX.Y.Z-win-x64.exe` runs as is. Neither needs .NET installed, and both read the same `SAP_*` variables.
 - The settings screen holds every switch: control switching, line changes, difficulty (easy, normal, hard), period length (2, 3, 5, 10 or 20 minutes, default 5), sim this game, auto deke, one-timers, penalties, fights, controls (keyboard or gamepad), player 2 controls (off, keyboard, gamepad 1 or 2), control marker, camera zoom, lighting mood, swap kits, volume, and the debug overlays (fps line, match debug line, lines panel; all off by default). Opening it from the pause menu keeps the match paused. They are saved as `settings.json` in `~/.config/StickAndPuck/` on Linux or `%APPDATA%\StickAndPuck\` on Windows, next to the season save; `SAP_SETTINGS=path` moves the file.
 - Screenshots (F12, `SAP_SCREENSHOT`) and recordings are saved in the folder the game was started from.
@@ -112,13 +112,13 @@ In one-player scenes the keyboard and the first gamepad both control your player
 
 ### Headless runs and tests
 
-- Run without a screen or GPU: `xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 SAP_SCREENSHOT=1 dotnet run`.
+- Run without a screen or GPU: `xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 SAP_SCREENSHOT=1 dotnet run --project src/StickAndPuck.App`.
 - `SAP_SCREENSHOT=1`: saves screenshot.png after one second of game time and quits.
 - `SAP_SCREEN_KEYS="down enter ..."`: presses scripted menu buttons in the screens (`up down left right enter back pause`, `wait`, and `shot:name` saves name.png). Default: real input.
 - `SAP_RECORD=seconds`: saves every frame for that many seconds as numbered PNGs, then quits. `SAP_FRAMES` sets the folder (default `frames/`).
 - `SAP_STEPS=n`: runs n fixed steps as fast as the machine can, without waiting for the screen, then quits.
 - `tools/record.sh out.mp4 seconds [input.sh]`: records an mp4 headless (needs xvfb-run and ffmpeg; xdotool for input.sh). `SAP_AUDIO=1` records in real time with sound.
-- Tests: `dotnet test --project tests/StickAndPuck.Tests` runs every check (TUnit; the former `SAP_SCENE=...test` scenes). One class: `dotnet test --project tests/StickAndPuck.Tests -- --treenode-filter "/*/*/LinesTests/*"`. Each check prints PASS or FAIL; a test fails listing its failed checks. CI runs them on every pull request.
+- Tests: `dotnet test --project src/StickAndPuck.Tests` runs every check (TUnit; the former `SAP_SCENE=...test` scenes). One class: `dotnet test --project src/StickAndPuck.Tests -- --treenode-filter "/*/*/LinesTests/*"`. Each check prints PASS or FAIL; a test fails listing its failed checks. CI runs them on every pull request.
 - `SAP_REPLAYTEST_PRINT=1` with the replay tests prints new golden values after a deliberate gameplay change.
 
 ### Replays

@@ -17,8 +17,8 @@
 set -euo pipefail
 out=$(realpath -m "$1"); seconds=$2; input=${3:+$(realpath "$3")}
 cd "$(dirname "$0")/.."
-dotnet build -c Release -v q -nologo >/dev/null
-bin=$(ls -d bin/Release/net*/StickAndPuck | head -1)
+dotnet build src/StickAndPuck.App/StickAndPuck.App.csproj -c Release -v q -nologo >/dev/null
+bin=$(realpath "$(ls -d src/StickAndPuck.App/bin/Release/net*/StickAndPuck | head -1)")
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 export LIBGL_ALWAYS_SOFTWARE=1 DOTNET_ROOT=${DOTNET_ROOT:-$(dirname "$(realpath "$(command -v dotnet)")")}
 
