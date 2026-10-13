@@ -8,6 +8,9 @@ namespace StickAndPuck.App.Core;
 /// </summary>
 public sealed class World
 {
+    readonly List<int>[] onIce = [[], []];
+    int onIceVersion = -1;
+
     /// <summary>Initializes a new world for a match.</summary>
     /// <param name="setup">The clubs, inputs and rules.</param>
     /// <param name="settings">Player options.</param>
@@ -25,7 +28,7 @@ public sealed class World
     public Settings Settings { get; set; }
 
     /// <summary>Gets every player in the match, both clubs, indexed by <see cref="Player.Id"/>.</summary>
-    public List<Player> Players { get; } = [];
+    public PlayerList Players { get; } = [];
 
     /// <summary>Gets the puck.</summary>
     public Puck Puck { get; } = new();
@@ -137,7 +140,38 @@ public sealed class World
     /// <returns>Those players.</returns>
     public IEnumerable<Player> OnIce(Side side)
     {
-        return Players.Where(p => p.Side == side && p.OnIce);
+        // W56: walks the cached list, which matches filtering the players in order; if the players
+        // change part way, the rest is filtered as it would have been, from the next player on
+        var list = OnIceIndices(side);
+        int version = Players.Version, next = 0;
+        foreach (int i in list)
+        {
+            if (Players.Version != version) break;
+            next = i + 1;
+            yield return Players[i];
+        }
+
+        if (Players.Version == version) yield break;
+        for (int i = next; i < Players.Count; i++)
+        {
+            var p = Players[i];
+            if (p.Side == side && p.OnIce) yield return p;
+        }
+    }
+
+    /// <summary>Gets the indices of one club's players on the ice, rebuilt after the players change.</summary>
+    List<int> OnIceIndices(Side side)
+    {
+        if (onIceVersion != Players.Version)
+        {
+            onIce[0].Clear();
+            onIce[1].Clear();
+            for (int i = 0; i < Players.Count; i++)
+                if (Players[i].OnIce) onIce[(int)Players[i].Side].Add(i);
+            onIceVersion = Players.Version;
+        }
+
+        return onIce[(int)side];
     }
 
     /// <summary>Gets the player a human slot controls, if any.</summary>

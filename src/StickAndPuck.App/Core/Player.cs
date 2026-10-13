@@ -30,6 +30,9 @@ public enum PlayerAction
 /// <summary>One player on the ice (or on the bench).</summary>
 public sealed class Player
 {
+    bool onIce = true;
+    Maybe<PlayerList> roster;
+
     /// <summary>Gets the index of this player in <see cref="World.Players"/>.</summary>
     public required int Id { get; init; }
 
@@ -52,7 +55,16 @@ public sealed class Player
     public float Heading { get; set; }
 
     /// <summary>Gets or sets a value indicating whether the player is on the ice (false on the bench).</summary>
-    public bool OnIce { get; set; } = true;
+    public bool OnIce
+    {
+        get => onIce;
+        set
+        {
+            if (onIce == value) return;
+            onIce = value;
+            if (roster.TryGet(out var list)) list.Changed();
+        }
+    }
 
     /// <summary>Gets or sets the human input slot controlling this player, or -1 when the AI does.</summary>
     public int Slot { get; set; } = -1;
@@ -82,4 +94,8 @@ public sealed class Player
         Action = action;
         ActionTime = 0;
     }
+
+    /// <summary>Notes the list this player is in, so going on or off the ice counts as a change to it.</summary>
+    /// <param name="list">The list.</param>
+    internal void Join(PlayerList list) => roster = list;
 }
