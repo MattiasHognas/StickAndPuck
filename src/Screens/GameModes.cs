@@ -84,4 +84,14 @@ internal static class GameModes
             .ThenBy(m => m.Title, StringComparer.Ordinal)
             .ToList();
     }
+
+    /// <summary>Gets a fresh mode by its type name, as a replay names it.</summary>
+    /// <param name="typeName">The type name; "" (or an unknown name) is a season game.</param>
+    /// <returns>The mode, or null for a season game.</returns>
+    public static IGameMode? Named(string typeName)
+    {
+        var type = typeof(GameModes).Assembly.GetTypes().FirstOrDefault(t => string.Equals(t.Name, typeName, StringComparison.Ordinal)
+            && typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false } && t.GetConstructor(Type.EmptyTypes) != null);
+        return type == null ? null : (IGameMode)Activator.CreateInstance(type)!;
+    }
 }

@@ -39,7 +39,7 @@ public static class Gamepads
         Refresh();
         var slots = new List<int>(MaxSlots);
         for (int slot = 0; slot < MaxSlots; slot++)
-            if (IsGamepadAvailable(slot)) slots.Add(slot);
+            if (DeviceInput.PadAvailable(slot)) slots.Add(slot);    // W67: as this step's frame has it, so a replay finds the same pads
         return slots;
     }
 

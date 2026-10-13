@@ -128,7 +128,7 @@ public sealed class LinesSelfTest : IScene
         bench.Energy = 0.5f;
         Run(w, 10, world =>
         {
-            skater.Command = new PlayerCommand { Move = new Vector2(MathF.Sin(world.Time), MathF.Cos(world.Time)), Sprint = true };
+            skater.Command = new PlayerCommand { Move = new Vector2(SimMath.Sin(world.Time), SimMath.Cos(world.Time)), Sprint = true };
             foreach (var p in world.Players) if (p.OnIce && p != skater) p.Command = default;
             SetEnergy(world.Players.Where(p => p.OnIce && p != skater && p != idle), 1f);   // nobody else changes
         });

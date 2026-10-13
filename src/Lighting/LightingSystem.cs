@@ -32,9 +32,8 @@ internal sealed class LightingSystem : ISystem
 
     public void Start(World world)
     {
-#pragma warning disable S2245 // a dice roll for the start time, not security
-        var dice = new Random();
-#pragma warning restore S2245
+        // W67: a seeded match (and so its replay) always gets the same mood; the unseeded menu backdrop varies
+        var dice = world.Seed != 0 ? Seeds.Dice(world.Seed, "lighting", 0) : Random.Shared;
         var time = Environment.GetEnvironmentVariable("SAP_LIGHTING") is { Length: > 0 } name
             ? Enum.TryParse<TimeOfDay>(name, ignoreCase: true, out var t) ? t
                 : throw new InvalidOperationException($"SAP_LIGHTING={name}: use early, afternoon or late")

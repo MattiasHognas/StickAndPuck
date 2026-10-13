@@ -36,12 +36,13 @@ internal sealed class TacticsSystem : ISystem
     const float ChaseFor = 3.5f;       // seconds the second forward goes after a dump
     const float Settled = 1.5f;        // seconds the breakout side has had the puck before it counts in the tally
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 4;
+
     readonly Random rng;
 
     public TacticsSystem()
-#pragma warning disable S2245 // gameplay variation, not security
-        : this(new Random())
-#pragma warning restore S2245
+        : this(Seeds.Dice(Seeds.Environment, "tactics", Fallback))
     {
     }
 

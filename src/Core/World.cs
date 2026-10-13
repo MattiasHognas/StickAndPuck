@@ -45,6 +45,13 @@ public sealed class World
     /// <summary>Gets the number of fixed steps run so far.</summary>
     public long Tick { get; internal set; }
 
+    /// <summary>
+    /// Gets or sets the match seed (W67): every system's dice are a stream of it, so the same seed
+    /// and the same inputs play the same match. 0 is no seed: the dice start from fixed test seeds.
+    /// Starts as SAP_SEED (0 when unset); set it before the systems start.
+    /// </summary>
+    public int Seed { get; set; } = Seeds.Environment;
+
     /// <summary>Adds a player from a club's roster.</summary>
     /// <param name="side">Which club.</param>
     /// <param name="data">The roster entry.</param>

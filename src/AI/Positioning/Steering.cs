@@ -70,7 +70,7 @@ public static class Steering
     public static Vector2 BodyForBlade(Player p, Vector2 point)
     {
         var to = point - new Vector2(p.Position.X, p.Position.Z);
-        float heading = to.LengthSquared() > 1e-4f ? MathF.Atan2(to.X, to.Y) : p.Heading;
+        float heading = to.LengthSquared() > 1e-4f ? SimMath.Atan2(to.X, to.Y) : p.Heading;
         var blade = PuckHandling.Blade(Vector3.Zero, heading);
         return point - new Vector2(blade.X, blade.Z);
     }

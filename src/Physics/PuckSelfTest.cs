@@ -212,7 +212,7 @@ public sealed class PuckSelfTest : IScene
             if (MathF.Abs(MathF.Abs(from.X) - RinkSpec.GoalLineX - 0.6f) < 1.2f && MathF.Abs(from.Z) < 1.5f) continue;
             if (!InsideRink(from)) continue;
             float a = (float)(rng.NextDouble() * MathF.Tau), s = 5 + (float)rng.NextDouble() * 40;
-            Shoot(w, from, new Vector3(MathF.Cos(a) * s, (float)rng.NextDouble() * 6, MathF.Sin(a) * s));
+            Shoot(w, from, new Vector3(SimMath.Cos(a) * s, (float)rng.NextDouble() * 6, SimMath.Sin(a) * s));
             bool mouth = false;
             var last = from;
             var ev = Run(w, 4f, each: x =>

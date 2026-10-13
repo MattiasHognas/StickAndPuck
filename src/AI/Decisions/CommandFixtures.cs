@@ -119,7 +119,7 @@ internal static class CommandFixtures
                 for (int k = 0; k < 16; k++)
                 {
                     float a = k * MathF.Tau / 16f;
-                    var stick = new Vector2(MathF.Cos(a), MathF.Sin(a)) * (k % 4 == 3 ? 0.2f : 1f);
+                    var stick = new Vector2(SimMath.Cos(a), SimMath.Sin(a)) * (k % 4 == 3 ? 0.2f : 1f);
                     var keep = p.Command;
                     p.Command = keep with { Move = stick };
                     var old = PuckHandling.PickReceiver(world, p);

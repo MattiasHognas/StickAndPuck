@@ -1,11 +1,12 @@
 using Raylib_cs;
 using StickAndPuck.Render;
+using StickAndPuck.Replays;
 using StickAndPuck.Screens;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Core;
 
-/// <summary>Window, fixed-step loop and the order things are drawn in. Systems do the work; this file stays as it is.</summary>
+/// <summary>Window, fixed-step loop and the order things are drawn in. Systems do the work.</summary>
 public static class Game
 {
     /// <summary>The native frame width in pixels.</summary>
@@ -20,14 +21,25 @@ public static class Game
     /// <summary>
     /// Runs the game. SAP_SCENE picks the scene; SAP_SCREENSHOT=1 saves screenshot.png after one
     /// second of game time and quits, for headless checks. SAP_RECORD saves every frame for a movie.
+    /// W67: SAP_REPLAY plays a replay file (see <see cref="ReplayPlayer"/>); every match the
+    /// screens start is recorded (see <see cref="ReplayRecorder"/>). SAP_STEPS=n runs n steps as
+    /// fast as it can without waiting for the screen, then quits.
     /// </summary>
     public static void Run()
     {
         var clubs = Clubs.LoadAll();
         Console.WriteLine($"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}");
-        var world = Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
-        bool headless = string.Equals(Environment.GetEnvironmentVariable("SAP_SCREENSHOT"), "1", StringComparison.Ordinal);
-        var recorder = FrameRecorder.FromEnvironment();
+        var replay = ReplayPlayer.FromEnvironment(clubs);
+        var world = replay?.World ?? Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
+        var loop = new Loop
+        {
+            Headless = string.Equals(Environment.GetEnvironmentVariable("SAP_SCREENSHOT"), "1", StringComparison.Ordinal),
+            Frames = FrameRecorder.FromEnvironment(),
+            Replay = replay,
+            Limit = long.TryParse(Environment.GetEnvironmentVariable("SAP_STEPS"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
+            Recorder = replay is { TakeOverAtTarget: true } ? replay.TakeOverRecorder() : replay == null ? ReplayRecorder.Begin(world, RecordedScene()) : null,
+        };
+        ReplayRecorder.OpenChecksums();
 
         SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint);
         InitWindow(Width * 3, Height * 3, "Stick & Puck");
@@ -38,48 +50,143 @@ public static class Game
         var systems = Restart(world, []);
         Console.WriteLine($"SAP: {systems.Count} systems: {string.Join(", ", systems.Select(s => s.GetType().Name))}");
 
-        float pending = 0;
         while (!WindowShouldClose() && !ScreenFlow.QuitRequested)
         {
-            // fixed 60 Hz steps; a slow frame runs a few steps, never more than a quarter second's worth
-            pending += Math.Min(GetFrameTime(), 0.25f);
-            if (headless || recorder != null) pending = Step;     // headless runs exactly one step per frame, so captures repeat
-            while (pending >= Step)
-            {
-                world.Events.Clear();
-                foreach (var s in systems)
-                    if (!world.Match.Paused || s.RunsWhilePaused) s.Update(world, Step);
-                world.Time += Step; world.Tick++;
-                pending -= Step;
-            }
+            loop.Frame(world, systems);
 
             // W11: a screen started a match or went back to the menus; the new world gets fresh systems
-            if (ScreenFlow.TakeNextWorld() is { } next) (world, systems) = (next, Restart(next, systems));
-
-            Draw(world, systems, pixel, render, showFps: recorder == null && world.Settings.FpsLine);
-            if (recorder?.Save(world) == true) break;
-
-            // F12 saves a frame; SAP_SCREENSHOT=1 saves one after a second and quits (headless checks)
-            if (IsKeyPressed(KeyboardKey.F12)) AssetRoot.SaveScreen("screenshot.png");
-            if (headless && world.Time >= 1f)
+            if (ScreenFlow.TakeNextWorld() is { } next)
             {
-                AssetRoot.SaveScreen("screenshot.png");
-                Console.WriteLine($"SAP: {world.Tick} steps of {systems.Count} systems, {world.Players.Count} players, screenshot.png saved");
-                break;
+                if (replay is { Live: false }) break;    // the replayed match is over
+                loop.Recorder?.Finish(world);
+                loop.Recorder = ReplayRecorder.Begin(next, null);
+                (world, systems) = (next, Restart(next, systems));
             }
+
+            Draw(world, systems, pixel, render, showFps: loop.Frames == null && world.Settings.FpsLine);
+            if (loop.AfterDraw(world, systems.Count)) break;
         }
 
+        loop.ReportOnce(world);    // a recording that went on to the menus or a quit ends the loop before its last step
+        loop.Recorder?.Finish(world);
+        ReplayRecorder.CloseChecksums();
         foreach (var s in systems.OfType<IDisposable>()) s.Dispose();
         pixel.Dispose();
         // GPU resources go before the window, or the context is already gone
         CloseWindow();
+        Environment.ExitCode = loop.ExitCode;
+    }
+
+    /// <summary>The SAP_SCENE to note in a scene's replay, or null for the screens, which record their own matches.</summary>
+    static string? RecordedScene()
+    {
+        string scene = Environment.GetEnvironmentVariable("SAP_SCENE") is { Length: > 0 } s ? s : Scenes.Default;
+        return string.Equals(scene, Scenes.Default, StringComparison.OrdinalIgnoreCase) ? null : scene;
+    }
+
+    /// <summary>Runs one fixed step of every system on the world.</summary>
+    /// <param name="world">The match.</param>
+    /// <param name="systems">The systems, in order.</param>
+    internal static void StepWorld(World world, IReadOnlyList<ISystem> systems)
+    {
+        DeviceInput.Step(world.Tick);
+        world.Events.Clear();
+        foreach (var s in systems)
+            if (!world.Match.Paused || s.RunsWhilePaused) s.Update(world, Step);
+        world.Time += Step;
+        world.Tick++;
+    }
+
+    /// <summary>The per-frame part of the loop: steps, replay checks, screenshots.</summary>
+    sealed class Loop
+    {
+        readonly SimClock clock = new();
+        bool scrubShot, reported;
+
+        public bool Headless { get; init; }
+
+        public FrameRecorder? Frames { get; init; }
+
+        public ReplayPlayer? Replay { get; init; }
+
+        /// <summary>Gets the steps SAP_STEPS asks for: run that many as fast as possible, then quit (0: no limit).</summary>
+        public long Limit { get; init; }
+
+        public ReplayRecorder? Recorder { get; set; }
+
+        public int ExitCode { get; private set; }
+
+        /// <summary>Runs this frame's steps.</summary>
+        public void Frame(World world, IReadOnlyList<ISystem> systems)
+        {
+            DeviceInput.Poll();
+            bool frozen = Replay is { Ended: true, Live: false };    // a replay that played out holds its last frame
+            bool fast = Replay?.FastForward(Headless) == true || (Limit > 0 && Replay == null);
+            int steps = frozen ? 0 : clock.Steps(GetFrameTime(), lockstep: Headless || Frames != null, fast);
+            if (Limit > 0) steps = (int)Math.Min(steps, Limit - world.Tick);
+            for (int i = 0; i < steps; i++)
+            {
+                StepWorld(world, systems);
+                ulong sum = WorldChecksum.Of(world);
+                if (Recorder != null || Replay != null) ReplayRecorder.LogChecksum(world.Tick - 1, sum);    // the recorded or replayed match only
+                Recorder?.AfterStep(world, sum);
+                var step = Replay?.AfterStep(world, sum) ?? ReplayStep.Next;
+                if (step == ReplayStep.Target)
+                {
+                    scrubShot = true;
+                    if (Replay!.TakeOverAtTarget) Replay.TakeOver();
+                    break;
+                }
+                if (step == ReplayStep.End) break;
+            }
+        }
+
+        /// <summary>Prints the replay's report the first time it is asked for.</summary>
+        /// <param name="world">The world the replay ended on.</param>
+        /// <returns>True when it printed now.</returns>
+        public bool ReportOnce(World world)
+        {
+            if (Replay == null || reported) return false;
+            reported = true;
+            ExitCode = Replay.Report(world);
+            return true;
+        }
+
+        /// <summary>Saves what this frame should save; true when the game should quit.</summary>
+        public bool AfterDraw(World world, int systemCount)
+        {
+            if (scrubShot)
+            {
+                scrubShot = false;
+                AssetRoot.SaveScreen("replay_at.png");
+                Console.WriteLine($"SAP: replay: replay_at.png saved");
+                if (Headless && Replay is { Live: false }) return true;
+            }
+            if (Replay is { Ended: true } && ReportOnce(world) && Headless) return true;
+            if (Frames?.Save(world) == true) return true;
+            if (Limit > 0 && world.Tick >= Limit)
+            {
+                Console.WriteLine($"SAP: {world.Tick} steps run (SAP_STEPS); {StateDump.Of(world).Split('\n')[1]}");
+                return true;
+            }
+
+            // F12 saves a frame; SAP_SCREENSHOT=1 saves one after a second and quits (headless checks)
+            if (IsKeyPressed(KeyboardKey.F12)) AssetRoot.SaveScreen("screenshot.png");
+            if (Headless && Replay == null && Limit == 0 && world.Time >= 1f)
+            {
+                AssetRoot.SaveScreen("screenshot.png");
+                Console.WriteLine($"SAP: {world.Tick} steps of {systemCount} systems, {world.Players.Count} players, screenshot.png saved");
+                return true;
+            }
+            return false;
+        }
     }
 
     /// <summary>Disposes the old systems and starts a fresh set on the world.</summary>
     static IReadOnlyList<ISystem> Restart(World world, IReadOnlyList<ISystem> old)
     {
         foreach (var s in old.OfType<IDisposable>()) s.Dispose();
-        var systems = Systems.Create();
+        var systems = Systems.Create(world.Seed);
         foreach (var s in systems) s.Start(world);
         return systems;
     }

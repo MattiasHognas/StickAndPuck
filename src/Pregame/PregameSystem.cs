@@ -68,9 +68,9 @@ internal sealed class PregameSystem : ISystem
     static bool StartPressed(WarmupState s)
     {
         if (!IsWindowReady()) return false;
-        bool down = IsKeyDown(KeyboardKey.Space) || IsKeyDown(KeyboardKey.Enter) || IsKeyDown(KeyboardKey.KpEnter);
+        bool down = DeviceInput.KeyDown(KeyboardKey.Space) || DeviceInput.KeyDown(KeyboardKey.Enter) || DeviceInput.KeyDown(KeyboardKey.KpEnter);
         for (int pad = 0; pad < 2 && !down; pad++)
-            down = IsGamepadAvailable(pad) && (IsGamepadButtonDown(pad, GamepadButton.RightFaceDown) || IsGamepadButtonDown(pad, GamepadButton.MiddleRight));
+            down = DeviceInput.PadAvailable(pad) && (DeviceInput.PadDown(pad, GamepadButton.RightFaceDown) || DeviceInput.PadDown(pad, GamepadButton.MiddleRight));
         if (!down) { s.Armed = true; return false; }
         return s.Armed;
     }

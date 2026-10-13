@@ -78,7 +78,7 @@ public static class Coverage
         float out_ = MathF.Sign(-net.X) * (attacker.X - net.X);   // metres out in front of the goal line
         if (out_ < 0.5f) return 0.1f;                              // behind the net
         float d = Vector2.Distance(net, attacker);
-        float angle = MathF.Atan2(MathF.Abs(attacker.Y), out_);
+        float angle = SimMath.Atan2(MathF.Abs(attacker.Y), out_);
         float range = Math.Clamp(1f - (d - 2f) / 22f, 0f, 1f);
         float open = Math.Clamp(1f - angle / 1.4f, 0f, 1f);
         return 0.1f + range * (0.4f + 0.7f * open);

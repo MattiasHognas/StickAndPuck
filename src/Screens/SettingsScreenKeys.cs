@@ -1,6 +1,5 @@
 using Raylib_cs;
 using StickAndPuck.Core;
-using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Screens;
 
@@ -111,7 +110,7 @@ internal sealed class KeyMappingScreen : MenuScreen
     {
         listening = action;
         heldKeys.Clear();
-        heldKeys.UnionWith(AllKeys.Where(k => IsKeyDown(k)));
+        heldKeys.UnionWith(AllKeys.Where(k => DeviceInput.KeyDown(k)));
         heldButtons.Clear();
         heldButtons.UnionWith(Buttons());
     }
@@ -126,7 +125,7 @@ internal sealed class KeyMappingScreen : MenuScreen
         }
         foreach (var key in AllKeys)
         {
-            if (!IsKeyDown(key))
+            if (!DeviceInput.KeyDown(key))
             {
                 heldKeys.Remove(key);
                 continue;
@@ -158,9 +157,9 @@ internal sealed class KeyMappingScreen : MenuScreen
         var down = new List<(int, GamepadButton)>();
         for (int pad = 0; pad < 2; pad++)
         {
-            if (!IsGamepadAvailable(pad)) continue;
+            if (!DeviceInput.PadAvailable(pad)) continue;
             foreach (var b in AllButtons)
-                if (IsGamepadButtonDown(pad, b)) down.Add((pad, b));
+                if (DeviceInput.PadDown(pad, b)) down.Add((pad, b));
         }
         return down;
     }

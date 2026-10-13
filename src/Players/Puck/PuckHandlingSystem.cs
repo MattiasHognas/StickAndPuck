@@ -39,6 +39,9 @@ internal sealed class PuckHandlingSystem : ISystem
     /// <summary>Seconds after a pass that a teammate can still arm a one-timer on it.</summary>
     public const float OneTimerWindow = 1.6f;
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 7;
+
     readonly Random rng;
     readonly HashSet<int> shootHeld = [];
     readonly Dictionary<int, float> charge = [];
@@ -54,9 +57,7 @@ internal sealed class PuckHandlingSystem : ISystem
     readonly HashSet<int> dekeHeld = [];
 
     public PuckHandlingSystem()
-#pragma warning disable S2245 // gameplay variation, not security
-        : this(new Random())
-#pragma warning restore S2245
+        : this(Seeds.Dice(Seeds.Environment, "puckhandling", Fallback))
     {
     }
 
@@ -290,7 +291,7 @@ internal sealed class PuckHandlingSystem : ISystem
     Vector3 DekePull(World world, int carrier)
     {
         if (!deking.TryGetValue(carrier, out var d)) return Vector3.Zero;
-        float k = MathF.Sin(MathF.PI * Math.Clamp((world.Time - d.At) / DekeModel.Duration, 0f, 1f)) * 0.6f;
+        float k = SimMath.Sin(MathF.PI * Math.Clamp((world.Time - d.At) / DekeModel.Duration, 0f, 1f)) * 0.6f;
         return new Vector3(d.Side.X, 0, d.Side.Y) * k;
     }
 

@@ -149,7 +149,7 @@ public static class MatchFlow
 
     internal static FlowState State(World world)
     {
-        return States.GetOrCreateValue(world);
+        return States.GetValue(world, w => new FlowState { Dice = Seeds.Dice(w.Seed, "matchflow", 43) });
     }
 
     internal static void SetUpFaceoff(World world, Vector3 dot)
@@ -187,10 +187,8 @@ internal sealed class FlowState
 
     public bool RefereeDrops { get; set; }
 
-    /// <summary>Gets the luck in the draws; seeded so test runs repeat.</summary>
-#pragma warning disable S2245 // gameplay dice, not security
-    public Random Dice { get; } = new(43);
-#pragma warning restore S2245
+    /// <summary>Gets the luck in the draws; the match seed's stream (W67), so runs repeat.</summary>
+    public required Random Dice { get; init; }
 
     /// <summary>Gets or sets how long a goalie has held the puck in play.</summary>
     public float Held { get; set; }

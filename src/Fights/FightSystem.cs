@@ -137,7 +137,7 @@ internal sealed class FightSystem : ISystem, IDisposable
     {
         p.Position = at;
         p.Velocity = Vector3.Zero;
-        p.Heading = MathF.Atan2(facing.X - at.X, facing.Z - at.Z);
+        p.Heading = SimMath.Atan2(facing.X - at.X, facing.Z - at.Z);
         if (p.Action != PlayerAction.Fight) p.Begin(PlayerAction.Fight);
     }
 
@@ -195,7 +195,7 @@ internal sealed class FightSystem : ISystem, IDisposable
                 Math.Clamp(to.X, -RinkSpec.HalfLength + 1f, RinkSpec.HalfLength - 1f), p.Position.Y,
                 Math.Clamp(to.Z, -RinkSpec.HalfWidth + 0.6f, RinkSpec.HalfWidth - 0.6f));
             p.Velocity = dir * FightTuning.BackOffSpeed;
-            p.Heading = MathF.Atan2(-dir.X, -dir.Z);
+            p.Heading = SimMath.Atan2(-dir.X, -dir.Z);
         }
     }
 

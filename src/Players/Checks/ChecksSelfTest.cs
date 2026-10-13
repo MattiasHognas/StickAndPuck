@@ -239,7 +239,7 @@ public sealed class ChecksSelfTest : IScene
         Run(w, 4f, (x, i) =>
         {
             float t = i * 0.08f;
-            them.Command = new PlayerCommand { Move = new Vector2(MathF.Cos(t), MathF.Sin(t)) };
+            them.Command = new PlayerCommand { Move = new Vector2(SimMath.Cos(t), SimMath.Sin(t)) };
             int now = x.Controlled(0)?.Id ?? -1;
             if (now != last) switches++;
             last = now;

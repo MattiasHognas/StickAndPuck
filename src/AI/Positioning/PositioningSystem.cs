@@ -28,12 +28,13 @@ internal sealed class PositioningSystem : ISystem
     const float Spacing = 2.4f;       // teammates closer than this push their spots apart
     const float PressureGap = 1.3f;   // how far goal side of the carrier the pressure skater stands
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 1;
+
     readonly Random rng;
 
     public PositioningSystem()
-#pragma warning disable S2245 // gameplay variation, not security
-        : this(new Random())
-#pragma warning restore S2245
+        : this(Seeds.Dice(Seeds.Environment, "positioning", Fallback))
     {
     }
 
@@ -345,7 +346,7 @@ internal sealed class PositioningSystem : ISystem
         if (world.Time >= plan.ErrorUntil)
         {
             float angle = rng.NextSingle() * MathF.Tau, size = (1f - smart) * 3.5f * MathF.Sqrt(rng.NextSingle());
-            plan.Error = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * size;
+            plan.Error = new Vector2(SimMath.Cos(angle), SimMath.Sin(angle)) * size;
             plan.ErrorUntil = world.Time + 4f + rng.NextSingle() * 4f;
         }
         float follow = Math.Min(1f, (1.2f + 4.8f * smart) * dt);
@@ -373,7 +374,7 @@ internal sealed class PositioningSystem : ISystem
                     var away = plan.Target - (other.Job is Job.Shape or Job.Support ? other.Target : new Vector2(mate.Position.X, mate.Position.Z));
                     float d = away.Length();
                     if (d >= Spacing) continue;
-                    var dir = d > 1e-3f ? away / d : new Vector2(MathF.Cos(p.Id), MathF.Sin(p.Id));
+                    var dir = d > 1e-3f ? away / d : new Vector2(SimMath.Cos(p.Id), SimMath.Sin(p.Id));
                     push += dir * (Spacing - d) * 0.6f;
                 }
                 plan.Target = TeamShape.Inside(plan.Target + push);

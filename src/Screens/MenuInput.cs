@@ -1,6 +1,5 @@
 using Raylib_cs;
 using StickAndPuck.Core;
-using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Screens;
 
@@ -62,7 +61,16 @@ internal sealed class MenuInput
         pressed.Clear();
         if (script != null)
         {
-            if (Scripted(menuUp) is var b and not MenuButton.None) pressed.Add(b);
+            if (Scripted(menuUp) is var b and not MenuButton.None)
+            {
+                pressed.Add(b);
+                DeviceInput.Scripted(b.ToString());    // W67: the replay presses it on the same step
+            }
+            return pressed;
+        }
+        if (DeviceInput.Current.MenuPress.Length > 0 && Enum.TryParse<MenuButton>(DeviceInput.Current.MenuPress, out var played))
+        {
+            pressed.Add(played);    // a scripted press, played back from a replay
             return pressed;
         }
 
@@ -136,23 +144,23 @@ internal sealed class MenuInput
             if (down) held.Add(b);
         }
 
-        Add(MenuButton.Up, IsKeyDown(KeyboardKey.Up) || IsKeyDown(KeyboardKey.W));
-        Add(MenuButton.Down, IsKeyDown(KeyboardKey.Down) || IsKeyDown(KeyboardKey.S));
-        Add(MenuButton.Left, IsKeyDown(KeyboardKey.Left) || IsKeyDown(KeyboardKey.A));
-        Add(MenuButton.Right, IsKeyDown(KeyboardKey.Right) || IsKeyDown(KeyboardKey.D));
-        Add(MenuButton.Accept, IsKeyDown(KeyboardKey.Enter) || IsKeyDown(KeyboardKey.KpEnter) || IsKeyDown(KeyboardKey.Space));
-        Add(MenuButton.Back, IsKeyDown(KeyboardKey.Escape) || IsKeyDown(KeyboardKey.Backspace));
-        Add(MenuButton.Pause, IsKeyDown(KeyboardKey.Escape) || Players.KeyInput.KeyDown(ScreenFlow.Settings, GameAction.Pause));
+        Add(MenuButton.Up, DeviceInput.KeyDown(KeyboardKey.Up) || DeviceInput.KeyDown(KeyboardKey.W));
+        Add(MenuButton.Down, DeviceInput.KeyDown(KeyboardKey.Down) || DeviceInput.KeyDown(KeyboardKey.S));
+        Add(MenuButton.Left, DeviceInput.KeyDown(KeyboardKey.Left) || DeviceInput.KeyDown(KeyboardKey.A));
+        Add(MenuButton.Right, DeviceInput.KeyDown(KeyboardKey.Right) || DeviceInput.KeyDown(KeyboardKey.D));
+        Add(MenuButton.Accept, DeviceInput.KeyDown(KeyboardKey.Enter) || DeviceInput.KeyDown(KeyboardKey.KpEnter) || DeviceInput.KeyDown(KeyboardKey.Space));
+        Add(MenuButton.Back, DeviceInput.KeyDown(KeyboardKey.Escape) || DeviceInput.KeyDown(KeyboardKey.Backspace));
+        Add(MenuButton.Pause, DeviceInput.KeyDown(KeyboardKey.Escape) || Players.KeyInput.KeyDown(ScreenFlow.Settings, GameAction.Pause));
         for (int pad = 0; pad < 2; pad++)
         {
-            if (!IsGamepadAvailable(pad)) continue;
-            float x = GetGamepadAxisMovement(pad, GamepadAxis.LeftX), y = GetGamepadAxisMovement(pad, GamepadAxis.LeftY);
-            Add(MenuButton.Up, IsGamepadButtonDown(pad, GamepadButton.LeftFaceUp) || y < -StickDeadZone);
-            Add(MenuButton.Down, IsGamepadButtonDown(pad, GamepadButton.LeftFaceDown) || y > StickDeadZone);
-            Add(MenuButton.Left, IsGamepadButtonDown(pad, GamepadButton.LeftFaceLeft) || x < -StickDeadZone);
-            Add(MenuButton.Right, IsGamepadButtonDown(pad, GamepadButton.LeftFaceRight) || x > StickDeadZone);
-            Add(MenuButton.Accept, IsGamepadButtonDown(pad, GamepadButton.RightFaceDown));
-            Add(MenuButton.Back, IsGamepadButtonDown(pad, GamepadButton.RightFaceRight));
+            if (!DeviceInput.PadAvailable(pad)) continue;
+            float x = DeviceInput.PadAxis(pad, GamepadAxis.LeftX), y = DeviceInput.PadAxis(pad, GamepadAxis.LeftY);
+            Add(MenuButton.Up, DeviceInput.PadDown(pad, GamepadButton.LeftFaceUp) || y < -StickDeadZone);
+            Add(MenuButton.Down, DeviceInput.PadDown(pad, GamepadButton.LeftFaceDown) || y > StickDeadZone);
+            Add(MenuButton.Left, DeviceInput.PadDown(pad, GamepadButton.LeftFaceLeft) || x < -StickDeadZone);
+            Add(MenuButton.Right, DeviceInput.PadDown(pad, GamepadButton.LeftFaceRight) || x > StickDeadZone);
+            Add(MenuButton.Accept, DeviceInput.PadDown(pad, GamepadButton.RightFaceDown));
+            Add(MenuButton.Back, DeviceInput.PadDown(pad, GamepadButton.RightFaceRight));
             Add(MenuButton.Pause, Players.KeyInput.PadDown(ScreenFlow.Settings, GameAction.Pause, pad));
         }
         return held;

@@ -110,7 +110,7 @@ public static class CheckingModel
             var off = new Vector2(p.Position.X - checker.Position.X, p.Position.Z - checker.Position.Z);
             float d = off.Length();
             if (d > bestDistance) continue;
-            if (d > 0.01f && Vector2.Dot(off / d, facing) < MathF.Cos(Cone)) continue;
+            if (d > 0.01f && Vector2.Dot(off / d, facing) < SimMath.Cos(Cone)) continue;
             best = p;
             bestDistance = d;
         }
