@@ -121,6 +121,9 @@ public sealed class Fight
     /// <summary>Gets or sets the seconds since the stage (or exchange) started.</summary>
     public float StageTime { get; set; }
 
+    /// <summary>Gets or sets when a punch last landed (<see cref="World.Time"/>), NaN before the first; the close-up camera jolts on it (W61).</summary>
+    public float LandedAt { get; set; } = float.NaN;
+
     /// <summary>Gets or sets the exchanges finished.</summary>
     public int Exchange { get; set; }
 
