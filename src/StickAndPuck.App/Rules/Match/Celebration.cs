@@ -1,5 +1,4 @@
 using System.Numerics;
-using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
 
@@ -155,7 +154,7 @@ public static class Celebration
         if (!s.Celebration.TryGet(out var c)) return false;
         var m = world.Match;
         // W9's goal replay (a sudden-death winner) plays out first; the live state comes back when it ends
-        if (Replay.Playing) return true;
+        if (world.ReplayPlaying) return true;
 
         var pk = world.Puck;
         pk.Live = false;

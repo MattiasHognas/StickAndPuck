@@ -41,7 +41,7 @@ internal sealed class CameraSystem : ISystem
         impact.Update(world, dt);
         if (replay.Update(world, dt)) follow.Cut(world);
         closeUp.Update(world, dt, replay.Waiting);
-        if (Replay.Playing)
+        if (world.ReplayPlaying)
         {
             (world.Camera, scale) = PixelGrid.SnapScaled(replay.Camera, scale);
             Render.RenderScale.Request(scale);
@@ -57,11 +57,11 @@ internal sealed class CameraSystem : ISystem
 
     public void DrawScene(World world, RenderContext render)
     {
-        if (!Replay.Playing) Render.Marker.Draw(world);
+        if (!world.ReplayPlaying) Render.Marker.Draw(world);
     }
 
     public void DrawHud(World world, RenderContext render)
     {
-        replay.DrawHud();
+        replay.DrawHud(world);
     }
 }

@@ -48,7 +48,7 @@ internal sealed class Impact
     public void Update(World world, float dt)
     {
         Rumble.Update(dt);
-        if (Replay.Playing)
+        if (world.ReplayPlaying)
         {
             holdSteps = 0;
             shakeLeft = 0;

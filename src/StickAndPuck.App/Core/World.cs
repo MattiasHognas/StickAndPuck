@@ -52,6 +52,12 @@ public sealed class World
     /// </summary>
     public int Seed { get; set; } = Seeds.Environment;
 
+    /// <summary>Gets the arena tones the lighting sets and the arena draws with.</summary>
+    public Arena.ArenaLook Look { get; } = new();
+
+    /// <summary>Gets or sets a value indicating whether a goal replay is playing right now (W9). Rules wait on it before the next faceoff.</summary>
+    public bool ReplayPlaying { get; internal set; }
+
     /// <summary>Gets or sets the switches dev scenes and tests turn (W56; these were statics).</summary>
     public WorldSwitches Switches { get; set; } = new();
 

@@ -83,17 +83,17 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
         // skate scratches on it all keep the depth test to stay behind them. The sheet writes no depth
         // while the overlays go down, since millimetres apart they z-fight at rink distance; a depth-only
         // pass of the sheet afterwards puts the ice depth back for the markings and everything else.
-        DrawPass(render, shaderDefault, ice: true, sheet: false);
+        DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: false);
         Rlgl.DisableDepthMask();
-        DrawPass(render, shaderDefault, ice: true, sheet: true);
-        IceBands.Draw(ArenaLook.IceBand);
-        IceScratches.Draw(ArenaLook.Scratch);
+        DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: true);
+        IceBands.Draw(world.Look.IceBand);
+        IceScratches.Draw(world.Look.Scratch);
         Rlgl.EnableDepthMask();
         Rlgl.ColorMask(false, false, false, false);
-        DrawPass(render, shaderDefault, ice: true, sheet: true);
+        DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: true);
         Rlgl.DrawRenderBatchActive();
         Rlgl.ColorMask(true, true, true, true);
-        DrawPass(render, shaderDefault, ice: false, sheet: false);
+        DrawPass(render, shaderDefault, world.Look.Ice, ice: false, sheet: false);
 
         // glass last and without depth, so players behind it still draw; flat colour over the crowd
         Rlgl.DisableDepthMask();
@@ -102,7 +102,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
             if (kind != Kind.Glass) continue;
             var mat = MaterialOf(mesh);
             mat.Shader = shaderDefault;
-            mat.Maps[(int)MaterialMapIndex.Albedo].Color = ArenaLook.Glass;
+            mat.Maps[(int)MaterialMapIndex.Albedo].Color = world.Look.Glass;
             DrawMesh(model.Meshes[mesh], mat, Matrix4x4.Identity);
         }
         Rlgl.EnableDepthMask();
@@ -111,9 +111,10 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
     /// <summary>Draws one group of meshes with the current depth and colour state.</summary>
     /// <param name="render">The scene's shaders.</param>
     /// <param name="unlit">The shader for unlit parts.</param>
+    /// <param name="iceTone">The ice sheet's tone.</param>
     /// <param name="ice">Whether to draw the ice group (the sheet and the floor) or everything else.</param>
     /// <param name="sheet">Within the ice group, whether to draw the sheet itself or the rest of it.</param>
-    void DrawPass(RenderContext render, Shader unlit, bool ice, bool sheet)
+    void DrawPass(RenderContext render, Shader unlit, Color iceTone, bool ice, bool sheet)
     {
         foreach (var (mesh, kind, _, isIce, isSheet) in meshes)
         {
@@ -121,7 +122,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
             var mat = MaterialOf(mesh);
             // the ice sheet is flat in the lighting's cold grey (W21); the toon ramp would warm it under the evening light
             mat.Shader = kind == Kind.Lit && !isSheet ? render.Toon : unlit;
-            if (isSheet) mat.Maps[(int)MaterialMapIndex.Albedo].Color = ArenaLook.Ice;
+            if (isSheet) mat.Maps[(int)MaterialMapIndex.Albedo].Color = iceTone;
             DrawMesh(model.Meshes[mesh], mat, Matrix4x4.Identity);
         }
     }

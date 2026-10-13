@@ -1,5 +1,4 @@
 using Raylib_cs;
-using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
 using StickAndPuck.App.Rules;
@@ -59,7 +58,7 @@ internal sealed class ScreenSystem : ISystem, IDisposable
         Watch(world);
         // W9's replay flag is shared, so the screens never leave a match or pause while a replay
         // plays (a winning goal's replay plays out first); a stale flag would hold the next faceoff
-        if (Replay.Playing) return;
+        if (world.ReplayPlaying) return;
         if (world.Match.Phase == MatchPhase.Final)
         {
             if (float.IsPositiveInfinity(finalAt)) finalAt = world.Time;

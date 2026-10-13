@@ -137,7 +137,7 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     /// <summary>Pans the gameplay camera after the Zamboni, swinging over from the follow camera and back.</summary>
     void Follow(World world, Drive drive, float dt)
     {
-        if (Replay.Playing) return;
+        if (world.ReplayPlaying) return;
         var at = Route.At(Route.Distance(drive.Seconds));
         float wanted = drive.Finished || !Route.OnIce(Route.Distance(drive.Seconds)) && drive.Seconds > Route.Duration / 2 ? 0 : 1;
         blend = Math.Clamp(blend + Math.Sign(wanted - blend) * dt / BlendSeconds, 0, 1);
