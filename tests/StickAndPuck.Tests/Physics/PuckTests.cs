@@ -117,6 +117,17 @@ public sealed class PuckTests : CheckedTest
     }
 
     [Test]
+    public void GoalWithNoPlayers()
+    {
+        // nobody to credit: the puck is held as scored but no event names a player that does not exist
+        var w = Make();
+        var empty = new World(w.Setup, w.Settings);
+        Shoot(empty, new Vector3(RinkSpec.GoalLineX + 0.3f, 0, 0.3f), Vector3.Zero);
+        var ev = Run(empty, 0.2f);
+        Check(ev.All(e => e is not GoalScored) && PuckMotion.FullyOverGoalLine(empty.Puck.Position, 1), "a goal in a world with no players publishes no event and does not throw");
+    }
+
+    [Test]
     public void PostRingsOut()
     {
         var w = Make();
