@@ -18,8 +18,7 @@
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <DebugType>embedded</DebugType>
-    <!-- the game reads its assets from disk, so extracting all content on first start is wanted, not legacy -->
-    <NoWarn>$(NoWarn);NETSDK1244</NoWarn>
+    <NoWarn>$(NoWarn);NETSDK1244;NETSDK1057</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
