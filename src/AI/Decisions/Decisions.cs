@@ -55,6 +55,9 @@ public sealed class DecisionTally
     /// <summary>Gets or sets the times an AI carrier held up at the blue line for a teammate offside to tag up (W63).</summary>
     public int HoldUps { get; set; }
 
+    /// <summary>Gets or sets the times an AI carrier came up to the blue line with a teammate offside and weighed holding up (W66).</summary>
+    public int HoldLooks { get; set; }
+
     /// <summary>Gets the share of passes that reached a teammate, 0 to 1.</summary>
     public float Completion => Passes == 0 ? 0f : (float)Completed / Passes;
 }

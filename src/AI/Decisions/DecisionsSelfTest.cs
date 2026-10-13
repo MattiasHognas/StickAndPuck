@@ -23,7 +23,8 @@ namespace StickAndPuck.AI;
 /// its file, and adds a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in: they must play visibly differently
 /// (SAP_SCENE=tacticstest also checks the club files). SAP_SEED picks the full match's seed (default 1).
 /// W63 plays full matches with the offside and icing rules on: under SHL over several seeds the AI ices the puck and
-/// goes offside at a hockey-like rate, a hockey IQ 30 club clears blind more and holds up at the blue line less than an 85 one,
+/// goes offside at a hockey-like rate, a hockey IQ 30 club clears blind more and holds up at the blue line less than an 85 one
+/// (W66: per time it comes up to the line with a teammate offside, over two matches each way round),
 /// and under Arcade, rules off, never.
 /// W68 ends with <see cref="CommandFixtures"/>: who writes an AI skater's command and which write wins.
 /// </summary>
@@ -148,7 +149,8 @@ public sealed class DecisionsSelfTest : IScene
         Check(world.Match.Phase == MatchPhase.Final, "three periods play out to the final");
         Check(h.Passes > 80 && a.Passes > 80, "both clubs pass the puck around");
         Check(h.Completion > 0.5f && a.Completion > 0.5f, "most passes reach a teammate");
-        Check(world.Match.Shots[0] >= 10 && world.Match.Shots[1] >= 10 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
+        // W66: the default home club plays dump and chase, which trades shots for dumps: over 50 matches it got 8 to 38 on goal, about 20 on average
+        Check(world.Match.Shots[0] >= 8 && world.Match.Shots[1] >= 8 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
         Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 10, "goals are scored, about as many as in a real match");
         Check(h.Checks is >= 15 and <= 30 && a.Checks is >= 15 and <= 30, "the AI throws 15 to 30 checks a side, like a real match (W22b)");
         Check(still < 15f, "the AI never leaves a loose puck lying");
@@ -230,19 +232,23 @@ public sealed class DecisionsSelfTest : IScene
         Console.WriteLine($"      Arcade: {aIce[0] + aIce[1]} icings, {aOff[0] + aOff[1]} offsides, {arcadeClears} clears");
         Check(aIce[0] + aIce[1] == 0 && aOff[0] + aOff[1] == 0 && arcade.Match.Phase == MatchPhase.Final, "under Arcade, rules off, a full match has no icing and no offside");
 
-        // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round
-        int[] smartTotals = new int[4], poorTotals = new int[4];
-        foreach (var smart in new[] { Side.Home, Side.Away })
+        // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round, twice (W66: a 30 club
+        // comes up to the line with a teammate offside only a handful of times a match)
+        int[] smartTotals = new int[5], poorTotals = new int[5];
+        foreach (int seed in new[] { 51, 53 })
         {
-            var (ice, off, world) = Calls(clubs, settings, RuleSet.Shl, smart == Side.Home ? 51 : 52, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
-            var poor = smart == Side.Home ? Side.Away : Side.Home;
-            Add(smartTotals, ice[(int)smart], off[(int)smart], Decisions.Tally(world, smart));
-            Add(poorTotals, ice[(int)poor], off[(int)poor], Decisions.Tally(world, poor));
+            foreach (var smart in new[] { Side.Home, Side.Away })
+            {
+                var (ice, off, world) = Calls(clubs, settings, RuleSet.Shl, seed + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
+                var poor = smart == Side.Home ? Side.Away : Side.Home;
+                Add(smartTotals, ice[(int)smart], off[(int)smart], Decisions.Tally(world, smart));
+                Add(poorTotals, ice[(int)poor], off[(int)poor], Decisions.Tally(world, poor));
+            }
         }
-        Console.WriteLine($"      hockey IQ 85: {smartTotals[0]} icings, {smartTotals[1]} offsides, {smartTotals[2]} clears, {smartTotals[3]} hold-ups; hockey IQ 30: {poorTotals[0]} icings, {poorTotals[1]} offsides, {poorTotals[2]} clears, {poorTotals[3]} hold-ups");
+        Console.WriteLine($"      hockey IQ 85: {smartTotals[0]} icings, {smartTotals[1]} offsides, {smartTotals[2]} clears, {smartTotals[3]} hold-ups in {smartTotals[4]} looks; hockey IQ 30: {poorTotals[0]} icings, {poorTotals[1]} offsides, {poorTotals[2]} clears, {poorTotals[3]} hold-ups in {poorTotals[4]} looks");
         Check(poorTotals[2] > smartTotals[2] * 1.5f, "a hockey IQ 30 club fires the puck out of its zone blind far more often than an 85 one");
-        float smartHolds = (float)smartTotals[3] / Math.Max(1, smartTotals[3] + smartTotals[1]), poorHolds = (float)poorTotals[3] / Math.Max(1, poorTotals[3] + poorTotals[1]);
-        Check(smartHolds > poorHolds, $"a hockey IQ 85 club holds up at the line for a teammate offside more often than a 30 one ({smartHolds:P0} vs {poorHolds:P0})");
+        float smartHolds = (float)smartTotals[3] / Math.Max(1, smartTotals[4]), poorHolds = (float)poorTotals[3] / Math.Max(1, poorTotals[4]);
+        Check(smartHolds > poorHolds, $"a hockey IQ 85 club holds up at the line for a teammate offside more often than a 30 one ({smartHolds:P0} vs {poorHolds:P0} of the times it came up to the line)");
     }
 
     static void Add(int[] totals, int icings, int offsides, DecisionTally tally)
@@ -251,6 +257,7 @@ public sealed class DecisionsSelfTest : IScene
         totals[1] += offsides;
         totals[2] += tally.Clears;
         totals[3] += tally.HoldUps;
+        totals[4] += tally.HoldLooks;
     }
 
     /// <summary>Plays a full match with the offside and icing rules on; returns each side's icings and offsides.</summary>
