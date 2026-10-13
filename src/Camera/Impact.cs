@@ -1,7 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.Core;
-using StickAndPuck.Fights;
 using StickAndPuck.Players;
 
 namespace StickAndPuck.Camera;
@@ -9,7 +8,7 @@ namespace StickAndPuck.Camera;
 /// <summary>
 /// W30: how big moments feel. A hard check (strength 1.5 and up) or a goal freezes the skaters and
 /// the puck for a few steps (hit-stop), shakes the camera in whole pixels and rumbles the pads of
-/// the people involved. During a fight the camera closes in on the fighters and eases back out after.
+/// the people involved. The fight close-up moved to <see cref="CloseUp"/> (W61).
 /// </summary>
 /// <remarks>
 /// The hit-stop works like the replay: it runs after every gameplay system and puts the players and
@@ -30,29 +29,15 @@ internal sealed class Impact
     /// <summary>Camera shake when a goal goes in, in pixels and seconds.</summary>
     const float GoalShake = 4f, GoalShakeSeconds = 0.5f;
 
-    /// <summary>How far the fight camera sits from the fighters along its view, in metres (the gameplay camera is about 37).</summary>
-    const float CloseDistance = 15f;
-
-    /// <summary>How quickly the camera closes in and pulls back, in seconds.</summary>
-    const float CloseSeconds = 0.7f;
-
     readonly ReplayBuffer.Frame held = new();
     readonly Random rng = new(30);
     int holdSteps;
     float shake, shakeLeft, shakeSeconds;
     Vector2 shakeOffset;
     int shakeStep;
-    float close;
-    Vector3 fightSpot;
 
     /// <summary>Gets the camera shake as whole-pixel steps right and up, for this step.</summary>
     public Vector2 ShakeOffset => shakeLeft > 0 ? shakeOffset : Vector2.Zero;
-
-    /// <summary>Gets how far the fight close-up has come in, 0 to 1.</summary>
-    public float Close => close;
-
-    /// <summary>Gets the spot the fight close-up looks at.</summary>
-    public Vector3 FightSpot => fightSpot;
 
     /// <summary>Gets the steps of hit-stop left.</summary>
     public int Holding => holdSteps;
@@ -67,7 +52,6 @@ internal sealed class Impact
         {
             holdSteps = 0;
             shakeLeft = 0;
-            close = 0;
             return;
         }
 
@@ -86,26 +70,14 @@ internal sealed class Impact
         }
 
         Shake(dt);
-        FightCloseUp(world, dt);
     }
 
-    /// <summary>Moves a camera by this step's shake and toward the fight close-up.</summary>
+    /// <summary>Moves a camera by this step's shake.</summary>
     /// <param name="camera">The gameplay camera.</param>
     /// <param name="pixel">One pixel at the far boards, in metres.</param>
     /// <returns>The camera to draw with.</returns>
     public Camera3D Apply(Camera3D camera, float pixel)
     {
-        if (close > 0)
-        {
-            float t = close * close * (3 - (2 * close));
-            var forward = BroadcastCamera.Forward;
-            var closePos = fightSpot - (forward * CloseDistance);
-            var pos = Vector3.Lerp(camera.Position, closePos, t);
-            camera.Position = pos;
-            // the target sits at the fighters' depth, so the render scale and pixel snap are measured there (W59)
-            camera.Target = pos + (forward * Math.Max(1f, Vector3.Dot(fightSpot - pos, forward)));
-        }
-
         var offset = ShakeOffset;
         if (offset != Vector2.Zero)
         {
@@ -172,15 +144,6 @@ internal sealed class Impact
         float x = side * MathF.Round(amp * (0.6f + (0.4f * rng.NextSingle())));
         float y = MathF.Round(((rng.NextSingle() * 2) - 1) * amp * 0.6f);
         shakeOffset = new Vector2(x, y);
-    }
-
-    void FightCloseUp(World world, float dt)
-    {
-        var fight = Fighting.Current(world);
-        if (fight != null) fightSpot = fight.Spot with { Y = 0.9f };
-        float want = fight != null ? 1 : 0;
-        float rate = dt / CloseSeconds;
-        close = want > close ? Math.Min(want, close + rate) : Math.Max(want, close - rate);
     }
 
     static void Pulse(World world, int slot, float strong, float weak, float seconds)

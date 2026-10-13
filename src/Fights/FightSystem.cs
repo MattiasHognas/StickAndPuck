@@ -286,6 +286,7 @@ internal sealed class FightSystem : ISystem, IDisposable
         var target = world.Players[other.PlayerId];
         other.Balance -= FightModel.Damage(puncher, target, quality);
         f.Landed++;
+        fight.LandedAt = world.Time;
         // a landed punch sounds like a body check (audio is the only reader after this system)
         world.Events.Publish(new MatchEvent(MatchEventKind.Check, world.Time, puncher.Side, puncher.Id, target.Position, 0.6f + (0.6f * quality)));
         if (other.Balance <= 0) Decide(world, s, fight, other, knockdown: true);
