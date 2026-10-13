@@ -154,10 +154,16 @@ def uv_of(key, u, t):
     t = min(1 - 0.5 / h, max(0.5 / h, t)); u = min(1 - 0.5 / w, max(0.5 / w, u))   # stay on texel centres at the rect edges
     return ((x0 + u * w) / TEX, 1 - (y0 + (1 - t) * h) / TEX)
 
-def new_obj(name, bm):
+def new_obj(name, bm, normals=None):
+    if normals is not None:
+        for f in bm.faces: f.smooth = True
+        bm.verts.index_update(); nl = [normals[v].to_tuple() for v in bm.verts]
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); me.materials.append(mat)
+    if normals is not None: me.normals_split_custom_set_from_vertices(nl)
     ob = bpy.data.objects.new(name, me); scene.collection.objects.link(ob)
     return ob
+
+CAP_LEAN = 0.6          # how far a loft's end ring normals lean toward its cap (0 = straight out from the axis)
 
 def loft(name, a, b, rings, key, n=8, zoff=None, up=None, e=1.0):
     """rings: (t, rx, ry) along a->b; rx across the body, ry front to back.
@@ -174,20 +180,34 @@ def loft(name, a, b, rings, key, n=8, zoff=None, up=None, e=1.0):
             cs, sn = math.cos(ang), math.sin(ang)
             d = -math.copysign(abs(cs) ** e, cs) * Xp * rx + math.copysign(abs(sn) ** e, sn) * Fp * ry
             tt = t + (zoff(u, t) if zoff else 0.0)
-            row.append((bm.verts.new(a + A * (tt * L) + d), u, t))
+            row.append((bm.verts.new(a + A * (tt * L) + d), u, t, d.length))
         grid.append(row)
     for i in range(len(grid) - 1):
         for k in range(n):
             q = [grid[i][k], grid[i][k + 1], grid[i + 1][k + 1], grid[i + 1][k]]
-            f = bm.faces.new([v for v, _, _ in q])
-            for lp, (_, u, t) in zip(f.loops, q): lp[uvl].uv = uv_of(key, u, t)
-    for row in (grid[0], grid[-1]):                                      # close both ends with a fan
-        c = bm.verts.new(sum((v.co for v, _, _ in row[:-1]), Vector()) / n)
+            f = bm.faces.new([v for v, _, _, _ in q])
+            for lp, (_, u, t, _) in zip(f.loops, q): lp[uvl].uv = uv_of(key, u, t)
+    # A8, painted shading: hand-set normals instead of facet normals. Each ring vertex takes the normal
+    # of a smooth ellipse round the axis (squared-off parts shade as if rounded too), tilted by how
+    # the profile widens or narrows, and the end rings lean toward their caps, so the three toon
+    # bands curve round every part instead of stepping face by face.
+    nrm = {}
+    for i, row in enumerate(grid):
+        i0, i1 = max(i - 1, 0), min(i + 1, len(grid) - 1)
+        span = max((rings[i1][0] - rings[i0][0]) * L, 1e-4); rx, ry = rings[i][1], rings[i][2]
+        for k, (v, u, t, r) in enumerate(row):
+            ang = 2 * math.pi * u
+            nr = (-math.cos(ang) / rx * Xp + math.sin(ang) / ry * Fp).normalized()
+            slope = (grid[i1][k][3] - grid[i0][k][3]) / span
+            tip = -CAP_LEAN if i == 0 else (CAP_LEAN if i == len(grid) - 1 else 0.0)
+            nrm[v] = (nr - A * slope + A * tip).normalized()
+    for row, axis in ((grid[0], -A), (grid[-1], A)):                    # close both ends with a fan
+        c = bm.verts.new(sum((v.co for v, _, _, _ in row[:-1]), Vector()) / n); nrm[c] = axis.copy()
         for k in range(n):
             f = bm.faces.new([row[k][0], row[k + 1][0], c])
             for lp in f.loops: lp[uvl].uv = uv_of(key, 0.5, row[0][2])
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    return new_obj(name, bm)
+    return new_obj(name, bm, nrm)
 
 def box(name, M, size, key):
     bm = bmesh.new(); uvl = bm.loops.layers.uv.new()
