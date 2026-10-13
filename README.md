@@ -117,7 +117,8 @@ In one-player scenes the keyboard and the first gamepad both control your player
 - `SAP_RECORD=seconds`: saves every frame for that many seconds as numbered PNGs, then quits. `SAP_FRAMES` sets the folder (default `frames/`).
 - `SAP_STEPS=n`: runs n fixed steps as fast as the machine can, without waiting for the screen, then quits.
 - `tools/record.sh out.mp4 seconds [input.sh]`: records an mp4 headless (needs xvfb-run and ffmpeg; xdotool for input.sh). `SAP_AUDIO=1` records in real time with sound.
-- Test scenes run with no window, print one line per check and exit 0 when all pass, 1 otherwise: `pucktest`, `nettest`, `handlingtest`, `checkstest`, `goalietest`, `matchtest`, `offsidetest`, `overtimetest`, `refereetest`, `positioningtest`, `aimatchtest`, `linestest`, `lightingtest`, `hudtest`, `penaltytest`, `fighttest`, `seasontest`, `playofftest`, `arcadetest`, `statstest`, `versustest`, `warmuptest`, `replaytest`. Example: `SAP_SCENE=matchtest dotnet run`.
+- Tests: `dotnet test --project tests/StickAndPuck.Tests` runs every check (TUnit; the former `SAP_SCENE=...test` scenes). One class: `dotnet test --project tests/StickAndPuck.Tests -- --treenode-filter "/*/*/LinesTests/*"`. Each check prints PASS or FAIL; a test fails listing its failed checks. CI runs them on every pull request.
+- `SAP_REPLAYTEST_PRINT=1` with the replay tests prints new golden values after a deliberate gameplay change.
 
 ### Replays
 

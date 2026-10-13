@@ -1,4 +1,4 @@
-# Builds every pull request. On each merge to main it publishes one self-contained executable per
+# Builds and tests every pull request (the test job runs tests/StickAndPuck.Tests). On each merge to main it publishes one self-contained executable per
 # platform (tools/publish.sh), tags the commit and creates a GitHub Release with the executables.
 # Versioning: a merge bumps the patch (v0.0.1 -> v0.0.2). A milestone bumps the minor (v0.0.5 -> v0.1.0):
 # put [milestone] in the squash-commit message or give the PR the label "milestone".
@@ -26,6 +26,18 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        run: dotnet test --project tests/StickAndPuck.Tests
+
   build:
     runs-on: ubuntu-latest
     steps:
