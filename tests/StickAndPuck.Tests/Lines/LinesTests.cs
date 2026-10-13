@@ -5,62 +5,26 @@ using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Rules;
 
-namespace StickAndPuck.Lines;
+using StickAndPuck.Lines;
+using StickAndPuck.Tests.Support;
+
+namespace StickAndPuck.Tests.Lines;
 
 /// <summary>
-/// SAP_SCENE=linestest: checks fatigue, line changes and the goalie swap with no window, prints
-/// one line per check and exits with 0 when all pass, 1 otherwise. Covers the W13 "done when":
-/// tired lines slow down and change, and the backup goalie comes in after the trigger; and W23's
-/// pulled goalie: the extra attacker comes on and the goalie is back at the next stoppage.
+/// Fatigue, line changes and the goalie swap (W13): tired lines slow down and change, and the backup
+/// goalie comes in after the trigger; and W23's pulled goalie: the extra attacker comes on and the
+/// goalie is back at the next stoppage. Formerly SAP_SCENE=linestest.
 /// </summary>
-public sealed class LinesSelfTest : IScene
+public sealed class LinesTests : CheckedTest
 {
-    int failures;
+    [Before(Test)]
+    public void FullPace() => LinesTuning.Pace = 1f;
 
-    /// <inheritdoc/>
-    public string Name => "linestest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    /// <summary>A match with the starters on, the match flow begun and lines started.</summary>
+    static World Make(Func<WorldBuilder, WorldBuilder>? change = null)
     {
-        LinesTuning.Pace = 1f;
-        var setup = Scenes.DefaultSetup(clubs);
-        World Make(Settings? s = null, bool human = false, RuleSet? rules = null)
-        {
-            var w = new World(rules is { } r ? setup.WithRules(r) : setup, s ?? settings);
-            Scenes.AddStarters(w);
-            if (human) w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.C).Slot = 0;
-            MatchFlow.Begin(w, log: false);
-            new LinesSystem().Start(w);
-            return w;
-        }
-
-        SquadOnTheBench(Make());
-        TiringAndResting(Make());
-        TiredSkatersSlowDown(Make());
-        ChangeOnTheFly(Make(human: true));
-        NotWhileDefending(Make());
-        ChangeAtFaceoff(Make(human: true));
-        ManualMode(Make(settings with { Lines = LineChanges.Manual }, human: true));
-        GoalieAfterABurst(Make());
-        NoSwapForSpreadGoals(Make());
-        NewPeriodFirstLine(Make());
-        OvertimeThreeOnThree(Make());
-        PulledGoalie(Make(human: true));
-        NoChangeAfterIcing(Make(human: true, rules: RuleSet.Shl), hold: true, "SHL");
-        NoChangeAfterIcing(Make(human: true, rules: RuleSet.Nhl), hold: true, "NHL");
-        NoChangeAfterIcing(Make(human: true, rules: RuleSet.Arcade with { Icing = IcingCall.Hybrid }), hold: false, "Arcade");
-        HeldChangeOnTheFly(Make(human: true, rules: RuleSet.Shl));
-
-        Console.WriteLine(failures == 0 ? "LINESTEST: all checks passed" : $"LINESTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        var builder = new WorldBuilder().Then(w => new LinesSystem().Start(w));
+        return (change?.Invoke(builder) ?? builder).Build();
     }
 
     /// <summary>Runs lines and skating for a while, calling <paramref name="each"/> before each step; returns the events.</summary>
@@ -103,8 +67,10 @@ public sealed class LinesSelfTest : IScene
         world.Puck.Carrier = -1;
     }
 
-    void SquadOnTheBench(World w)
+    [Test]
+    public void SquadOnTheBench()
     {
+        var w = Make();
         foreach (var side in new[] { Side.Home, Side.Away })
         {
             var squad = Bench.SquadOf(w, side)!;
@@ -119,8 +85,10 @@ public sealed class LinesSelfTest : IScene
         }
     }
 
-    void TiringAndResting(World w)
+    [Test]
+    public void TiringAndResting()
     {
+        var w = Make();
         Phase(w, MatchPhase.Play);
         var skater = w.OnIce(Side.Home).First(p => !p.IsGoalie);
         var idle = w.OnIce(Side.Away).First(p => !p.IsGoalie);
@@ -138,8 +106,10 @@ public sealed class LinesSelfTest : IScene
         Check(w.Players.Where(p => p.IsGoalie).All(g => g.Energy >= 1f), "goalies do not tire");
     }
 
-    void TiredSkatersSlowDown(World w)
+    [Test]
+    public void TiredSkatersSlowDown()
     {
+        var w = Make();
         var p = w.OnIce(Side.Home).First(o => !o.IsGoalie);
         float fresh = SkatingModel.TopSpeed(p.Data.Traits, 1f), spent = SkatingModel.TopSpeed(p.Data.Traits, 0.2f);
         Check(spent < fresh * 0.8f, $"a tired skater is slower ({spent:0.0} m/s vs {fresh:0.0} m/s fresh)");
@@ -165,8 +135,10 @@ public sealed class LinesSelfTest : IScene
         Check(b > a * 1.1f, $"over 20 m the tired skater is beaten ({b:0.00} s vs {a:0.00} s)");
     }
 
-    void ChangeOnTheFly(World w)
+    [Test]
+    public void ChangeOnTheFly()
     {
+        var w = Make(b => b.Human());
         Phase(w, MatchPhase.Play);
         PuckUpIce(w, Side.Home);
         var squad = Bench.SquadOf(w, Side.Home)!;
@@ -187,8 +159,10 @@ public sealed class LinesSelfTest : IScene
             "the new centre plays centre");
     }
 
-    void NotWhileDefending(World w)
+    [Test]
+    public void NotWhileDefending()
     {
+        var w = Make();
         Phase(w, MatchPhase.Play);
         var first = Bench.SquadOf(w, Side.Home)!.Lines[0].Members.ToList();
         int end = FaceoffFormation.DefendedEnd(w.Match, Side.Home);
@@ -207,8 +181,10 @@ public sealed class LinesSelfTest : IScene
         Check(first.TrueForAll(p => !p.OnIce), "but goes off once spent");
     }
 
-    void ChangeAtFaceoff(World w)
+    [Test]
+    public void ChangeAtFaceoff()
     {
+        var w = Make(b => b.Human());
         Phase(w, MatchPhase.Play);
         Run(w, 0.1f);
         var squad = Bench.SquadOf(w, Side.Home)!;
@@ -227,8 +203,10 @@ public sealed class LinesSelfTest : IScene
         Check(On(w, Side.Away, Group.Forwards).All(p => p.Energy > 0.9f), "the fresh away line stays on");
     }
 
-    void ManualMode(World w)
+    [Test]
+    public void ManualMode()
     {
+        var w = Make(b => b.Settings(s => s with { Lines = LineChanges.Manual }).Human());
         Phase(w, MatchPhase.Play);
         PuckUpIce(w, Side.Home);
         var line = Bench.SquadOf(w, Side.Home)!.Lines[0].Members.ToList();
@@ -248,8 +226,10 @@ public sealed class LinesSelfTest : IScene
         Check(line.TrueForAll(p => !p.OnIce), "the button sends the tired line off");
     }
 
-    void GoalieAfterABurst(World w)
+    [Test]
+    public void GoalieAfterABurst()
     {
+        var w = Make();
         Phase(w, MatchPhase.Play);
         var squad = Bench.SquadOf(w, Side.Away)!;
         var starter = squad.Goalies[0];
@@ -278,8 +258,10 @@ public sealed class LinesSelfTest : IScene
         Check(Bench.SquadOf(w, Side.Home)!.Goalies[0].OnIce, "the scoring club keeps its goalie");
     }
 
-    void NoSwapForSpreadGoals(World w)
+    [Test]
+    public void NoSwapForSpreadGoals()
     {
+        var w = Make();
         var starter = Bench.SquadOf(w, Side.Away)!.Goalies[0];
         float gap = LinesTuning.GoalieSpell * w.Setup.PeriodSeconds / 2 + 5;
         for (int goal = 0; goal < LinesTuning.GoalieGoals + 1; goal++)
@@ -295,8 +277,10 @@ public sealed class LinesSelfTest : IScene
         Check(starter.OnIce, $"{LinesTuning.GoalieGoals + 1} goals spread over {(int)(gap * LinesTuning.GoalieGoals)} s: the starter stays in");
     }
 
-    void NewPeriodFirstLine(World w)
+    [Test]
+    public void NewPeriodFirstLine()
     {
+        var w = Make();
         Phase(w, MatchPhase.Play);
         PuckUpIce(w, Side.Home);
         var squad = Bench.SquadOf(w, Side.Home)!;
@@ -310,8 +294,10 @@ public sealed class LinesSelfTest : IScene
         Check(squad.Lines[0].Members.All(p => p.OnIce) && squad.Pairs[0].Members.All(p => p.OnIce), "the new period starts with line 1 and pair 1");
     }
 
-    void OvertimeThreeOnThree(World w)
+    [Test]
+    public void OvertimeThreeOnThree()
     {
+        var w = Make();
         OvertimeRules.ThreeOnThree(w);
         int Skaters(Side side) => w.OnIce(side).Count(p => !p.IsGoalie);
         var kept = w.OnIce(Side.Home).Where(p => !p.IsGoalie).ToList();
@@ -340,8 +326,10 @@ public sealed class LinesSelfTest : IScene
         Check(!events.Exists(e => e.Kind == MatchEventKind.LineChange) && w.Players.Where(p => p.OnIce).SequenceEqual(before), "no changes in a shootout");
     }
 
-    void PulledGoalie(World w)
+    [Test]
+    public void PulledGoalie()
     {
+        var w = Make(b => b.Human());
         Phase(w, MatchPhase.Play);
         var goalie = w.OnIce(Side.Home).First(p => p.IsGoalie);
         var benchForward = w.Players.Where(p => p.Side == Side.Home && !p.OnIce && Squad.GroupOf(p) == Group.Forwards).ToList();
@@ -373,8 +361,19 @@ public sealed class LinesSelfTest : IScene
     /// home faces off with the same five skaters and away changes; under Arcade both change. After
     /// the drop the hold is over and home's next stoppage changes again.
     /// </summary>
-    void NoChangeAfterIcing(World w, bool hold, string preset)
+    [Test]
+    [Arguments("SHL", true)]
+    [Arguments("NHL", true)]
+    [Arguments("Arcade", false)]
+    public void NoChangeAfterIcing(string preset, bool hold)
     {
+        var rules = preset switch
+        {
+            "SHL" => RuleSet.Shl,
+            "NHL" => RuleSet.Nhl,
+            _ => RuleSet.Arcade with { Icing = IcingCall.Hybrid },
+        };
+        var w = Make(b => b.Human().Rules(rules));
         var events = IceThePuck(w);
         Check(events.Count(e => e.Kind == MatchEventKind.Icing && e.Side == Side.Home) == 1, $"{preset}: home ices the puck");
         Check(IcingRule.HoldsLines(w, Side.Home) == hold && !IcingRule.HoldsLines(w, Side.Away),
@@ -405,8 +404,10 @@ public sealed class LinesSelfTest : IScene
     }
 
     /// <summary>W49: home is mid-change on the fly when it ices the puck; the change stops where it is and nobody else comes on.</summary>
-    void HeldChangeOnTheFly(World w)
+    [Test]
+    public void HeldChangeOnTheFly()
     {
+        var w = Make(b => b.Human().Rules(RuleSet.Shl));
         Phase(w, MatchPhase.Play);
         var line = Bench.SquadOf(w, Side.Home)!.Lines[0].Members.ToList();
         IcingRule.HoldLines(w, Side.Home);
