@@ -70,8 +70,8 @@ public static class ShootoutOrder
     {
         var b = KeyBindings.Of(settings, action);
         if (device == InputDevice.KeyboardMouse)
-            return (b.Key != Raylib_cs.KeyboardKey.Null && IsKeyPressed(b.Key)) || (b.Alt != Raylib_cs.KeyboardKey.Null && IsKeyPressed(b.Alt));
+            return (b.Key != Raylib_cs.KeyboardKey.Null && DeviceInput.KeyPressed(b.Key)) || (b.Alt != Raylib_cs.KeyboardKey.Null && DeviceInput.KeyPressed(b.Alt));
         int pad = device == InputDevice.Gamepad2 ? 1 : 0;
-        return b.Button != Raylib_cs.GamepadButton.Unknown && IsGamepadAvailable(pad) && IsGamepadButtonPressed(pad, b.Button);
+        return b.Button != Raylib_cs.GamepadButton.Unknown && DeviceInput.PadAvailable(pad) && DeviceInput.PadPressed(pad, b.Button);
     }
 }

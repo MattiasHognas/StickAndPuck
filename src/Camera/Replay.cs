@@ -149,10 +149,10 @@ public sealed class Replay
 
     static bool SkipPressed()
     {
-        if (IsKeyPressed(KeyboardKey.Enter) || IsKeyPressed(KeyboardKey.Space)) return true;
+        if (DeviceInput.KeyPressed(KeyboardKey.Enter) || DeviceInput.KeyPressed(KeyboardKey.Space)) return true;
         for (int pad = 0; pad < 2; pad++)
         {
-            if (IsGamepadAvailable(pad) && (IsGamepadButtonPressed(pad, GamepadButton.RightFaceDown) || IsGamepadButtonPressed(pad, GamepadButton.MiddleRight)))
+            if (DeviceInput.PadAvailable(pad) && (DeviceInput.PadPressed(pad, GamepadButton.RightFaceDown) || DeviceInput.PadPressed(pad, GamepadButton.MiddleRight)))
                 return true;
         }
 

@@ -95,7 +95,7 @@ internal static class StandInPlay
         {
             // the drop: the puck squirts a little to one side
             float angle = dice.NextSingle() * MathF.Tau;
-            pk.Velocity = new Vector3(MathF.Cos(angle), 0, MathF.Sin(angle)) * (1.5f + dice.NextSingle() * 2f);
+            pk.Velocity = new Vector3(SimMath.Cos(angle), 0, SimMath.Sin(angle)) * (1.5f + dice.NextSingle() * 2f);
             pk.Live = true;
         }
     }

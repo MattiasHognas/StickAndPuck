@@ -63,7 +63,7 @@ public static class DekeModel
             var off = new Vector2(p.Position.X - carrier.Position.X, p.Position.Z - carrier.Position.Z);
             float d = off.Length();
             if (d > bestDistance) continue;
-            if (d > 0.01f && Vector2.Dot(off / d, travel) < MathF.Cos(FrontCone)) continue;
+            if (d > 0.01f && Vector2.Dot(off / d, travel) < SimMath.Cos(FrontCone)) continue;
             best = (p, d);
             bestDistance = d;
         }

@@ -260,7 +260,44 @@ internal static class ScreenFlow
     static void Start(MatchSetup setup, MatchPlan plan)
     {
         setup = (setup with { PeriodSeconds = PeriodSeconds() }).WithRules(RulePicks.For(plan));
-        var world = new World(setup, Settings);
+        var world = Build(setup, Seeds.NewMatch());    // W67: every match has a seed, written to its replay
+        Playing = plan;
+        Backdrop = setup;
+        Started = setup;
+        Stack.Clear();
+        next = world;
+        Console.WriteLine($"SAP: screens: match {setup.Home.Id} vs {setup.Away.Id}, {(plan.Season ? "season" : plan.Mode!.Title)}, {setup.PeriodSeconds:0} s periods, seed {world.Seed}, {world.Settings}, {setup.Rules}");
+    }
+
+    /// <summary>Gets the setup the last match started from, before the difficulty scaled it: what its replay rebuilds it from (W67).</summary>
+    public static MatchSetup? Started { get; private set; }
+
+    /// <summary>
+    /// W67: rebuilds a match from its replay, as <see cref="Start"/> built it: the screens run with the
+    /// replay's settings (nothing is saved) and no menus, and the match starts at once.
+    /// </summary>
+    /// <param name="clubs">Every club.</param>
+    /// <param name="prefs">The settings the match was played with.</param>
+    /// <param name="setup">The setup it started from.</param>
+    /// <param name="mode">The game mode's type name, "" for a season game.</param>
+    /// <param name="seed">Its seed.</param>
+    /// <returns>The match.</returns>
+    public static World BeginReplay(IReadOnlyList<ClubData> clubs, ScreenPrefs prefs, MatchSetup setup, int seed, string mode)
+    {
+        Active = true;
+        Clubs = clubs;
+        Prefs = prefs;
+        Stack.Clear();
+        var world = Build(setup, seed);
+        Playing = new MatchPlan(GameModes.Named(mode), [setup.Home, setup.Away]);    // the results screen offers what it offered in the match
+        Backdrop = setup;
+        Started = setup;
+        return world;
+    }
+
+    static World Build(MatchSetup setup, int seed)
+    {
+        var world = new World(setup, Settings) { Seed = seed };
         Apply(world, world.Settings);
         Scenes.AddStarters(world);
         for (int slot = 0; slot < setup.Inputs.Count; slot++)
@@ -271,11 +308,7 @@ internal static class ScreenFlow
             if ((skaters.Find(p => p.Data.Position == PlayingPosition.C) ?? skaters.FirstOrDefault()) is { } centre) centre.Slot = slot;
         }
         MatchFlow.Begin(world);
-        Playing = plan;
-        Backdrop = setup;
-        Stack.Clear();
-        next = world;
-        Console.WriteLine($"SAP: screens: match {setup.Home.Id} vs {setup.Away.Id}, {(plan.Season ? "season" : plan.Mode!.Title)}, {setup.PeriodSeconds:0} s periods, {world.Settings}, {setup.Rules}");
+        return world;
     }
 
     /// <summary>The period length from the settings; SAP_PERIOD=seconds overrides it for quick checks.</summary>

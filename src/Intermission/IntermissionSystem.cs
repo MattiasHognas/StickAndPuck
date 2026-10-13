@@ -188,9 +188,9 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     static bool SkipPressed()
     {
         if (!IsWindowReady()) return false;
-        if (IsKeyPressed(KeyboardKey.Enter) || IsKeyPressed(KeyboardKey.KpEnter) || IsKeyPressed(KeyboardKey.Space)) return true;
+        if (DeviceInput.KeyPressed(KeyboardKey.Enter) || DeviceInput.KeyPressed(KeyboardKey.KpEnter) || DeviceInput.KeyPressed(KeyboardKey.Space)) return true;
         for (int pad = 0; pad < 2; pad++)
-            if (IsGamepadAvailable(pad) && IsGamepadButtonPressed(pad, GamepadButton.RightFaceDown)) return true;
+            if (DeviceInput.PadAvailable(pad) && DeviceInput.PadPressed(pad, GamepadButton.RightFaceDown)) return true;
         return false;
     }
 

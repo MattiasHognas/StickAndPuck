@@ -1,6 +1,5 @@
 using Raylib_cs;
 using StickAndPuck.Core;
-using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Players;
 
@@ -17,10 +16,10 @@ internal static class KeyInput
     public static bool Pressed(Settings settings, GameAction action)
     {
         var b = KeyBindings.Of(settings, action);
-        if ((b.Key != KeyboardKey.Null && IsKeyPressed(b.Key)) || (b.Alt != KeyboardKey.Null && IsKeyPressed(b.Alt))) return true;
+        if ((b.Key != KeyboardKey.Null && DeviceInput.KeyPressed(b.Key)) || (b.Alt != KeyboardKey.Null && DeviceInput.KeyPressed(b.Alt))) return true;
         if (b.Button == GamepadButton.Unknown) return false;
         for (int pad = 0; pad < Gamepads.MaxSlots; pad++)    // W38: any slot a pad landed in
-            if (IsGamepadAvailable(pad) && IsGamepadButtonPressed(pad, b.Button)) return true;
+            if (DeviceInput.PadAvailable(pad) && DeviceInput.PadPressed(pad, b.Button)) return true;
         return false;
     }
 
@@ -31,7 +30,7 @@ internal static class KeyInput
     public static bool KeyDown(Settings settings, GameAction action)
     {
         var b = KeyBindings.Of(settings, action);
-        return (b.Key != KeyboardKey.Null && IsKeyDown(b.Key)) || (b.Alt != KeyboardKey.Null && IsKeyDown(b.Alt));
+        return (b.Key != KeyboardKey.Null && DeviceInput.KeyDown(b.Key)) || (b.Alt != KeyboardKey.Null && DeviceInput.KeyDown(b.Alt));
     }
 
     /// <summary>Whether the action's button is held on this pad.</summary>

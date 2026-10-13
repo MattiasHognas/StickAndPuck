@@ -1,7 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.Core;
-using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Players;
 
@@ -56,10 +55,10 @@ internal static class InputDevices
     /// <returns>What is held.</returns>
     public static DeviceState KeyboardMouse(Settings settings)
     {
-        var state = KeyboardMouse(settings, k => IsKeyDown(k));
-        state.Shoot |= IsMouseButtonDown(MouseButton.Left);
+        var state = KeyboardMouse(settings, k => DeviceInput.KeyDown(k));
+        state.Shoot |= DeviceInput.MouseDown(MouseButton.Left);
         state.Punch = state.Shoot;
-        state.Pass |= IsMouseButtonDown(MouseButton.Right);
+        state.Pass |= DeviceInput.MouseDown(MouseButton.Right);
         return state;
     }
 
@@ -106,7 +105,7 @@ internal static class InputDevices
         if (pad < 0) return default;
         bool Button(GameAction action) => PadDown(pad, KeyBindings.Of(settings, action).Button);
 
-        var move = Stick(GetGamepadAxisMovement(pad, GamepadAxis.LeftX), GetGamepadAxisMovement(pad, GamepadAxis.LeftY));
+        var move = Stick(DeviceInput.PadAxis(pad, GamepadAxis.LeftX), DeviceInput.PadAxis(pad, GamepadAxis.LeftY));
         if (move == Vector2.Zero)
         {
             move = new Vector2(
@@ -138,12 +137,12 @@ internal static class InputDevices
     /// <returns>Whether it is held.</returns>
     public static bool PadDown(int pad, GamepadButton button)
     {
-        if (button == GamepadButton.Unknown || !IsGamepadAvailable(pad)) return false;
-        if (IsGamepadButtonDown(pad, button)) return true;
+        if (button == GamepadButton.Unknown || !DeviceInput.PadAvailable(pad)) return false;
+        if (DeviceInput.PadDown(pad, button)) return true;
         return button switch
         {
-            GamepadButton.RightTrigger2 => GetGamepadAxisMovement(pad, GamepadAxis.RightTrigger) > 0f,
-            GamepadButton.LeftTrigger2 => GetGamepadAxisMovement(pad, GamepadAxis.LeftTrigger) > 0f,
+            GamepadButton.RightTrigger2 => DeviceInput.PadAxis(pad, GamepadAxis.RightTrigger) > 0f,
+            GamepadButton.LeftTrigger2 => DeviceInput.PadAxis(pad, GamepadAxis.LeftTrigger) > 0f,
             _ => false,
         };
     }

@@ -53,7 +53,7 @@ internal sealed class ZamboniRoute
         for (int i = 0; i <= 12; i++)
         {
             float angle = MathF.PI - i * MathF.PI / 2f / 12f;
-            list.Add(new Vector2(-HalfStraight + 3f * MathF.Cos(angle), -OuterRadius - 3f + 3f * MathF.Sin(angle)));
+            list.Add(new Vector2(-HalfStraight + 3f * SimMath.Cos(angle), -OuterRadius - 3f + 3f * SimMath.Sin(angle)));
         }
 
         // the laps, the radius shrinking a little with every metre; the last one stops halfway
@@ -122,7 +122,7 @@ internal sealed class ZamboniRoute
     public float HeadingAt(float distance)
     {
         var d = At(distance + HeadingReach) - At(distance - HeadingReach);
-        return MathF.Atan2(d.X, d.Y);
+        return SimMath.Atan2(d.X, d.Y);
     }
 
     /// <summary>Gets whether the Zamboni is inside the boards at a distance along the route.</summary>
@@ -146,13 +146,13 @@ internal sealed class ZamboniRoute
         if (s < MathF.PI * r)
         {
             float phi = -MathF.PI / 2 + s / r;
-            return new Vector2(a + r * MathF.Cos(phi), r * MathF.Sin(phi));
+            return new Vector2(a + r * SimMath.Cos(phi), r * SimMath.Sin(phi));
         }
         s -= MathF.PI * r;
         if (s < 2 * a) return new Vector2(a - s, r);
         s -= 2 * a;
         float psi = MathF.PI / 2 + s / r;
-        return new Vector2(-a + r * MathF.Cos(psi), r * MathF.Sin(psi));
+        return new Vector2(-a + r * SimMath.Cos(psi), r * SimMath.Sin(psi));
     }
 
     static void Line(List<Vector2> list, Vector2 from, Vector2 to)

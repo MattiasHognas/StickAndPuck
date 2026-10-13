@@ -109,7 +109,7 @@ internal static class ChecksDemo
         if (carrier!.Slot < 0 && world.Puck.Carrier == carrier.Id)
         {
             float a = t * 0.6f;
-            carrier.Command = new PlayerCommand { Move = new Vector2(-MathF.Cos(a), -MathF.Sin(a)) * 0.6f };
+            carrier.Command = new PlayerCommand { Move = new Vector2(-SimMath.Cos(a), -SimMath.Sin(a)) * 0.6f };
         }
         else if (carrier.Slot < 0)
         {

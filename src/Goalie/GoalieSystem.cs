@@ -25,8 +25,11 @@ internal sealed class GoalieSystem : ISystem, IDisposable
     readonly Dictionary<int, GoalieState> states = [];
     readonly GoalieRenderer renderer = new();
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 5;
+
     /// <summary>Gets or sets the dice for squeezes and rebounds; tests seed it.</summary>
-    public Random Dice { get; set; } = new(5);
+    public Random Dice { get; set; } = Seeds.Dice(0, "goalie", Fallback);
 
     public void Start(World world)
     {
@@ -157,7 +160,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         float keep = Traits.Scale(control, GoalieTuning.ReboundSlow, GoalieTuning.ReboundFast);
         float wide = Traits.Scale(control, 0.1f, 0.75f);
         float angle = (wide + Dice.NextSingle() * (1.2f - wide)) * (Dice.Next(2) == 0 ? -1 : 1);
-        var dir = new Vector3(-end * MathF.Cos(angle), 0, MathF.Sin(angle));
+        var dir = new Vector3(-end * SimMath.Cos(angle), 0, SimMath.Sin(angle));
         pk.Position = at with { X = at.X - end * 0.12f };
         pk.Velocity = dir * speed * keep + new Vector3(0, MathF.Min(pk.Velocity.Y, 0) * 0.2f, 0);
         pk.LastTouch = g.Id;
@@ -263,7 +266,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         float speed = pass ? Traits.Scale(handling, GoalieTuning.PassSpeedPoor, GoalieTuning.PassSpeedGood) : GoalieTuning.PlayOutSpeed;
         dir = Flat(dir);
         dir = dir.LengthSquared() < 1e-6f ? new Vector3(1, 0, 0) : Vector3.Normalize(dir);
-        float c = MathF.Cos(error), s = MathF.Sin(error);
+        float c = SimMath.Cos(error), s = SimMath.Sin(error);
         dir = new Vector3(dir.X * c - dir.Z * s, 0, dir.X * s + dir.Z * c);
         pk.Position = start with { Y = 0 };
         pk.Velocity = dir * speed;
@@ -323,7 +326,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
     {
         float square = -end * MathF.PI / 2;
         var d = puck - g.Position;
-        float want = d.LengthSquared() < 0.01f ? square : MathF.Atan2(d.X, d.Z);
+        float want = d.LengthSquared() < 0.01f ? square : SimMath.Atan2(d.X, d.Z);
         float off = MathF.IEEERemainder(want - square, 2 * MathF.PI);
         g.Heading = square + Math.Clamp(off, -1.22f, 1.22f);
     }

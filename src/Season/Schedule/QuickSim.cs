@@ -38,7 +38,7 @@ public static class QuickSim
     static double Ratio(ClubData attack, ClubData defence)
     {
         double att = Attack(attack), def = Defence(defence);
-        return Math.Pow(att / def, 1.5);
+        return SimMath.Pow(att / def, 1.5);
     }
 
     static double Attack(ClubData club)
@@ -63,7 +63,7 @@ public static class QuickSim
 
     static int Poisson(Random dice, double mean)
     {
-        double limit = Math.Exp(-mean), p = 1;
+        double limit = SimMath.Exp(-mean), p = 1;
         int k = 0;
         do { k++; p *= dice.NextDouble(); } while (p > limit);
         return k - 1;

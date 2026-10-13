@@ -38,13 +38,14 @@ internal sealed class SpecialTeamsSystem : ISystem
     const float SlotShot = 0.4f;        // a power play carrier with a lane shoots from a spot this good
     const float PerimeterShot = 0.12f;  // and from the point or the half wall on this share of his looks
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 3;
+
     readonly Random rng;
     readonly bool on;
 
     public SpecialTeamsSystem()
-#pragma warning disable S2245 // gameplay variation, not security
-        : this(new Random())
-#pragma warning restore S2245
+        : this(Seeds.Dice(Seeds.Environment, "specialteams", Fallback))
     {
     }
 
@@ -293,7 +294,7 @@ internal sealed class SpecialTeamsSystem : ISystem
         if (world.Time >= plan.ErrorUntil)
         {
             float angle = rng.NextSingle() * MathF.Tau, size = (1f - p.Data.Traits.Iq) * off * MathF.Sqrt(rng.NextSingle());
-            plan.Error = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * size;
+            plan.Error = new Vector2(SimMath.Cos(angle), SimMath.Sin(angle)) * size;
             plan.ErrorUntil = world.Time + 3f + rng.NextSingle() * 3f;
         }
         return TeamShape.Inside(spot + plan.Error);

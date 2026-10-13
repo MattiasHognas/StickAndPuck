@@ -49,7 +49,7 @@ public static class Choices
         float dx = RinkSpec.GoalLineX - end * at.X;
         if (dx < 0.8f) return 0f;
         float d = new Vector2(dx, at.Y).Length();
-        float angle = MathF.Atan2(MathF.Abs(at.Y), dx);
+        float angle = SimMath.Atan2(MathF.Abs(at.Y), dx);
         float range = Math.Clamp(1f - (d - 3f) / 19f, 0f, 1f);
         float open = Math.Clamp(1f - angle / 1.3f, 0f, 1f);
         return range * range * open;
@@ -126,7 +126,7 @@ public static class Choices
                 float reach = Math.Max(0f, Vector2.Distance(at, point) - StickReach);
                 // a stick already in the lane needs no reaction: the puck runs into it
                 float margin = react * Math.Min(1f, reach / 0.6f) + reach / Math.Max(top, 1f) - puckTime;
-                worst = Math.Max(worst, 1f / (1f + MathF.Exp(margin / 0.08f)));
+                worst = Math.Max(worst, 1f / (1f + SimMath.Exp(margin / 0.08f)));
             }
 
             // W22a: a stick right at the release, on the side the pass goes, gets a touch on it nearly every time

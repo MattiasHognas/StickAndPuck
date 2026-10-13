@@ -61,7 +61,7 @@ public static class GetOpen
             for (int i = 0; i < Angles; i++)
             {
                 float angle = turn + i * MathF.Tau / Angles;
-                Try(spot + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * r, 0f);
+                Try(spot + new Vector2(SimMath.Cos(angle), SimMath.Sin(angle)) * r, 0f);
             }
         }
 

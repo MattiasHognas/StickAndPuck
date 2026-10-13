@@ -18,18 +18,14 @@ internal sealed class RefereeSystem : ISystem, IDisposable
     readonly RefereeRenderer renderer = new();
     readonly Random dice;
 
-    /// <summary>Initializes the system with its own dice: seeded by SAP_SEED when that is set, so a run repeats, otherwise unseeded.</summary>
-    public RefereeSystem()
-        : this(SeededDice())
-    {
-    }
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 8;
 
-#pragma warning disable S2245 // gameplay variation, not security
-    static Random SeededDice()
+    /// <summary>Initializes the system with its own dice: SAP_SEED's referee stream, or the fixed one, so every run repeats.</summary>
+    public RefereeSystem()
+        : this(Seeds.Dice(Seeds.Environment, "referee", Fallback))
     {
-        return int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int seed) ? new Random(seed) : new Random();
     }
-#pragma warning restore S2245
 
     /// <summary>Initializes the system with the given dice (the self test seeds them).</summary>
     /// <param name="dice">Rolls the hold before each drop.</param>
@@ -182,7 +178,7 @@ internal sealed class RefereeSystem : ISystem, IDisposable
         r.Velocity += change.Length() > step ? Vector3.Normalize(change) * step : change;
         if (dist <= RefereeTuning.Arrived * 0.5f && r.Velocity.Length() < 0.3f) r.Velocity = Vector3.Zero;
         r.Position = Clamp(r.Position + r.Velocity * dt);
-        if (r.Speed > 0.5f) Turn(r, MathF.Atan2(r.Velocity.X, r.Velocity.Z), dt);
+        if (r.Speed > 0.5f) Turn(r, SimMath.Atan2(r.Velocity.X, r.Velocity.Z), dt);
     }
 
     static void Turn(Referee r, float heading, float dt)

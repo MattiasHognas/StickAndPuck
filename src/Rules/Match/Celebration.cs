@@ -96,8 +96,8 @@ public static class Celebration
         int slots = winners.Count + 1;
         for (int i = 0; i < winners.Count; i++)
         {
-            float a = MathF.Atan2(0, end) + (i + 1) * MathF.PI * 2 / slots;
-            c.Parts[winners[i].Id] = new Part(Mood.Winner, c.Pile + new Vector3(MathF.Cos(a), 0, MathF.Sin(a)) * PileRadius);
+            float a = SimMath.Atan2(0, end) + (i + 1) * MathF.PI * 2 / slots;
+            c.Parts[winners[i].Id] = new Part(Mood.Winner, c.Pile + new Vector3(SimMath.Cos(a), 0, SimMath.Sin(a)) * PileRadius);
         }
         foreach (var g in world.OnIce(win).Where(p => p.IsGoalie))
             c.Parts[g.Id] = new Part(Mood.Goalie, c.Pile + new Vector3(end * PileRadius, 0, 0));
@@ -211,7 +211,7 @@ public static class Celebration
             case Mood.Drop:
                 if (float.IsNaN(part.ClipSince) && !Move(p, part.Target, DropSpeed, dt)) break;
                 Brake(p, dt);
-                p.Heading = MathF.Atan2(c.Pile.X - p.Position.X, 0);   // the back to the winners, slumped toward the far end
+                p.Heading = SimMath.Atan2(c.Pile.X - p.Position.X, 0);   // the back to the winners, slumped toward the far end
                 p.Heading += MathF.PI;
                 part.StartClip(c);
                 break;
@@ -247,7 +247,7 @@ public static class Celebration
         float step = Math.Min(v * dt, d);
         p.Position += dir * step;
         p.Velocity = dir * v;
-        p.Heading = MathF.Atan2(dir.X, dir.Z);
+        p.Heading = SimMath.Atan2(dir.X, dir.Z);
         return false;
     }
 
@@ -268,7 +268,7 @@ public static class Celebration
 
     static void Face(Player p, Vector3 at)
     {
-        p.Heading = MathF.Atan2(at.X - p.Position.X, at.Z - p.Position.Z);
+        p.Heading = SimMath.Atan2(at.X - p.Position.X, at.Z - p.Position.Z);
     }
 
     internal enum Mood

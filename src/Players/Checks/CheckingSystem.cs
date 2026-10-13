@@ -21,15 +21,16 @@ internal sealed class CheckingSystem : ISystem
 {
     const float SlideDrag = 5f;   // m/s² a fallen body loses on the ice
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 6;
+
     readonly Random rng;
     readonly HashSet<int> landed = [];
     readonly Dictionary<int, float> downFor = [];
     readonly Dictionary<int, (Vector3 Position, Vector3 Velocity, float Heading)> sliding = [];
 
     public CheckingSystem()
-#pragma warning disable S2245 // gameplay variation, not security
-        : this(new Random())
-#pragma warning restore S2245
+        : this(Seeds.Dice(Seeds.Environment, "checking", Fallback))
     {
     }
 
