@@ -30,7 +30,7 @@ public static class StateDump
             b.AppendLine(c, $"STATE player {p.Id} {who}{(p.OnIce ? "" : " (bench)")}{control}: at {V(p.Position)} moving {V(p.Velocity)} heading {p.Heading:0.000}, {p.Action} {p.ActionTime:0.00} s, energy {p.Energy:0.000}");
         }
         foreach (var e in world.Events.Current)
-            b.AppendLine(c, $"STATE event {e.Kind} {e.Side?.ToString() ?? "-"} player {e.PlayerId} at {V(e.Position)}{(e.Strength != 0 ? $" strength {e.Strength:0.00}" : "")}");
+            b.AppendLine(c, $"STATE event {ReplayFile.EventText(e)}");
         return b.ToString().TrimEnd();
     }
 

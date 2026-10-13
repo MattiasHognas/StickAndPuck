@@ -29,7 +29,7 @@ namespace StickAndPuck.App.Players;
 /// when the puck reaches the blade it is struck at once, without being stopped and carried.
 /// <see cref="Settings.OneTimers"/> off turns this off: the pass is taken, then shot.</item>
 /// </list>
-/// Publishes <see cref="MatchEventKind.Pass"/> and <see cref="MatchEventKind.Shot"/> (every shot,
+/// Publishes <see cref="PassMade"/> and <see cref="ShotTaken"/> (every shot,
 /// on goal or not) with the passer or shooter, the puck and its speed as Strength.
 /// </summary>
 internal sealed class PuckHandlingSystem : ISystem
@@ -171,7 +171,7 @@ internal sealed class PuckHandlingSystem : ISystem
         passer.Begin(PlayerAction.Pass);
         lastPass = (passer.Side, passer.Id, world.Time);
         armed.Clear();
-        world.Events.Publish(new MatchEvent(MatchEventKind.Pass, world.Time, passer.Side, passer.Id, from, velocity.Length()));
+        world.Events.Publish(new PassMade(world.Time, passer.Side, passer.Id, from, velocity.Length()));
         if (human && receiver != null) HumanPasses.AddOrUpdate(world, new StrongBox<HumanPass?>(new HumanPass(passer.Id, receiver.Id, passer.Command.Move, world.Time)));
 
         if (receiver != null && passer.Slot >= 0 && world.Settings.Switching != ControlSwitching.Manual)
@@ -201,7 +201,7 @@ internal sealed class PuckHandlingSystem : ISystem
         var from = world.Puck.Position;
         var velocity = PuckHandling.ShotVelocity(world, p, from, shot.Kind, shot.Speed, rng, shot.Held);
         Release(world, p, velocity);
-        world.Events.Publish(new MatchEvent(MatchEventKind.Shot, world.Time, p.Side, p.Id, from, velocity.Length()));
+        world.Events.Publish(new ShotTaken(world.Time, p.Side, p.Id, from, velocity.Length()));
     }
 
     /// <summary>An armed one-timer meets a pass this much harder than a skater could stop.</summary>
@@ -236,7 +236,7 @@ internal sealed class PuckHandlingSystem : ISystem
         Release(world, p, velocity);
         p.Begin(PlayerAction.Shoot);
         p.ActionTime = PuckHandling.StrikeDelay;   // the clip at the sweep, where the puck leaves
-        world.Events.Publish(new MatchEvent(MatchEventKind.Shot, world.Time, p.Side, p.Id, from, velocity.Length()));
+        world.Events.Publish(new ShotTaken(world.Time, p.Side, p.Id, from, velocity.Length()));
     }
 
     /// <summary>The wind-up a one-timer is struck with at least, in seconds of hold.</summary>

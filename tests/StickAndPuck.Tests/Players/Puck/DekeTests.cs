@@ -163,10 +163,10 @@ public sealed class DekeTests : CheckedTest
             receiver.Command = new PlayerCommand { Shoot = i >= shootFrom && i < shootFrom + shootFor };
             if (w.Puck.Carrier == receiver.Id) { carried = true; if (hadStep < 0) hadStep = i; }
         });
-        foreach (var e in events.Where(e => e.Kind == MatchEventKind.Shot && e.PlayerId == receiver.Id).Take(1))
+        foreach (var e in events.OfType<ShotTaken>().Where(e => e.ShooterId == receiver.Id).Take(1))
         {
             shotStep = (int)MathF.Round(e.Time / Game.Step);
-            shotSpeed = e.Strength;
+            shotSpeed = e.Speed;
         }
         return (carried, shotStep, hadStep, shotSpeed);
     }

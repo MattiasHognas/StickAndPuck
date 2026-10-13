@@ -404,7 +404,7 @@ public static class Penalties
         else ToBox(world, p);
         book.Called[(int)p.Side]++;
         float shown = seconds > 0 ? seconds : MisconductSeconds(world);
-        world.Events.Publish(new MatchEvent(MatchEventKind.Penalty, world.Time, p.Side, p.Id, p.Position, shown));
+        world.Events.Publish(new PenaltyCalled(world.Time, p.Side, p.Id, p.Position, shown));
         Referee.Referee.Announce(world, d.Infraction, p.Id);
         string what = severity == Severity.Minor ? "" : $", {severity}";
         book.Log(world, $"{d.Infraction}, {Name(world, p)}, {MatchFlow.ClockText(shown)}{what}{(substitute ? ", coincidental, substituted" : waits ? ", waits in the box" : "")}");

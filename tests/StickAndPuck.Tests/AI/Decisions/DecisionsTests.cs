@@ -289,9 +289,8 @@ public sealed class DecisionsTests : CheckedTest
             world.Time += Game.Step; world.Tick++;
             foreach (var e in world.Events.Current)
             {
-                if (e.Side is not { } side) continue;
-                if (e.Kind == MatchEventKind.Icing) icings[(int)side]++;
-                else if (e.Kind == MatchEventKind.Offside) offsides[(int)side]++;
+                if (e is IcingCalled icing) icings[(int)icing.Offender]++;
+                else if (e is OffsideCalled offside) offsides[(int)offside.Attacker]++;
             }
         }
         return (icings, offsides, world);

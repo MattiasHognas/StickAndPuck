@@ -41,7 +41,7 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
 
         var game = SeasonSession.Playing;
         if (game == null || !string.Equals(game.Home, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(game.Away, world.Setup.Away.Id, StringComparison.Ordinal)) return;
-        if (!world.Events.Of(MatchEventKind.MatchEnd).Any()) return;
+        if (!world.Events.Of<MatchEnded>().Any()) return;
 
         var m = world.Match;
         var kind = sawShootout ? ResultKind.Shootout : m.Period > world.Setup.Periods ? ResultKind.Overtime : ResultKind.Regulation;

@@ -57,7 +57,7 @@ public sealed class LightCues
         wasIntro = Intro;
         if (!Intro) lightsUp = Math.Min(lightsUp + dt, LightsUpSeconds);
 
-        if (world.Events.Of(MatchEventKind.Goal).Any()) flash = 0;
+        if (world.Events.Of<GoalScored>().Any()) flash = 0;
         else flash = Math.Min(flash + dt, FlashSeconds);
     }
 

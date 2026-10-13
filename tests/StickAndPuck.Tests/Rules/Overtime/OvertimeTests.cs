@@ -93,10 +93,10 @@ public sealed class OvertimeTests : CheckedTest
         pk.Velocity = new Vector3(end * 30, 0, 0);
         pk.LastTouch = w.OnIce(Side.Home).First(p => !p.IsGoalie).Id;
         var ev = Run(w, x => x.Match.Phase == MatchPhase.Final, limit: 3 + MatchTuning.CelebrationSeconds);
-        var final = ev.Where(e => e.Kind == MatchEventKind.MatchEnd).ToList();
-        bool wonHere = final.Count == 1 && final[0].Side == Side.Home && w.Match.Score[0] == 1 && w.Match.Score[1] == 0;
+        var final = ev.OfType<MatchEnded>().ToList();
+        bool wonHere = final.Count == 1 && final[0] is MatchWon { Winner: Side.Home } && w.Match.Score[0] == 1 && w.Match.Score[1] == 0;
         // the goalie may stop it; then the overtime runs out into the shootout, still a valid ending
-        Check(wonHere || (ev.Any(e => e.Kind == MatchEventKind.Save) && w.Match.Phase != MatchPhase.Final), $"an overtime goal ends it 1-0 (score {w.Match.Score[0]}-{w.Match.Score[1]})");
+        Check(wonHere || (ev.Any(e => e is ShotSaved) && w.Match.Phase != MatchPhase.Final), $"an overtime goal ends it 1-0 (score {w.Match.Score[0]}-{w.Match.Score[1]})");
         Check(OvertimeRules.Shootout(w) == null, "no shootout after an overtime goal");
     }
 
@@ -152,8 +152,8 @@ public sealed class OvertimeTests : CheckedTest
             awayFirst &= so.Shots[0].Side == Side.Away && so.Rounds == 3;
             var homeShooters = so.Shots.Where(s => s.Side == Side.Home).Select(s => s.PlayerId).Take(3).ToList();
             fairOrder &= homeShooters.Distinct().Count() == homeShooters.Count;
-            var end = ev.Where(e => e.Kind == MatchEventKind.MatchEnd).ToList();
-            oneEnd &= end.Count == 1 && end[0].Side == so.Winner && so.Decided(so.Rounds) == so.Winner;
+            var end = ev.OfType<MatchEnded>().ToList();
+            oneEnd &= end.Count == 1 && end[0] is MatchWon won && won.Winner == so.Winner && so.Decided(so.Rounds) == so.Winner;
             oneGoal &= w.Match.Score[(int)so.Winner!.Value] == 1 && w.Match.Score[1 - (int)so.Winner.Value] == 0;
             celebrated &= Celebration.Winner(w) == so.Winner && w.OnIce(so.Winner.Value).Count(p => !p.IsGoalie) == 5 && w.OnIce(1 - so.Winner.Value).Any(p => !p.IsGoalie);
             Console.WriteLine($"      seed {seed}: {string.Concat(so.Shots.Select(s => s.Scored ? "o" : "x"))}, {so.Winner} wins {w.Match.Score[0]}-{w.Match.Score[1]}");
@@ -176,7 +176,7 @@ public sealed class OvertimeTests : CheckedTest
         var w = Make(OvertimeRule.ShootoutOnly);
         var ev = Run(w, x => x.Match.Phase == MatchPhase.Final);
         Check(w.Match.Period == 3 && OvertimeRules.Shootout(w) is { Winner: not null }, "shootout only: no overtime period, the shootout decides it");
-        Check(ev.Count(e => e.Kind == MatchEventKind.MatchEnd) == 1, "one MatchEnd");
+        Check(ev.Count(e => e is MatchEnded) == 1, "one MatchEnd");
     }
 
     /// <summary>The per-mode formats: what each one plays after a tie.</summary>
@@ -233,8 +233,8 @@ public sealed class OvertimeTests : CheckedTest
         pk.Velocity = new Vector3(end * 5, 0, 0);
         pk.LastTouch = w.OnIce(Side.Away).First(p => !p.IsGoalie).Id;
         var ev = Run(w, x => x.Match.Phase == MatchPhase.Final, limit: 3 + MatchTuning.CelebrationSeconds);
-        var final = ev.Where(e => e.Kind == MatchEventKind.MatchEnd).ToList();
-        Check(final.Count == 1 && final[0].Side == Side.Away && w.Match.Score[0] == 0 && w.Match.Score[1] == 1, $"the first goal in the second overtime ends it 0-1 (score {w.Match.Score[0]}-{w.Match.Score[1]})");
+        var final = ev.OfType<MatchEnded>().ToList();
+        Check(final.Count == 1 && final[0] is MatchWon { Winner: Side.Away } && w.Match.Score[0] == 0 && w.Match.Score[1] == 1, $"the first goal in the second overtime ends it 0-1 (score {w.Match.Score[0]}-{w.Match.Score[1]})");
         Check(w.Match.Phase == MatchPhase.Final && w.Match.Period == 5, "the match is final in period 5");
         Check(OvertimeRules.Shootout(w) == null, "no shootout in the playoffs");
     }

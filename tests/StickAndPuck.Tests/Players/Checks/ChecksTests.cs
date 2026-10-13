@@ -98,9 +98,9 @@ public sealed class ChecksTests : CheckedTest
         {
             var w = Make(ControlSwitching.Auto);
             var (events, checker, carrier) = Chase(w, 90, 20, 8f, 2f);
-            hits += events.Count(e => e.Kind == MatchEventKind.Check && e.PlayerId == checker.Id) == 1 ? 1 : 0;
+            hits += events.Count(e => e is CheckLanded check && check.CheckerId == checker.Id) == 1 ? 1 : 0;
             if (w.Puck.Carrier != carrier.Id && w.Puck.LastTouch != carrier.Id || w.Puck.Carrier == checker.Id) won++;
-            if (events.Any(e => e.Kind == MatchEventKind.Check && e.Strength >= CheckingModel.HardHit)) down++;
+            if (events.Any(e => e is CheckLanded { Strength: >= CheckingModel.HardHit })) down++;
             slid &= carrier.Position.X > 1.5f;
         }
         Check(hits == 10, $"a check from behind lands exactly once each time ({hits}/10)");
@@ -182,7 +182,7 @@ public sealed class ChecksTests : CheckedTest
             carrier.Command = new PlayerCommand { Check = i == 0 };
             near.Command = default;
         });
-        Check(!events.Any(e => e.Kind == MatchEventKind.Check), "a check at nobody, or from the carrier, hits no one");
+        Check(!events.Any(e => e is CheckLanded), "a check at nobody, or from the carrier, hits no one");
         Check(lone.Action == PlayerAction.None && lone.Speed > 0.5f, "a whiffed check lunges forward and ends");
     }
 

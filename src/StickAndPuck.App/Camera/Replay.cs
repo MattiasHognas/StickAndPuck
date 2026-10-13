@@ -78,7 +78,7 @@ public sealed class Replay
         if (Playing) return Play(world, dt);
 
         buffer.Record(world);
-        if (!waiting && GoalScored(world, out float x))
+        if (!waiting && GoalThisStep(world, out float x))
         {
             waiting = true;
             goalTime = world.Time;
@@ -90,13 +90,12 @@ public sealed class Replay
     }
 
     /// <summary>Whether a goal was scored this step, and at which end. SAP_REPLAY_AT fakes one at that world time, for checks before the rules exist.</summary>
-    bool GoalScored(World world, out float x)
+    bool GoalThisStep(World world, out float x)
     {
         x = world.Puck.Position.X;
-        foreach (var e in world.Events.Current)
+        if (world.Events.Of<GoalScored>().FirstOrDefault() is { } goal)
         {
-            if (e.Kind != MatchEventKind.Goal) continue;
-            if (e.Position.X != 0) x = e.Position.X;
+            if (goal.Position.X != 0) x = goal.Position.X;
             return true;
         }
         return world.Time >= testGoalAt && world.Time - Game.Step < testGoalAt;

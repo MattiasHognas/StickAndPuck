@@ -44,7 +44,7 @@ internal sealed class RefereeSystem : ISystem, IDisposable
         if (!MatchFlow.IsRunning(world)) return;
         MatchFlow.SetRefereeDrops(world, true);
         var r = Referee.Of(world);
-        if (world.Events.Of(MatchEventKind.Whistle).Any()) r.ClearCall();
+        if (world.Events.Of<WhistleBlown>().Any()) r.ClearCall();
         Step(world, r, dice, dt);
         renderer.Animate(r, dt, world.Time);
     }

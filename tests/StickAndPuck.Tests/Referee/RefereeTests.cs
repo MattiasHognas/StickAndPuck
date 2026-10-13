@@ -45,7 +45,7 @@ public sealed class RefereeTests : CheckedTest
         var r = Ref.Of(w);
         r.Position = new Vector3(-20, 0, 11);
         float dropAt = float.NaN;
-        Run(w, x => x.Match.Phase == MatchPhase.Play, 20, x => { if (x.Events.Of(MatchEventKind.Faceoff).Any()) dropAt = x.Time; });
+        Run(w, x => x.Match.Phase == MatchPhase.Play, 20, x => { if (x.Events.Of<PuckDropped>().Any()) dropAt = x.Time; });
         Check(w.Match.Phase == MatchPhase.Play, "the opening faceoff is dropped");
         Check(dropAt > MatchTuning.IntroSeconds + MatchTuning.FaceoffSeconds, $"the drop waits for the referee to skate from the corner ({dropAt:0.0} s)");
         Check(Distance(r.Position, Ref.DropSpot(RinkSpec.CentreDot)) <= RefereeTuning.Arrived, "the referee is at the centre dot when the puck drops");
@@ -64,7 +64,7 @@ public sealed class RefereeTests : CheckedTest
         Run(w, x => x.Match.Phase == MatchPhase.Play, 20, x =>
         {
             if (float.IsNaN(setAt) && r.SetTime > 0) setAt = x.Time;
-            if (x.Events.Of(MatchEventKind.Faceoff).Any()) dropAt = x.Time;
+            if (x.Events.Of<PuckDropped>().Any()) dropAt = x.Time;
         });
         Check(w.Match.Phase == MatchPhase.Play && Distance(w.Puck.Position, dot) < 0.5f, "a whistle in the far end is followed by a drop at that dot");
         Check(Distance(r.Position, Ref.DropSpot(dot)) <= RefereeTuning.Arrived, "the referee skated the length of the rink to that dot");
@@ -88,7 +88,7 @@ public sealed class RefereeTests : CheckedTest
             var holds = new List<float>();
             void Record(World x)
             {
-                if (x.Events.Of(MatchEventKind.Faceoff).Any()) holds.Add(r.LastHold);
+                if (x.Events.Of<PuckDropped>().Any()) holds.Add(r.LastHold);
             }
             Run(w, x => x.Match.Phase == MatchPhase.Play, 20, Record, referee);
             for (int i = 1; i < 10; i++)
@@ -123,7 +123,7 @@ public sealed class RefereeTests : CheckedTest
         {
             if (x.Match.Phase == MatchPhase.Faceoff && last != MatchPhase.Faceoff) setups++;
             last = x.Match.Phase;
-            if (x.Events.Of(MatchEventKind.Faceoff).Any())
+            if (x.Events.Of<PuckDropped>().Any())
             {
                 drops++;
                 droppedAt = x.Time;

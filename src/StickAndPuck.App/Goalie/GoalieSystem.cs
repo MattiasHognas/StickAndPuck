@@ -11,7 +11,7 @@ namespace StickAndPuck.App.Goalie;
 /// will cross. A puck that meets a covered part of the goalie is stopped, except a share that
 /// squeezes through, more for slow reflexes and hard shots. A stopped puck is caught (the goalie
 /// carries it: <see cref="Puck.Carrier"/> is the goalie, which rules read as a freeze to whistle)
-/// or left as a rebound. Every stop publishes <see cref="MatchEventKind.Save"/> with the goalie's
+/// or left as a rebound. Every stop publishes <see cref="ShotSaved"/> with the goalie's
 /// side and id and the shot speed as Strength. With no whistle, a held puck is played out.
 /// W34 goalie traits: positioning (the goalie's hockey IQ) sets how far out and how square the
 /// goalie stands and how fast it shuffles; glove and blocker set the reach and the clean-stop chance
@@ -166,7 +166,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         pk.LastTouch = g.Id;
         state.IgnoreUntil = world.Time + GoalieTuning.IgnoreAfterSave;
         state.SeenAt = float.NaN;
-        world.Events.Publish(new MatchEvent(MatchEventKind.Save, world.Time, g.Side, g.Id, at, speed));
+        world.Events.Publish(new ShotSaved(world.Time, g.Side, g.Id, at, speed));
         GoalieDemo.Saved(caught: false);
     }
 
@@ -178,7 +178,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         pk.Velocity = Vector3.Zero;
         state.HeldSince = world.Time;
         state.SeenAt = float.NaN;
-        world.Events.Publish(new MatchEvent(MatchEventKind.Save, world.Time, g.Side, g.Id, pk.Position, speed));
+        world.Events.Publish(new ShotSaved(world.Time, g.Side, g.Id, pk.Position, speed));
         GoalieDemo.Saved(caught: true);
     }
 
@@ -273,7 +273,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         pk.LastTouch = g.Id;
         state.IgnoreUntil = world.Time + GoalieTuning.IgnoreAfterSave * 2;
         state.OutOfCrease = true;
-        if (pass) world.Events.Publish(new MatchEvent(MatchEventKind.Pass, world.Time, g.Side, g.Id, start, speed));
+        if (pass) world.Events.Publish(new PassMade(world.Time, g.Side, g.Id, start, speed));
     }
 
     /// <summary>The teammate a goalie passes to: the nearest skater in front of the goal line with no opponent near the lane, or null.</summary>

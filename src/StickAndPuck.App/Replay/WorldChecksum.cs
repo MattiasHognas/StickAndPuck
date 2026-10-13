@@ -56,11 +56,7 @@ public static class WorldChecksum
         }
         foreach (var e in world.Events.Current)
         {
-            Add(ref h, (int)e.Kind);
-            Add(ref h, e.Side is { } side ? (int)side : -1);
-            Add(ref h, e.PlayerId);
-            Add(ref h, e.Position);
-            Add(ref h, e.Strength);
+            foreach (char ch in ReplayFile.EventText(e)) Add(ref h, ch);
         }
         return h;
     }

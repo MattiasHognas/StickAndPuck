@@ -150,7 +150,7 @@ public sealed class LinesTests : CheckedTest
         Check(first.TrueForAll(p => !p.OnIce), "tired line 1 goes to the bench on the fly");
         Check(on.Count == 3 && on.All(p => squad.UnitOf(p) is { Number: > 1 }), $"a fresh line comes on ({Bench.OnIceUnit(w, Side.Home, Group.Forwards)?.Name})");
         Check(On(w, Side.Home, Group.Defence).Count == 2 && squad.Pairs[0].Members.All(p => p.OnIce), "the defence pair stays on");
-        Check(events.Count(e => e.Kind == MatchEventKind.LineChange && e.Side == Side.Home) == 1, "one LineChange event");
+        Check(events.Count(e => e is LineChanged { Side: Side.Home }) == 1, "one LineChange event");
         Check(!human.OnIce || human.Slot < 0, "the human was taken off the leaving centre");
         Check(w.Controlled(0) is { OnIce: true }, "and controls a skater on the ice");
         var roles = Roles.Assign([.. w.OnIce(Side.Home).Where(p => !p.IsGoalie)]);
@@ -198,7 +198,7 @@ public sealed class LinesTests : CheckedTest
         var events = Run(w, Game.Step);
         Check(pair.TrueForAll(p => !p.OnIce) && line.TrueForAll(p => !p.OnIce), "a tiring line and pair change at the faceoff");
         Check(On(w, Side.Home, Group.Forwards).Count == 3 && On(w, Side.Home, Group.Defence).Count == 2, "still five skaters");
-        Check(events.Count(e => e.Kind == MatchEventKind.LineChange) == 2, "one LineChange per group");
+        Check(events.Count(e => e is LineChanged) == 2, "one LineChange per group");
         Check(w.Controlled(0) is { OnIce: true, Data.Position: PlayingPosition.C }, "the human moves to the new centre");
         Check(On(w, Side.Away, Group.Forwards).All(p => p.Energy > 0.9f), "the fresh away line stays on");
     }
@@ -250,7 +250,7 @@ public sealed class LinesTests : CheckedTest
             else
             {
                 Check(!starter.OnIce && backup.OnIce, $"{LinesTuning.GoalieGoals} goals in a minute: the backup comes in at the faceoff");
-                Check(events.Exists(e => e.Kind == MatchEventKind.LineChange && e.PlayerId == backup.Id), "a LineChange event names the backup");
+                Check(events.Exists(e => e is LineChanged change && change.PlayerId == backup.Id), "a LineChange event names the backup");
                 Check(w.OnIce(Side.Away).Count(p => p.IsGoalie) == 1, "one goalie on the ice");
             }
             Phase(w, MatchPhase.Play);
@@ -323,7 +323,7 @@ public sealed class LinesTests : CheckedTest
         var before = w.Players.Where(p => p.OnIce).ToList();
         SetEnergy(w.Players, 0.2f);
         var events = Run(w, 3);
-        Check(!events.Exists(e => e.Kind == MatchEventKind.LineChange) && w.Players.Where(p => p.OnIce).SequenceEqual(before), "no changes in a shootout");
+        Check(!events.Exists(e => e is LineChanged) && w.Players.Where(p => p.OnIce).SequenceEqual(before), "no changes in a shootout");
     }
 
     [Test]
@@ -375,7 +375,7 @@ public sealed class LinesTests : CheckedTest
         };
         var w = Make(b => b.Human().Rules(rules));
         var events = IceThePuck(w);
-        Check(events.Count(e => e.Kind == MatchEventKind.Icing && e.Side == Side.Home) == 1, $"{preset}: home ices the puck");
+        Check(events.Count(e => e is IcingCalled { Offender: Side.Home }) == 1, $"{preset}: home ices the puck");
         Check(IcingRule.HoldsLines(w, Side.Home) == hold && !IcingRule.HoldsLines(w, Side.Away),
             $"{preset}: {(hold ? "the icing club is held, the other is not" : "nobody is held")}");
 
@@ -387,7 +387,7 @@ public sealed class LinesTests : CheckedTest
         events = Rules(w, 15f, until: x => x.Match.Phase == MatchPhase.Play);
         Check(w.Match.Phase == MatchPhase.Play, $"{preset}: the faceoff after the icing is dropped");
         bool kept = home.TrueForAll(p => p.OnIce);
-        Check(hold ? kept && !events.Exists(e => e.Kind == MatchEventKind.LineChange && e.Side == Side.Home) : home.TrueForAll(p => !p.OnIce),
+        Check(hold ? kept && !events.Exists(e => e is LineChanged { Side: Side.Home }) : home.TrueForAll(p => !p.OnIce),
             hold ? $"{preset}: the icing club faces off with the same five skaters, whatever the bench or button asks" : $"{preset}: the icing club changes freely");
         Check(away.TrueForAll(p => !p.OnIce) && On(w, Side.Away, Group.Forwards).Count == 3 && On(w, Side.Away, Group.Defence).Count == 2,
             $"{preset}: the other club changes, still five skaters");

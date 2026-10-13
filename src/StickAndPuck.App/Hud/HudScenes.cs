@@ -49,31 +49,31 @@ internal static class HudDemo
     public static void Update(World world)
     {
         if (Message == null || world.Tick != 0) return;
-        var scorer = world.OnIce(Side.Home).FirstOrDefault(p => !p.IsGoalie);
-        var other = world.OnIce(Side.Away).FirstOrDefault(p => !p.IsGoalie);
+        int scorer = world.OnIce(Side.Home).First(p => !p.IsGoalie).Id;
+        int other = world.OnIce(Side.Away).First(p => !p.IsGoalie).Id;
+        var at = world.Puck.Position;
         if (string.Equals(Message, "hattrick", StringComparison.Ordinal) || string.Equals(Message, "gwg", StringComparison.Ordinal))
         {
             // the earlier goals of the match, so the tally knows them: two by the scorer, or home, away, home
             bool hat = string.Equals(Message, "hattrick", StringComparison.Ordinal);
-            world.Events.Publish(new(MatchEventKind.Goal, world.Time, Side.Home, scorer?.Id ?? -1));
-            world.Events.Publish(new(MatchEventKind.Goal, world.Time, hat ? Side.Home : Side.Away, hat ? scorer?.Id ?? -1 : other?.Id ?? -1));
-            world.Events.Publish(new(MatchEventKind.Goal, world.Time, Side.Home, scorer?.Id ?? -1));
+            world.Events.Publish(new GoalScored(world.Time, Side.Home, scorer, at, 0));
+            world.Events.Publish(hat ? new GoalScored(world.Time, Side.Home, scorer, at, 0) : new GoalScored(world.Time, Side.Away, other, at, 0));
+            world.Events.Publish(new GoalScored(world.Time, Side.Home, scorer, at, 0));
             if (hat) world.Match.Score[0] = 3;
-            if (!hat) world.Events.Publish(new(MatchEventKind.MatchEnd, world.Time, Side.Home));
+            if (!hat) world.Events.Publish(new MatchWon(world.Time, Side.Home));
             return;
         }
 
         MatchEvent? e = Message switch
         {
-            "goal" or "firstgoal" => new(MatchEventKind.Goal, world.Time, Side.Home, scorer?.Id ?? -1),
-            "shutout" => new(MatchEventKind.MatchEnd, world.Time, Side.Home),
-            "period" => new(MatchEventKind.PeriodEnd, world.Time, Strength: 2),
-            "final" => new(MatchEventKind.MatchEnd, world.Time, Side.Home),
-            "tie" => new(MatchEventKind.MatchEnd, world.Time),
-            "offside" => new(MatchEventKind.Offside, world.Time),
-            "icing" => new(MatchEventKind.Icing, world.Time, Side.Away, other?.Id ?? -1),
+            "goal" or "firstgoal" => new GoalScored(world.Time, Side.Home, scorer, at, 0),
+            "shutout" or "final" => new MatchWon(world.Time, Side.Home),
+            "period" => new PeriodEnded(world.Time, 2),
+            "tie" => new MatchTied(world.Time),
+            "offside" => new OffsideCalled(world.Time, Side.Home, at),
+            "icing" => new IcingCalled(world.Time, Side.Away, other, at),
             _ => null,
         };
-        if (e is { } ev) world.Events.Publish(ev);
+        if (e != null) world.Events.Publish(e);
     }
 }

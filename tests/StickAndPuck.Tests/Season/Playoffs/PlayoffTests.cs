@@ -155,7 +155,7 @@ public sealed class PlayoffTests : CheckedTest
         world.Match.Phase = MatchPhase.Final;
         system.Update(world, Game.Step);
         Check(series.Games.Count == 0, "nothing is recorded before MatchEnd");
-        world.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, world.Time, Side.Home));
+        world.Events.Publish(new MatchWon(world.Time, Side.Home));
         system.Update(world, Game.Step);
         autosave.Update(world, Game.Step);
         Check(series.Games.Count == 1 && series.Games[0].Result == new FixtureResult(3, 2, ResultKind.Overtime), "MatchEnd records 3-2 in overtime");

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Goalie;
@@ -78,7 +79,8 @@ public sealed class ReplayTests : CheckedTest
         };
         file.Inputs[10] = frame;
         file.Checks[0] = 0xdeadbeefcafef00dUL;
-        file.Events.Add("3 Pass Home 2 0.05 1,0,2 0");
+        file.Events.Add(ReplayFile.EventLine(3, new PassMade(0.05f, Side.Home, 2, new Vector3(1, 0, 2), 0)));
+        Check(string.Equals(file.Events[0], "3 PassMade 0.05 Home 2 1,0,2 0", StringComparison.Ordinal), $"an event line names its type and fields ({file.Events[0]})");
         string path = Path.Combine(Path.GetTempPath(), $"sap-replaytest-{Environment.ProcessId}.sapreplay");
         file.Write(path);
         var read = ReplayFile.Read(path);

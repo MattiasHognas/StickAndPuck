@@ -89,9 +89,10 @@ public sealed class LineCallsTests : CheckedTest
         pk.Velocity = velocity;
     }
 
-    static int Count(List<MatchEvent> events, MatchEventKind kind)
+    static int Count<T>(List<MatchEvent> events)
+        where T : MatchEvent
     {
-        return events.Count(e => e.Kind == kind);
+        return events.OfType<T>().Count();
     }
 
     /// <summary>The whistle leads to a faceoff at <paramref name="dot"/> with the puck there.</summary>
@@ -116,7 +117,7 @@ public sealed class LineCallsTests : CheckedTest
             c.Position += new Vector3(9 * Game.Step, 0, 0);
             x.Puck.Position = c.Position + new Vector3(0.6f, 0, 0);
         });
-        Check(c.Position.X > 15 && Count(ev, MatchEventKind.Offside) == 0 && w.Match.Phase == MatchPhase.Play, "a clean carry-in is onside");
+        Check(c.Position.X > 15 && Count<OffsideCalled>(ev) == 0 && w.Match.Phase == MatchPhase.Play, "a clean carry-in is onside");
     }
 
     /// <summary>A pass over the line to a winger already in the zone: pending, then called when he plays it.</summary>
@@ -131,9 +132,9 @@ public sealed class LineCallsTests : CheckedTest
         Side? pending = null;
         var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, x => pending ??= OffsideRule.Pending(x), 3);
         Check(pending == Side.Home, "the pass over the line makes an offside pending for home");
-        var off = ev.Where(e => e.Kind == MatchEventKind.Offside).ToList();
-        Check(off.Count == 1 && off[0].Side == Side.Home && off[0].PlayerId == rw.Id, "the winger touching it is called offside, home's offence");
-        Check(Count(ev, MatchEventKind.Whistle) == 1, "one whistle");
+        var off = ev.OfType<OffsideCalled>().ToList();
+        Check(off.Count == 1 && off[0].Attacker == Side.Home, "the winger touching it is called offside, home's offence");
+        Check(Count<WhistleBlown>(ev) == 1, "one whistle");
         FaceoffAt(w, new Vector3(6.1f, 0, 6.7f), "offside");
     }
 
@@ -154,7 +155,7 @@ public sealed class LineCallsTests : CheckedTest
         Check(OffsideRule.Pending(w) == null, "tagging up at the blue line waves it off");
         rw.Position = w.Puck.Position + new Vector3(0.5f, 0, 0);
         ev.AddRange(RunFor(w, 0.5f, x => x.Puck.Carrier = rw.Id));
-        Check(Count(ev, MatchEventKind.Offside) == 0 && w.Match.Phase == MatchPhase.Play, "after tagging up he may play the puck");
+        Check(Count<OffsideCalled>(ev) == 0 && w.Match.Phase == MatchPhase.Play, "after tagging up he may play the puck");
     }
 
     /// <summary>The puck goes back out over the line while offside is pending: waved off.</summary>
@@ -173,7 +174,7 @@ public sealed class LineCallsTests : CheckedTest
         Check(OffsideRule.Pending(w) == null, "the defence clearing the zone waves the offside off");
         w.Puck.Velocity = Vector3.Zero;
         var ev = RunFor(w, 0.3f, x => x.Puck.Carrier = rw.Id);
-        Check(Count(ev, MatchEventKind.Offside) == 0, "and no call follows");
+        Check(Count<OffsideCalled>(ev) == 0, "and no call follows");
     }
 
     /// <summary>The defending club sends the puck into its own zone with an attacker inside: never offside.</summary>
@@ -190,7 +191,7 @@ public sealed class LineCallsTests : CheckedTest
         w.Puck.Velocity = Vector3.Zero;
         rw.Position = w.Puck.Position;
         ev.AddRange(RunFor(w, 0.3f, x => x.Puck.Carrier = rw.Id));
-        Check(Count(ev, MatchEventKind.Offside) == 0, "the attacker may play it");
+        Check(Count<OffsideCalled>(ev) == 0, "the attacker may play it");
     }
 
     /// <summary>Carrying the puck in with a teammate already deep in the zone: called at once.</summary>
@@ -209,8 +210,8 @@ public sealed class LineCallsTests : CheckedTest
             c.Position += new Vector3(9 * Game.Step, 0, 0);
             x.Puck.Position = c.Position + new Vector3(0.6f, 0, 0);
         }, 2);
-        var off = ev.Where(e => e.Kind == MatchEventKind.Offside).ToList();
-        Check(off.Count == 1 && off[0].Side == Side.Home && off[0].Position.X < 9, "carrying in with a teammate ahead is offside as the puck crosses");
+        var off = ev.OfType<OffsideCalled>().ToList();
+        Check(off.Count == 1 && off[0].Attacker == Side.Home && off[0].Position.X < 9, "carrying in with a teammate ahead is offside as the puck crosses");
         FaceoffAt(w, new Vector3(6.1f, 0, -6.7f), "carried offside");
     }
 
@@ -225,7 +226,7 @@ public sealed class LineCallsTests : CheckedTest
         var from = new Vector3(3, 0, -1);
         Send(w, c, from, Vector3.Normalize(RinkSpec.NetMouth(1) - from) * 32);
         var ev = RunFor(w, 1.5f);
-        Check(Count(ev, MatchEventKind.Offside) == 1 && Count(ev, MatchEventKind.Goal) == 0 && w.Match.Score[0] == 0, "a shot on goal past an offside winger is called, no goal");
+        Check(Count<OffsideCalled>(ev) == 1 && Count<GoalScored>(ev) == 0 && w.Match.Score[0] == 0, "a shot on goal past an offside winger is called, no goal");
         Check(MatchFlow.FaceoffDot(w) == new Vector3(6.1f, 0, -6.7f), "faceoff at the neutral dot on the puck's side");
     }
 
@@ -239,7 +240,7 @@ public sealed class LineCallsTests : CheckedTest
         rw.Position = new Vector3(-13, 0, -4);
         Send(w, c, new Vector3(-2, 0, -4), new Vector3(-14, 0, 0));
         var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 3);
-        Check(ev.Any(e => e.Kind == MatchEventKind.Offside && e.Side == Side.Home), "period 2: home offside in the -x zone");
+        Check(ev.Any(e => e is OffsideCalled { Attacker: Side.Home }), "period 2: home offside in the -x zone");
         Check(MatchFlow.FaceoffDot(w) == new Vector3(-6.1f, 0, -6.7f), "faceoff at the -x neutral dot");
     }
 
@@ -253,8 +254,8 @@ public sealed class LineCallsTests : CheckedTest
         ad.Position = new Vector3(22, 0, 10);
         Send(w, d, new Vector3(-10, 0, 5), new Vector3(30, 0, 0));
         var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 3);
-        var icing = ev.Where(e => e.Kind == MatchEventKind.Icing).ToList();
-        Check(icing.Count == 1 && icing[0].Side == Side.Home && icing[0].PlayerId == d.Id, "home ices the puck");
+        var icing = ev.OfType<IcingCalled>().ToList();
+        Check(icing.Count == 1 && icing[0].Offender == Side.Home && icing[0].PlayerId == d.Id, "home ices the puck");
         Check(icing.Count == 1 && icing[0].Position.X > RinkSpec.GoalLineX, "called as it crosses the goal line");
         FaceoffAt(w, new Vector3(-20.7f, 0, 6.7f), "icing");
     }
@@ -269,7 +270,7 @@ public sealed class LineCallsTests : CheckedTest
         ad.Position = new Vector3(22, 0, 10);
         Send(w, d, new Vector3(1, 0, 5), new Vector3(30, 0, 0));
         var ev = RunFor(w, 1.5f);
-        Check(Count(ev, MatchEventKind.Icing) == 0 && w.Match.Phase == MatchPhase.Play, "a dump from past the red line is not icing");
+        Check(Count<IcingCalled>(ev) == 0 && w.Match.Phase == MatchPhase.Play, "a dump from past the red line is not icing");
     }
 
     /// <summary>Hybrid icing: an attacker closer to the dot wins the race and waves it off.</summary>
@@ -282,7 +283,7 @@ public sealed class LineCallsTests : CheckedTest
         rw.Position = new Vector3(20.7f, 0, 9);
         Send(w, d, new Vector3(-10, 0, 3), new Vector3(30, 0, 0));
         var ev = RunFor(w, 1.5f);
-        Check(Count(ev, MatchEventKind.Icing) == 0 && w.Match.Phase == MatchPhase.Play, "an attacker winning the race waves icing off");
+        Check(Count<IcingCalled>(ev) == 0 && w.Match.Phase == MatchPhase.Play, "an attacker winning the race waves icing off");
     }
 
     /// <summary>The goalie plays the puck before the line: no icing.</summary>
@@ -299,7 +300,7 @@ public sealed class LineCallsTests : CheckedTest
         {
             if (x.Puck.Position.X > 24 && x.Puck.LastTouch == d.Id) x.Puck.LastTouch = g.Id;
         });
-        Check(Count(ev, MatchEventKind.Icing) == 0, "a puck the goalie touched is not icing");
+        Check(Count<IcingCalled>(ev) == 0, "a puck the goalie touched is not icing");
     }
 
     /// <summary>A short-handed club may ice the puck.</summary>
@@ -313,11 +314,11 @@ public sealed class LineCallsTests : CheckedTest
         w.Match.Penalties.Add(new PenaltyState(d.Id, Side.Home, "hooking", 120));
         Send(w, d, new Vector3(-10, 0, 5), new Vector3(30, 0, 0));
         var ev = RunFor(w, 1.5f);
-        Check(Count(ev, MatchEventKind.Icing) == 0, "a short-handed club may ice the puck");
+        Check(Count<IcingCalled>(ev) == 0, "a short-handed club may ice the puck");
         w.Match.Penalties.Add(new PenaltyState(ad.Id, Side.Away, "slashing", 120));
         Send(w, d, new Vector3(-10, 0, 5), new Vector3(30, 0, 0));
         ev = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 3);
-        Check(Count(ev, MatchEventKind.Icing) == 1, "at even strength again it is icing");
+        Check(Count<IcingCalled>(ev) == 1, "at even strength again it is icing");
     }
 
     /// <summary>A long shot from the own half that goes in is a goal, not icing.</summary>
@@ -331,7 +332,7 @@ public sealed class LineCallsTests : CheckedTest
         var from = new Vector3(-10, 0, 0.2f);
         Send(w, d, from, Vector3.Normalize(RinkSpec.NetMouth(1) - from) * 30);
         var ev = RunFor(w, 2);
-        Check(Count(ev, MatchEventKind.Goal) == 1 && Count(ev, MatchEventKind.Icing) == 0 && w.Match.Score[0] == 1, "a long shot into the net is a goal, not icing");
+        Check(Count<GoalScored>(ev) == 1 && Count<IcingCalled>(ev) == 0 && w.Match.Score[0] == 1, "a long shot into the net is a goal, not icing");
     }
 
     /// <summary>In period 2 home defends +x: its icing toward -x brings a faceoff at its +x end-zone dot.</summary>
@@ -344,7 +345,7 @@ public sealed class LineCallsTests : CheckedTest
         ad.Position = new Vector3(-22, 0, -10);
         Send(w, d, new Vector3(10, 0, -5), new Vector3(-30, 0, 0));
         var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 3);
-        Check(ev.Any(e => e.Kind == MatchEventKind.Icing && e.Side == Side.Home), "period 2: home ices toward -x");
+        Check(ev.Any(e => e is IcingCalled { Offender: Side.Home }), "period 2: home ices toward -x");
         Check(MatchFlow.FaceoffDot(w) == new Vector3(20.7f, 0, -6.7f), "faceoff at home's own end-zone dot at +x");
     }
 }

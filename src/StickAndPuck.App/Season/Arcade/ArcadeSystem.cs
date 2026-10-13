@@ -40,7 +40,7 @@ internal sealed class ArcadeSystem : ISystem, IDisposable
 
         var playing = ArcadeSession.Playing;
         if (playing == null || !string.Equals(playing.Home.Id, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(playing.Away.Id, world.Setup.Away.Id, StringComparison.Ordinal)) return;
-        if (!world.Events.Of(MatchEventKind.MatchEnd).Any()) return;
+        if (!world.Events.Of<MatchEnded>().Any()) return;
 
         var m = world.Match;
         var kind = sawShootout ? ResultKind.Shootout : m.Period > world.Setup.Periods ? ResultKind.Overtime : ResultKind.Regulation;

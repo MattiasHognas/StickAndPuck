@@ -118,7 +118,7 @@ public sealed class RuleSetTests : CheckedTest
         Send(w, d, new Vector3(-10, 0, 5), new Vector3(30, 0, 0));
         var ev = Run(w, 1.5f, [new PuckPhysics(), new MatchRules(), new IcingRule()]);
         if (toucher is { } side) ev.AddRange(Run(w, 0.5f, [new IcingRule()], x => x.Puck.LastTouch = Skater(x, side, side == Side.Home ? PlayingPosition.RW : PlayingPosition.D).Id));
-        return ev.Count(e => e.Kind == MatchEventKind.Icing);
+        return ev.Count(e => e is IcingCalled);
     }
 
     [Test]
@@ -130,7 +130,7 @@ public sealed class RuleSetTests : CheckedTest
             var c = Skater(w, Side.Home, PlayingPosition.C);
             Skater(w, Side.Home, PlayingPosition.RW).Position = new Vector3(13, 0, 4);
             Send(w, c, new Vector3(2, 0, 4), new Vector3(14, 0, 0));
-            return Run(w, 3f, [new PuckPhysics(), new MatchRules(), new OffsideRule()]).Count(e => e.Kind == MatchEventKind.Offside);
+            return Run(w, 3f, [new PuckPhysics(), new MatchRules(), new OffsideRule()]).Count(e => e is OffsideCalled);
         }
 
         Check(Called(RuleSet.Shl) == 1, "SHL: the pass to a winger in the zone is offside");

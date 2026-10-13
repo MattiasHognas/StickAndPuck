@@ -158,26 +158,24 @@ internal sealed class PenaltyRules : ISystem, IDisposable
     /// </summary>
     static void Goals(World world, PenaltyBook book)
     {
-        foreach (var goal in world.Events.Of(MatchEventKind.Goal))
+        // MatchRules counts one goal per step
+        if (world.Events.Of<GoalScored>().FirstOrDefault() is not { } goal) return;
+        var scorer = goal.Side;
+        var other = scorer == Side.Home ? Side.Away : Side.Home;
+        if (book.Delayed.RemoveAll(d => d.Side == other) > 0) book.Log(world, "delayed call waved off by the goal");
+        if (Penalties.Serving(world, scorer) < Penalties.Serving(world, other)
+            && world.Match.Penalties.Where(p => p.Side == other && !Penalties.Substituted(world, p.PlayerId) && Ends(world, p)).MinBy(p => p.SecondsLeft) is { } shortest)
         {
-            if (goal.Side is not { } scorer) continue;
-            var other = scorer == Side.Home ? Side.Away : Side.Home;
-            if (book.Delayed.RemoveAll(d => d.Side == other) > 0) book.Log(world, "delayed call waved off by the goal");
-            if (Penalties.Serving(world, scorer) < Penalties.Serving(world, other)
-                && world.Match.Penalties.Where(p => p.Side == other && !Penalties.Substituted(world, p.PlayerId) && Ends(world, p)).MinBy(p => p.SecondsLeft) is { } shortest)
+            float minor = Penalties.MinorSeconds(world);
+            if (Penalties.SeverityOf(world, shortest.PlayerId) == Severity.DoubleMinor && shortest.SecondsLeft > minor + 0.0001f)
             {
-                float minor = Penalties.MinorSeconds(world);
-                if (Penalties.SeverityOf(world, shortest.PlayerId) == Severity.DoubleMinor && shortest.SecondsLeft > minor + 0.0001f)
-                {
-                    world.Match.Penalties[world.Match.Penalties.IndexOf(shortest)] = shortest with { SecondsLeft = minor };
-                    book.Log(world, $"power play goal ends the first half of {Penalties.Name(world, world.Players[shortest.PlayerId])}'s double minor");
-                }
-                else
-                {
-                    Penalties.End(world, book, shortest, "power play goal");
-                }
+                world.Match.Penalties[world.Match.Penalties.IndexOf(shortest)] = shortest with { SecondsLeft = minor };
+                book.Log(world, $"power play goal ends the first half of {Penalties.Name(world, world.Players[shortest.PlayerId])}'s double minor");
             }
-            return;     // MatchRules counts one goal per step
+            else
+            {
+                Penalties.End(world, book, shortest, "power play goal");
+            }
         }
     }
 
@@ -190,7 +188,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
     /// <summary>Judges every check this step and every close chase of the carrier.</summary>
     static void Watch(World world, PenaltyBook book, float dt)
     {
-        foreach (var check in world.Events.Of(MatchEventKind.Check).ToList())
+        foreach (var check in world.Events.Of<CheckLanded>().ToList())
         {
             if (PenaltyModel.Judge(world, check, Again(world, book, check)) is { } foul) Roll(world, book, foul, check.Strength);
         }
@@ -201,21 +199,21 @@ internal sealed class PenaltyRules : ISystem, IDisposable
     /// <summary>W47: hits in the moments after the whistle can only be roughing.</summary>
     static void LateHits(World world, PenaltyBook book)
     {
-        foreach (var check in world.Events.Of(MatchEventKind.Check).ToList())
+        foreach (var check in world.Events.Of<CheckLanded>().ToList())
         {
             if (PenaltyModel.Judge(world, check, afterWhistle: true) is { } foul) Roll(world, book, foul, check.Strength, afterWhistle: true);
         }
     }
 
     /// <summary>Notes the hit and gets whether the checker hit the same skater a moment ago (W47, roughing).</summary>
-    static bool Again(World world, PenaltyBook book, MatchEvent check)
+    static bool Again(World world, PenaltyBook book, CheckLanded check)
     {
         var target = world.Players
             .Where(p => p.Side != check.Side && p.OnIce && !p.IsGoalie)
             .MinBy(p => System.Numerics.Vector3.DistanceSquared(p.Position, check.Position));
         if (target == null) return false;
-        bool again = book.LastHit.TryGetValue(check.PlayerId, out var last) && last.Target == target.Id && world.Time - last.Time < PenaltyTuning.RoughingWindow;
-        book.LastHit[check.PlayerId] = (target.Id, world.Time);
+        bool again = book.LastHit.TryGetValue(check.CheckerId, out var last) && last.Target == target.Id && world.Time - last.Time < PenaltyTuning.RoughingWindow;
+        book.LastHit[check.CheckerId] = (target.Id, world.Time);
         return again;
     }
 

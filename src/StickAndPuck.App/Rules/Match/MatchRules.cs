@@ -72,16 +72,16 @@ internal sealed class MatchRules : ISystem
     {
         var m = world.Match;
         // goals first: physics ran earlier this step, so a puck over the line before the clock ran out counts
-        foreach (var save in world.Events.Of(MatchEventKind.Save))
-            if (save.Side is { } goalieSide) m.Shots[(int)Other(goalieSide)]++;
-        if (world.Events.Of(MatchEventKind.Goal).FirstOrDefault() is { Side: { } scorer } goal)
+        foreach (var save in world.Events.Of<ShotSaved>()) m.Shots[(int)Other(save.Side)]++;
+        if (world.Events.Of<GoalScored>().FirstOrDefault() is { } goal)
         {
+            var scorer = goal.Side;
             m.Score[(int)scorer]++;
             m.Shots[(int)scorer]++;
             m.Phase = MatchPhase.Goal;
             world.Puck.Live = false;
             s.Timer = MatchTuning.GoalSeconds;
-            Log(world, s, $"goal {world.Setup.Club(scorer).ShortName} by #{Number(world, goal.PlayerId)}");
+            Log(world, s, $"goal {world.Setup.Club(scorer).ShortName} by #{Number(world, goal.ScorerId)}");
             // sudden death after regulation
             if (m.Period > world.Setup.Periods) EndMatch(world, s);
             return;
@@ -110,7 +110,7 @@ internal sealed class MatchRules : ISystem
     {
         var m = world.Match;
         world.Puck.Live = false;
-        world.Events.Publish(new MatchEvent(MatchEventKind.PeriodEnd, world.Time, Strength: m.Period));
+        world.Events.Publish(new PeriodEnded(world.Time, m.Period));
         Log(world, s, $"end of period {m.Period}");
         bool tied = m.Score[0] == m.Score[1];
         if (m.Period < world.Setup.Periods)
@@ -129,14 +129,14 @@ internal sealed class MatchRules : ISystem
         }
     }
 
-    /// <summary>The horn: MatchEnd with the winner, then the celebration (W40) holds the final for a while, or the final at once after a tie.</summary>
+    /// <summary>The horn: MatchWon or MatchTied, then the celebration (W40) holds the final for a while, or the final at once after a tie.</summary>
     internal static void EndMatch(World world, FlowState s)
     {
         var m = world.Match;
         world.Puck.Live = false;
         Side? winner = m.Score[0] > m.Score[1] ? Side.Home : m.Score[1] > m.Score[0] ? Side.Away : null;
         m.Phase = Celebration.Begin(world, s, winner) ? MatchPhase.Stopped : MatchPhase.Final;
-        world.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, world.Time, winner));
+        world.Events.Publish(winner is { } w ? new MatchWon(world.Time, w) : new MatchTied(world.Time));
         Log(world, s, "final");
     }
 

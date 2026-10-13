@@ -127,21 +127,21 @@ public sealed class MatchStatTracker
 
         foreach (var e in w.Events.Current)
         {
-            switch (e.Kind)
+            switch (e)
             {
-                case MatchEventKind.Shot when !shootout:
-                    if (Line(e.PlayerId) is { } shooter) shooter.Shots++;
+                case ShotTaken shot when !shootout:
+                    if (Line(shot.ShooterId) is { } shooter) shooter.Shots++;
                     break;
-                case MatchEventKind.Check:
-                    if (Line(e.PlayerId) is { } checker) checker.Hits++;
+                case CheckLanded check:
+                    if (Line(check.CheckerId) is { } checker) checker.Hits++;
                     break;
-                case MatchEventKind.Save:
-                    if (Line(e.PlayerId) is { } goalie) goalie.Saves++;
+                case ShotSaved save:
+                    if (Line(save.GoalieId) is { } goalie) goalie.Saves++;
                     break;
-                case MatchEventKind.Goal when !shootout && e.Side is { } side:
-                    Goal(w, side, e.PlayerId, e.Time);
+                case GoalScored goal when !shootout:
+                    Goal(w, goal.Side, goal.ScorerId, goal.Time);
                     break;
-                case MatchEventKind.Faceoff:
+                case PuckDropped:
                     touches.Clear();
                     break;
                 default:

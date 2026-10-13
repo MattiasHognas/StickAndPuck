@@ -13,7 +13,14 @@ namespace StickAndPuck.Tests;
 public sealed class NetTests : CheckedTest
 {
     /// <summary>An empty world: each check places its own puck and players.</summary>
-    static World Make() => new WorldBuilder().NoStarters().NotBegun().Build();
+    // one skater per club on the bench (home 0, away 1), clear of the puck, so a goal always has someone to credit
+    static World Make()
+    {
+        var w = new WorldBuilder().NoStarters().NotBegun().Build();
+        var skater = WorldBuilder.Clubs[0].Roster.First(p => p.Position != PlayingPosition.G);
+        foreach (var side in new[] { Side.Home, Side.Away }) w.AddPlayer(side, skater, Vector3.Zero).OnIce = false;
+        return w;
+    }
 
     static string End(int end) => end < 0 ? "-x net" : "+x net";
 
@@ -45,7 +52,7 @@ public sealed class NetTests : CheckedTest
     /// <summary>A point given as depth behind the goal line and sideways offset, at one end.</summary>
     static Vector3 At(int end, float depth, float z, float y = 0) => new(end * (RinkSpec.GoalLineX + depth), y, z);
 
-    static bool Goal(IEnumerable<MatchEvent> ev) => ev.Any(e => e.Kind == MatchEventKind.Goal);
+    static bool Goal(IEnumerable<MatchEvent> ev) => ev.Any(e => e is GoalScored);
 
     static bool Outside(Vector3 p) => !PuckMotion.InsideNet(p, 1) && !PuckMotion.InsideNet(p, -1);
 
@@ -128,11 +135,11 @@ public sealed class NetTests : CheckedTest
     public void FromTheFront(int end)
     {
         var w = Make();
-        w.Puck.LastTouch = 5;
+        w.Puck.LastTouch = 1;
         Shoot(w, At(end, -8f, 0.2f), new Vector3(end * 28f, 1.2f, 0));
         var ev = Run(w, 2f);
-        var goals = ev.Where(e => e.Kind == MatchEventKind.Goal).ToList();
-        Check(goals.Count == 1 && goals[0].PlayerId == 5 && PuckMotion.InsideNet(w.Puck.Position, end),
+        var goals = ev.OfType<GoalScored>().ToList();
+        Check(goals.Count == 1 && goals[0].ScorerId == 1 && PuckMotion.InsideNet(w.Puck.Position, end),
             $"{End(end)}: a shot through the mouth is one goal and stays in the net ({goals.Count} goal(s))");
 
         // under the bar, from an angle
@@ -150,7 +157,7 @@ public sealed class NetTests : CheckedTest
         var post = Make();
         Shoot(post, At(end, -8f, RinkSpec.NetWidth / 2 + 0.02f), new Vector3(end * 30f, 0, 0));
         var pev = Run(post, 1.5f);
-        Check(!Goal(pev) && pev.Any(e => e.Kind == MatchEventKind.PuckPost) && Outside(post.Puck.Position), $"{End(end)}: a shot off the post is no goal");
+        Check(!Goal(pev) && pev.Any(e => e is PuckHitPost) && Outside(post.Puck.Position), $"{End(end)}: a shot off the post is no goal");
     }
 
     /// <summary>A carrier's stick moves the puck itself, so physics only sees where it ends up.</summary>
@@ -197,12 +204,12 @@ public sealed class NetTests : CheckedTest
         var wp = new PuckPhysics();
         Shoot(walk, At(end, -1.5f, 0.2f), Vector3.Zero);
         Run(walk, 0.1f, wp);
-        walk.Puck.Carrier = 7;
-        walk.Puck.LastTouch = 7;
+        walk.Puck.Carrier = 0;
+        walk.Puck.LastTouch = 0;
         float u = -1.5f;
         var wev = Run(walk, 1.5f, wp, each: x => { u = Math.Min(0.4f, u + 0.03f); x.Puck.Position = At(end, u, 0.2f); });
-        var g = wev.Where(e => e.Kind == MatchEventKind.Goal).ToList();
-        Check(g.Count == 1 && g[0].PlayerId == 7, $"{End(end)}: a puck walked in through the mouth on the stick is a goal ({g.Count})");
+        var g = wev.OfType<GoalScored>().ToList();
+        Check(g.Count == 1 && g[0].ScorerId == 0, $"{End(end)}: a puck walked in through the mouth on the stick is a goal ({g.Count})");
     }
 
     /// <summary>W62: skaters driving at the cage, pushed every step the way skating would move them.</summary>

@@ -150,9 +150,9 @@ public sealed class DefenceTests : CheckedTest
 
         public void Observe(World world)
         {
-            foreach (var e in world.Events.Of(MatchEventKind.Check))
+            foreach (var e in world.Events.Of<CheckLanded>())
                 if (e.Side is { } side) stats.Hits[(int)side]++;
-            foreach (var e in world.Events.Of(MatchEventKind.Shot))
+            foreach (var e in world.Events.Of<ShotTaken>())
             {
                 shots++;
                 shotDistance += Math.Min(Vector2.Distance(Flat(e.Position), Coverage.OwnNet(1)), Vector2.Distance(Flat(e.Position), Coverage.OwnNet(-1)));

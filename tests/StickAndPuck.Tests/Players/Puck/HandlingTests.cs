@@ -95,11 +95,11 @@ public sealed class HandlingTests : CheckedTest
             if (got < 0 && x.Puck.Carrier == b.Id) got = i;
             if (got >= 0 && b.Slot == 0) b.Command = new PlayerCommand { Move = Vector2.UnitX, Shoot = i >= got + 50 && i < got + 56 };
         });
-        Check(events.Any(e => e.Kind == MatchEventKind.Pass && e.PlayerId == a.Id), "the carrier skates up ice and passes");
+        Check(events.Any(e => e is PassMade pass && pass.PasserId == a.Id), "the carrier skates up ice and passes");
         Check(b.Slot == 0 && a.Slot == -1, "control follows the pass to the receiver");
-        Check(events.Any(e => e.Kind == MatchEventKind.Shot && e.PlayerId == b.Id), "the receiver takes the pass and shoots");
-        var goal = events.FirstOrDefault(e => e.Kind == MatchEventKind.Goal);
-        Check(goal.Kind == MatchEventKind.Goal && goal.PlayerId == b.Id && goal.Side == Side.Home, "and scores, credited to the shooter");
+        Check(events.Any(e => e is ShotTaken shot && shot.ShooterId == b.Id), "the receiver takes the pass and shoots");
+        var goal = events.OfType<GoalScored>().FirstOrDefault();
+        Check(goal != null && goal.ScorerId == b.Id && goal.Side == Side.Home, "and scores, credited to the shooter");
     }
 
     [Test]
@@ -167,7 +167,7 @@ public sealed class HandlingTests : CheckedTest
             Check(w.Puck.Carrier == b.Id, $"a pass reaches the teammate the stick points at ({switching})");
             Check(follows ? b.Slot == 0 && a.Slot < 0 : a.Slot == 0 && b.Slot < 0,
                 $"with switching {switching} control {(follows ? "follows the pass" : "stays with the passer")}");
-            Check(events.Count(e => e.Kind == MatchEventKind.Pass) == 1, "one pass event");
+            Check(events.Count(e => e is PassMade) == 1, "one pass event");
         }
     }
 
@@ -220,7 +220,7 @@ public sealed class HandlingTests : CheckedTest
             var p = Add(w, Side.Home, new Vector3(10, 0, 0), traits: new Traits { ShotPower = power });
             Give(w, p);
             var ev = Run(seeds, w, 2f, (_, i) => Press(p, i, 0, shootFrom: 0, shootTo: holdSteps));
-            return ev.FirstOrDefault(e => e.Kind == MatchEventKind.Shot).Strength;
+            return ev.OfType<ShotTaken>().FirstOrDefault()?.Speed ?? 0;
         }
         float wrist = Shot(50, 6), slap = Shot(50, 60), weak = Shot(10, 6), strong = Shot(90, 6);
         Check(wrist > 15 && slap > wrist * 1.2f, $"a held shot is a harder slap shot ({slap:0} vs wrist {wrist:0} m/s)");
@@ -241,7 +241,7 @@ public sealed class HandlingTests : CheckedTest
                 Give(w, p);
                 p.Command = new PlayerCommand { Move = new Vector2(1, n % 2 == 0 ? 1 : -1) };   // pick a corner
                 var ev = Run(seeds, w, 2f, (_, i) => Press(p, i, 0, shootFrom: 0, shootTo: 6));
-                if (ev.Any(e => e.Kind == MatchEventKind.Goal)) goals++;
+                if (ev.Any(e => e is GoalScored)) goals++;
             }
             return goals;
         }

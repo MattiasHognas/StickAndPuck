@@ -81,30 +81,28 @@ internal sealed class HudMessages
     {
         var m = world.Match;
         string Short(Side s) => world.Setup.Club(s).ShortName;
-        switch (e.Kind)
+        string Score() => Text.Format(K.ScoreLine, Short(Side.Home), m.Score[0], m.Score[1], Short(Side.Away));
+        switch (e)
         {
-            case MatchEventKind.Goal when e.Side is { } scorer:
-                return Goal(world, e, scorer);
-            case MatchEventKind.PeriodEnd:
-                int period = e.Strength > 0 ? (int)e.Strength : m.Period;
-                string title = period > world.Setup.Periods ? Text.Get(K.EndOfOvertime) : Text.Format(K.EndOfPeriod, period);
-                return new("panel", title, Text.Format(K.ScoreLine, Short(Side.Home), m.Score[0], m.Score[1], Short(Side.Away)), null, e.Time + PeriodSeconds, Intermission: true);
-            case MatchEventKind.MatchEnd:
-                string detail = Text.Format(K.ScoreLine, Short(Side.Home), m.Score[0], m.Score[1], Short(Side.Away));
-                string? crest = e.Side is { } winner ? world.Setup.Club(winner).Id : null;
-                return new("panel_red", Text.Get(e.Side == null ? K.FinalTie : K.Final), detail, crest, float.PositiveInfinity, Notes: FinalNotes(world, e.Side));
-            case MatchEventKind.Offside:
+            case GoalScored goal:
+                return Goal(world, goal);
+            case PeriodEnded end:
+                string title = end.Period > world.Setup.Periods ? Text.Get(K.EndOfOvertime) : Text.Format(K.EndOfPeriod, end.Period);
+                return new("panel", title, Score(), null, e.Time + PeriodSeconds, Intermission: true);
+            case MatchWon won:
+                return new("panel_red", Text.Get(K.Final), Score(), world.Setup.Club(won.Winner).Id, float.PositiveInfinity, Notes: FinalNotes(world, won.Winner));
+            case MatchTied:
+                return new("panel_red", Text.Get(K.FinalTie), Score(), null, float.PositiveInfinity);
+            case OffsideCalled:
                 return new("panel", Text.Get(K.Offside), "", null, e.Time + CallSeconds, "whistle");
-            case MatchEventKind.Icing when e.Side is { } iced:
+            case IcingCalled icing:
                 // the club that iced the puck, by name, with its crest
-                return new("panel", Text.Get(K.Icing), world.Setup.Club(iced).Name, world.Setup.Club(iced).Id, e.Time + CallSeconds);
-            case MatchEventKind.Icing:
-                return new("panel", Text.Get(K.Icing), "", null, e.Time + CallSeconds, "whistle");
-            case MatchEventKind.Penalty when e.Side is { } offender && e.PlayerId >= 0 && e.PlayerId < world.Players.Count:
+                return new("panel", Text.Get(K.Icing), world.Setup.Club(icing.Offender).Name, world.Setup.Club(icing.Offender).Id, e.Time + CallSeconds);
+            case PenaltyCalled penalty:
                 // W14: the infraction and minutes, then the player
-                var called = m.Penalties.FindLast(p => p.PlayerId == e.PlayerId);
-                var who = world.Players[e.PlayerId].Data;
-                return new("panel_red", Text.Format(K.PenaltyBanner, Infraction.Label(called?.Infraction), MatchFlow.ClockText(e.Strength)), Text.Format(K.PlayerTag, who.Number, who.LastName), world.Setup.Club(offender).Id, e.Time + CallSeconds + 1);
+                var called = m.Penalties.FindLast(p => p.PlayerId == penalty.PlayerId);
+                var who = world.Players[penalty.PlayerId].Data;
+                return new("panel_red", Text.Format(K.PenaltyBanner, Infraction.Label(called?.Infraction), MatchFlow.ClockText(penalty.Seconds)), Text.Format(K.PlayerTag, who.Number, who.LastName), world.Setup.Club(penalty.Side).Id, e.Time + CallSeconds + 1);
             default:
                 return null;
         }
@@ -119,24 +117,24 @@ internal sealed class HudMessages
     }
 
     /// <summary>A goal: GOAL! with the scorer, HAT TRICK! on the third, plus a note for a club's first goal of the season.</summary>
-    HudMessage Goal(World world, MatchEvent e, Side scorer)
+    HudMessage Goal(World world, GoalScored e)
     {
+        var scorer = e.Side;
         int clubBefore = goals.Count(g => g.Side == scorer);
         int? seasonBefore = SeasonGoals(world, scorer);
-        int player = Scorer(world, e, scorer)?.Id ?? -1;
+        int player = Scorer(world, e)?.Id ?? -1;
         goals.Add((scorer, player));
 
         string club = world.Setup.Club(scorer).Id;
-        string detail = ScorerText(world, e, scorer);
+        string detail = ScorerText(world, e);
         List<string>? notes = clubBefore == 0 && seasonBefore == 0 ? [Text.Get(K.FirstGoalOfSeason)] : null;
         string title = Text.Get(GoalsBy(player) == HatTrick ? K.HatTrick : K.Goal);
         return new("panel_gold", title, detail, club, e.Time + GoalSeconds, Notes: notes);
     }
 
     /// <summary>The final's extra lines: the game-winning goal and a shutout, when the events say so.</summary>
-    List<string>? FinalNotes(World world, Side? winner)
+    List<string>? FinalNotes(World world, Side w)
     {
-        if (winner is not { } w) return null;
         var m = world.Match;
         var loser = w == Side.Home ? Side.Away : Side.Home;
         var notes = new List<string>();
@@ -157,16 +155,16 @@ internal sealed class HudMessages
     }
 
     /// <summary>Gets the scorer when the event names a player on the scoring club, else null (an own goal).</summary>
-    static Player? Scorer(World world, MatchEvent e, Side scorer)
+    static Player? Scorer(World world, GoalScored e)
     {
-        if (e.PlayerId >= 0 && e.PlayerId < world.Players.Count && world.Players[e.PlayerId] is { } p && p.Side == scorer) return p;
-        return null;
+        var p = world.Players[e.ScorerId];
+        return p.Side == e.Side ? p : null;
     }
 
     /// <summary>Gets "#12 SURNAME" for the scorer, or the club name when nobody on that club touched it last.</summary>
-    static string ScorerText(World world, MatchEvent e, Side scorer)
+    static string ScorerText(World world, GoalScored e)
     {
-        return Scorer(world, e, scorer) is { } p ? Text.Format(K.PlayerTag, p.Data.Number, p.Data.LastName) : world.Setup.Club(scorer).Name;
+        return Scorer(world, e) is { } p ? Text.Format(K.PlayerTag, p.Data.Number, p.Data.LastName) : world.Setup.Club(e.Side).Name;
     }
 
     /// <summary>Goals a club scored in the season's earlier games, or null when this match is not a season game.</summary>

@@ -146,7 +146,7 @@ public sealed class AimedPassTests : CheckedTest
             if (Vector2.Distance(b3.Command.Move, stick3) > 1e-3f) moved++;
         });
         Check(steps3 > 5 && moved == steps3, $"a receiver holding shoot for a one-timer is still moved to meet the pass ({moved} of {steps3} steps)");
-        Check(events.Any(e => e.Kind == MatchEventKind.Shot && e.PlayerId == b3.Id), "and he one-times it");
+        Check(events.Any(e => e is ShotTaken shot && shot.ShooterId == b3.Id), "and he one-times it");
     }
 
     /// <summary>Human passes to receivers all over: standing, skating up ice, across, back; the stick held toward each.</summary>
@@ -245,7 +245,7 @@ public sealed class AimedPassTests : CheckedTest
         {
             if (got < 0 && w.Puck.Carrier >= 0 && i > PassAt) got = w.Puck.Carrier;
         });
-        Check(events.Any(e => e.Kind == MatchEventKind.Pass && e.PlayerId == a.Id), "the human passes with the stick pointing at nobody");
+        Check(events.Any(e => e is PassMade pass && pass.PasserId == a.Id), "the human passes with the stick pointing at nobody");
         Check(got == open.Id, $"the no-cone pass reaches the nearest open teammate within 40 m (taken by #{got}, open is #{open.Id})");
         Check(open.Slot == 0, "and control follows it to him");
     }

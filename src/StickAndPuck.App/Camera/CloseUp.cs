@@ -168,10 +168,9 @@ internal sealed class CloseUp
         goalSince = replayWaiting;
         scorer = -1;
         goalSpot = world.Puck.Position;
-        foreach (var e in world.Events.Current)
+        foreach (var e in world.Events.Of<GoalScored>())
         {
-            if (e.Kind != MatchEventKind.Goal) continue;
-            scorer = e.PlayerId;
+            scorer = e.ScorerId;
             goalSpot = e.Position;
         }
     }

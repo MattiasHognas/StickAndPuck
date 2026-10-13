@@ -73,7 +73,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
         bool puckEvent = false;
         foreach (var e in world.Events.Current)
         {
-            puckEvent |= SoundCues.IsPuckContact(e.Kind);
+            puckEvent |= SoundCues.IsPuckContact(e);
             Queue(world, e);
         }
 
@@ -104,7 +104,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
 
     void Queue(World world, MatchEvent e)
     {
-        float pan = Pan(world, e.Position);
+        float pan = Pan(world, SoundCues.Where(e));
         foreach (var cue in SoundCues.For(e))
         {
             if (cue.Delay > 0) delayed.Add((clock + cue.Delay, cue, pan));
@@ -125,7 +125,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
             }
             else if (puck.Carrier < 0 && lastCarrier >= 0 && puck.Velocity.Length() > Deflection)
             {
-                Queue(world, new MatchEvent(MatchEventKind.Shot, world.Time, Position: puck.Position, Strength: puck.Velocity.Length()));
+                Play(world, SoundCues.Shot(puck.Velocity.Length()), Pan(world, puck.Position));
             }
             else if (puck.Carrier < 0 && lastCarrier < 0)
             {
@@ -143,10 +143,9 @@ internal sealed class AudioSystem : ISystem, IDisposable
         demoTimer -= dt;
         if (demoTimer > 0) return;
         demoTimer = DemoGap;
-        var kinds = Enum.GetValues<MatchEventKind>();
-        var kind = kinds[demoIndex++ % kinds.Length];
-        var e = new MatchEvent(kind, world.Time, Position: world.Camera.Target);
-        Console.WriteLine($"SAP: audio demo: {kind} -> {string.Join(", ", SoundCues.For(e).Select(c => c.Sound))}");
+        var samples = SoundCues.Samples(world.Time, world.Camera.Target);
+        var e = samples[demoIndex++ % samples.Length];
+        Console.WriteLine($"SAP: audio demo: {e.GetType().Name} -> {string.Join(", ", SoundCues.For(e).Select(c => c.Sound))}");
         Queue(world, e);
     }
 

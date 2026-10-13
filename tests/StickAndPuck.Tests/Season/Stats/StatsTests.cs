@@ -51,9 +51,9 @@ public sealed class StatsTests : CheckedTest
 
         public void Touch(Player p) => Step(x => x.Puck.LastTouch = p.Id);
 
-        public void Goal(Side side, Player p) => Step(x => { x.Match.Score[(int)side]++; x.Events.Publish(new MatchEvent(MatchEventKind.Goal, x.Time, side, p.Id)); });
+        public void Goal(Side side, Player p) => Step(x => { x.Match.Score[(int)side]++; x.Events.Publish(new GoalScored(x.Time, side, p.Id, default, 0)); });
 
-        public void Faceoff() => Step(x => x.Events.Publish(new MatchEvent(MatchEventKind.Faceoff, x.Time)));
+        public void Faceoff() => Step(x => x.Events.Publish(new PuckDropped(x.Time, default)));
     }
 
     [Test]
@@ -72,9 +72,9 @@ public sealed class StatsTests : CheckedTest
     void Assists(Rig r)
     {
         // c to b to a, a scores: a goal, b and c assists
-        r.Step(x => { x.Puck.LastTouch = r.C.Id; x.Events.Publish(new MatchEvent(MatchEventKind.Pass, x.Time, Side.Home, r.C.Id)); });
-        r.Step(x => { x.Puck.LastTouch = r.B.Id; x.Events.Publish(new MatchEvent(MatchEventKind.Pass, x.Time, Side.Home, r.B.Id)); });
-        r.Step(x => { x.Puck.LastTouch = r.A.Id; x.Events.Publish(new MatchEvent(MatchEventKind.Shot, x.Time, Side.Home, r.A.Id, Strength: 30)); });
+        r.Step(x => { x.Puck.LastTouch = r.C.Id; x.Events.Publish(new PassMade(x.Time, Side.Home, r.C.Id, default, 0)); });
+        r.Step(x => { x.Puck.LastTouch = r.B.Id; x.Events.Publish(new PassMade(x.Time, Side.Home, r.B.Id, default, 0)); });
+        r.Step(x => { x.Puck.LastTouch = r.A.Id; x.Events.Publish(new ShotTaken(x.Time, Side.Home, r.A.Id, default, 30)); });
         r.Goal(Side.Home, r.A);
         Check(r.L(r.A) is { Goals: 1, Shots: 1, Assists: 0 }, "the scorer gets the goal and the shot");
         Check(r.L(r.B).Assists == 1 && r.L(r.C).Assists == 1, "the two teammates who touched the puck before get the assists");
@@ -95,7 +95,7 @@ public sealed class StatsTests : CheckedTest
         // a shot that deflects in off d: the last attacker to touch gets the goal, as an own goal would
         r.Faceoff();
         r.Touch(r.B);
-        r.Step(x => { x.Puck.LastTouch = r.D.Id; x.Match.Score[0]++; x.Events.Publish(new MatchEvent(MatchEventKind.Goal, x.Time, Side.Home, r.D.Id)); });
+        r.Step(x => { x.Puck.LastTouch = r.D.Id; x.Match.Score[0]++; x.Events.Publish(new GoalScored(x.Time, Side.Home, r.D.Id, default, 0)); });
         Check(r.L(r.B).Goals == 1 && r.L(r.D).Goals == 0, "a puck in off a defender is the last attacker's goal");
 
         // a touch too long ago is no assist
@@ -110,10 +110,10 @@ public sealed class StatsTests : CheckedTest
     void HitsSavesAndStar(Rig r)
     {
         // hits, saves, and a shootout goal that counts for nobody
-        r.Step(x => x.Events.Publish(new MatchEvent(MatchEventKind.Check, x.Time, Side.Away, r.D.Id, Strength: 2)));
-        for (int i = 0; i < 5; i++) r.Step(x => x.Events.Publish(new MatchEvent(MatchEventKind.Save, x.Time, Side.Away, r.G.Id)));
+        r.Step(x => x.Events.Publish(new CheckLanded(x.Time, Side.Away, r.D.Id, default, 2)));
+        for (int i = 0; i < 5; i++) r.Step(x => x.Events.Publish(new ShotSaved(x.Time, Side.Away, r.G.Id, default, 0)));
         r.Step(x => x.Match.Phase = MatchPhase.Shootout);
-        r.Step(x => { x.Puck.LastTouch = r.D.Id; x.Events.Publish(new MatchEvent(MatchEventKind.Shot, x.Time, Side.Away, r.D.Id)); x.Events.Publish(new MatchEvent(MatchEventKind.Goal, x.Time, Side.Away, r.D.Id)); });
+        r.Step(x => { x.Puck.LastTouch = r.D.Id; x.Events.Publish(new ShotTaken(x.Time, Side.Away, r.D.Id, default, 0)); x.Events.Publish(new GoalScored(x.Time, Side.Away, r.D.Id, default, 0)); });
         Check(r.L(r.D) is { Hits: 1, Goals: 0, Shots: 0 } && r.L(r.G).Saves == 5, "hits and saves count, shootout shots and goals do not");
 
         r.W.Match.Score[0] = 4;
@@ -187,11 +187,11 @@ public sealed class StatsTests : CheckedTest
         var b = Skater(w, side, 1);
         step(null);
         step(x => x.Puck.LastTouch = b.Id);
-        step(x => { x.Puck.LastTouch = a.Id; x.Match.Score[(int)side]++; x.Events.Publish(new MatchEvent(MatchEventKind.Goal, x.Time, side, a.Id)); });
-        step(x => { x.Puck.LastTouch = a.Id; x.Match.Score[(int)side]++; x.Events.Publish(new MatchEvent(MatchEventKind.Goal, x.Time, side, a.Id)); });
+        step(x => { x.Puck.LastTouch = a.Id; x.Match.Score[(int)side]++; x.Events.Publish(new GoalScored(x.Time, side, a.Id, default, 0)); });
+        step(x => { x.Puck.LastTouch = a.Id; x.Match.Score[(int)side]++; x.Events.Publish(new GoalScored(x.Time, side, a.Id, default, 0)); });
         Check(season.Stats.Regular.Players.Count == 0, "nothing is credited before MatchEnd");
         w.Match.Phase = MatchPhase.Final;
-        step(x => x.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, x.Time, side)));
+        step(x => x.Events.Publish(new MatchWon(x.Time, side)));
         var line = season.Stats.Regular.Find(user, a.Data.Number);
         Check(line is { Goals: 2, Games: 1 } && season.Stats.Regular.Find(user, b.Data.Number)?.Assists == 1, "MatchEnd credits the played game from the event log");
         Check(season.Stats.Credited.Contains(SeasonStats.GameKey(game.Number)) && season.Stats.Awards.Count == 1 && season.Stats.Awards[0].Number == a.Data.Number, "the game is marked credited and its player of the game kept");
@@ -239,9 +239,9 @@ public sealed class StatsTests : CheckedTest
         var setup = ArcadeSession.NextSetup()!;
         var (w, step) = Rink(setup, settings, new StatsSystem(), new ArcadeSystem());
         var a = Skater(w, Side.Home, 0);
-        step(x => { x.Puck.LastTouch = a.Id; x.Match.Score[0]++; x.Events.Publish(new MatchEvent(MatchEventKind.Goal, x.Time, Side.Home, a.Id)); });
+        step(x => { x.Puck.LastTouch = a.Id; x.Match.Score[0]++; x.Events.Publish(new GoalScored(x.Time, Side.Home, a.Id, default, 0)); });
         w.Match.Phase = MatchPhase.Final;
-        step(x => x.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, x.Time, Side.Home)));
+        step(x => x.Events.Publish(new MatchWon(x.Time, Side.Home)));
         Check(run.Stats.Find(user, a.Data.Number) is { Goals: 1, Games: 1 } && run.Awards.Count == 1, "an arcade game credits the run's stats and its player of the game");
         Check(run.Games.Count == 1 && run.Records.Count == 0, "a run still going is not on the board");
 
@@ -250,7 +250,7 @@ public sealed class StatsTests : CheckedTest
         (w, step) = Rink(setup, settings, new StatsSystem(), new ArcadeSystem());
         w.Match.Score[(int)setup.Inputs[0].Side == 0 ? 1 : 0] = 2;
         w.Match.Phase = MatchPhase.Final;
-        step(x => x.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, x.Time, Side.Home)));
+        step(x => x.Events.Publish(new MatchWon(x.Time, Side.Home)));
         Check(run.IsOver && run.Records.Count == 1 && run.Records[0] is { Beaten: 1, Losses: 1, Champion: false } && run.Place == 1, "the finished run is first on the board");
         Check(run.Records[0].TopPoints == 1 && run.Records[0].TopScorer.Contains(a.Data.LastName, StringComparison.Ordinal), $"the record names the run's top scorer ({run.Records[0].TopScorer})");
 
