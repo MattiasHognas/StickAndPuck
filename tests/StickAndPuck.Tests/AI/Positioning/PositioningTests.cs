@@ -8,6 +8,7 @@ using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
 using AiPositioning = StickAndPuck.App.AI.Positioning;
+using StickAndPuck.App.AI.Dev;
 
 namespace StickAndPuck.Tests;
 

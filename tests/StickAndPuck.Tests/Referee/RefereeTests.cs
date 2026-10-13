@@ -5,6 +5,7 @@ using StickAndPuck.App.Referee;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
 using Ref = StickAndPuck.App.Referee.Referee;
+using StickAndPuck.App.Rules.Dev;
 
 namespace StickAndPuck.Tests;
 

@@ -7,26 +7,26 @@ namespace StickAndPuck.App.Core;
 public sealed class DevScenes
 {
     /// <summary>Gets the goalie scene's shot loop and tally.</summary>
-    internal Slot<Goalie.GoalieDemo> Goalie { get; } = new();
+    internal Slot<Goalie.Dev.GoalieDemo> Goalie { get; } = new();
 
     /// <summary>Gets the positioning scenes' stand-in for the rest of a match.</summary>
-    internal Slot<AI.StandInPlay> StandIn { get; } = new();
+    internal Slot<AI.Dev.StandInPlay> StandIn { get; } = new();
 
     /// <summary>Gets the shot scene's loop.</summary>
-    internal Slot<Players.ShotDemo> Shot { get; } = new();
+    internal Slot<Players.Dev.ShotDemo> Shot { get; } = new();
 
     /// <summary>Gets the puck handling scene's loop.</summary>
-    internal Slot<Players.HandlingDemo> Handling { get; } = new();
+    internal Slot<Players.Dev.HandlingDemo> Handling { get; } = new();
 
     /// <summary>Gets the checks scene's loop.</summary>
-    internal Slot<Players.ChecksDemo> Checks { get; } = new();
+    internal Slot<Players.Dev.ChecksDemo> Checks { get; } = new();
 
     /// <summary>Gets the match demo's shot loop and camera.</summary>
-    internal Slot<Rules.MatchDemo> Match { get; } = new();
+    internal Slot<Rules.Dev.MatchDemo> Match { get; } = new();
 
     /// <summary>Gets the puck scene's shot loop.</summary>
-    internal Slot<Physics.PuckDemo> Puck { get; } = new();
+    internal Slot<Physics.Dev.PuckDemo> Puck { get; } = new();
 
     /// <summary>Gets the line calls scene's plays.</summary>
-    internal Slot<Rules.LineCallsDemo> LineCalls { get; } = new();
+    internal Slot<Rules.Dev.LineCallsDemo> LineCalls { get; } = new();
 }

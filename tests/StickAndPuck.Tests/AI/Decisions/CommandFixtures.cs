@@ -3,6 +3,7 @@ using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
 using StickAndPuck.Tests.Support;
+using StickAndPuck.App.AI.Dev;
 
 namespace StickAndPuck.Tests;
 
