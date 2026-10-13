@@ -1,13 +1,14 @@
 using System.Numerics;
+using StickAndPuck.AI;
 using StickAndPuck.Core;
 using StickAndPuck.Players;
-using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.AI;
+namespace StickAndPuck.Tests.AI.Decisions;
 
 /// <summary>
 /// W68: checks who writes an AI skater's command and which write wins (<see cref="AiCommand"/>),
-/// run by aimatchtest. Each fixture plays real AI systems and looks at every AI write between
+/// run by <see cref="DecisionsTests"/>. Each fixture plays real AI systems and looks at every AI write between
 /// decisions and skating:
 /// <list type="bullet">
 /// <item>Weighing a pass touches nobody, and the pure receiver pick matches the old one.</item>
@@ -20,18 +21,6 @@ namespace StickAndPuck.AI;
 /// </summary>
 internal static class CommandFixtures
 {
-    /// <summary>Runs every fixture.</summary>
-    /// <param name="clubs">The clubs; the first two are used.</param>
-    /// <param name="settings">The settings.</param>
-    /// <param name="check">Prints and counts one check.</param>
-    public static void Run(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
-    {
-        PureReceiver(clubs, settings, check);
-        DumpAndShot(clubs, settings, check);
-        KillClear(clubs, settings, check);
-        HumanUntouched(clubs, settings, check);
-    }
-
     /// <summary>Every AI write of one step, per skater, in the order they were made.</summary>
     sealed class StepWrites
     {
@@ -82,10 +71,7 @@ internal static class CommandFixtures
     static World Match(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 20 * 60, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
-        var world = new World(setup, settings);
-        Scenes.AddStarters(world);
-        MatchFlow.Begin(world, log: false);
-        return world;
+        return new WorldBuilder().Setup(setup).Settings(settings).Build();
     }
 
     /// <summary>Whether any write after the given layer's write with this reason came from anyone but decisions holding the shot.</summary>
@@ -105,7 +91,7 @@ internal static class CommandFixtures
     /// stick direction is the one puck handling picks with the stick held that way (same scoring,
     /// same ties, a short stick reading as the way the body faces).
     /// </summary>
-    static void PureReceiver(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
+    internal static void PureReceiver(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
     {
         var world = Match(clubs, settings);
         var systems = TacticsSelfTest.Systems(world, 41);
@@ -159,7 +145,7 @@ internal static class CommandFixtures
     /// defender the defence has containing never lines up a hit (one it lets engage may); and an
     /// AI skater meeting a pass never presses shoot or pass.
     /// </summary>
-    static void DumpAndShot(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
+    internal static void DumpAndShot(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
     {
         var press = new ClubTactics { Forecheck = Forecheck.Aggressive, Entry = ZoneEntry.DumpAndChase };
         var trap = new ClubTactics { Forecheck = Forecheck.Trap, Entry = ZoneEntry.Carry };
@@ -190,7 +176,7 @@ internal static class CommandFixtures
     }
 
     /// <summary>A man short, a killer's clear is held by decisions and never replaced by decisions' own clear, shot or pass.</summary>
-    static void KillClear(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
+    internal static void KillClear(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
     {
         int clears = 0, over = 0, ownClears = 0;
         foreach (var kill in new[] { Side.Away, Side.Home })
@@ -212,7 +198,7 @@ internal static class CommandFixtures
     }
 
     /// <summary>A human skater in an all-AI match keeps exactly the command his input gave, every step, and through the stand-in faceoff.</summary>
-    static void HumanUntouched(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
+    internal static void HumanUntouched(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
     {
         var world = Match(clubs, settings);
         var human = world.OnIce(Side.Home).First(p => !p.IsGoalie);

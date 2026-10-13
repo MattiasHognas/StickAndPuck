@@ -1,52 +1,27 @@
 using StickAndPuck.Core;
+using StickAndPuck.Season;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Season;
+namespace StickAndPuck.Tests.Season.Stats;
 
 /// <summary>
-/// SAP_SCENE=statstest: checks the goals, assists, shots and saves read from a match's event
-/// log, the player of the game, the lines of a game settled on paper, that the season's stats
-/// survive the autosave and a restart (and that an old save without them fills in), and the
-/// arcade run's stats and best-runs board across runs, with saves in a temporary folder; no
-/// window. Prints one line per check and exits with 0 when all pass, 1 otherwise.
+/// The goals, assists, shots and saves read from a match's event log, the player of the game, the
+/// lines of a game settled on paper, that the season's stats survive the autosave and a restart (and
+/// that an old save without them fills in), and the arcade run's stats and best-runs board across
+/// runs, with saves in a temporary folder. Formerly SAP_SCENE=statstest.
 /// </summary>
-public sealed class StatsSelfTest : IScene
+public sealed class StatsTests : CheckedTest
 {
-    int failures;
+    static readonly string Folder = Path.Combine(Path.GetTempPath(), $"sap-statstest-{Environment.ProcessId}");
+    static readonly string SeasonPath = Path.Combine(Folder, "season.json");
+    static readonly string ArcadePath = Path.Combine(Folder, "arcade.json");
 
-    /// <inheritdoc/>
-    public string Name => "statstest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    [After(Test)]
+    public void EndSessions()
     {
-        string folder = Path.Combine(Path.GetTempPath(), $"sap-statstest-{Environment.ProcessId}");
-        string season = Path.Combine(folder, "season.json");
-        string arcade = Path.Combine(folder, "arcade.json");
-        try
-        {
-            EventLog(clubs, settings);
-            Shutout();
-            Synthetic(clubs);
-            SeasonSaveAndReload(clubs, settings, season);
-            OldSave(clubs, season);
-            Arcade(clubs, settings, arcade);
-        }
-        finally
-        {
-            SeasonSession.End();
-            ArcadeSession.End();
-            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
-        }
-
-        Console.WriteLine(failures == 0 ? "STATSTEST: all checks passed" : $"STATSTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return new World(Scenes.DefaultSetup(clubs), settings);
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        SeasonSession.End();
+        ArcadeSession.End();
+        if (Directory.Exists(Folder)) Directory.Delete(Folder, recursive: true);
     }
 
     static bool Same(string a, string b) => string.Equals(a, b, StringComparison.Ordinal);
@@ -54,8 +29,7 @@ public sealed class StatsSelfTest : IScene
     /// <summary>A world with the starters on, and a way to play one step with some events.</summary>
     static (World World, Action<Action<World>?> Step) Rink(MatchSetup setup, Settings settings, params ISystem[] systems)
     {
-        var world = new World(setup, settings);
-        Scenes.AddStarters(world);
+        var world = new WorldBuilder().Setup(setup).Settings(settings).NotBegun().Build();
         void Step(Action<World>? act)
         {
             world.Events.Clear();
@@ -82,10 +56,12 @@ public sealed class StatsSelfTest : IScene
         public void Faceoff() => Step(x => x.Events.Publish(new MatchEvent(MatchEventKind.Faceoff, x.Time)));
     }
 
-    void EventLog(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Test]
+    public void EventLog()
     {
+        var settings = new Settings();
         var tracker = new MatchStatTracker();
-        var (w, step) = Rink(Scenes.DefaultSetup(clubs), settings, new Observer(tracker));
+        var (w, step) = Rink(WorldBuilder.DefaultSetup, settings, new Observer(tracker));
         var rig = new Rig(w, step, tracker, Skater(w, Side.Home, 0), Skater(w, Side.Home, 1), Skater(w, Side.Home, 2), Skater(w, Side.Away, 0), Goalie(w, Side.Away));
         step(null);
         Assists(rig);
@@ -147,7 +123,8 @@ public sealed class StatsSelfTest : IScene
         Check(done.Lines.Count == r.W.Players.Count && done.Lines.Count(l => l.Played) == r.W.Players.Count(p => p.OnIce), "every dressed player has a line, the ones on the ice played");
     }
 
-    void Shutout()
+    [Test]
+    public void Shutout()
     {
         // a shutout goalie beats a one-goal scorer
         var quiet = new MatchStatSheet { Home = "h", Away = "a", HomeGoals = 1, AwayGoals = 0 };
@@ -157,8 +134,10 @@ public sealed class StatsSelfTest : IScene
         Check(quiet.PlayerOfGame?.Number == 1, "a 30-save shutout is player of the game over a single goal");
     }
 
-    void Synthetic(IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void Synthetic()
     {
+        var clubs = WorldBuilder.Clubs;
         var result = new FixtureResult(4, 3, ResultKind.Shootout);
         var sheet = SyntheticStats.Sheet(clubs[0], clubs[1], result, 77);
         int homeGoals = sheet.Lines.Where(l => l.Side == Side.Home).Sum(l => l.Goals);
@@ -184,7 +163,19 @@ public sealed class StatsSelfTest : IScene
         Check(table.Goalies(1)[0].Games > 0 && table.GamesCredited == 60, "the goalies and the game count fill in");
     }
 
-    void SeasonSaveAndReload(IReadOnlyList<ClubData> clubs, Settings settings, string path)
+    /// <summary>
+    /// The season's stats through the autosave and a restart, then the same save stripped of its
+    /// stats as a save from before they existed: one test, as the old save is the one this writes.
+    /// </summary>
+    [Test]
+    public void SeasonSaveAndReload()
+    {
+        var clubs = WorldBuilder.Clubs;
+        SaveAndReload(clubs, new Settings(), SeasonPath);
+        OldSave(clubs, SeasonPath);
+    }
+
+    void SaveAndReload(IReadOnlyList<ClubData> clubs, Settings settings, string path)
     {
         string user = clubs[2].Id;
         var season = SeasonSession.StartNew(clubs, user, seed: 11, path: path);
@@ -233,10 +224,13 @@ public sealed class StatsSelfTest : IScene
         SeasonSave.Write(season, path);
         var resumed = SeasonSession.Continue(clubs, path)!;
         Check(resumed.Stats.Regular.GamesCredited == 0, "an old save reads with empty stats");
-        var w = new World(Scenes.DefaultSetup(clubs), new Settings());
+        var w = new World(WorldBuilder.DefaultSetup, new Settings());
         new StatsSystem().Update(w, Game.Step);
         Check(resumed.Stats.Regular.GamesCredited == 7 && resumed.Stats.Awards.Count == 7 && SeasonSession.Unsaved, "the first step credits every played game from its score and asks for a save");
     }
+
+    [Test]
+    public void Arcade() => Arcade(WorldBuilder.Clubs, new Settings(), ArcadePath);
 
     void Arcade(IReadOnlyList<ClubData> clubs, Settings settings, string path)
     {

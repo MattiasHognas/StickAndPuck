@@ -4,61 +4,33 @@ using StickAndPuck.Core;
 using StickAndPuck.Goalie;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
+using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Rules;
+namespace StickAndPuck.Tests.Rules.Overtime;
 
 /// <summary>
-/// SAP_SCENE=overtimetest: plays tied matches with skating, puck handling, the goalies, puck physics
-/// and the match rules, no window, prints one line per check and exits with 0 when all pass, 1
-/// otherwise. Covers the W7c "done when": a tied match goes to 3 on 3 and then to a shootout, and
-/// W19's: under the playoff format a tie goes to 5 on 5 and ends on the first goal, with no shootout.
+/// Tied matches with skating, puck handling, the goalies, puck physics and the match rules (W7c): a
+/// tied match goes to 3 on 3 and then to a shootout; and W19's: under the playoff format a tie goes
+/// to 5 on 5 and ends on the first goal, with no shootout. Formerly SAP_SCENE=overtimetest.
 /// </summary>
-public sealed class OvertimeSelfTest : IScene
+public sealed class OvertimeTests : CheckedTest
 {
     const float Period = 10;
     static readonly IReadOnlyList<InputSlot> NoHumans = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)];
-    int failures;
+    static readonly OvertimeFormat Playoffs = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = Period };
 
-    /// <inheritdoc/>
-    public string Name => "overtimetest";
+    /// <summary>The default exhibition with 10-second periods and no humans.</summary>
+    static MatchSetup BaseSetup => WorldBuilder.DefaultSetup with { PeriodSeconds = Period, Inputs = NoHumans };
 
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Before(Test)]
+    public void ShortOvertime() => OvertimeRules.PeriodSeconds = Period;
+
+    static World Make(OvertimeRule rule = OvertimeRule.Shl, IReadOnlyList<InputSlot>? inputs = null, OvertimeFormat? format = null, RuleSet? rules = null)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period, Inputs = NoHumans };
-        World Make(OvertimeRule rule = OvertimeRule.Shl, IReadOnlyList<InputSlot>? inputs = null, OvertimeFormat? format = null, RuleSet? rules = null)
-        {
-            var w = new World(setup with { Overtime = rule, Inputs = inputs ?? NoHumans, OvertimeFormat = format, Rules = rules ?? RuleSet.Shl }, settings);
-            Scenes.AddStarters(w);
-            MatchFlow.Begin(w, log: false);
-            return w;
-        }
-
-        OvertimeRules.PeriodSeconds = Period;
-        ThreeOnThree(Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]));
-        OvertimeGoal(Make());
-        ShootoutTally();
-        Shootouts(rule => Make(rule));
-        ShootoutOnly(Make(OvertimeRule.ShootoutOnly));
-        var homeFirst = RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home };
-        HumanShooter(Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: homeFirst));
-        ShootoutRules(setup, rules => Make(OvertimeRule.ShootoutOnly, rules: rules));
-        HomeChooses(Make(OvertimeRule.ShootoutOnly, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: RuleSet.Nhl));
-        Formats(setup);
-        var playoffs = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = Period };
-        PlayoffOvertime(Make(format: playoffs, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]));
-        PlayoffGoal(Make(format: playoffs));
-        OvertimeRules.PeriodSeconds = MatchTuning.OvertimeSeconds;
-
-        Console.WriteLine(failures == 0 ? "OVERTIMETEST: all checks passed" : $"OVERTIMETEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        return new WorldBuilder()
+            .Setup(BaseSetup with { Overtime = rule, Inputs = inputs ?? NoHumans, OvertimeFormat = format, Rules = rules ?? RuleSet.Shl })
+            .Build();
     }
 
     /// <summary>Runs the systems a shootout needs, step by step, calling <paramref name="each"/> before each step, and returns every event.</summary>
@@ -85,8 +57,10 @@ public sealed class OvertimeSelfTest : IScene
 #pragma warning restore S2245
 
     /// <summary>A tie after regulation: three skaters a side, the human's control on one of them, then a sudden death faceoff at centre.</summary>
-    void ThreeOnThree(World w)
+    [Test]
+    public void ThreeOnThree()
     {
+        var w = Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]);
         // the human is on the left wing, who goes to the bench
         w.Players.First(p => p.Side == Side.Home && p.Data.Position == PlayingPosition.LW).Slot = 0;
         Run(w, x => x.Match.Phase == MatchPhase.Overtime);
@@ -107,8 +81,10 @@ public sealed class OvertimeSelfTest : IScene
     }
 
     /// <summary>A goal in the 3 on 3 wins it.</summary>
-    void OvertimeGoal(World w)
+    [Test]
+    public void OvertimeGoal()
     {
+        var w = Make();
         Run(w, x => x.Match.Phase == MatchPhase.Play && x.Match.Period == 4);
         int end = PuckHandling.AttackEnd(w, Side.Home);
         var pk = w.Puck;
@@ -125,7 +101,8 @@ public sealed class OvertimeSelfTest : IScene
     }
 
     /// <summary>The tally decides the shootout within the rounds, and in sudden death only after both clubs shot.</summary>
-    void ShootoutTally()
+    [Test]
+    public void ShootoutTally()
     {
         static ShootoutState Tally(params (Side Side, bool Scored)[] shots)
         {
@@ -150,13 +127,14 @@ public sealed class OvertimeSelfTest : IScene
     }
 
     /// <summary>Scoreless overtimes go to shootouts that the AI shooters and goalies settle.</summary>
-    void Shootouts(Func<OvertimeRule, World> make)
+    [Test]
+    public void Shootouts()
     {
         int goals = 0, misses = 0, decided = 0, games = 6;
         bool alternate = true, awayFirst = true, alone = true, oneEnd = true, oneGoal = true, fairOrder = true, celebrated = true;
         for (int seed = 1; seed <= games; seed++)
         {
-            var w = make(OvertimeRule.Shl);
+            var w = Make(OvertimeRule.Shl);
             Run(w, x => x.Match.Phase == MatchPhase.Shootout, seed);
             if (seed == 1) Check(w.Match.Period == 4 && w.Match.Phase == MatchPhase.Shootout, "a scoreless overtime goes to the shootout");
             var ev = Run(w, x => x.Match.Phase == MatchPhase.Final, seed, x =>
@@ -192,16 +170,20 @@ public sealed class OvertimeSelfTest : IScene
     }
 
     /// <summary>With the shootout-only rule, a tie skips the overtime.</summary>
-    void ShootoutOnly(World w)
+    [Test]
+    public void ShootoutOnly()
     {
+        var w = Make(OvertimeRule.ShootoutOnly);
         var ev = Run(w, x => x.Match.Phase == MatchPhase.Final);
         Check(w.Match.Period == 3 && OvertimeRules.Shootout(w) is { Winner: not null }, "shootout only: no overtime period, the shootout decides it");
         Check(ev.Count(e => e.Kind == MatchEventKind.MatchEnd) == 1, "one MatchEnd");
     }
 
     /// <summary>The per-mode formats: what each one plays after a tie.</summary>
-    void Formats(MatchSetup setup)
+    [Test]
+    public void Formats()
     {
+        var setup = BaseSetup;
         var shl = OvertimeFormat.Shl;
         var po = OvertimeFormat.ShlPlayoffs;
         Check(shl.AfterTie(0) == MatchPhase.Overtime && shl.AfterTie(1) == MatchPhase.Shootout, "SHL: one overtime period, then the shootout");
@@ -215,8 +197,10 @@ public sealed class OvertimeSelfTest : IScene
     }
 
     /// <summary>The playoff format: a tie keeps 5 on 5, a scoreless period goes to another, never to a shootout.</summary>
-    void PlayoffOvertime(World w)
+    [Test]
+    public void PlayoffOvertime()
     {
+        var w = Make(format: Playoffs, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]);
         w.Players.First(p => p.Side == Side.Home && p.Data.Position == PlayingPosition.LW).Slot = 0;
         Run(w, x => x.Match.Phase == MatchPhase.Overtime);
         Run(w, _ => false, limit: Game.Step);
@@ -236,8 +220,10 @@ public sealed class OvertimeSelfTest : IScene
     }
 
     /// <summary>The first goal in a playoff overtime ends it.</summary>
-    void PlayoffGoal(World w)
+    [Test]
+    public void PlayoffGoal()
     {
+        var w = Make(format: Playoffs);
         Run(w, x => x.Match.Phase == MatchPhase.Play && x.Match.Period == 5);
         int end = PuckHandling.AttackEnd(w, Side.Away);
         var pk = w.Puck;
@@ -254,8 +240,10 @@ public sealed class OvertimeSelfTest : IScene
     }
 
     /// <summary>A human slot takes its club's shots; a human who does nothing runs out of time.</summary>
-    void HumanShooter(World w)
+    [Test]
+    public void HumanShooter()
     {
+        var w = Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home });
         Run(w, x => OvertimeRules.Shootout(x) is { ShooterId: >= 0 });
         var so = OvertimeRules.Shootout(w)!;
         var shooter = w.Players[so.ShooterId];
@@ -268,31 +256,35 @@ public sealed class OvertimeSelfTest : IScene
     }
 
     /// <summary>W45: shooters and order from the rules: SHL three each with away first, five when set, home first when set, NHL home choosing.</summary>
-    void ShootoutRules(MatchSetup setup, Func<RuleSet, World> make)
+    [Test]
+    public void ShootoutRules()
     {
+        var setup = BaseSetup;
         Check(ShootoutOrder.Shooters(setup with { Rules = RuleSet.Shl }) == 3 && ShootoutOrder.First(setup with { Rules = RuleSet.Shl }) == Side.Away, "SHL preset: three shooters each, away first");
         Check(ShootoutOrder.Shooters(setup with { Rules = RuleSet.Nhl }) == 3 && ShootoutOrder.First(setup with { Rules = RuleSet.Nhl, Inputs = NoHumans }) == Side.Home, "NHL preset: three shooters each, an AI home club chooses to shoot first");
         var human = setup with { Rules = RuleSet.Nhl, Inputs = [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]] };
         Check(ShootoutOrder.First(human) == null, "NHL preset: a human home club is asked to choose");
         Check(ShootoutOrder.First(human with { Inputs = [NoHumans[0], new InputSlot(InputDevice.Gamepad1, Side.Away)] }) == Side.Home, "NHL preset: a human away club does not choose; the AI home club shoots first");
 
-        var five = make(RuleSet.Shl with { ShootoutShooters = 5 });
+        var five = Make(OvertimeRule.ShootoutOnly, rules: RuleSet.Shl with { ShootoutShooters = 5 });
         Run(five, x => x.Match.Phase == MatchPhase.Final, 3);
         Check(OvertimeRules.Shootout(five) is { Rounds: 5, Winner: not null } so5 && so5.Shots[0].Side == Side.Away && so5.Decided(5) == so5.Winner, "five shooters when set: decided over five rounds");
 
-        var home = make(RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home });
+        var home = Make(OvertimeRule.ShootoutOnly, rules: RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home });
         Run(home, x => x.Match.Phase == MatchPhase.Final, 2);
         bool turns = OvertimeRules.Shootout(home) is { } soh && soh.Shots.Select((s, i) => s.Side == (i % 2 == 0 ? Side.Home : Side.Away)).All(b => b);
         Check(turns && OvertimeRules.Shootout(home)!.Shots.Count > 0, "home first when set: home opens every round");
 
-        var nhl = make(RuleSet.Nhl);
+        var nhl = Make(OvertimeRule.ShootoutOnly, rules: RuleSet.Nhl);
         Run(nhl, x => x.Match.Phase == MatchPhase.Final, 4);
         Check(OvertimeRules.Shootout(nhl) is { Winner: not null } son && son.Shots[0].Side == Side.Home, "NHL preset with an AI home club: home shoots first");
     }
 
     /// <summary>W45: a human home club under NHL rules picks the order; nobody shoots until it does, and a home club that never picks shoots first.</summary>
-    void HomeChooses(World w)
+    [Test]
+    public void HomeChooses()
     {
+        var w = Make(OvertimeRule.ShootoutOnly, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: RuleSet.Nhl);
         Run(w, x => OvertimeRules.Shootout(x) != null);
         Run(w, _ => false, limit: OvertimeTuning.BreakSeconds + 2);
         var so = OvertimeRules.Shootout(w);

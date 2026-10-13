@@ -1,50 +1,33 @@
 using System.Numerics;
 using StickAndPuck.Core;
 using StickAndPuck.Physics;
+using StickAndPuck.Players;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Players;
+namespace StickAndPuck.Tests.Players.Checks;
 
 /// <summary>
-/// SAP_SCENE=checkstest: runs the checking and switching checks with switching, skating,
-/// checking, puck handling and puck physics and no window, prints one line per check and exits
-/// with 0 when all pass, 1 otherwise. Covers the W4c "done when": checks knock players off the
-/// puck, the checking trait decides how often, and control switching follows each Settings mode.
+/// Checking and switching with switching, skating, checking, puck handling and puck physics (W4c):
+/// checks knock players off the puck, the checking trait decides how often, and control switching
+/// follows each Settings mode. Formerly SAP_SCENE=checkstest.
 /// </summary>
-public sealed class ChecksSelfTest : IScene
+public sealed class ChecksTests : CheckedTest
 {
     const float Right = MathF.PI / 2;
-    int failures;
+
+    /// <summary>
+    /// The seed of the next run's random streams. The old scene counted it up from 1 across all its
+    /// groups, so each test starts from the seed its group had there.
+    /// </summary>
     int seed = 1;
 
-    /// <inheritdoc/>
-    public string Name => "checkstest";
+    /// <summary>Starts the seeds where this test's group started in the old scene.</summary>
+    void SeedFrom(int first) => seed = first;
 
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    /// <summary>An empty rink with default settings and this switching mode.</summary>
+    static World Make(ControlSwitching mode = ControlSwitching.Auto)
     {
-        var setup = Scenes.DefaultSetup(clubs);
-        World Make(ControlSwitching mode = ControlSwitching.Auto) => new(setup, settings with { Switching = mode });
-
-        StrongCheckWinsPuck(Make);
-        WeakCheckBounces(Make);
-        TraitMatters(Make());
-        FallenSlides(Make());
-        WhiffAndCarrier(Make());
-        PickupSwitches(Make);
-        DefenceSwitches(Make);
-        DefenceSettles(Make());
-        ManualButton(Make);
-        KnockedDownHuman(Make());
-
-        Console.WriteLine(failures == 0 ? "CHECKSTEST: all checks passed" : $"CHECKSTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        return new WorldBuilder().Settings(s => s with { Switching = mode }).NoStarters().NotBegun().Build();
     }
 
     /// <summary>Runs the systems for some seconds; <paramref name="each"/> sets commands before each step.</summary>
@@ -105,13 +88,15 @@ public sealed class ChecksSelfTest : IScene
         return (events, checker, carrier);
     }
 
-    void StrongCheckWinsPuck(Func<ControlSwitching, World> make)
+    [Test]
+    public void StrongCheckWinsPuck()
     {
+        SeedFrom(1);
         int down = 0, won = 0, hits = 0;
         bool slid = true;
         for (int t = 0; t < 10; t++)
         {
-            var w = make(ControlSwitching.Auto);
+            var w = Make(ControlSwitching.Auto);
             var (events, checker, carrier) = Chase(w, 90, 20, 8f, 2f);
             hits += events.Count(e => e.Kind == MatchEventKind.Check && e.PlayerId == checker.Id) == 1 ? 1 : 0;
             if (w.Puck.Carrier != carrier.Id && w.Puck.LastTouch != carrier.Id || w.Puck.Carrier == checker.Id) won++;
@@ -124,20 +109,24 @@ public sealed class ChecksSelfTest : IScene
         Check(slid, "the hit carrier is shoved up ice");
     }
 
-    void WeakCheckBounces(Func<ControlSwitching, World> make)
+    [Test]
+    public void WeakCheckBounces()
     {
+        SeedFrom(11);
         int kept = 0;
         for (int t = 0; t < 10; t++)
         {
-            var w = make(ControlSwitching.Auto);
+            var w = Make(ControlSwitching.Auto);
             var (_, _, carrier) = Chase(w, 15, 90, 3f, 2f);
             if (w.Puck.Carrier == carrier.Id) kept++;
         }
         Check(kept >= 9, $"a weak, slow check bounces off a strong carrier, who keeps the puck ({kept}/10)");
     }
 
-    void TraitMatters(World w)
+    [Test]
+    public void TraitMatters()
     {
+        var w = Make();
         var target = Add(w, Side.Home, Vector3.Zero);
         var weak = Add(w, Side.Away, Vector3.Zero, traits: new Traits { Checking = 20 });
         var avg = Add(w, Side.Away, Vector3.Zero);
@@ -152,8 +141,11 @@ public sealed class ChecksSelfTest : IScene
         Check(CheckingModel.Strength(avg, target, 5, false) < s50, "a tired checker hits softer");
     }
 
-    void FallenSlides(World w)
+    [Test]
+    public void FallenSlides()
     {
+        SeedFrom(21);
+        var w = Make();
         var p = Add(w, Side.Home, Vector3.Zero);
         var checker = Add(w, Side.Away, new Vector3(-1.2f, 0, 0), traits: new Traits { Checking = 100 });
         checker.Velocity = new Vector3(8, 0, 0);
@@ -175,8 +167,11 @@ public sealed class ChecksSelfTest : IScene
         Check(p.Position.Z < -1f, "then skates on with their stick");
     }
 
-    void WhiffAndCarrier(World w)
+    [Test]
+    public void WhiffAndCarrier()
     {
+        SeedFrom(22);
+        var w = Make();
         var lone = Add(w, Side.Away, new Vector3(-5, 0, 0));
         var carrier = Add(w, Side.Home, new Vector3(5, 0, 0));
         var near = Add(w, Side.Away, new Vector3(6.2f, 0, 0), -Right);
@@ -191,11 +186,13 @@ public sealed class ChecksSelfTest : IScene
         Check(lone.Action == PlayerAction.None && lone.Speed > 0.5f, "a whiffed check lunges forward and ends");
     }
 
-    void PickupSwitches(Func<ControlSwitching, World> make)
+    [Test]
+    public void PickupSwitches()
     {
+        SeedFrom(23);
         foreach (var mode in new[] { ControlSwitching.Auto, ControlSwitching.PassesOnly, ControlSwitching.Manual })
         {
-            var w = make(mode);
+            var w = Make(mode);
             var human = Add(w, Side.Home, new Vector3(-10, 0, 0));
             var mate = Add(w, Side.Home, new Vector3(5, 0, 0));
             human.Slot = 0;
@@ -209,11 +206,13 @@ public sealed class ChecksSelfTest : IScene
         }
     }
 
-    void DefenceSwitches(Func<ControlSwitching, World> make)
+    [Test]
+    public void DefenceSwitches()
     {
+        SeedFrom(26);
         foreach (var mode in new[] { ControlSwitching.Auto, ControlSwitching.PassesOnly })
         {
-            var w = make(mode);
+            var w = Make(mode);
             var human = Add(w, Side.Home, new Vector3(-20, 0, 0));
             var near = Add(w, Side.Home, new Vector3(6, 0, 3));
             var far = Add(w, Side.Home, new Vector3(-5, 0, 0));
@@ -227,8 +226,11 @@ public sealed class ChecksSelfTest : IScene
         }
     }
 
-    void DefenceSettles(World w)
+    [Test]
+    public void DefenceSettles()
     {
+        SeedFrom(28);
+        var w = Make();
         // two teammates equally near a carrier circling between them: control must not flicker
         var a = Add(w, Side.Home, new Vector3(-3, 0, 0));
         Add(w, Side.Home, new Vector3(3, 0, 0));
@@ -247,9 +249,11 @@ public sealed class ChecksSelfTest : IScene
         Check(switches <= 3, $"defence switching does not flicker between two close teammates ({switches} switches in 4 s)");
     }
 
-    void ManualButton(Func<ControlSwitching, World> make)
+    [Test]
+    public void ManualButton()
     {
-        var w = make(ControlSwitching.Manual);
+        SeedFrom(29);
+        var w = Make(ControlSwitching.Manual);
         var human = Add(w, Side.Home, new Vector3(-20, 0, 0));
         var near = Add(w, Side.Home, new Vector3(6, 0, 3));
         Add(w, Side.Home, new Vector3(-5, 0, 0));
@@ -259,7 +263,7 @@ public sealed class ChecksSelfTest : IScene
         Run(w, 0.5f, (x, i) => { if (human.Slot == 0) human.Command = new PlayerCommand { SwitchPlayer = i == 10 }; });
         Check(near.Slot == 0 && human.Slot == -1, "Manual: the switch button moves control to the teammate nearest the puck");
 
-        var w2 = make(ControlSwitching.Auto);
+        var w2 = Make(ControlSwitching.Auto);
         var carrier = Add(w2, Side.Home, new Vector3(0, 0, 0));
         Add(w2, Side.Home, new Vector3(1, 0, 2));
         carrier.Slot = 0;
@@ -268,8 +272,11 @@ public sealed class ChecksSelfTest : IScene
         Check(carrier.Slot == 0, "the switch button does nothing while you carry the puck");
     }
 
-    void KnockedDownHuman(World w)
+    [Test]
+    public void KnockedDownHuman()
     {
+        SeedFrom(31);
+        var w = Make();
         var human = Add(w, Side.Home, Vector3.Zero);
         var mate = Add(w, Side.Home, new Vector3(-8, 0, 2));
         var checker = Add(w, Side.Away, new Vector3(-1.2f, 0, 0), traits: new Traits { Checking = 100 });

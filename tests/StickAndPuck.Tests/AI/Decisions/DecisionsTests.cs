@@ -1,14 +1,17 @@
 using System.Numerics;
+using StickAndPuck.AI;
 using StickAndPuck.Core;
 using StickAndPuck.Goalie;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
+using AiDecisions = StickAndPuck.AI.Decisions;
 
-namespace StickAndPuck.AI;
+namespace StickAndPuck.Tests.AI.Decisions;
 
 /// <summary>
-/// SAP_SCENE=aimatchtest: headless checks for W6b, printed one per line; exits 0 when all pass.
+/// Headless checks for W6b, formerly SAP_SCENE=aimatchtest.
 /// Plays a full three-period match with every skater AI (positioning, decisions, skating, checks,
 /// puck handling, goalies, puck physics, match rules) and checks it reaches the final with
 /// passes, shots, checks and goals on both sides. Then plays the same clubs with every skater's
@@ -17,49 +20,21 @@ namespace StickAndPuck.AI;
 /// W22a adds: the jitter's odds, the cycle stations and their path round the net, that AI passes go to
 /// moving teammates in open ice, that both clubs cycle and take the puck behind the net, and that a
 /// hockey IQ 100 club still fumbles and misses now and then while a 20 club gets lucky. The defence (W22b) runs too,
-/// so each side throws 15 to 30 checks; SAP_SCENE=defencetest checks its reads in detail.
+/// so each side throws 15 to 30 checks; defencetest checks its reads in detail.
 /// W22c adds a power play, a man in the box throughout: the power play holds its umbrella or 1-3-1, the kill its box or
-/// diamond, and the kill clears the puck (SAP_SCENE=specialteamstest runs the same with other seeds). W22d plays each club's tactics from
+/// diamond, and the kill clears the puck (specialteamstest runs the same with other seeds). W22d plays each club's tactics from
 /// its file, and adds a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in: they must play visibly differently
-/// (SAP_SCENE=tacticstest also checks the club files). SAP_SEED picks the full match's seed (default 1).
+/// (tacticstest also checks the club files). The full match plays seed 1.
 /// W63 plays full matches with the offside and icing rules on: under SHL over several seeds the AI ices the puck and
 /// goes offside at a hockey-like rate, a hockey IQ 30 club clears blind more and holds up at the blue line less than an 85 one
 /// (W66: per time it comes up to the line with a teammate offside, over two matches each way round),
 /// and under Arcade, rules off, never.
 /// W68 ends with <see cref="CommandFixtures"/>: who writes an AI skater's command and which write wins.
 /// </summary>
-public sealed class DecisionsSelfTest : IScene
+public sealed class DecisionsTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "aimatchtest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        ChoicesMaths();
-        JitterMaths();
-        CycleMaths();
-        var match = FullMatch(clubs, settings);
-        HockeyIq(clubs, settings);
-        Stars(clubs, settings);
-        SpecialTeamsSelfTest.PowerPlay(clubs, settings, 1, Check);
-        TacticsSelfTest.Compare(clubs, settings, 1, Check);
-        LineCalls(clubs, settings);
-        CommandFixtures.Run(clubs, settings, Check);
-        Console.WriteLine(failures == 0 ? "AIMATCHTEST: all checks passed" : $"AIMATCHTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return match;
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
-    void ChoicesMaths()
+    [Test]
+    public void ChoicesMaths()
     {
         Check(Choices.ShotQuality(1, new Vector2(21f, 0)) > Choices.ShotQuality(1, new Vector2(12f, 0)), "a shot from the slot beats one from the blue line");
         Check(Choices.ShotQuality(1, new Vector2(25f, 9f)) < Choices.ShotQuality(1, new Vector2(20f, 0)), "a shot from a bad angle is worse than one from the slot");
@@ -76,7 +51,8 @@ public sealed class DecisionsSelfTest : IScene
     }
 
     /// <summary>W22a: the jitter's odds come out as the trait says over many rolls.</summary>
-    void JitterMaths()
+    [Test]
+    public void JitterMaths()
     {
 #pragma warning disable S2245 // fixed seed so the check repeats
         var rng = new Random(7);
@@ -100,7 +76,8 @@ public sealed class DecisionsSelfTest : IScene
     }
 
     /// <summary>W22a: the cycle's stations sit where they should and its path goes round the cage.</summary>
-    void CycleMaths()
+    [Test]
+    public void CycleMaths()
     {
         bool inside = true, order = true, around = true;
         foreach (int end in new[] { -1, 1 })
@@ -138,13 +115,16 @@ public sealed class DecisionsSelfTest : IScene
     }
 
     /// <summary>A whole regulation match, every skater AI.</summary>
-    World FullMatch(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Test]
+    public void FullMatch() => FullMatch(WorldBuilder.Clubs, new Settings());
+
+    void FullMatch(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var world = Make(clubs, settings, 20 * 60, null, null);
-        var systems = Systems(world, int.Parse(Environment.GetEnvironmentVariable("SAP_SEED") ?? "1", System.Globalization.CultureInfo.InvariantCulture));
+        var systems = Systems(world, 1);
         float still = Play(world, systems, 2 * 60 * 60);
-        var h = Decisions.Tally(world, Side.Home);
-        var a = Decisions.Tally(world, Side.Away);
+        var h = AiDecisions.Tally(world, Side.Home);
+        var a = AiDecisions.Tally(world, Side.Away);
         Console.WriteLine($"      match: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {h.Shots}-{a.Shots}, passes {h.Completed}/{h.Passes} ({h.Completion:P0}) and {a.Completed}/{a.Passes} ({a.Completion:P0}), checks {h.Checks}-{a.Checks}, longest loose puck {still:F1} s");
         Check(world.Match.Phase == MatchPhase.Final, "three periods play out to the final");
         Check(h.Passes > 80 && a.Passes > 80, "both clubs pass the puck around");
@@ -165,10 +145,12 @@ public sealed class DecisionsSelfTest : IScene
         Check(open > 0.5f, "most AI passes go to a teammate in open ice");
         Check(hc.Entries >= 10 && ac.Entries >= 10 && hc.Turns >= 20 && ac.Turns >= 20, "both clubs cycle in the attacking zone, turning the forwards over");
         Check(hc.BehindNet > 5f && ac.BehindNet > 5f, "the cycle takes the puck behind the net");
-        return world;
     }
 
     /// <summary>The same clubs with hockey IQ 90 against 20, both ways round, over two periods each.</summary>
+    [Test]
+    public void HockeyIq() => HockeyIq(WorldBuilder.Clubs, new Settings());
+
     void HockeyIq(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         int smartTotal = 0, smartDone = 0, poorPasses = 0, poorDone = 0, smartLost = 0, poorLost = 0;
@@ -177,8 +159,8 @@ public sealed class DecisionsSelfTest : IScene
             var poorSide = smartSide == Side.Home ? Side.Away : Side.Home;
             var world = Make(clubs, settings, 15 * 60, smartSide == Side.Home ? 90 : 20, smartSide == Side.Home ? 20 : 90);
             Play(world, Systems(world, smartSide == Side.Home ? 21 : 22), 2 * 15 * 60 + 300, stopAfter: 3);
-            var s = Decisions.Tally(world, smartSide);
-            var p = Decisions.Tally(world, poorSide);
+            var s = AiDecisions.Tally(world, smartSide);
+            var p = AiDecisions.Tally(world, poorSide);
             smartTotal += s.Passes; smartDone += s.Completed; smartLost += s.Intercepted;
             poorPasses += p.Passes; poorDone += p.Completed; poorLost += p.Intercepted;
         }
@@ -190,12 +172,15 @@ public sealed class DecisionsSelfTest : IScene
     }
 
     /// <summary>W22a: hockey IQ 100 against 20 for two periods; the stars still fumble and miss now and then, the weak side gets lucky.</summary>
+    [Test]
+    public void Stars() => Stars(WorldBuilder.Clubs, new Settings());
+
     void Stars(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var world = Make(clubs, settings, 15 * 60, 100, 20);
         Play(world, Systems(world, 23), 2 * 15 * 60 + 300, stopAfter: 3);
-        var star = Decisions.Tally(world, Side.Home);
-        var poor = Decisions.Tally(world, Side.Away);
+        var star = AiDecisions.Tally(world, Side.Home);
+        var poor = AiDecisions.Tally(world, Side.Away);
         float rate = (float)star.StarFumbles / Math.Max(1, star.StarRolls);
         Console.WriteLine($"      hockey IQ 100: {star.StarFumbles} fumbles in {star.StarRolls} reads ({rate:P1}), {star.Completed}/{star.Passes} passes completed; hockey IQ 20: {poor.Lucky} lucky reads in {poor.Rolls}, {poor.Completed}/{poor.Passes} completed");
         Check(star.StarFumbles > 0 && rate < 0.08f, "a hockey IQ 100 club still fumbles a read now and then");
@@ -204,7 +189,18 @@ public sealed class DecisionsSelfTest : IScene
         Check(star.Completion > poor.Completion, "hockey IQ 100 still passes better than 20");
     }
 
+    /// <summary>W22c: a power play with a man in the box throughout, seed 1 (specialteamstest runs other seeds).</summary>
+    [Test]
+    public void PowerPlay() => SpecialTeamsSelfTest.PowerPlay(WorldBuilder.Clubs, new Settings(), 1, Check);
+
+    /// <summary>W22d: a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in, seed 1.</summary>
+    [Test]
+    public void TacticsCompare() => TacticsSelfTest.Compare(WorldBuilder.Clubs, new Settings(), 1, Check);
+
     /// <summary>W63: icings and offsides over full matches, per preset and per hockey IQ.</summary>
+    [Test]
+    public void LineCalls() => LineCalls(WorldBuilder.Clubs, new Settings());
+
     void LineCalls(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         const int Seeds = 4;
@@ -213,8 +209,8 @@ public sealed class DecisionsSelfTest : IScene
         {
             var (ice, off, world) = Calls(clubs, settings, RuleSet.Shl, seed, null, null);
             int i = ice[0] + ice[1], o = off[0] + off[1];
-            var h = Decisions.Tally(world, Side.Home);
-            var a = Decisions.Tally(world, Side.Away);
+            var h = AiDecisions.Tally(world, Side.Home);
+            var a = AiDecisions.Tally(world, Side.Away);
             Console.WriteLine($"      SHL seed {seed}: {i} icings, {o} offsides, {h.Clears + a.Clears} clears out of the own zone, {h.HoldUps + a.HoldUps} hold-ups at the blue line, {world.Match.Score[0]}-{world.Match.Score[1]}");
             icings += i; offsides += o; clears += h.Clears + a.Clears; holds += h.HoldUps + a.HoldUps;
             fewest = Math.Min(fewest, Math.Min(i, o));
@@ -228,7 +224,7 @@ public sealed class DecisionsSelfTest : IScene
         Check(clears > 0 && holds > 0, "the AI clears its own zone under pressure and holds up at the blue line for a teammate offside");
 
         var (aIce, aOff, arcade) = Calls(clubs, settings, RuleSet.Arcade, 41, null, null);
-        int arcadeClears = Decisions.Tally(arcade, Side.Home).Clears + Decisions.Tally(arcade, Side.Away).Clears;
+        int arcadeClears = AiDecisions.Tally(arcade, Side.Home).Clears + AiDecisions.Tally(arcade, Side.Away).Clears;
         Console.WriteLine($"      Arcade: {aIce[0] + aIce[1]} icings, {aOff[0] + aOff[1]} offsides, {arcadeClears} clears");
         Check(aIce[0] + aIce[1] == 0 && aOff[0] + aOff[1] == 0 && arcade.Match.Phase == MatchPhase.Final, "under Arcade, rules off, a full match has no icing and no offside");
 
@@ -241,8 +237,8 @@ public sealed class DecisionsSelfTest : IScene
             {
                 var (ice, off, world) = Calls(clubs, settings, RuleSet.Shl, seed + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
                 var poor = smart == Side.Home ? Side.Away : Side.Home;
-                Add(smartTotals, ice[(int)smart], off[(int)smart], Decisions.Tally(world, smart));
-                Add(poorTotals, ice[(int)poor], off[(int)poor], Decisions.Tally(world, poor));
+                Add(smartTotals, ice[(int)smart], off[(int)smart], AiDecisions.Tally(world, smart));
+                Add(poorTotals, ice[(int)poor], off[(int)poor], AiDecisions.Tally(world, poor));
             }
         }
         Console.WriteLine($"      hockey IQ 85: {smartTotals[0]} icings, {smartTotals[1]} offsides, {smartTotals[2]} clears, {smartTotals[3]} hold-ups in {smartTotals[4]} looks; hockey IQ 30: {poorTotals[0]} icings, {poorTotals[1]} offsides, {poorTotals[2]} clears, {poorTotals[3]} hold-ups in {poorTotals[4]} looks");
@@ -250,6 +246,18 @@ public sealed class DecisionsSelfTest : IScene
         float smartHolds = (float)smartTotals[3] / Math.Max(1, smartTotals[4]), poorHolds = (float)poorTotals[3] / Math.Max(1, poorTotals[4]);
         Check(smartHolds > poorHolds, $"a hockey IQ 85 club holds up at the line for a teammate offside more often than a 30 one ({smartHolds:P0} vs {poorHolds:P0} of the times it came up to the line)");
     }
+
+    [Test]
+    public void PureReceiver() => CommandFixtures.PureReceiver(WorldBuilder.Clubs, new Settings(), Check);
+
+    [Test]
+    public void DumpAndShot() => CommandFixtures.DumpAndShot(WorldBuilder.Clubs, new Settings(), Check);
+
+    [Test]
+    public void KillClear() => CommandFixtures.KillClear(WorldBuilder.Clubs, new Settings(), Check);
+
+    [Test]
+    public void HumanUntouched() => CommandFixtures.HumanUntouched(WorldBuilder.Clubs, new Settings(), Check);
 
     static void Add(int[] totals, int icings, int offsides, DecisionTally tally)
     {

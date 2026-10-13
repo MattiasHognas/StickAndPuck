@@ -1,63 +1,30 @@
 using System.Numerics;
 using StickAndPuck.Core;
 using StickAndPuck.Physics;
+using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Rules;
+namespace StickAndPuck.Tests.Rules.Offside;
 
 /// <summary>
-/// SAP_SCENE=offsidetest: scripted plays with puck physics, the match rules, offside and icing, no
-/// window; prints one line per check and exits with 0 when all pass, 1 otherwise. Covers the W7b
-/// "done when": offside and icing are called correctly and lead to the right faceoff.
-/// In period 1 home defends -x, so home attacks the zone at +x.
+/// Scripted plays with puck physics, the match rules, offside and icing (W7b): offside and icing
+/// are called correctly and lead to the right faceoff. In period 1 home defends -x, so home attacks
+/// the zone at +x. Formerly SAP_SCENE=offsidetest.
 /// </summary>
-public sealed class LineCallsSelfTest : IScene
+public sealed class LineCallsTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "offsidetest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    /// <summary>A 600-second-period match in play at the given period, every skater parked along the boards.</summary>
+    static World Make(int period = 1)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 600 };
-        World Make(int period = 1)
-        {
-            var w = new World(setup, settings);
-            Scenes.AddStarters(w);
-            MatchFlow.Begin(w, log: false);
-            if (period > 1) MatchFlow.StartPeriod(w, period, 600);
-            Run(w, x => x.Match.Phase == MatchPhase.Play, null, 10);
-            Park(w);
-            return w;
-        }
-
-        CleanCarry(Make());
-        PassToOffsidePlayer(Make());
-        TagUp(Make());
-        PuckLeavesZone(Make());
-        DefenceSendsItIn(Make());
-        CarriedWithTeammateAhead(Make());
-        ShotOnGoalWhileOffside(Make());
-        OffsideAfterEndsSwap(Make(2));
-
-        Icing(Make());
-        NoIcingFromOverRedLine(Make());
-        AttackerWinsRace(Make());
-        GoalieTouch(Make());
-        ShortHanded(Make());
-        IcedIntoTheNet(Make());
-        IcingAfterEndsSwap(Make(2));
-
-        Console.WriteLine(failures == 0 ? "OFFSIDETEST: all checks passed" : $"OFFSIDETEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        return new WorldBuilder()
+            .Setup(s => s with { PeriodSeconds = 600 })
+            .Then(w =>
+            {
+                if (period > 1) MatchFlow.StartPeriod(w, period, 600);
+                Run(w, x => x.Match.Phase == MatchPhase.Play, null, 10);
+                Park(w);
+            })
+            .Build();
     }
 
     /// <summary>Runs physics and rules step by step, calling <paramref name="each"/> before each step, and returns every event.</summary>
@@ -136,8 +103,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>A carrier skates the puck in with every teammate behind him: no offside.</summary>
-    void CleanCarry(World w)
+    [Test]
+    public void CleanCarry()
     {
+        var w = Make();
         var c = Skater(w, Side.Home, PlayingPosition.C);
         c.Position = new Vector3(4, 0, 2);
         w.Puck.Carrier = c.Id;
@@ -151,8 +120,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>A pass over the line to a winger already in the zone: pending, then called when he plays it.</summary>
-    void PassToOffsidePlayer(World w)
+    [Test]
+    public void PassToOffsidePlayer()
     {
+        var w = Make();
         var c = Skater(w, Side.Home, PlayingPosition.C);
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(13, 0, 4);
@@ -167,8 +138,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>The offside winger tags up at the line, then plays the puck: no call.</summary>
-    void TagUp(World w)
+    [Test]
+    public void TagUp()
     {
+        var w = Make();
         var c = Skater(w, Side.Home, PlayingPosition.C);
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(13, 0, -8);
@@ -185,8 +158,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>The puck goes back out over the line while offside is pending: waved off.</summary>
-    void PuckLeavesZone(World w)
+    [Test]
+    public void PuckLeavesZone()
     {
+        var w = Make();
         var c = Skater(w, Side.Home, PlayingPosition.C);
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         var d = Skater(w, Side.Away, PlayingPosition.D);
@@ -202,8 +177,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>The defending club sends the puck into its own zone with an attacker inside: never offside.</summary>
-    void DefenceSendsItIn(World w)
+    [Test]
+    public void DefenceSendsItIn()
     {
+        var w = Make();
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         var d = Skater(w, Side.Away, PlayingPosition.D);
         rw.Position = new Vector3(13, 0, -8);
@@ -217,8 +194,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>Carrying the puck in with a teammate already deep in the zone: called at once.</summary>
-    void CarriedWithTeammateAhead(World w)
+    [Test]
+    public void CarriedWithTeammateAhead()
     {
+        var w = Make();
         var c = Skater(w, Side.Home, PlayingPosition.C);
         var lw = Skater(w, Side.Home, PlayingPosition.LW);
         lw.Position = new Vector3(15, 0, 8);
@@ -236,8 +215,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>A shot at the net from outside the zone with a winger offside: called before it can count.</summary>
-    void ShotOnGoalWhileOffside(World w)
+    [Test]
+    public void ShotOnGoalWhileOffside()
     {
+        var w = Make();
         var c = Skater(w, Side.Home, PlayingPosition.C);
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(14, 0, -8);
@@ -249,8 +230,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>In period 2 home attacks -x; offside there goes to the neutral dot at -x.</summary>
-    void OffsideAfterEndsSwap(World w)
+    [Test]
+    public void OffsideAfterEndsSwap()
     {
+        var w = Make(2);
         var c = Skater(w, Side.Home, PlayingPosition.C);
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(-13, 0, -4);
@@ -261,8 +244,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>A dump from the home half over the away goal line, away defender closer: icing.</summary>
-    void Icing(World w)
+    [Test]
+    public void Icing()
     {
+        var w = Make();
         var d = Skater(w, Side.Home, PlayingPosition.D);
         var ad = Skater(w, Side.Away, PlayingPosition.D);
         ad.Position = new Vector3(22, 0, 10);
@@ -275,8 +260,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>Sent from beyond the red line: no icing.</summary>
-    void NoIcingFromOverRedLine(World w)
+    [Test]
+    public void NoIcingFromOverRedLine()
     {
+        var w = Make();
         var d = Skater(w, Side.Home, PlayingPosition.D);
         var ad = Skater(w, Side.Away, PlayingPosition.D);
         ad.Position = new Vector3(22, 0, 10);
@@ -286,8 +273,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>Hybrid icing: an attacker closer to the dot wins the race and waves it off.</summary>
-    void AttackerWinsRace(World w)
+    [Test]
+    public void AttackerWinsRace()
     {
+        var w = Make();
         var d = Skater(w, Side.Home, PlayingPosition.D);
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(20.7f, 0, 9);
@@ -297,8 +286,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>The goalie plays the puck before the line: no icing.</summary>
-    void GoalieTouch(World w)
+    [Test]
+    public void GoalieTouch()
     {
+        var w = Make();
         var d = Skater(w, Side.Home, PlayingPosition.D);
         var ad = Skater(w, Side.Away, PlayingPosition.D);
         var g = w.OnIce(Side.Away).First(p => p.IsGoalie);
@@ -312,8 +303,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>A short-handed club may ice the puck.</summary>
-    void ShortHanded(World w)
+    [Test]
+    public void ShortHanded()
     {
+        var w = Make();
         var d = Skater(w, Side.Home, PlayingPosition.D);
         var ad = Skater(w, Side.Away, PlayingPosition.D);
         ad.Position = new Vector3(22, 0, 10);
@@ -328,8 +321,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>A long shot from the own half that goes in is a goal, not icing.</summary>
-    void IcedIntoTheNet(World w)
+    [Test]
+    public void IcedIntoTheNet()
     {
+        var w = Make();
         var d = Skater(w, Side.Home, PlayingPosition.D);
         var ad = Skater(w, Side.Away, PlayingPosition.D);
         ad.Position = new Vector3(22, 0, 10);
@@ -340,8 +335,10 @@ public sealed class LineCallsSelfTest : IScene
     }
 
     /// <summary>In period 2 home defends +x: its icing toward -x brings a faceoff at its +x end-zone dot.</summary>
-    void IcingAfterEndsSwap(World w)
+    [Test]
+    public void IcingAfterEndsSwap()
     {
+        var w = Make(2);
         var d = Skater(w, Side.Home, PlayingPosition.D);
         var ad = Skater(w, Side.Away, PlayingPosition.D);
         ad.Position = new Vector3(-22, 0, -10);

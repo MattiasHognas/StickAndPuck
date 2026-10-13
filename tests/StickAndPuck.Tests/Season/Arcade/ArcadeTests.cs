@@ -1,52 +1,30 @@
 using StickAndPuck.Core;
+using StickAndPuck.Season;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Season;
+namespace StickAndPuck.Tests.Season.Arcade;
 
 /// <summary>
-/// SAP_SCENE=arcadetest: checks the opponent order, that sudden death ends on the first loss and
-/// three lives on the third, that a loss replays the same club, a champion run, the save after a
-/// match and continuing after a restart, with a save in a temporary folder; no window. Prints one
-/// line per check and exits with 0 when all pass, 1 otherwise.
+/// The arcade run: the opponent order, that sudden death ends on the first loss and three lives on
+/// the third, that a loss replays the same club, a champion run, the save after a match and
+/// continuing after a restart, with a save in a temporary folder. Formerly SAP_SCENE=arcadetest.
 /// </summary>
-public sealed class ArcadeSelfTest : IScene
+public sealed class ArcadeTests : CheckedTest
 {
     static readonly FixtureResult HomeWin = new(3, 1, ResultKind.Regulation);
     static readonly FixtureResult AwayWin = new(1, 3, ResultKind.Regulation);
 
-    int failures;
+    static readonly string Folder = Path.Combine(Path.GetTempPath(), $"sap-arcadetest-{Environment.ProcessId}");
+    static readonly string SavePath = Path.Combine(Folder, "arcade.json");
 
-    /// <inheritdoc/>
-    public string Name => "arcadetest";
+    [Before(Test)]
+    public void SaveFolder() => Directory.CreateDirectory(Folder);
 
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    [After(Test)]
+    public void EndRun()
     {
-        string folder = Path.Combine(Path.GetTempPath(), $"sap-arcadetest-{Environment.ProcessId}");
-        string path = Path.Combine(folder, "arcade.json");
-        try
-        {
-            Order(clubs);
-            SuddenDeath(clubs);
-            ThreeLives(clubs);
-            Champion(clubs);
-            SaveAndContinue(clubs, settings, path);
-            BadSave(path);
-        }
-        finally
-        {
-            ArcadeSession.End();
-            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
-        }
-
-        Console.WriteLine(failures == 0 ? "ARCADETEST: all checks passed" : $"ARCADETEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return new World(Scenes.DefaultSetup(clubs), settings);
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        ArcadeSession.End();
+        if (Directory.Exists(Folder)) Directory.Delete(Folder, recursive: true);
     }
 
     static bool Same(string a, string b) => string.Equals(a, b, StringComparison.Ordinal);
@@ -58,8 +36,10 @@ public sealed class ArcadeSelfTest : IScene
         return r with { HomeGoals = kind == ResultKind.Regulation ? r.HomeGoals : Math.Min(r.HomeGoals, 2), AwayGoals = kind == ResultKind.Regulation ? r.AwayGoals : Math.Min(r.AwayGoals, 2), Kind = kind };
     }
 
-    void Order(IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void Order()
     {
+        var clubs = WorldBuilder.Clubs;
         string user = clubs[0].Id;
         var run = ArcadeRun.New(clubs, user, ArcadeRule.ThreeLives, 5);
         Check(run.Opponents.Count == clubs.Count - 1 && run.Opponents.Distinct().Count() == run.Opponents.Count, $"the run meets each of the other {clubs.Count - 1} clubs once");
@@ -75,8 +55,10 @@ public sealed class ArcadeSelfTest : IScene
         Check(Same(setup.Away.Id, user) && Same(setup.Home.Id, run.Opponents[1]) && setup.Inputs[0].Side == Side.Away, "game 2: away to the second club");
     }
 
-    void SuddenDeath(IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void SuddenDeath()
     {
+        var clubs = WorldBuilder.Clubs;
         var run = ArcadeRun.New(clubs, clubs[3].Id, ArcadeRule.SuddenDeath, 1);
         Check(run.StartLives == 1 && run.LivesLeft == 1 && !run.IsOver, "sudden death starts with one life");
         run.Record(Result(run, win: true));
@@ -92,8 +74,10 @@ public sealed class ArcadeSelfTest : IScene
         Check(threw && run.Games.Count == 3, "nothing is recorded after the run ends");
     }
 
-    void ThreeLives(IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void ThreeLives()
     {
+        var clubs = WorldBuilder.Clubs;
         var run = ArcadeRun.New(clubs, clubs[5].Id, ArcadeRule.ThreeLives, 2);
         Check(run.StartLives == 3, "three lives starts with three");
         string first = run.NextOpponent!;
@@ -112,13 +96,18 @@ public sealed class ArcadeSelfTest : IScene
         Check(tie.IsOver, "a tie is not a win, so it costs a life");
     }
 
-    void Champion(IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void Champion()
     {
+        var clubs = WorldBuilder.Clubs;
         var run = ArcadeRun.New(clubs, clubs[^1].Id, ArcadeRule.SuddenDeath, 3);
         int games = 0;
         while (!run.IsOver && games++ < 40) run.Record(Result(run, win: true));
         Check(run.Champion && !run.Lost && run.Stage == clubs.Count - 1 && run.Games.Count == clubs.Count - 1, $"beating all {clubs.Count - 1} clubs ends the run as champions");
     }
+
+    [Test]
+    public void SaveAndContinue() => SaveAndContinue(WorldBuilder.Clubs, new Settings(), SavePath);
 
     void SaveAndContinue(IReadOnlyList<ClubData> clubs, Settings settings, string path)
     {
@@ -169,14 +158,16 @@ public sealed class ArcadeSelfTest : IScene
         Check(ArcadeSession.Continue(clubs, path) is { Lost: true, Stage: 0 } && ArcadeSession.NextSetup() == null, "a finished run reads back over, with no next game");
 
         // a match that is not the arcade game records nothing
-        var other = new World(Scenes.DefaultSetup(clubs), settings);
+        var other = new World(WorldBuilder.DefaultSetup, settings);
         other.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, other.Time, Side.Home));
         new ArcadeSystem().Update(other, Game.Step);
         Check(ArcadeSession.Current!.Games.Count == 3, "a match that is not an arcade game records nothing");
     }
 
-    void BadSave(string path)
+    [Test]
+    public void BadSave()
     {
+        string path = SavePath;
         ArcadeSession.End();
         File.WriteAllText(path, "{ not json");
         Check(ArcadeSave.Read(path) == null && !ArcadeSession.CanContinue(path), "a broken save reads as no save");
