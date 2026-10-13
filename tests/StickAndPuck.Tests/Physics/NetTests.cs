@@ -1,49 +1,19 @@
 using System.Numerics;
 using StickAndPuck.Core;
+using StickAndPuck.Physics;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Physics;
+namespace StickAndPuck.Tests.Physics;
 
 /// <summary>
-/// SAP_SCENE=nettest: fires pucks at both nets from behind, from both sides, over the top and from
-/// the front, loose and on a carrier's stick, without opening a window. Only the shots through the
-/// mouth may score; everything else must bounce off the cage and end up outside it. Prints one line
-/// per check and exits with 0 when all pass, 1 otherwise.
+/// Fires pucks at both nets from behind, from both sides, over the top and from the front, loose
+/// and on a carrier's stick. Only the shots through the mouth may score; everything else must
+/// bounce off the cage and end up outside it. Formerly SAP_SCENE=nettest.
 /// </summary>
-public sealed class NetSelfTest : IScene
+public sealed class NetTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "nettest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        var setup = Scenes.DefaultSetup(clubs);
-        Func<World> make = () => new World(setup, settings);
-
-        for (int end = -1; end <= 1; end += 2)
-        {
-            FromBehind(make, end);
-            FromTheSides(make, end);
-            OverTheTop(make, end);
-            FromTheFront(make, end);
-            Carried(make, end);
-            Skaters(make, end);
-            Goalies(make, end);
-        }
-        Fuzz(make);
-
-        Console.WriteLine(failures == 0 ? "NETTEST: all checks passed" : $"NETTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
+    /// <summary>An empty world: each check places its own puck and players.</summary>
+    static World Make() => new WorldBuilder().NoStarters().NotBegun().Build();
 
     static string End(int end) => end < 0 ? "-x net" : "+x net";
 
@@ -79,12 +49,15 @@ public sealed class NetSelfTest : IScene
 
     static bool Outside(Vector3 p) => !PuckMotion.InsideNet(p, 1) && !PuckMotion.InsideNet(p, -1);
 
-    void FromBehind(Func<World> make, int end)
+    [Test]
+    [Arguments(-1)]
+    [Arguments(1)]
+    public void FromBehind(int end)
     {
         float d = RinkSpec.NetDepth;
         foreach (var (z, vz, what) in new[] { (0f, 0f, "straight"), (0.5f, -4f, "angled"), (-0.7f, 6f, "across") })
         {
-            var w = make();
+            var w = Make();
             Shoot(w, At(end, d + 1.6f, z), new Vector3(-end * 16, 0, vz));
             var ev = Run(w, 1.5f);
             var p = w.Puck.Position;
@@ -93,19 +66,22 @@ public sealed class NetSelfTest : IScene
         }
 
         // a slow dribble into the back stops against it
-        var soft = make();
+        var soft = Make();
         Shoot(soft, At(end, d + 0.4f, 0.2f), new Vector3(-end * 2, 0, 0));
         Check(!Goal(Run(soft, 1f)) && PuckMotion.Depth(soft.Puck.Position, end) >= d, $"{End(end)}: a dribble into the back of the net stays out");
     }
 
-    void FromTheSides(Func<World> make, int end)
+    [Test]
+    [Arguments(-1)]
+    [Arguments(1)]
+    public void FromTheSides(int end)
     {
         float w2 = RinkSpec.NetWidth / 2;
         for (int s = -1; s <= 1; s += 2)
         {
             foreach (var (depth, vx, what) in new[] { (0.5f, 0f, "square"), (0.2f, end * 4f, "angled toward the back") })
             {
-                var w = make();
+                var w = Make();
                 Shoot(w, At(end, depth, s * 3.5f), new Vector3(vx, 0, -s * 15));
                 var ev = Run(w, 1.5f);
                 var p = w.Puck.Position;
@@ -114,38 +90,44 @@ public sealed class NetSelfTest : IScene
             }
 
             // a sneak from beside the net, cutting in just behind the post
-            var cut = make();
+            var cut = Make();
             Shoot(cut, At(end, 0.08f, s * 2f), new Vector3(0, 0, -s * 12));
             var cev = Run(cut, 1.5f);
             Check(!Goal(cev) && Outside(cut.Puck.Position), $"{End(end)}: a puck cutting in behind the {(s < 0 ? "-z" : "+z")} post stays out");
         }
     }
 
-    void OverTheTop(Func<World> make, int end)
+    [Test]
+    [Arguments(-1)]
+    [Arguments(1)]
+    public void OverTheTop(int end)
     {
         // dropped straight onto the roof of the net
-        var drop = make();
+        var drop = Make();
         Shoot(drop, At(end, RinkSpec.NetDepth / 2, 0.1f, RinkSpec.NetHeight + 1f), Vector3.Zero);
         var dev = Run(drop, 2.5f);
         Check(!Goal(dev) && Outside(drop.Puck.Position), $"{End(end)}: a puck dropped onto the top of the net never gets in");
 
         // a lob from the front that comes down on the roof
-        var lob = make();
+        var lob = Make();
         Shoot(lob, At(end, -4f, 0.3f), new Vector3(end * 6f, 6.5f, 0));
         bool roof = false;
         var lev = Run(lob, 3f, each: x => roof |= PuckMotion.Depth(x.Puck.Position, end) > 0 && x.Puck.Position.Y >= RinkSpec.NetHeight - 0.01f && !PuckMotion.InsideNet(x.Puck.Position, end));
         Check(!Goal(lev) && Outside(lob.Puck.Position), $"{End(end)}: a lob landing on the roof of the net is no goal (on roof: {roof})");
 
         // a high shot from behind, falling in from above the back
-        var high = make();
+        var high = Make();
         Shoot(high, At(end, RinkSpec.NetDepth + 2.5f, 0), new Vector3(-end * 7f, 5.5f, 0));
         var hev = Run(high, 3f);
         Check(!Goal(hev) && Outside(high.Puck.Position), $"{End(end)}: a high puck from behind the net coming down on it is no goal");
     }
 
-    void FromTheFront(Func<World> make, int end)
+    [Test]
+    [Arguments(-1)]
+    [Arguments(1)]
+    public void FromTheFront(int end)
     {
-        var w = make();
+        var w = Make();
         w.Puck.LastTouch = 5;
         Shoot(w, At(end, -8f, 0.2f), new Vector3(end * 28f, 1.2f, 0));
         var ev = Run(w, 2f);
@@ -154,29 +136,32 @@ public sealed class NetSelfTest : IScene
             $"{End(end)}: a shot through the mouth is one goal and stays in the net ({goals.Count} goal(s))");
 
         // under the bar, from an angle
-        var angle = make();
+        var angle = Make();
         Shoot(angle, At(end, -6f, 4f), new Vector3(end * 24f, 2.5f, -14f));
         Check(Goal(Run(angle, 2f)), $"{End(end)}: an angled shot through the mouth is a goal");
 
         // over the bar: no goal, and it lands behind the net rather than in it
-        var over = make();
+        var over = Make();
         Shoot(over, At(end, -6f, 0), new Vector3(end * 22f, 7.5f, 0));
         var oev = Run(over, 3f);
         Check(!Goal(oev) && Outside(over.Puck.Position), $"{End(end)}: a shot over the crossbar is no goal and lands outside the net");
 
         // off the post: no goal
-        var post = make();
+        var post = Make();
         Shoot(post, At(end, -8f, RinkSpec.NetWidth / 2 + 0.02f), new Vector3(end * 30f, 0, 0));
         var pev = Run(post, 1.5f);
         Check(!Goal(pev) && pev.Any(e => e.Kind == MatchEventKind.PuckPost) && Outside(post.Puck.Position), $"{End(end)}: a shot off the post is no goal");
     }
 
     /// <summary>A carrier's stick moves the puck itself, so physics only sees where it ends up.</summary>
-    void Carried(Func<World> make, int end)
+    [Test]
+    [Arguments(-1)]
+    [Arguments(1)]
+    public void Carried(int end)
     {
         float d = RinkSpec.NetDepth;
         // a skater behind the net pokes the puck through the back mesh and lets go of it inside
-        var w = make();
+        var w = Make();
         var physics = new PuckPhysics();
         Shoot(w, At(end, d + 1f, 0.1f), Vector3.Zero);
         Run(w, 0.1f, physics);
@@ -195,7 +180,7 @@ public sealed class NetSelfTest : IScene
             $"{End(end)}: let go inside from behind it pops back out through the back, no goal (depth {PuckMotion.Depth(w.Puck.Position, end):0.00} m)");
 
         // the same from the side
-        var side = make();
+        var side = Make();
         var sp = new PuckPhysics();
         Shoot(side, At(end, 0.4f, 2f), Vector3.Zero);
         Run(side, 0.1f, sp);
@@ -208,7 +193,7 @@ public sealed class NetSelfTest : IScene
             $"{End(end)}: let go inside from the side it pops out through the side, no goal");
 
         // a skater in the crease walks the puck in through the mouth: that is a goal
-        var walk = make();
+        var walk = Make();
         var wp = new PuckPhysics();
         Shoot(walk, At(end, -1.5f, 0.2f), Vector3.Zero);
         Run(walk, 0.1f, wp);
@@ -221,7 +206,10 @@ public sealed class NetSelfTest : IScene
     }
 
     /// <summary>W62: skaters driving at the cage, pushed every step the way skating would move them.</summary>
-    void Skaters(Func<World> make, int end)
+    [Test]
+    [Arguments(-1)]
+    [Arguments(1)]
+    public void Skaters(int end)
     {
         var skater = new PlayerData { Position = PlayingPosition.C };
 
@@ -236,7 +224,7 @@ public sealed class NetSelfTest : IScene
         ];
         foreach (var (name, from, velocity) in runs)
         {
-            var w = make();
+            var w = Make();
             var p = w.AddPlayer(Side.Home, skater, from);
             bool overlap = false;
             Run(w, 2f, each: x =>
@@ -249,7 +237,7 @@ public sealed class NetSelfTest : IScene
         }
 
         // a skater sliding along the back keeps its speed along the frame
-        var slide = make();
+        var slide = Make();
         var sl = slide.AddPlayer(Side.Home, skater, At(end, RinkSpec.NetDepth + 0.5f, -0.5f));
         Run(slide, 1f, each: x =>
         {
@@ -259,7 +247,7 @@ public sealed class NetSelfTest : IScene
         Check(sl.Position.Z > RinkSpec.NetWidth / 2 + PuckTuning.SkaterNetRadius, $"{End(end)}: a skater pressed against the back slides along it and round the post (z {sl.Position.Z:0.0})");
 
         // a carried puck goes with its carrier when the cage stops him
-        var carry = make();
+        var carry = Make();
         var c = carry.AddPlayer(Side.Home, skater, At(end, RinkSpec.NetDepth + 0.6f, 0f));
         carry.Puck.Position = At(end, RinkSpec.NetDepth + 1.2f, 0f);
         carry.Puck.Carrier = c.Id;
@@ -275,13 +263,16 @@ public sealed class NetSelfTest : IScene
     }
 
     /// <summary>W62: a goalie keeps its crease and gets round the cage when it leaves it.</summary>
-    void Goalies(Func<World> make, int end)
+    [Test]
+    [Arguments(-1)]
+    [Arguments(1)]
+    public void Goalies(int end)
     {
         var keeper = new PlayerData { Position = PlayingPosition.G };
 
         // a goalie stands on its line between the posts and shuffles post to post untouched
         bool moved = false;
-        var again = make();
+        var again = Make();
         var ak = again.AddPlayer(Side.Home, keeper, At(end, -0.04f, -0.9f));
         for (int i = 0; i < 72; i++)
         {
@@ -294,7 +285,7 @@ public sealed class NetSelfTest : IScene
         Check(!moved && MathF.Abs(PuckMotion.Depth(ak.Position, end) + 0.04f) < 1e-4f, $"{End(end)}: a goalie right on its goal line moves post to post without touching the cage");
 
         // a goalie going straight out to a puck behind the net gets round the frame, and back again
-        var out_ = make();
+        var out_ = Make();
         var ok = out_.AddPlayer(Side.Home, keeper, At(end, -0.4f, 0f));
         var target = At(end, RinkSpec.NetDepth + 0.8f, 0f);
         bool inCage = false;
@@ -317,7 +308,8 @@ public sealed class NetSelfTest : IScene
         Check(!inCage && Vector3.Distance(ok.Position, home) < 0.2f, $"{End(end)}: and back to the crease the same way ({Vector3.Distance(ok.Position, home):0.00} m short)");
     }
 
-    void Fuzz(Func<World> make)
+    [Test]
+    public void Fuzz()
     {
         // random shots from behind and beside both nets, aimed at the cage: none may score or get inside
         // unless it rebounded off the boards and came back in through the mouth
@@ -327,7 +319,7 @@ public sealed class NetSelfTest : IScene
         int sneaky = 0, inside = 0, total = 0, goals = 0;
         for (int i = 0; i < 400; i++)
         {
-            var w = make();
+            var w = Make();
             int end = rng.Next(2) == 0 ? -1 : 1;
             float depth = (float)(rng.NextDouble() * 3.0 - 0.5), z = (float)(rng.NextDouble() * 2 - 1) * 6f;
             if (depth < RinkSpec.NetDepth + 0.3f && MathF.Abs(z) < RinkSpec.NetWidth / 2 + 0.3f) continue;

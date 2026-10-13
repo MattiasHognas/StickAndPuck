@@ -1,69 +1,45 @@
 using System.Numerics;
 using StickAndPuck.AI;
 using StickAndPuck.Core;
+using StickAndPuck.Fights;
 using StickAndPuck.Goalie;
 using StickAndPuck.Lines;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
+using StickAndPuck.Referee;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Fights;
+namespace StickAndPuck.Tests.Fights;
 
 /// <summary>
-/// SAP_SCENE=fighttest: scripted fights under the match rules, the bench, the penalty box and the
-/// referee, then full AI matches, no window; prints one line per check and exits with 0 when all
-/// pass, 1 otherwise. Covers the W15 "done when": a fight can start, be won by timing, and sends the
-/// loser to the box; and W48's: each preset's fight penalty (Arcade the loser's minor, NHL coincidental
-/// majors, SHL majors and game misconducts that take both fighters off the squad).
+/// Scripted fights under the match rules, the bench, the penalty box and the referee, then full AI
+/// matches. Covers W15: a fight can start, be won by timing, and sends the loser to the box; and
+/// W48: each preset's fight penalty (Arcade the loser's minor, NHL coincidental majors, SHL majors
+/// and game misconducts that take both fighters off the squad). Formerly SAP_SCENE=fighttest.
 /// </summary>
-public sealed class FightSelfTest : IScene
+public sealed class FightTests : CheckedTest
 {
     const float Period = 600;
-    int failures;
 
-    /// <inheritdoc/>
-    public string Name => "fighttest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    /// <summary>
+    /// A match in play with 10:00 periods, under Arcade unless other rules are given (W15's checks:
+    /// the loser's two minutes). The scripted hits must not be called as slashing or tripping first,
+    /// so it turns the referee's strictness down to 0 before building, as the scene did.
+    /// </summary>
+    static World Make(int period = 1, Func<Settings, Settings>? options = null, RuleSet? rules = null)
     {
-        var shl = Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period };
-        var setup = shl.WithRules(RuleSet.Arcade);   // W15's checks: the loser's two minutes
-        World Make(int period = 1, Settings? options = null, RuleSet? rules = null)
-        {
-            var w = new World(rules == null ? setup : shl.WithRules(rules), options ?? settings);
-            Scenes.AddStarters(w);
-            MatchFlow.Begin(w, log: false);
-            if (period > 1) MatchFlow.StartPeriod(w, period, Period);
-            Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
-            return w;
-        }
-
-        Penalties.Strictness = 0;     // the scripted hits must not be called as slashing or tripping first
-        HardCheckStartsFight(Make());
-        SoftCheckOrDecline(Make(), Make());
-        HumanAccepts(Make());
-        WonByTiming(Make());
-        BadTimingLoses(Make());
-        BlockTiming(Make(), Make());
-        BrokenUp(Make());
-        NoFight(Make(4), Make(options: settings with { Fights = false }), Make());
-        ArcadePenalty(Make(rules: RuleSet.Arcade));
-        MajorsStay(Make(rules: RuleSet.Nhl));
-        MajorsAndEjection(Make(rules: RuleSet.Shl));
-        MajorsNeverShort(Make(rules: RuleSet.Shl));
-        Penalties.Strictness = 1;
-        foreach (var rules in new[] { RuleSet.Arcade, RuleSet.Shl, RuleSet.Nhl }) FullMatches(shl.WithRules(rules), settings);
-
-        Console.WriteLine(failures == 0 ? "FIGHTTEST: all checks passed" : $"FIGHTTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        Penalties.Strictness = 0;
+        return new WorldBuilder()
+            .Setup(s => s with { PeriodSeconds = Period })
+            .Rules(rules ?? RuleSet.Arcade)
+            .Settings(options ?? (s => s))
+            .Then(w =>
+            {
+                if (period > 1) MatchFlow.StartPeriod(w, period, Period);
+                Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+            })
+            .Build();
     }
 
     static readonly System.Runtime.CompilerServices.ConditionalWeakTable<World, ISystem[]> Sets = new();
@@ -71,7 +47,7 @@ public sealed class FightSelfTest : IScene
     /// <summary>Physics, the match rules, the bench, penalties, fights and the referee: everything but the players moving themselves.</summary>
     static ISystem[] Systems(World world)
     {
-        return Sets.GetValue(world, _ => [new LinesSystem(), new PuckPhysics(), new MatchRules(), new OffsideRule(), new IcingRule(), new PenaltyRules(), new FightSystem(), new Referee.RefereeSystem()]);
+        return Sets.GetValue(world, _ => [new LinesSystem(), new PuckPhysics(), new MatchRules(), new OffsideRule(), new IcingRule(), new PenaltyRules(), new FightSystem(), new RefereeSystem()]);
     }
 
     static List<MatchEvent> Run(World world, Func<World, bool> until, Action<World>? each = null, float limit = 10)
@@ -135,8 +111,10 @@ public sealed class FightSelfTest : IScene
         };
     }
 
-    void HardCheckStartsFight(World w)
+    [Test]
+    public void HardCheckStartsFight()
     {
+        var w = Make();
         var s = Fighting.State(w);
         s.OfferChance = 1;
         s.ForceAccept = true;
@@ -156,8 +134,11 @@ public sealed class FightSelfTest : IScene
         Check(Math.Abs(Vector3.Distance(w.Puck.Position, f!.Spot) - 1.2f) < 0.01f, "the dead puck lies by the fight, so the camera stays on it");
     }
 
-    void SoftCheckOrDecline(World soft, World decline)
+    [Test]
+    public void SoftCheckOrDecline()
     {
+        var soft = Make();
+        var decline = Make();
         Fighting.State(soft).OfferChance = 1;
         Fighting.State(soft).ForceAccept = true;
         Hit(soft, 1.2f);
@@ -171,8 +152,10 @@ public sealed class FightSelfTest : IScene
             "an AI who declines skates away and play goes on");
     }
 
-    void HumanAccepts(World w)
+    [Test]
+    public void HumanAccepts()
     {
+        var w = Make();
         var me = Skater(w, Side.Home, PlayingPosition.C);
         me.Slot = 0;
         var s = Fighting.State(w);
@@ -190,8 +173,10 @@ public sealed class FightSelfTest : IScene
         Check(Fighting.Current(w) != null, "a human who presses accept (F, or Y on a pad) fights");
     }
 
-    void WonByTiming(World w)
+    [Test]
+    public void WonByTiming()
     {
+        var w = Make();
         var me = Skater(w, Side.Home, PlayingPosition.C);
         var them = Skater(w, Side.Away, PlayingPosition.C);
         me.Slot = 0;
@@ -213,8 +198,10 @@ public sealed class FightSelfTest : IScene
             "play restarts with a faceoff in the loser's end and the winner's club on the power play");
     }
 
-    void BadTimingLoses(World w)
+    [Test]
+    public void BadTimingLoses()
     {
+        var w = Make();
         var me = Skater(w, Side.Home, PlayingPosition.C);
         me.Slot = 0;
         var s = Fighting.State(w);
@@ -227,8 +214,11 @@ public sealed class FightSelfTest : IScene
         Check(Penalties.InBox(w, me.Id) && now != null && now != me && now.OnIce && now.Side == Side.Home, "the losing human's skater goes to the box and control moves to a teammate");
     }
 
-    void BlockTiming(World fresh, World stale)
+    [Test]
+    public void BlockTiming()
     {
+        var fresh = Make();
+        var stale = Make();
         // block just as the AI winds up: every punch is stopped
         var me = Skater(fresh, Side.Home, PlayingPosition.C);
         me.Slot = 0;
@@ -248,8 +238,10 @@ public sealed class FightSelfTest : IScene
             $"a guard held up from the start is too old to block ({fight2.Checker.Landed} landed)");
     }
 
-    void BrokenUp(World w)
+    [Test]
+    public void BrokenUp()
     {
+        var w = Make();
         var s = Fighting.State(w);
         s.AiPunches = false;
         var a = Skater(w, Side.Away, PlayingPosition.C);
@@ -259,8 +251,12 @@ public sealed class FightSelfTest : IScene
             "with nobody down after the last exchange the linesmen break it up; on even balance the checker who started it goes to the box");
     }
 
-    void NoFight(World overtime, World off, World w)
+    [Test]
+    public void NoFight()
     {
+        var overtime = Make(4);
+        var off = Make(options: s => s with { Fights = false });
+        var w = Make();
         Fighting.State(overtime).ForceAccept = true;
         Check(!Fighting.Offer(overtime, Skater(overtime, Side.Away, PlayingPosition.C).Id, Skater(overtime, Side.Home, PlayingPosition.C).Id), "no fights in overtime");
         Fighting.State(off).ForceAccept = true;
@@ -298,8 +294,10 @@ public sealed class FightSelfTest : IScene
             && Math.Abs(x.SecondsLeft - Penalties.ClubSeconds(w, Severity.Major)) < 0.01f);
     }
 
-    void ArcadePenalty(World w)
+    [Test]
+    public void ArcadePenalty()
     {
+        var w = Make(rules: RuleSet.Arcade);
         var me = Skater(w, Side.Home, PlayingPosition.C);
         var them = Skater(w, Side.Away, PlayingPosition.C);
         HomeWins(w);
@@ -310,8 +308,10 @@ public sealed class FightSelfTest : IScene
             "Arcade: the loser gets two minutes, the winner stays on and his club has the power play");
     }
 
-    void MajorsStay(World w)
+    [Test]
+    public void MajorsStay()
     {
+        var w = Make(rules: RuleSet.Nhl);
         var me = Skater(w, Side.Home, PlayingPosition.C);
         var them = Skater(w, Side.Away, PlayingPosition.C);
         var events = HomeWins(w);
@@ -328,8 +328,10 @@ public sealed class FightSelfTest : IScene
             "NHL: when the five minutes are up both fighters leave the box and stay in their lines");
     }
 
-    void MajorsAndEjection(World w)
+    [Test]
+    public void MajorsAndEjection()
     {
+        var w = Make(rules: RuleSet.Shl);
         var me = Skater(w, Side.Home, PlayingPosition.C);
         var them = Skater(w, Side.Away, PlayingPosition.C);
         var homeSquad = Bench.SquadOf(w, Side.Home)!;
@@ -352,8 +354,10 @@ public sealed class FightSelfTest : IScene
             "SHL: when the five minutes are up neither fighter comes back, both clubs play five on five");
     }
 
-    void MajorsNeverShort(World w)
+    [Test]
+    public void MajorsNeverShort()
     {
+        var w = Make(rules: RuleSet.Shl);
         // two home skaters already serve: substituted majors cannot put home three short, so the fight may go on
         var book = Penalties.Book(w);
         Penalties.Assess(w, book, new DelayedPenalty(Side.Home, Skater(w, Side.Home, PlayingPosition.LW).Id, Infraction.Tripping, w.Time));
@@ -363,13 +367,26 @@ public sealed class FightSelfTest : IScene
             "SHL: a club serving two penalties can still fight, since coincidental majors never leave it shorter");
     }
 
-    void FullMatches(MatchSetup setup, Settings settings)
+    /// <summary>Full AI matches under each preset, with the referee at full strictness.</summary>
+    [Test]
+    [Arguments("Arcade")]
+    [Arguments("SHL")]
+    [Arguments("NHL")]
+    public void FullMatches(string preset)
     {
+        var rules = preset switch
+        {
+            "SHL" => RuleSet.Shl,
+            "NHL" => RuleSet.Nhl,
+            _ => RuleSet.Arcade,
+        };
+        Penalties.Strictness = 1;
+        var setup = WorldBuilder.DefaultSetup.WithRules(rules);
         int perFight = setup.Rules.FightPenalty == FightPenalty.LoserMinor ? 1 : 2;
         int fights = 0, boxed = 0, broken = 0, open = 0;
         foreach (int seed in Seeds)
         {
-            var (f, b, x, o) = Match(setup with { PeriodSeconds = 600 }, settings, seed);
+            var (f, b, x, o) = Match(setup with { PeriodSeconds = 600 }, seed);
             fights += f; boxed += b; broken += x; open += o;
         }
         Check(fights >= 1 && boxed == fights * perFight && broken == 0 && open == 0,
@@ -378,11 +395,11 @@ public sealed class FightSelfTest : IScene
 
     static readonly int[] Seeds = [2, 3, 4, 5];
 
-    static (int Fights, int Boxed, int Broken, int Open) Match(MatchSetup setup, Settings settings, int seed)
+    static (int Fights, int Boxed, int Broken, int Open) Match(MatchSetup setup, int seed)
     {
-        var w = new World(setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] }, settings);
-        Scenes.AddStarters(w);
-        MatchFlow.Begin(w, log: false);
+        var w = new WorldBuilder()
+            .Setup(setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] })
+            .Build();
 #pragma warning disable S2245 // fixed seeds so the checks repeat
         Penalties.Book(w).Rng = new Random(seed);
         Fighting.State(w).Rng = new Random(seed);
@@ -390,7 +407,7 @@ public sealed class FightSelfTest : IScene
         [
             new PositioningSystem(new Random(seed)), new DecisionSystem(new Random(seed)), new LinesSystem(), new SkatingSystem(), new CheckingSystem(new Random(seed)),
             new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), new MatchRules(), new OffsideRule(),
-            new IcingRule(), new PenaltyRules(), new FightSystem(), new Referee.RefereeSystem(),
+            new IcingRule(), new PenaltyRules(), new FightSystem(), new RefereeSystem(),
         ];
 #pragma warning restore S2245
         foreach (var s in systems) if (s is PositioningSystem or DecisionSystem or LinesSystem or SkatingSystem or CheckingSystem or PuckHandlingSystem) s.Start(w);

@@ -1,28 +1,33 @@
+using System.Numerics;
 using StickAndPuck.Core;
+using StickAndPuck.Lighting;
 using StickAndPuck.Physics;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Lighting;
+namespace StickAndPuck.Tests.Lighting;
 
 /// <summary>
-/// SAP_SCENE=lightingtest: runs the match flow with the light cues, no window, prints one line
-/// per check and exits with 0 when all pass, 1 otherwise. Covers the W18 "done when": the
-/// presets differ, the intro is dim, the lights come back at the faceoff and a goal flashes.
-/// W21: the ice is a cold grey in every preset and the scratches are faint and a shade off it.
+/// The match flow with the light cues (W18): the presets differ, the intro is dim, the lights come
+/// back at the faceoff and a goal flashes. W21: the ice is a cold grey in every preset and the
+/// scratches are faint and a shade off it. Formerly SAP_SCENE=lightingtest.
 /// </summary>
-public sealed class LightingSelfTest : IScene
+public sealed class LightingTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "lightingtest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Test]
+    public void Presets()
     {
-        var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = 60 }, settings);
-        Scenes.AddStarters(world);
-        MatchFlow.Begin(world, log: false);
+        Check(LightPresets.Early.Full.Y > LightPresets.Late.Full.Y + 0.15f
+            && LightPresets.Early.Shadow.Y > LightPresets.Late.Shadow.Y + 0.3f, "early is brighter than late");
+        Check(!LightPresets.Early.IceBand.Equals(LightPresets.Late.IceBand), "early and late bands differ");
+        CheckIce(LightPresets.Early); CheckIce(LightPresets.Afternoon); CheckIce(LightPresets.Late);
+    }
+
+    /// <summary>The cues through one intro, the lights coming up and a goal flash, in order on one world.</summary>
+    [Test]
+    public void Cues()
+    {
+        var world = new WorldBuilder().Setup(s => s with { PeriodSeconds = 60 }).Build();
         var cues = new LightCues();
         var systems = new ISystem[] { new PuckPhysics(), new MatchRules() };
         void Step(Action<World>? before = null)
@@ -34,11 +39,6 @@ public sealed class LightingSelfTest : IScene
             world.Time += Game.Step; world.Tick++;
         }
 
-        Check(LightPresets.Early.Full.Y > LightPresets.Late.Full.Y + 0.15f
-            && LightPresets.Early.Shadow.Y > LightPresets.Late.Shadow.Y + 0.3f, "early is brighter than late");
-        Check(!LightPresets.Early.IceBand.Equals(LightPresets.Late.IceBand), "early and late bands differ");
-        CheckIce(LightPresets.Early); CheckIce(LightPresets.Afternoon); CheckIce(LightPresets.Late);
-
         Step();
         Check(cues.Intro && cues.Current().Tone == LightCues.IntroDim && !cues.Current().Bands, "intro plays with the lights down");
 
@@ -46,7 +46,7 @@ public sealed class LightingSelfTest : IScene
         var first = cues.Current().Tone;
         Check(first.X > LightCues.IntroDim.X && first.X < 1, "lights come up in steps after the intro");
         for (int i = 0; i < LightCues.LightsUpSeconds / Game.Step + 1; i++) Step();
-        Check(cues.Current() == new CueLight(System.Numerics.Vector3.One, true, false), "full light once they are up");
+        Check(cues.Current() == new CueLight(Vector3.One, true, false), "full light once they are up");
 
         Step(w => w.Events.Publish(new MatchEvent(MatchEventKind.Goal, w.Time, Side.Home)));
         Check(cues.Flashing && cues.Current().Flash, "a goal starts a flash");
@@ -54,11 +54,7 @@ public sealed class LightingSelfTest : IScene
         for (int i = 0; i < LightCues.FlashSeconds / Game.Step - 2; i++) { Step(); dark |= !cues.Current().Flash; }
         Check(dark && cues.Flashing, "the flash strobes with dark gaps");
         for (int i = 0; i < 4; i++) Step();
-        Check(!cues.Flashing && cues.Current().Tone == System.Numerics.Vector3.One, "the flash ends and the lights settle");
-
-        Console.WriteLine(failures == 0 ? "LIGHTINGTEST: all checks passed" : $"LIGHTINGTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return world;
+        Check(!cues.Flashing && cues.Current().Tone == Vector3.One, "the flash ends and the lights settle");
     }
 
     /// <summary>W21: the preset's ice is a cold, light grey and its scratches are faint and a shade off it.</summary>
@@ -68,11 +64,5 @@ public sealed class LightingSelfTest : IScene
         Check(ice.B >= ice.R && ice.B >= ice.G && ice.R >= 0xb0, $"{preset.Time} ice is a cold, light grey");
         Check(scratch.A is >= 96 and <= 192 && Math.Abs(scratch.R - ice.R) + Math.Abs(scratch.G - ice.G) + Math.Abs(scratch.B - ice.B) <= 60,
             $"{preset.Time} scratches are faint and a shade off the ice");
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
     }
 }

@@ -1,52 +1,23 @@
 using System.Numerics;
 using StickAndPuck.Core;
 using StickAndPuck.Physics;
+using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Rules;
+namespace StickAndPuck.Tests.Rules.Match;
 
 /// <summary>
-/// SAP_SCENE=matchtest: plays whole matches with puck physics and the match rules, no window,
-/// prints one line per check and exits with 0 when all pass, 1 otherwise. Covers the W7a "done
-/// when": a full regulation match plays out with the right score.
+/// Whole matches with puck physics and the match rules (W7a): a full regulation match plays out
+/// with the right score. Formerly SAP_SCENE=matchtest.
 /// </summary>
-public sealed class MatchSelfTest : IScene
+public sealed class MatchTests : CheckedTest
 {
     const float Period = 30;
-    int failures;
 
-    /// <inheritdoc/>
-    public string Name => "matchtest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    /// <summary>A match with 30-second periods, the starters on and the match flow begun.</summary>
+    static World Make(OvertimeRule rule = OvertimeRule.Shl)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period };
-        World Make(OvertimeRule rule = OvertimeRule.Shl)
-        {
-            var w = new World(setup with { Overtime = rule }, settings);
-            Scenes.AddStarters(w);
-            MatchFlow.Begin(w, log: false);
-            return w;
-        }
-
-        FullMatch(Make());
-        OpeningFaceoff(Make());
-        GoalAfterTheHorn(Make());
-        Ties(Make);
-        SuddenDeath(Make());
-        WhistleAndDot(Make());
-        FrozenPuck(Make());
-        RefereeDrop(Make());
-
-        Console.WriteLine(failures == 0 ? "MATCHTEST: all checks passed" : $"MATCHTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        return new WorldBuilder().Setup(s => s with { PeriodSeconds = Period, Overtime = rule }).Build();
     }
 
     /// <summary>Runs physics and rules step by step, calling <paramref name="each"/> before each step, and returns every event.</summary>
@@ -88,8 +59,10 @@ public sealed class MatchSelfTest : IScene
     }
 
     /// <summary>Plays three periods with a scripted list of goals and checks score, clock, ends, faceoffs and the final.</summary>
-    void FullMatch(World w)
+    [Test]
+    public void FullMatch()
     {
+        var w = Make();
         // (period, game seconds left when the shot goes, scorer)
         (int Period, float At, Side Scorer)[] script =
         [
@@ -127,8 +100,10 @@ public sealed class MatchSelfTest : IScene
     }
 
     /// <summary>The intro, then a faceoff at centre with everyone in their own half and still, then the drop.</summary>
-    void OpeningFaceoff(World w)
+    [Test]
+    public void OpeningFaceoff()
     {
+        var w = Make();
         Check(w.Match.Phase == MatchPhase.Intro && !w.Puck.Live, "the match starts in the intro with a dead puck");
         Run(w, x => x.Match.Phase == MatchPhase.Faceoff, null, 10);
         Check(w.Match.Phase == MatchPhase.Faceoff && w.Puck.Position == RinkSpec.CentreDot, "then a faceoff at centre");
@@ -143,8 +118,10 @@ public sealed class MatchSelfTest : IScene
     }
 
     /// <summary>A puck that crosses after the clock runs out does not count.</summary>
-    void GoalAfterTheHorn(World w)
+    [Test]
+    public void GoalAfterTheHorn()
     {
+        var w = Make();
         Run(w, x => x.Match.Phase == MatchPhase.Play && x.Match.Clock < 0.2f);
         Shoot(w, Side.Home, fromGoalLine: 12, speed: 15);
         var events = RunFor(w, 2);
@@ -155,17 +132,18 @@ public sealed class MatchSelfTest : IScene
     }
 
     /// <summary>What a tie after regulation leads to under each overtime rule.</summary>
-    void Ties(Func<OvertimeRule, World> make)
+    [Test]
+    public void Ties()
     {
-        var none = make(OvertimeRule.None);
+        var none = Make(OvertimeRule.None);
         var ev = Run(none, x => x.Match.Phase == MatchPhase.Final);
         Check(ev.Count(e => e.Kind == MatchEventKind.MatchEnd && e.Side == null) == 1, "no overtime: a 0-0 tie ends the match with no winner");
 
-        var shl = make(OvertimeRule.Shl);
+        var shl = Make(OvertimeRule.Shl);
         ev = Run(shl, x => x.Match.Phase is MatchPhase.Overtime or MatchPhase.Final);
         Check(shl.Match.Phase == MatchPhase.Overtime && ev.All(e => e.Kind != MatchEventKind.MatchEnd), "SHL: a tie hands over to overtime, no MatchEnd yet");
 
-        var so = make(OvertimeRule.ShootoutOnly);
+        var so = Make(OvertimeRule.ShootoutOnly);
         Run(so, x => x.Match.Phase is MatchPhase.Shootout or MatchPhase.Final);
         Check(so.Match.Phase == MatchPhase.Shootout, "shootout only: a tie goes straight to the shootout");
 
@@ -175,8 +153,10 @@ public sealed class MatchSelfTest : IScene
     }
 
     /// <summary>A goal in overtime ends the match at once.</summary>
-    void SuddenDeath(World w)
+    [Test]
+    public void SuddenDeath()
     {
+        var w = Make();
         Run(w, x => x.Match.Phase == MatchPhase.Overtime);
         MatchFlow.StartPeriod(w, 4, MatchTuning.OvertimeSeconds);
         Run(w, x => x.Match.Phase == MatchPhase.Play, null, 5);
@@ -208,8 +188,10 @@ public sealed class MatchSelfTest : IScene
     }
 
     /// <summary>W7b's entry point: a whistle stops the clock and leads to a faceoff at the given dot.</summary>
-    void WhistleAndDot(World w)
+    [Test]
+    public void WhistleAndDot()
     {
+        var w = Make();
         Check(!MatchFlow.Whistle(w, RinkSpec.CentreDot), "no whistle outside play");
         Run(w, x => x.Match.Phase == MatchPhase.Play);
         RunFor(w, 1);
@@ -228,8 +210,10 @@ public sealed class MatchSelfTest : IScene
     }
 
     /// <summary>A goalie holding the puck brings a whistle and an end-zone faceoff.</summary>
-    void FrozenPuck(World w)
+    [Test]
+    public void FrozenPuck()
     {
+        var w = Make();
         Run(w, x => x.Match.Phase == MatchPhase.Play);
         var g = w.OnIce(Side.Away).First(p => p.IsGoalie);
         w.Puck.Carrier = g.Id;
@@ -240,8 +224,10 @@ public sealed class MatchSelfTest : IScene
     }
 
     /// <summary>With the referee dropping the puck, the faceoff waits for the referee.</summary>
-    void RefereeDrop(World w)
+    [Test]
+    public void RefereeDrop()
     {
+        var w = Make();
         MatchFlow.SetRefereeDrops(w, true);
         Run(w, x => x.Match.Phase == MatchPhase.Faceoff, null, 10);
         RunFor(w, MatchTuning.FaceoffSeconds * 3);
