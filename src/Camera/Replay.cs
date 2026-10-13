@@ -38,6 +38,9 @@ public sealed class Replay
     /// <summary>Where the ice-level camera sits relative to the puck: behind the play (scaled by the attacked end), low, toward the viewer.</summary>
     static readonly Vector3 ChaseOffset = new(-6.5f, 2.2f, 5.5f);
 
+    /// <summary>The camera looks this far above the puck.</summary>
+    static readonly Vector3 TargetLift = new(0, 0.5f, 0);
+
     static readonly Color TagText = new(0xef, 0xe0, 0xc2, 255);
     static readonly Color TagDot = new(0xe9, 0x6f, 0x5d, 255);
     static readonly Color TagBack = new(0x18, 0x13, 0x1f, 255);
@@ -48,13 +51,16 @@ public sealed class Replay
     float goalTime = float.NaN, playSince, playhead, shown;
     int endIndex, end = 1;
     bool waiting;
-    Vector3 camPos, camTarget;
+    Vector3 camTarget;
 
     /// <summary>Gets a value indicating whether a replay is playing right now. Rules wait on it before the next faceoff.</summary>
     public static bool Playing { get; private set; }
 
-    /// <summary>Gets the replay camera while <see cref="Playing"/>.</summary>
-    public Camera3D Camera => BroadcastCamera.IceLevel(camPos, camTarget);
+    /// <summary>
+    /// Gets the replay camera while <see cref="Playing"/>. It follows the puck at a fixed angle and
+    /// moves in whole pixels at the puck (W58), so the pan steps cleanly instead of swimming.
+    /// </summary>
+    public Camera3D Camera => PixelGrid.Snap(BroadcastCamera.IceLevel(ChasePosition(camTarget), camTarget));
 
     /// <summary>Records or plays back one step. Runs after every gameplay system.</summary>
     /// <param name="world">The match state.</param>
@@ -106,7 +112,6 @@ public sealed class Replay
         shown = 0;
         ReplayBuffer.Apply(buffer[startIndex], world);
         camTarget = Target(world);
-        camPos = ChasePosition(world);
     }
 
     bool Play(World world, float dt)
@@ -125,18 +130,18 @@ public sealed class Replay
         ReplayBuffer.Apply(buffer[(int)playhead], world);   // whole frames: held, like the clips
         float ease = 1 - MathF.Exp(-dt * 6f);
         camTarget += (Target(world) - camTarget) * ease;
-        camPos += (ChasePosition(world) - camPos) * ease;
         return false;
     }
 
     static Vector3 Target(World world)
     {
-        return world.Puck.Position + new Vector3(0, 0.5f, 0);
+        return world.Puck.Position + TargetLift;
     }
 
-    Vector3 ChasePosition(World world)
+    /// <summary>Where the camera stands for a target: a fixed offset from it, so the view direction stays the same while it follows.</summary>
+    Vector3 ChasePosition(Vector3 target)
     {
-        var p = world.Puck.Position + ChaseOffset with { X = ChaseOffset.X * end };
+        var p = target - TargetLift + ChaseOffset with { X = ChaseOffset.X * end };
         p.X = Math.Clamp(p.X, -RinkSpec.HalfLength + 1, RinkSpec.HalfLength - 1);
         return p;
     }

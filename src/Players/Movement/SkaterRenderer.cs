@@ -95,8 +95,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
         string path = Assets.KitAtlas(world.Setup.Club(p.Side).Id, side, "skater", p.Data.Number);
         if (!kits.TryGetValue(path, out var tex))
         {
-            tex = LoadTexture(path);
-            SetTextureFilter(tex, TextureFilter.Point);
+            tex = Camera.FarTexture.Load(path);   // W58: mipmapped so stripes hold still at broadcast range
             kits[path] = tex;
         }
         return tex;
