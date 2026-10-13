@@ -13,11 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TUnit" Version="1.73.19" />
+    <PackageReference Include="TUnit" Version="1.74.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/StickAndPuck.App/StickAndPuck.App.csproj" />
+    <ProjectReference Include="$(RepoRoot)src/StickAndPuck.App/StickAndPuck.App.csproj" />
   </ItemGroup>
 
 </Project>
