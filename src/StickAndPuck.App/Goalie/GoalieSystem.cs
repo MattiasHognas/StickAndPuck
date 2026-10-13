@@ -1,5 +1,6 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Goalie.Dev;
 
 namespace StickAndPuck.App.Goalie;
 
@@ -167,7 +168,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         state.IgnoreUntil = world.Time + GoalieTuning.IgnoreAfterSave;
         state.SeenAt = float.NaN;
         world.Events.Publish(new ShotSaved(world.Time, g.Side, g.Id, at, speed));
-        GoalieDemo.Saved(caught: false);
+        GoalieDemo.Saved(world, caught: false);
     }
 
     static void Catch(World world, Player g, GoalieState state, float speed)
@@ -179,7 +180,7 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         state.HeldSince = world.Time;
         state.SeenAt = float.NaN;
         world.Events.Publish(new ShotSaved(world.Time, g.Side, g.Id, pk.Position, speed));
-        GoalieDemo.Saved(caught: true);
+        GoalieDemo.Saved(world, caught: true);
     }
 
     /// <summary>

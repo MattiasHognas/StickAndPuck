@@ -41,7 +41,7 @@ public sealed class ReplayRecorder
     /// <summary>Opens the SAP_CHECKSUMS log once, when it is set.</summary>
     public static void OpenChecksums()
     {
-        if (Sums.HasValue || Environment.GetEnvironmentVariable("SAP_CHECKSUMS") is not { Length: > 0 } f) return;
+        if (Sums.HasValue || Env.Get("SAP_CHECKSUMS") is not { Length: > 0 } f) return;
         Sums = new StreamWriter(AssetRoot.Output(f)) { AutoFlush = false };
         Console.WriteLine($"SAP: replay: checksum of every step to {AssetRoot.Output(f)}");
     }
@@ -70,7 +70,7 @@ public sealed class ReplayRecorder
     /// <returns>The recorder, or None.</returns>
     public static Maybe<ReplayRecorder> Begin(World world, string scene)
     {
-        string target = Environment.GetEnvironmentVariable("SAP_REPLAY_OUT") ?? "";
+        string target = Env.Get("SAP_REPLAY_OUT");
         if (string.Equals(target, "0", StringComparison.Ordinal)) return Maybe<ReplayRecorder>.None;
         bool built = scene.Length == 0;
         var playing = built ? ScreenFlow.Playing : Maybe<MatchPlan>.None;
@@ -138,8 +138,8 @@ public sealed class ReplayRecorder
     static Dictionary<string, string> Variables()
     {
         var vars = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (System.Collections.DictionaryEntry e in Environment.GetEnvironmentVariables())
-            if (e.Key is string k && k.StartsWith("SAP_", StringComparison.Ordinal) && !ControlVariables.Contains(k, StringComparer.Ordinal)) vars[k] = e.Value as string ?? "";
+        foreach (var (k, v) in Env.Sap)
+            if (!ControlVariables.Contains(k, StringComparer.Ordinal)) vars[k] = v;
         return vars;
     }
 

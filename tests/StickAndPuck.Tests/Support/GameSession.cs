@@ -1,8 +1,4 @@
-using StickAndPuck.App.AI;
-using StickAndPuck.App.Hud;
-using StickAndPuck.App.Intermission;
-using StickAndPuck.App.Lines;
-using StickAndPuck.App.Rules;
+using StickAndPuck.App.Core;
 using StickAndPuck.App.Screens;
 using StickAndPuck.App.Season;
 
@@ -28,20 +24,11 @@ public static class GameSession
     public static void Start()
     {
         Directory.SetCurrentDirectory(AppContext.BaseDirectory);
-        foreach (string name in Environment.GetEnvironmentVariables().Keys.Cast<string>().Where(n => n.StartsWith("SAP_", StringComparison.Ordinal) && !string.Equals(n, PrintGoldens, StringComparison.Ordinal)).ToList())
-            Environment.SetEnvironmentVariable(name, "");
+        foreach (var (name, _) in Env.Sap.Where(v => !string.Equals(v.Key, PrintGoldens, StringComparison.Ordinal)))
+            Env.Set(name, "");
 
-        Keep(() => Penalties.Strictness, v => Penalties.Strictness = v);
-        Keep(() => OvertimeRules.PeriodSeconds, v => OvertimeRules.PeriodSeconds = v);
-        Keep(() => LinesTuning.Pace, v => LinesTuning.Pace = v);
-        Keep(() => TacticsSystem.ShowLine, v => TacticsSystem.ShowLine = v);
         Keep(() => PlayoffSession.Rules, v => PlayoffSession.Rules = v);
-        Keep(() => MatchDemo.Enabled, v => MatchDemo.Enabled = v);
-        Keep(() => Celebration.Enabled, v => Celebration.Enabled = v);
         Keep(() => ScreenFlow.Prefs, v => ScreenFlow.Prefs = v);
-        Keep(() => HudSystem.ShowAlways, v => HudSystem.ShowAlways = v);
-        Keep(() => HudMessages.SeasonGoals, v => HudMessages.SeasonGoals = v);
-        Keep(() => IntermissionSystem.StartAt, v => IntermissionSystem.StartAt = v);
     }
 
     /// <summary>Runs before every test.</summary>

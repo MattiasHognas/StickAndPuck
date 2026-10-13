@@ -1,6 +1,6 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Players.Dev;
 
 namespace StickAndPuck.App.Players;
 
@@ -45,7 +45,6 @@ internal sealed class PuckHandlingSystem : ISystem
     /// <summary>The dice seed without a match seed (W67).</summary>
     internal const int Fallback = 7;
 
-    static readonly ConditionalWeakTable<World, StrongBox<HumanPass>> HumanPasses = [];
 
     readonly Random rng;
     readonly HashSet<int> shootHeld = [];
@@ -173,7 +172,7 @@ internal sealed class PuckHandlingSystem : ISystem
         lastPass = Maybe.Some((passer.Side, passer.Id, world.Time));
         armed.Clear();
         world.Events.Publish(new PassMade(world.Time, passer.Side, passer.Id, from, velocity.Length()));
-        if (human && receiver.TryGet(out var mate)) HumanPasses.AddOrUpdate(world, new StrongBox<HumanPass>(new HumanPass(passer.Id, mate.Id, passer.Command.Move, world.Time)));
+        if (human && receiver.TryGet(out var mate)) world.LastHumanPass = new HumanPass(passer.Id, mate.Id, passer.Command.Move, world.Time);
 
         if (receiver.TryGet(out var taker) && passer.Slot >= 0 && world.Settings.Switching != ControlSwitching.Manual)
         {
@@ -188,7 +187,7 @@ internal sealed class PuckHandlingSystem : ISystem
     /// <returns>The pass.</returns>
     internal static Maybe<HumanPass> LastHumanPass(World world)
     {
-        return HumanPasses.TryGetValue(world, out var box) ? box.Value : Maybe<HumanPass>.None;
+        return world.LastHumanPass;
     }
 
     /// <summary>Fires a wound-up shot once the clip reaches the sweep.</summary>

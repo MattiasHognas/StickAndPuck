@@ -25,7 +25,7 @@ internal sealed class CameraSystem : ISystem
 
     public void Start(World world)
     {
-        string zoom = Environment.GetEnvironmentVariable("SAP_CAMERA_ZOOM") ?? "";
+        string zoom = Env.Get("SAP_CAMERA_ZOOM");
         if (zoom is "0" or "1") world.Settings = world.Settings with { CameraZoom = string.Equals(zoom, "1", StringComparison.Ordinal) };
         follow.Cut(world);
         world.Camera = follow.Camera;
@@ -41,7 +41,7 @@ internal sealed class CameraSystem : ISystem
         impact.Update(world, dt);
         if (replay.Update(world, dt)) follow.Cut(world);
         closeUp.Update(world, dt, replay.Waiting);
-        if (Replay.Playing)
+        if (world.ReplayPlaying)
         {
             (world.Camera, scale) = PixelGrid.SnapScaled(replay.Camera, scale);
             Render.RenderScale.Request(scale);
@@ -57,11 +57,11 @@ internal sealed class CameraSystem : ISystem
 
     public void DrawScene(World world, RenderContext render)
     {
-        if (!Replay.Playing) Render.Marker.Draw(world);
+        if (!world.ReplayPlaying) Render.Marker.Draw(world);
     }
 
     public void DrawHud(World world, RenderContext render)
     {
-        replay.DrawHud();
+        replay.DrawHud(world);
     }
 }

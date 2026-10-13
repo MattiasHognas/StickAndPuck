@@ -29,9 +29,6 @@ public sealed class PenaltyTests : CheckedTest
 {
     const float Period = 600;
 
-    [Before(Test)]
-    public void NormalReferee() => Penalties.Strictness = 1f;
-
     static T Must<T>(Maybe<T> m)
         where T : notnull => m.TryGet(out var v) ? v : throw new InvalidOperationException("expected a value");
 
@@ -532,14 +529,14 @@ public sealed class PenaltyTests : CheckedTest
         w.Puck.Position = Vector3.Zero;
         w.Puck.Velocity = Vector3.Zero;
         scene.SetUp(w, target, checker);
-        Penalties.Strictness = 1e6f;
+        w.Switches.PenaltyStrictness = 1e6f;
         bool hit = false;
         Run(w, _ => hit && (scene.Strength > 0 || w.Time > 1), x =>
         {
             if (!hit && scene.Strength > 0) x.Events.Publish(new CheckLanded(x.Time, Side.Away, checker.Id, target.Position, scene.Strength));
             hit = true;
         }, scene.Strength > 0 ? 1 : 2);
-        Penalties.Strictness = 1f;
+        w.Switches.PenaltyStrictness = 1f;
         return [.. Penalties.Delayed(w).Select(d => d.Infraction).Concat(w.Match.Penalties.Select(p => p.Infraction))];
     }
 
@@ -770,7 +767,7 @@ public sealed class PenaltyTests : CheckedTest
         var w = new WorldBuilder()
             .Setup(setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] })
             .Build();
-        Penalties.Strictness = strictness;
+        w.Switches.PenaltyStrictness = strictness;
 #pragma warning disable S2245 // fixed seeds so the checks repeat
         Penalties.Book(w).Rng = new Random(seed);
         ISystem[] systems =
@@ -805,7 +802,6 @@ public sealed class PenaltyTests : CheckedTest
             }
             served &= w.Match.Penalties.TrueForAll(p => p.SecondsLeft <= Penalties.ClubSeconds(w, Severity.Major) + 0.01f);
         }
-        Penalties.Strictness = 1f;
         Console.WriteLine($"      {string.Join(", ", kinds.Select(k => $"{k.Value} {k.Key}"))}");
         return (calls, broken, served);
     }

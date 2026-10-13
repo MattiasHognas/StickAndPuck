@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
 using K = StickAndPuck.App.Core.Text.Keys;
@@ -140,10 +139,7 @@ public readonly record struct DelayedPenalty(Side Side, int PlayerId, string Inf
 /// </summary>
 public static class Penalties
 {
-    static readonly ConditionalWeakTable<World, PenaltyBook> Books = new();
 
-    /// <summary>Gets or sets how strict the referee is: 1 is normal, 0 calls nothing. Scenes raise it to see calls often.</summary>
-    public static float Strictness { get; set; } = 1f;
 
     /// <summary>Gets the calls signalled and not yet made.</summary>
     /// <param name="world">The match.</param>
@@ -560,7 +556,7 @@ public static class Penalties
 
     internal static PenaltyBook Book(World world)
     {
-        return Books.GetValue(world, w => new PenaltyBook { Rng = Seeds.Dice(w.Seed, "penalties", 14) });
+        return world.Penalties.Get(() => new PenaltyBook { Rng = Seeds.Dice(world.Seed, "penalties", 14) });
     }
 
     internal static string Name(World world, Player p)

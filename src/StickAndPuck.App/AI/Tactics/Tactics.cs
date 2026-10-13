@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.AI;
@@ -53,7 +52,6 @@ public sealed class TacticsTally
 /// <summary>W22d: club tactics' state for a match, and the tallies other code may read.</summary>
 public static class Tactics
 {
-    static readonly ConditionalWeakTable<World, TacticsBoard> Boards = [];
 
     /// <summary>Gets a side's tactics, from its club file.</summary>
     /// <param name="world">The match.</param>
@@ -84,7 +82,7 @@ public static class Tactics
 
     internal static TacticsBoard Board(World world)
     {
-        return Boards.GetValue(world, _ => new TacticsBoard());
+        return world.Tactics.Get(() => new TacticsBoard());
     }
 }
 

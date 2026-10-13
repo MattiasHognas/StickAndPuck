@@ -23,15 +23,13 @@ public sealed class OvertimeTests : CheckedTest
     /// <summary>The default exhibition with 10-second periods and no humans.</summary>
     static MatchSetup BaseSetup => WorldBuilder.DefaultSetup with { PeriodSeconds = Period, Inputs = NoHumans };
 
-    [Before(Test)]
-    public void ShortOvertime() => OvertimeRules.PeriodSeconds = Period;
-
     static World Make(OvertimeRule rule = OvertimeRule.Shl, Maybe<OvertimeFormat> format = default, Maybe<RuleSet> rules = default) => Make(NoHumans, rule, format, rules);
 
     static World Make(IReadOnlyList<InputSlot> inputs, OvertimeRule rule = OvertimeRule.Shl, Maybe<OvertimeFormat> format = default, Maybe<RuleSet> rules = default)
     {
         return new WorldBuilder()
             .Setup(BaseSetup with { Overtime = rule, Inputs = inputs, OvertimeFormat = format, Rules = rules.Or(RuleSet.Shl) })
+            .Switches(s => s.OvertimeSeconds = Period)
             .Build();
     }
 

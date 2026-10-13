@@ -1,5 +1,5 @@
-using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Rules.Dev;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Rules;
@@ -11,8 +11,6 @@ namespace StickAndPuck.App.Rules;
 /// </summary>
 internal sealed class MatchRules : ISystem
 {
-    /// <summary>Gets or sets a value indicating whether the plain score and clock line is drawn; SAP_MATCH_DEBUG=1 turns it on.</summary>
-    public static bool ShowLine { get; set; } = string.Equals(Environment.GetEnvironmentVariable("SAP_MATCH_DEBUG"), "1", StringComparison.Ordinal);
 
     public void Update(World world, float dt)
     {
@@ -40,7 +38,7 @@ internal sealed class MatchRules : ISystem
                 break;
             case MatchPhase.Goal:
                 // W9's goal replay holds the restart; the faceoff follows a second after it ends
-                if (Replay.Playing) s.Timer = 1f;
+                if (world.ReplayPlaying) s.Timer = 1f;
                 else if (Wait(s, dt)) MatchFlow.SetUpFaceoff(world, RinkSpec.CentreDot);
                 break;
             case MatchPhase.Intermission:
@@ -55,7 +53,7 @@ internal sealed class MatchRules : ISystem
     public void DrawHud(World world, RenderContext render)
     {
         // a plain readout for checking the flow before W10's scorebug; SAP_MATCH_DEBUG=1 turns it on
-        if (!ShowLine || !MatchFlow.IsRunning(world)) return;
+        if (!world.Switches.MatchLine || !MatchFlow.IsRunning(world)) return;
         var m = world.Match;
         string text = $"{world.Setup.Home.ShortName} {m.Score[0]} - {m.Score[1]} {world.Setup.Away.ShortName}   P{m.Period} {MatchFlow.ClockText(m.Clock)}   {m.Phase}";
         DrawRectangle(4, 252, MeasureText(text, 10) + 8, 14, new Raylib_cs.Color(24, 19, 31, 255));

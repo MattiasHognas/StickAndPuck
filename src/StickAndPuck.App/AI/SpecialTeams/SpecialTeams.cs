@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.AI;
@@ -59,7 +58,6 @@ public sealed class SpecialTeamsTally
 /// <summary>W22c: the special teams' state for a match, and what other code may read of it.</summary>
 public static class SpecialTeams
 {
-    static readonly ConditionalWeakTable<World, SpecialTeamsBoard> Boards = [];
 
     /// <summary>Gets a club's special teams tally for this match.</summary>
     /// <param name="world">The match.</param>
@@ -90,7 +88,7 @@ public static class SpecialTeams
 
     internal static SpecialTeamsBoard Board(World world)
     {
-        return Boards.GetValue(world, _ => new SpecialTeamsBoard());
+        return world.SpecialTeams.Get(() => new SpecialTeamsBoard());
     }
 }
 

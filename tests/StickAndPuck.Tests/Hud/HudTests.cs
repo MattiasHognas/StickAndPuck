@@ -80,7 +80,7 @@ public sealed class HudTests : CheckedTest
         var hud = new HudMessages();
         var scorer = w.OnIce(Side.Home).First(p => !p.IsGoalie);
         var other = w.OnIce(Side.Away).First(p => !p.IsGoalie);
-        HudMessages.SeasonGoals = (_, side) => side == Side.Home ? 0 : 4;
+        w.Switches.SeasonGoals = (_, side) => side == Side.Home ? 0 : 4;
         void Goal(Side side, int player)
         {
             w.Events.Clear();
@@ -100,7 +100,7 @@ public sealed class HudTests : CheckedTest
         Check(Shown(hud).TryGet(out var h) && h is { Title: "HAT TRICK!" } && string.Equals(h.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal), "the third goal by one player shows HAT TRICK!");
         Goal(Side.Home, scorer.Id);
         Check(Shown(hud).Is(b => b is { Title: "GOAL!" }), "the fourth is a plain goal again");
-        HudMessages.SeasonGoals = (_, _) => Maybe<int>.None;
+        w.Switches.SeasonGoals = (_, _) => Maybe<int>.None;
 
         // 4-1 home: the game winner is home's second goal
         Check(Final(w, hud, Side.Home).TryGet(out var f) && f is { Title: "FINAL" } && f.Lines.Count == 1 && string.Equals(f.Lines[0], $"GAME-WINNING GOAL #{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal),

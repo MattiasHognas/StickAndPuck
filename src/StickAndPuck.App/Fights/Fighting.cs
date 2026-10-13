@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
 
@@ -169,14 +168,13 @@ public sealed class Fight
 /// </summary>
 public static class Fighting
 {
-    static readonly ConditionalWeakTable<World, FightState> States = new();
 
     /// <summary>Gets the fight on the ice, or None.</summary>
     /// <param name="world">The match.</param>
     /// <returns>The fight.</returns>
     public static Maybe<Fight> Current(World world)
     {
-        return States.TryGetValue(world, out var s) ? s.Fight : Maybe<Fight>.None;
+        return world.Fight.TryGet(out var s) ? s.Fight : Maybe<Fight>.None;
     }
 
     /// <summary>Gets the fight waiting to be accepted, or None.</summary>
@@ -184,7 +182,7 @@ public static class Fighting
     /// <returns>The offer.</returns>
     public static Maybe<FightOffer> Pending(World world)
     {
-        return States.TryGetValue(world, out var s) ? s.Offer : Maybe<FightOffer>.None;
+        return world.Fight.TryGet(out var s) ? s.Offer : Maybe<FightOffer>.None;
     }
 
     /// <summary>Gets the fights started this match.</summary>
@@ -192,7 +190,7 @@ public static class Fighting
     /// <returns>The count.</returns>
     public static int Started(World world)
     {
-        return States.TryGetValue(world, out var s) ? s.Started : 0;
+        return world.Fight.TryGet(out var s) ? s.Started : 0;
     }
 
     /// <summary>Gets whether a skater is in a fight right now.</summary>
@@ -281,7 +279,7 @@ public static class Fighting
 
     internal static FightState State(World world)
     {
-        return States.GetValue(world, _ => new FightState());
+        return world.Fight.Get(() => new FightState());
     }
 }
 

@@ -50,7 +50,7 @@ internal static class ScreenPrefsFile
 
     /// <summary>Gets the settings file path.</summary>
     public static string DefaultPath =>
-        Environment.GetEnvironmentVariable("SAP_SETTINGS") is { Length: > 0 } p
+        Env.Get("SAP_SETTINGS") is { Length: > 0 } p
             ? Path.GetFullPath(p)
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "settings.json");
 

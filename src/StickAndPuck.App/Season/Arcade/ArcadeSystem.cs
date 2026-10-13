@@ -18,8 +18,6 @@ internal sealed class ArcadeSystem : ISystem, IDisposable
     float finishedAt = float.PositiveInfinity;
     Maybe<HudArt> art;
 
-    /// <summary>Gets or sets a value indicating whether the panel always shows (the arcadesummary scene).</summary>
-    public static bool ShowSummary { get; set; }
 
     public bool RunsWhilePaused => true;
 
@@ -52,7 +50,7 @@ internal sealed class ArcadeSystem : ISystem, IDisposable
     public void DrawHud(World world, RenderContext render)
     {
         if (!art.TryGet(out var hud) || !ArcadeSession.Current.TryGet(out var run)) return;
-        if (ShowSummary || world.Time - finishedAt >= PanelDelay) ArcadeSummary.Draw(hud, run, ArcadeSession.Clubs);
+        if (world.Switches.ArcadeSummary || world.Time - finishedAt >= PanelDelay) ArcadeSummary.Draw(hud, run, ArcadeSession.Clubs);
     }
 
     public void Dispose()

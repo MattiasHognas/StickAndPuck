@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
 
@@ -27,7 +26,6 @@ internal sealed class DefenceSystem : ISystem
 {
     const float Spacing = 2.2f;   // defenders closer than this push their spots apart
 
-    static readonly ConditionalWeakTable<World, DefenceBoard> Boards = [];
 
     /// <summary>The dice seed without a match seed (W67).</summary>
     internal const int Fallback = 2;
@@ -226,7 +224,7 @@ internal sealed class DefenceSystem : ISystem
 
     static DefenceBoard Board(World world)
     {
-        return Boards.GetValue(world, _ => new DefenceBoard());
+        return world.Defence.Get(() => new DefenceBoard());
     }
 
     static Vector2 Flat(Vector3 v)

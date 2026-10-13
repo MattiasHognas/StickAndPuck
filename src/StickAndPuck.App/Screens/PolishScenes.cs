@@ -19,7 +19,7 @@ internal static class PolishScenes
         {
             case "leaders" or "stats":
                 Season(clubs, "stats-test.json", 12);
-                ScreenFlow.Push(new SeasonStatsScreen().Showing(Environment.GetEnvironmentVariable("SAP_STATS_VIEW") ?? "POINTS"));
+                ScreenFlow.Push(new SeasonStatsScreen().Showing(Env.Get("SAP_STATS_VIEW") is { Length: > 0 } view ? view : "POINTS"));
                 break;
             case "sim":
                 Season(clubs, "sim-test.json", 5);
@@ -102,11 +102,11 @@ internal static class PolishScenes
 
     static string Club(IReadOnlyList<ClubData> clubs)
     {
-        return Environment.GetEnvironmentVariable("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
+        return Env.Get("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
     }
 
     static int Seed()
     {
-        return int.TryParse(Environment.GetEnvironmentVariable("SAP_SEED"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int s) ? s : 33;
+        return int.TryParse(Env.Get("SAP_SEED"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int s) ? s : 33;
     }
 }

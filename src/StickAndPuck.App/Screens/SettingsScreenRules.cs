@@ -109,7 +109,7 @@ internal static class RulePicks
 {
     /// <summary>Gets the player's rule choice, under SAP_RULES.</summary>
     public static RuleChoice Choice =>
-        Environment.GetEnvironmentVariable("SAP_RULES") is { Length: > 0 } name
+        Env.Get("SAP_RULES") is { Length: > 0 } name
             ? RuleChoice.Of(Enum.TryParse<RulePreset>(name.Trim(), ignoreCase: true, out var p) ? p : throw new InvalidOperationException($"SAP_RULES={name}: use shl, arcade or nhl"))
             : ScreenFlow.Prefs.Rules;
 

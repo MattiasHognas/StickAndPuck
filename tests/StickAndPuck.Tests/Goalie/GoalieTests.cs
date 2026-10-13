@@ -5,6 +5,7 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Goalie;
 using StickAndPuck.App.Physics;
 using StickAndPuck.Tests.Support;
+using StickAndPuck.App.Goalie.Dev;
 
 namespace StickAndPuck.Tests;
 

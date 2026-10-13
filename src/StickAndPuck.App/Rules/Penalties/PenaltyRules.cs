@@ -219,7 +219,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
 
     static void Roll(World world, PenaltyBook book, Foul foul, float strength, bool afterWhistle = false)
     {
-        if (book.Rng.NextSingle() >= foul.Chance * Penalties.Strictness * world.Setup.Rules.StrictnessScale) return;
+        if (book.Rng.NextSingle() >= foul.Chance * world.Switches.PenaltyStrictness * world.Setup.Rules.StrictnessScale) return;
         var severity = PenaltyModel.Grade(world.Setup.Rules, foul.Infraction, strength, book.Rng.NextSingle());
         Penalties.Signal(world, foul.PlayerId, foul.Infraction, severity, afterWhistle);
     }

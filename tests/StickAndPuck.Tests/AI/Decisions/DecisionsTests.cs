@@ -7,6 +7,7 @@ using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
+using StickAndPuck.App.AI.Dev;
 
 namespace StickAndPuck.Tests;
 

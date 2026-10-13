@@ -22,11 +22,7 @@ internal sealed class LightingSystem : ISystem
     readonly LightCues cues = new();
     int shadowLoc = -1, midLoc, fullLoc, dirLoc;
 
-    /// <summary>Gets the preset of the current match, for the HUD and screens.</summary>
-    public static LightPreset Preset { get; private set; } = LightPresets.Afternoon;
-
-    /// <summary>Gets the face-off time of the current match, like "19:00".</summary>
-    public static string StartTime { get; private set; } = LightPresets.Afternoon.StartTimes[0];
+    LightPreset preset = LightPresets.Afternoon;
 
     public bool RunsWhilePaused => true;
 
@@ -34,31 +30,32 @@ internal sealed class LightingSystem : ISystem
     {
         // W67: a seeded match (and so its replay) always gets the same mood; the unseeded menu backdrop varies
         var dice = world.Seed != 0 ? Seeds.Dice(world.Seed, "lighting", 0) : Random.Shared;
-        var time = Environment.GetEnvironmentVariable("SAP_LIGHTING") is { Length: > 0 } name
+        var time = Env.Get("SAP_LIGHTING") is { Length: > 0 } name
             ? Enum.TryParse<TimeOfDay>(name, ignoreCase: true, out var t) ? t
                 : throw new InvalidOperationException($"SAP_LIGHTING={name}: use early, afternoon or late")
             : Enum.TryParse<TimeOfDay>(world.Settings.Lighting.ToString(), out var chosen) ? chosen    // W20: the settings screen's mood
             : (TimeOfDay)dice.Next(3);
-        Preset = LightPresets.For(time);
-        StartTime = Preset.StartTimes[dice.Next(Preset.StartTimes.Length)];
-        Console.WriteLine($"SAP: lighting {time.ToString().ToLowerInvariant()}, face-off {StartTime}");
-        Apply();
+        preset = LightPresets.For(time);
+        string startTime = preset.StartTimes[dice.Next(preset.StartTimes.Length)];
+        Console.WriteLine($"SAP: lighting {time.ToString().ToLowerInvariant()}, face-off {startTime}");
+        Apply(world);
     }
 
     public void Update(World world, float dt)
     {
         if (!world.Match.Paused) cues.Update(world, dt);
-        Apply();
+        Apply(world);
     }
 
     /// <summary>Sets the arena tones from the preset and cues.</summary>
-    void Apply()
+    void Apply(World world)
     {
         var cue = cues.Current();
-        ArenaLook.IceBand = cue.Flash ? FlashBand : cue.Bands ? Preset.IceBand : Preset.IceBand with { A = 0 };
-        ArenaLook.Glass = cue.Flash ? FlashGlass : Preset.Glass;
-        ArenaLook.Ice = Dimmed(Preset.Ice, cue.Tone);
-        ArenaLook.Scratch = Dimmed(Preset.Scratch, cue.Tone);
+        var look = world.Look;
+        look.IceBand = cue.Flash ? FlashBand : cue.Bands ? preset.IceBand : preset.IceBand with { A = 0 };
+        look.Glass = cue.Flash ? FlashGlass : preset.Glass;
+        look.Ice = Dimmed(preset.Ice, cue.Tone);
+        look.Scratch = Dimmed(preset.Scratch, cue.Tone);
     }
 
     /// <summary>A flat tone times the cue's light level, so the ice goes down with the intro and up with a flash; alpha is kept.</summary>
@@ -80,10 +77,10 @@ internal sealed class LightingSystem : ISystem
             dirLoc = GetShaderLocation(shader, "lightDir");
         }
         var tone = cues.Current().Tone;
-        SetShaderValue(shader, shadowLoc, Preset.Shadow * tone, ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, midLoc, Preset.Mid * tone, ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, fullLoc, Preset.Full * tone, ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, dirLoc, Preset.LightDir, ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, shadowLoc, preset.Shadow * tone, ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, midLoc, preset.Mid * tone, ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, fullLoc, preset.Full * tone, ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, dirLoc, preset.LightDir, ShaderUniformDataType.Vec3);
         Render.DitherGrid.Apply(world.Camera, shader);     // W60: the dither pattern hangs from the ice, not the screen
     }
 }

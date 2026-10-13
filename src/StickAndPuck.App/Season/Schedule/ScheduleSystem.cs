@@ -19,8 +19,6 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
     float finishedAt = float.PositiveInfinity;
     Maybe<HudArt> art;
 
-    /// <summary>Gets or sets a value indicating whether the table always shows (the seasontable scene).</summary>
-    public static bool ShowTable { get; set; }
 
     public bool RunsWhilePaused => true;
 
@@ -53,7 +51,7 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
     public void DrawHud(World world, RenderContext render)
     {
         if (!art.TryGet(out var hud) || !SeasonSession.Current.TryGet(out var season)) return;
-        if (ShowTable || world.Time - finishedAt >= TableDelay) SeasonTable.Draw(hud, season, SeasonSession.Clubs);
+        if (world.Switches.ScheduleTable || world.Time - finishedAt >= TableDelay) SeasonTable.Draw(hud, season, SeasonSession.Clubs);
     }
 
     public void Dispose()

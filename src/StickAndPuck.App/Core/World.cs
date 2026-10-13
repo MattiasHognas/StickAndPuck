@@ -8,6 +8,9 @@ namespace StickAndPuck.App.Core;
 /// </summary>
 public sealed class World
 {
+    readonly List<int>[] onIce = [[], []];
+    int onIceVersion = -1;
+
     /// <summary>Initializes a new world for a match.</summary>
     /// <param name="setup">The clubs, inputs and rules.</param>
     /// <param name="settings">Player options.</param>
@@ -25,7 +28,7 @@ public sealed class World
     public Settings Settings { get; set; }
 
     /// <summary>Gets every player in the match, both clubs, indexed by <see cref="Player.Id"/>.</summary>
-    public List<Player> Players { get; } = [];
+    public PlayerList Players { get; } = [];
 
     /// <summary>Gets the puck.</summary>
     public Puck Puck { get; } = new();
@@ -52,6 +55,74 @@ public sealed class World
     /// </summary>
     public int Seed { get; set; } = Seeds.Environment;
 
+    /// <summary>Gets the arena tones the lighting sets and the arena draws with.</summary>
+    public Arena.ArenaLook Look { get; } = new();
+
+    /// <summary>Gets or sets a value indicating whether a goal replay is playing right now (W9). Rules wait on it before the next faceoff.</summary>
+    public bool ReplayPlaying { get; internal set; }
+
+    /// <summary>Gets or sets the switches dev scenes and tests turn (W56; these were statics).</summary>
+    public WorldSwitches Switches { get; set; } = new();
+
+    /// <summary>Gets the dev scenes' loops (W56; these were statics).</summary>
+    public DevScenes Dev { get; } = new();
+
+    // W56: each system's own state, made the first time the system asks for it (these were side tables keyed on the world)
+
+    /// <summary>Gets the AI layer that last set each player's command, by player id (<see cref="AI.AiCommand"/>).</summary>
+    internal Slot<Dictionary<int, AI.AiIntent>> AiIntents { get; } = new();
+
+    /// <summary>Gets the intents SAP_AI_TRACE last printed, by player id.</summary>
+    internal Slot<Dictionary<int, AI.AiIntent>> AiIntentsPrinted { get; } = new();
+
+    /// <summary>Gets the positioning system's board.</summary>
+    internal Slot<AI.PositioningBoard> Positioning { get; } = new();
+
+    /// <summary>Gets the decision system's board.</summary>
+    internal Slot<AI.DecisionBoard> Decisions { get; } = new();
+
+    /// <summary>Gets the defence system's board.</summary>
+    internal Slot<AI.DefenceBoard> Defence { get; } = new();
+
+    /// <summary>Gets the tactics system's board.</summary>
+    internal Slot<AI.TacticsBoard> Tactics { get; } = new();
+
+    /// <summary>Gets the special teams system's board.</summary>
+    internal Slot<AI.SpecialTeamsBoard> SpecialTeams { get; } = new();
+
+    /// <summary>Gets the fight in progress and the offer before it.</summary>
+    internal Slot<Fights.FightState> Fight { get; } = new();
+
+    /// <summary>Gets the lines, the bench and the changes in progress.</summary>
+    internal Slot<Lines.LinesBoard> Lines { get; } = new();
+
+    /// <summary>Gets each club's momentum.</summary>
+    internal Slot<Momentum.MomentumState> Momentum { get; } = new();
+
+    /// <summary>Gets or sets the last pass a human made, for the AI receiver to skate onto.</summary>
+    internal Maybe<Players.HumanPass> LastHumanPass { get; set; }
+
+    /// <summary>Gets the on-ice referee.</summary>
+    internal Slot<Referee.Referee> Referee { get; } = new();
+
+    /// <summary>Gets the pregame warm-up.</summary>
+    internal Slot<Pregame.WarmupState> Warmup { get; } = new();
+
+    /// <summary>Gets the icing rule's state.</summary>
+    internal Slot<Rules.IcingState> Icing { get; } = new();
+
+    /// <summary>Gets the match flow's state.</summary>
+    internal Slot<Rules.FlowState> Flow { get; } = new();
+
+    /// <summary>Gets the offside rule's state.</summary>
+    internal Slot<Rules.OffsideState> Offside { get; } = new();
+
+    /// <summary>Gets the overtime and shootout state.</summary>
+    internal Slot<Rules.OvertimeState> Overtime { get; } = new();
+
+    /// <summary>Gets the penalty book.</summary>
+    internal Slot<Rules.PenaltyBook> Penalties { get; } = new();
+
     /// <summary>Adds a player from a club's roster.</summary>
     /// <param name="side">Which club.</param>
     /// <param name="data">The roster entry.</param>
@@ -69,7 +140,38 @@ public sealed class World
     /// <returns>Those players.</returns>
     public IEnumerable<Player> OnIce(Side side)
     {
-        return Players.Where(p => p.Side == side && p.OnIce);
+        // W56: walks the cached list, which matches filtering the players in order; if the players
+        // change part way, the rest is filtered as it would have been, from the next player on
+        var list = OnIceIndices(side);
+        int version = Players.Version, next = 0;
+        foreach (int i in list)
+        {
+            if (Players.Version != version) break;
+            next = i + 1;
+            yield return Players[i];
+        }
+
+        if (Players.Version == version) yield break;
+        for (int i = next; i < Players.Count; i++)
+        {
+            var p = Players[i];
+            if (p.Side == side && p.OnIce) yield return p;
+        }
+    }
+
+    /// <summary>Gets the indices of one club's players on the ice, rebuilt after the players change.</summary>
+    List<int> OnIceIndices(Side side)
+    {
+        if (onIceVersion != Players.Version)
+        {
+            onIce[0].Clear();
+            onIce[1].Clear();
+            for (int i = 0; i < Players.Count; i++)
+                if (Players[i].OnIce) onIce[(int)Players[i].Side].Add(i);
+            onIceVersion = Players.Version;
+        }
+
+        return onIce[(int)side];
     }
 
     /// <summary>Gets the player a human slot controls, if any.</summary>

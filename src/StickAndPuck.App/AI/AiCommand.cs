@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.AI;
@@ -70,14 +69,8 @@ public readonly record struct AiIntent(AiLayer Owner, string Reason, long Tick);
 /// </summary>
 public static class AiCommand
 {
-    static readonly ConditionalWeakTable<World, Dictionary<int, AiIntent>> Intents = [];
-    static readonly ConditionalWeakTable<World, Dictionary<int, AiIntent>> Printed = [];
 
-    /// <summary>Gets or sets a value indicating whether owner changes are printed (SAP_AI_TRACE=1 sets it).</summary>
-    public static bool Trace { get; set; } = string.Equals(Environment.GetEnvironmentVariable("SAP_AI_TRACE"), "1", StringComparison.Ordinal);
 
-    /// <summary>Gets or sets a hook that sees every AI write as it happens, for the W68 fixtures (a no-op by default).</summary>
-    internal static Action<Player, AiIntent> Watch { get; set; } = Unwatched;
 
     /// <summary>Gets who last wrote a skater's command, and why.</summary>
     /// <param name="world">The match.</param>
@@ -85,7 +78,7 @@ public static class AiCommand
     /// <returns>The intent; <see cref="AiLayer.None"/> when the AI has not written it.</returns>
     public static AiIntent IntentOf(World world, Player p)
     {
-        return Intents.GetValue(world, _ => []).GetValueOrDefault(p.Id, new AiIntent(AiLayer.None, "", long.MinValue));
+        return world.AiIntents.Get(() => []).GetValueOrDefault(p.Id, new AiIntent(AiLayer.None, "", long.MinValue));
     }
 
     /// <summary>Positioning's write at the start of a step: the whole command, every button cleared.</summary>
@@ -96,7 +89,7 @@ public static class AiCommand
     internal static void Base(World world, Player p, PlayerCommand move, string reason)
     {
         if (p.Slot >= 0) return;
-        if (Trace) Print(world, p);
+        if (world.Switches.AiTrace) Print(world, p);
         Owns(world, p, AiLayer.Positioning, reason);
         p.Command = move;
     }
@@ -190,24 +183,16 @@ public static class AiCommand
     {
         if (p.Slot >= 0) return false;
         var intent = new AiIntent(layer, reason, world.Tick);
-        Intents.GetValue(world, _ => [])[p.Id] = intent;
-        Watch(p, intent);
+        world.AiIntents.Get(() => [])[p.Id] = intent;
+        world.Switches.AiWatch(p, intent);
         return true;
-    }
-
-    /// <summary>The default <see cref="Watch"/>: sees nothing.</summary>
-    /// <param name="p">The skater.</param>
-    /// <param name="intent">The write.</param>
-    internal static void Unwatched(Player p, AiIntent intent)
-    {
-        // nobody is watching: a fixture sets its own hook
     }
 
     /// <summary>Prints who had a skater at the end of the last step he was written, when that changed.</summary>
     static void Print(World world, Player p)
     {
-        if (!Intents.GetValue(world, _ => []).TryGetValue(p.Id, out var now)) return;
-        var printed = Printed.GetValue(world, _ => []);
+        if (!world.AiIntents.Get(() => []).TryGetValue(p.Id, out var now)) return;
+        var printed = world.AiIntentsPrinted.Get(() => []);
         if (printed.TryGetValue(p.Id, out var was) && was.Owner == now.Owner && string.Equals(was.Reason, now.Reason, StringComparison.Ordinal)) return;
         printed[p.Id] = now;
         Console.WriteLine($"AI {now.Tick} #{p.Id} {p.Side} {now.Owner}: {now.Reason}");

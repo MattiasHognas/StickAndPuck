@@ -20,6 +20,7 @@ public sealed class WorldBuilder
     int seed;
     Maybe<PlayingPosition> human;
     readonly List<Action<World>> after = [];
+    readonly List<Action<WorldSwitches>> switches = [];
 
     /// <summary>Gets every club from data/clubs/, loaded once.</summary>
     public static IReadOnlyList<ClubData> Clubs => AllClubs.Value;
@@ -115,6 +116,15 @@ public sealed class WorldBuilder
         return this;
     }
 
+    /// <summary>Turns a switch on the new world before anything runs on it, for example <c>s => s.PenaltyStrictness = 0</c>.</summary>
+    /// <param name="change">The change.</param>
+    /// <returns>This builder.</returns>
+    public WorldBuilder Switches(Action<WorldSwitches> change)
+    {
+        switches.Add(change);
+        return this;
+    }
+
     /// <summary>Runs a step on the finished world, after the match flow began.</summary>
     /// <param name="step">The step.</param>
     /// <returns>This builder.</returns>
@@ -129,6 +139,7 @@ public sealed class WorldBuilder
     public World Build()
     {
         var world = new World(setup, settings) { Seed = seed };
+        foreach (var change in switches) change(world.Switches);
         if (starters) Scenes.AddStarters(world, skaters);
         if (human.TryGet(out var position)) world.OnIce(Side.Home).First(p => p.Data.Position == position).Slot = 0;
         if (begin) MatchFlow.Begin(world, log: false);

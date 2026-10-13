@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Render;
 
@@ -18,7 +17,6 @@ public readonly record struct RefereeCall(string Infraction, int PlayerId, float
 /// </summary>
 public sealed class Referee
 {
-    static readonly ConditionalWeakTable<World, Referee> All = new();
 
     /// <summary>The referee's outline id in the mask pass: the last id, which players (id + 1) never reach.</summary>
     public const int MaskId = MaskIds.Max;
@@ -68,7 +66,7 @@ public sealed class Referee
     /// <returns>The referee, made on first use.</returns>
     public static Referee Of(World world)
     {
-        return All.GetValue(world, _ => new Referee());
+        return world.Referee.Get(() => new Referee());
     }
 
     /// <summary>W14's hook: the referee raises an arm for a penalty, to be called at the next stoppage.</summary>

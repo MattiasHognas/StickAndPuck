@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules;
@@ -22,7 +21,6 @@ namespace StickAndPuck.App.Rules;
 /// </remarks>
 public static class MatchFlow
 {
-    static readonly ConditionalWeakTable<World, FlowState> States = new();
 
     /// <summary>Starts the match: score to zero, period 1, the intro, then the opening faceoff at centre.</summary>
     /// <param name="world">The match state.</param>
@@ -48,7 +46,7 @@ public static class MatchFlow
     /// <returns>True after <see cref="Begin"/>.</returns>
     public static bool IsRunning(World world)
     {
-        return States.TryGetValue(world, out var s) && s.Active;
+        return world.Flow.TryGet(out var s) && s.Active;
     }
 
     /// <summary>Gets the dot of the coming (or last) faceoff; the referee skates here during a stoppage.</summary>
@@ -149,7 +147,7 @@ public static class MatchFlow
 
     internal static FlowState State(World world)
     {
-        return States.GetValue(world, w => new FlowState { Dice = Seeds.Dice(w.Seed, "matchflow", 43) });
+        return world.Flow.Get(() => new FlowState { Dice = Seeds.Dice(world.Seed, "matchflow", 43) });
     }
 
     internal static void SetUpFaceoff(World world, Vector3 dot)

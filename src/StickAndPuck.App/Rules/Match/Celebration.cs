@@ -1,5 +1,4 @@
 using System.Numerics;
-using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
 
@@ -24,8 +23,6 @@ public static class Celebration
     const float BrakeSeconds = 0.5f;
     const float PileX = 10f;
 
-    /// <summary>Gets or sets a value indicating whether the celebration plays at all (tests turn it off).</summary>
-    public static bool Enabled { get; set; } = true;
 
     /// <summary>Gets a value indicating whether a celebration is on or has played in this match, so the final poses hold until the summary.</summary>
     /// <param name="world">The match state.</param>
@@ -78,7 +75,7 @@ public static class Celebration
     /// <returns>True when the celebration runs, so the caller holds the final.</returns>
     internal static bool Begin(World world, FlowState s, SideOrNone winner)
     {
-        if (!Enabled || !winner.TryGetSide(out var win) || s.Celebration.HasValue) return false;
+        if (!world.Switches.Celebrations || !winner.TryGetSide(out var win) || s.Celebration.HasValue) return false;
         Pour(world, Side.Home);
         Pour(world, Side.Away);
         var skaters = world.Players.Where(p => p.OnIce && !p.IsGoalie).ToList();
@@ -157,7 +154,7 @@ public static class Celebration
         if (!s.Celebration.TryGet(out var c)) return false;
         var m = world.Match;
         // W9's goal replay (a sudden-death winner) plays out first; the live state comes back when it ends
-        if (Replay.Playing) return true;
+        if (world.ReplayPlaying) return true;
 
         var pk = world.Puck;
         pk.Live = false;

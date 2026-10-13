@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Camera;
 /// <remarks>
 /// While a replay plays, it writes the recorded players and puck into the world each step, after
 /// every gameplay system has run, so the scene draws the replay. MatchRules holds the match in
-/// <see cref="MatchPhase.Goal"/> (puck dead) while <see cref="Playing"/> is true, so the replay
+/// <see cref="MatchPhase.Goal"/> (puck dead) while <see cref="World.ReplayPlaying"/> is true, so the replay
 /// ends by putting the players back where the goal left them and the centre faceoff follows.
 /// </remarks>
 public sealed class Replay
@@ -55,11 +55,8 @@ public sealed class Replay
     float lastTime;
     Vector3 camTarget;
 
-    /// <summary>Gets a value indicating whether a replay is playing right now. Rules wait on it before the next faceoff.</summary>
-    public static bool Playing { get; private set; }
-
     /// <summary>
-    /// Gets the replay camera while <see cref="Playing"/>. It follows the puck at a fixed angle; the
+    /// Gets the replay camera while <see cref="World.ReplayPlaying"/>. It follows the puck at a fixed angle; the
     /// camera system snaps it to whole pixels at the puck (W58) at the close render scale (W59), so
     /// the pan steps cleanly instead of swimming.
     /// </summary>
@@ -75,7 +72,7 @@ public sealed class Replay
     public bool Update(World world, float dt)
     {
         lastTime = world.Time;
-        if (Playing) return Play(world, dt);
+        if (world.ReplayPlaying) return Play(world, dt);
 
         buffer.Record(world);
         if (!waiting && GoalThisStep(world, out float x))
@@ -103,14 +100,14 @@ public sealed class Replay
 
     static float TestGoalTime()
     {
-        string s = Environment.GetEnvironmentVariable("SAP_REPLAY_AT") ?? "";
+        string s = Env.Get("SAP_REPLAY_AT");
         return float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out float t) ? t : float.PositiveInfinity;
     }
 
     void Begin(World world)
     {
         waiting = false;
-        Playing = true;
+        world.ReplayPlaying = true;
         ReplayBuffer.Capture(world, live);
         int startIndex = buffer.IndexAt(Math.Max(goalTime - LeadInSeconds, playSince));
         endIndex = buffer.IndexAt(goalTime + TailSeconds);
@@ -129,7 +126,7 @@ public sealed class Replay
         {
             ReplayBuffer.Apply(live, world);
             buffer.Clear();
-            Playing = false;
+            world.ReplayPlaying = false;
             return true;
         }
 
@@ -165,9 +162,10 @@ public sealed class Replay
     }
 
     /// <summary>Draws a blinking REPLAY tag in the top right while a replay plays.</summary>
-    public void DrawHud()
+    /// <param name="world">The match.</param>
+    public void DrawHud(World world)
     {
-        if (!Playing) return;
+        if (!world.ReplayPlaying) return;
         const int w = 54, h = 13, x = Game.Width - w - 6, y = 6;
         DrawRectangle(x, y, w, h, TagBack);
         if ((int)(shown * 2) % 2 == 0) DrawRectangle(x + 4, y + 4, 5, 5, TagDot);

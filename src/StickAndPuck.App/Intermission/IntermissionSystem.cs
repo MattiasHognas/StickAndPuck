@@ -62,7 +62,6 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     /// Gets or sets the seconds into its drive the next Zamboni starts at. SAP_ZAMBONI_AT sets it for
     /// headless screenshots of a chosen moment; the scene sets it back to 0 once used.
     /// </summary>
-    public static float StartAt { get; set; }
 
     /// <summary>Gets the Zamboni's drive in this world while one is under way, or None.</summary>
     public Maybe<Drive> Current { get; private set; }
@@ -86,9 +85,9 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
         if (!Current.TryGet(out var drive))
         {
             if (flow.Timer <= 0) return;   // the next period is starting this step
-            drive = new Drive { Seconds = StartAt, Period = world.Match.Period };
+            drive = new Drive { Seconds = world.Switches.ZamboniStartAt, Period = world.Match.Period };
             Current = drive;
-            StartAt = 0;
+            world.Switches.ZamboniStartAt = 0;
             cameraX = Route.At(Route.Distance(drive.Seconds)).X;
             cameraVx = 0;
         }
@@ -138,7 +137,7 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     /// <summary>Pans the gameplay camera after the Zamboni, swinging over from the follow camera and back.</summary>
     void Follow(World world, Drive drive, float dt)
     {
-        if (Replay.Playing) return;
+        if (world.ReplayPlaying) return;
         var at = Route.At(Route.Distance(drive.Seconds));
         float wanted = drive.Finished || !Route.OnIce(Route.Distance(drive.Seconds)) && drive.Seconds > Route.Duration / 2 ? 0 : 1;
         blend = Math.Clamp(blend + Math.Sign(wanted - blend) * dt / BlendSeconds, 0, 1);

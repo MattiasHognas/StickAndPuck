@@ -41,7 +41,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
     {
         lastCarrier = world.Puck.Carrier;
         lastVelocity = world.Puck.Velocity;
-        demo = string.Equals(Environment.GetEnvironmentVariable("SAP_SFX"), "demo", StringComparison.OrdinalIgnoreCase);
+        demo = string.Equals(Env.Get("SAP_SFX"), "demo", StringComparison.OrdinalIgnoreCase);
         InitAudioDevice();
         if (!IsAudioDeviceReady())
         {

@@ -12,7 +12,7 @@ public static class Seeds
 {
     /// <summary>Gets the seed from SAP_SEED, or 0 when it is not set.</summary>
     public static int Environment =>
-        int.TryParse(System.Environment.GetEnvironmentVariable("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? s : 0;
+        int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? s : 0;
 
     /// <summary>Gets a fresh match seed for a match nobody seeded: SAP_SEED when set, otherwise a random one (never 0).</summary>
     /// <returns>The seed.</returns>

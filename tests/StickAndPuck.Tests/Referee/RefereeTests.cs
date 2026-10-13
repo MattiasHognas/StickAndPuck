@@ -5,6 +5,7 @@ using StickAndPuck.App.Referee;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
 using Ref = StickAndPuck.App.Referee.Referee;
+using StickAndPuck.App.Rules.Dev;
 
 namespace StickAndPuck.Tests;
 
@@ -118,7 +119,7 @@ public sealed class RefereeTests : CheckedTest
     public void WholeMatch()
     {
         var w = Make();
-        MatchDemo.Enabled = true;
+        w.Dev.Match.Set(new MatchDemo());
         var r = Ref.Of(w);
         int setups = 0, drops = 0, atDot = 0, playSteps = 0, nearPuck = 0, nearPlayer = 0;
         float closestPlayer = float.MaxValue, droppedAt = float.NegativeInfinity;
@@ -141,7 +142,7 @@ public sealed class RefereeTests : CheckedTest
             closestPlayer = MathF.Min(closestPlayer, d);
             if (d < 1f) nearPlayer++;
         });
-        MatchDemo.Enabled = false;
+        w.Dev.Match.Clear();
         Check(w.Match.Phase == MatchPhase.Final, "a whole match with the referee reaches the final");
         Check(setups > 3 && drops == setups, $"the referee dropped every faceoff ({drops} of {setups})");
         Check(atDot == drops, $"each from the drop spot beside the dot ({atDot} of {drops})");

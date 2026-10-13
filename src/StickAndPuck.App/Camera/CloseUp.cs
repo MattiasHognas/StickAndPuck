@@ -68,7 +68,7 @@ internal sealed class CloseUp
     /// <param name="replayWaiting">Seconds since a goal while the replay waits to cut in, or NaN.</param>
     public void Update(World world, float dt, float replayWaiting)
     {
-        if (Replay.Playing)
+        if (world.ReplayPlaying)
         {
             weight = 0;
             shot = Shot.None;

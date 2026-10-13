@@ -17,9 +17,6 @@ namespace StickAndPuck.Tests;
 /// </summary>
 public sealed class LinesTests : CheckedTest
 {
-    [Before(Test)]
-    public void FullPace() => LinesTuning.Pace = 1f;
-
     /// <summary>A match with the starters on, the match flow begun and lines started.</summary>
     static World Make() => Make(b => b);
 
