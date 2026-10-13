@@ -139,3 +139,18 @@ dotnet_diagnostic.MA0046.severity = suggestion  # event delegate signature
 dotnet_diagnostic.MA0047.severity = suggestion  # type outside a namespace
 dotnet_diagnostic.MA0084.severity = suggestion  # local hides outer symbol
 dotnet_diagnostic.MA0158.severity = suggestion  # use System.Threading.Lock
+
+# ---------------------------------------------------------------------------
+# No nulls (analyzers/StickAndPuck.Analyzers, referenced by the game project only)
+# ---------------------------------------------------------------------------
+# SAP0001 nullable type, SAP0002 null literal: errors by default in the analyzer.
+
+# TEMPORARY (W55 -> W99): these two folders belong to the open W99 task and still use T?/null.
+# Remove both sections once W99 has merged and they are converted.
+[src/StickAndPuck.App/Players/Checks/**.cs]
+dotnet_diagnostic.SAP0001.severity = none
+dotnet_diagnostic.SAP0002.severity = none
+
+[src/StickAndPuck.App/AI/Difficulty/**.cs]
+dotnet_diagnostic.SAP0001.severity = none
+dotnet_diagnostic.SAP0002.severity = none

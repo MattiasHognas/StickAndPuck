@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj" />
   <Project Path="src/StickAndPuck.App/StickAndPuck.App.csproj" />
   <Project Path="tests/StickAndPuck.Tests/StickAndPuck.Tests.csproj" />
 </Solution>

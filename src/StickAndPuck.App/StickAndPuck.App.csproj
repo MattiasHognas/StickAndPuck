@@ -26,6 +26,12 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
+  <!-- SAP0001/SAP0002: no nullable types and no null literals in the game (tests may use null) -->
+  <ItemGroup>
+    <ProjectReference Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Raylib-cs" Version="8.1.0" />
   </ItemGroup>
