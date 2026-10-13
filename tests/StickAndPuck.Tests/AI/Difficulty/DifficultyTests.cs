@@ -55,7 +55,7 @@ public sealed class DifficultyTests : CheckedTest
         var settings = new Settings() with { Difficulty = Level.Normal };
         int hardWins = 0, hardGoals = 0, easyGoals = 0, hardShots = 0, easyShots = 0;
         float hardPass = 0, easyPass = 0;
-        for (int g = 0; g < games; g++)
+        var played = Matches.Play(games, g =>
         {
             var hardSide = g % 2 == 0 ? Side.Home : Side.Away;
             var easySide = hardSide == Side.Home ? Side.Away : Side.Home;
@@ -64,6 +64,11 @@ public sealed class DifficultyTests : CheckedTest
             setup = DifficultyScale.Apply(setup, hardSide, Level.Hard);
             var world = new WorldBuilder().Setup(setup).Settings(settings).Build();
             Play(world, Systems(world, seed + g), 3 * 60 * 60);
+            return (hardSide, easySide, world);
+        });
+        for (int g = 0; g < games; g++)
+        {
+            var (hardSide, easySide, world) = played[g];
             int h = world.Match.Score[(int)hardSide], e = world.Match.Score[(int)easySide];
             if (h > e) hardWins++;
             hardGoals += h; easyGoals += e;

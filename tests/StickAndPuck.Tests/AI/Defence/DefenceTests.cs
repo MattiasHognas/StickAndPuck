@@ -61,11 +61,12 @@ public sealed class DefenceTests : CheckedTest
     {
         var on = new List<Stats>();
         var off = new List<Stats>();
+        var played = Support.Matches.Play(Matches * 2, j => Match(Seed + j / 2, defence: j % 2 == 0));
         for (int i = 0; i < Matches; i++)
         {
-            var s = Match(Seed + i, defence: true);
+            var s = played[i * 2];
             on.Add(s);
-            off.Add(Match(Seed + i, defence: false));
+            off.Add(played[i * 2 + 1]);
             Console.WriteLine($"      seed {Seed + i} defence on:  {s}");
             Console.WriteLine($"      seed {Seed + i} defence off: {off[^1]}");
         }

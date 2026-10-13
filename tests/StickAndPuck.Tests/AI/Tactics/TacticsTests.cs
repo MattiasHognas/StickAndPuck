@@ -89,13 +89,19 @@ public sealed class TacticsTests : CheckedTest
         var t = new TacticsTally();
         World world = null!;
         int goals = 0, pressShots = 0, trapShots = 0;
+        var played = Matches.Play(Rounds * 2, i =>
+        {
+            var side = (Side)(i % 2);
+            var w = Make(clubs, settings, side == Side.Home ? press : trap, side == Side.Home ? trap : press);
+            Play(w, Systems(w, seed + i), 20 * 60 + 300);   // seed + 2 * round + side
+            return w;
+        });
         for (int round = 0; round < Rounds; round++)
         {
             foreach (var pressSide in new[] { Side.Home, Side.Away })
             {
                 var trapSide = pressSide == Side.Home ? Side.Away : Side.Home;
-                world = Make(clubs, settings, pressSide == Side.Home ? press : trap, pressSide == Side.Home ? trap : press);
-                Play(world, Systems(world, seed + (2 * round) + (int)pressSide), 20 * 60 + 300);
+                world = played[(2 * round) + (int)pressSide];
                 Add(p, AiTactics.Tally(world, pressSide));
                 Add(t, AiTactics.Tally(world, trapSide));
                 goals += world.Match.Score[0] + world.Match.Score[1];

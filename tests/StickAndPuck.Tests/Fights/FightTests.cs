@@ -384,9 +384,8 @@ public sealed class FightTests : CheckedTest
         var setup = WorldBuilder.DefaultSetup.WithRules(rules);
         int perFight = setup.Rules.FightPenalty == FightPenalty.LoserMinor ? 1 : 2;
         int fights = 0, boxed = 0, broken = 0, open = 0;
-        foreach (int seed in Seeds)
+        foreach (var (f, b, x, o) in Matches.Play(Seeds.Length, i => Match(setup with { PeriodSeconds = 600 }, Seeds[i])))
         {
-            var (f, b, x, o) = Match(setup with { PeriodSeconds = 600 }, seed);
             fights += f; boxed += b; broken += x; open += o;
         }
         Check(fights >= 1 && boxed == fights * perFight && broken == 0 && open == 0,

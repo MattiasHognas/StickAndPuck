@@ -205,9 +205,10 @@ public sealed class DecisionsTests : CheckedTest
     {
         const int Seeds = 4;
         int icings = 0, offsides = 0, fewest = int.MaxValue, most = 0, clears = 0, holds = 0;
+        var shl = Matches.Play(Seeds, i => Calls(clubs, settings, RuleSet.Shl, 31 + i, null, null));
         for (int seed = 31; seed < 31 + Seeds; seed++)
         {
-            var (ice, off, world) = Calls(clubs, settings, RuleSet.Shl, seed, null, null);
+            var (ice, off, world) = shl[seed - 31];
             int i = ice[0] + ice[1], o = off[0] + off[1];
             var h = AiDecisions.Tally(world, Side.Home);
             var a = AiDecisions.Tally(world, Side.Away);
@@ -231,11 +232,17 @@ public sealed class DecisionsTests : CheckedTest
         // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round, twice (W66: a 30 club
         // comes up to the line with a teammate offside only a handful of times a match)
         int[] smartTotals = new int[5], poorTotals = new int[5];
-        foreach (int seed in new[] { 51, 53 })
+        int[] iqSeeds = [51, 53];
+        var iq = Matches.Play(4, i =>
+        {
+            var smart = (Side)(i % 2);
+            return Calls(clubs, settings, RuleSet.Shl, iqSeeds[i / 2] + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
+        });
+        for (int s = 0; s < iqSeeds.Length; s++)
         {
             foreach (var smart in new[] { Side.Home, Side.Away })
             {
-                var (ice, off, world) = Calls(clubs, settings, RuleSet.Shl, seed + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
+                var (ice, off, world) = iq[s * 2 + (int)smart];
                 var poor = smart == Side.Home ? Side.Away : Side.Home;
                 Add(smartTotals, ice[(int)smart], off[(int)smart], AiDecisions.Tally(world, smart));
                 Add(poorTotals, ice[(int)poor], off[(int)poor], AiDecisions.Tally(world, poor));
