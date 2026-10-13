@@ -138,7 +138,7 @@ public static class PuckHandling
     /// <returns>A unit vector.</returns>
     public static Vector2 Facing(Player p)
     {
-        return new Vector2(MathF.Sin(p.Heading), MathF.Cos(p.Heading));
+        return new Vector2(SimMath.Sin(p.Heading), SimMath.Cos(p.Heading));
     }
 
     /// <summary>Gets the way a player means: the stick when pushed, else the way the body faces.</summary>
@@ -346,7 +346,7 @@ public static class PuckHandling
     public static float Gauss(Random rng)
     {
         float u = 1f - rng.NextSingle(), v = rng.NextSingle();
-        return MathF.Sqrt(-2f * MathF.Log(u)) * MathF.Cos(MathF.Tau * v);
+        return MathF.Sqrt(-2f * SimMath.Log(u)) * SimMath.Cos(MathF.Tau * v);
     }
 
     static Vector2 Flat(Vector3 v)
@@ -361,12 +361,12 @@ public static class PuckHandling
 
     static float Angle(Vector2 from, Vector2 to)
     {
-        return MathF.Atan2(from.X * to.Y - from.Y * to.X, Vector2.Dot(from, to));
+        return SimMath.Atan2(from.X * to.Y - from.Y * to.X, Vector2.Dot(from, to));
     }
 
     static Vector2 Rotate(Vector2 v, float radians)
     {
-        float c = MathF.Cos(radians), s = MathF.Sin(radians);
+        float c = SimMath.Cos(radians), s = SimMath.Sin(radians);
         return new Vector2(v.X * c - v.Y * s, v.X * s + v.Y * c);
     }
 }

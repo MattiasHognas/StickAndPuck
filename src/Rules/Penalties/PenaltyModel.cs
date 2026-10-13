@@ -128,7 +128,7 @@ public static class PenaltyModel
     {
         var push = new Vector2(target.Position.X - from.X, target.Position.Z - from.Z);
         if (push.LengthSquared() < 1e-6f) return false;
-        var facing = new Vector2(MathF.Sin(target.Heading), MathF.Cos(target.Heading));
+        var facing = new Vector2(SimMath.Sin(target.Heading), SimMath.Cos(target.Heading));
         return Vector2.Dot(Vector2.Normalize(push), facing) < -0.5f;
     }
 
@@ -174,8 +174,8 @@ public static class PenaltyModel
         var push = new Vector2(target.Position.X - from.X, target.Position.Z - from.Z);
         if (push.LengthSquared() < 1e-6f) return false;
         // heading 0 faces +z; the push of a hit from behind goes the way the target faces
-        var facing = new Vector2(MathF.Sin(target.Heading), MathF.Cos(target.Heading));
-        return Vector2.Dot(Vector2.Normalize(push), facing) > MathF.Cos(PenaltyTuning.BehindDegrees * MathF.PI / 180f);
+        var facing = new Vector2(SimMath.Sin(target.Heading), SimMath.Cos(target.Heading));
+        return Vector2.Dot(Vector2.Normalize(push), facing) > SimMath.Cos(PenaltyTuning.BehindDegrees * MathF.PI / 180f);
     }
 
     /// <summary>Gets how much a skater's checking trait scales his chance of a foul: 1.25 at 0 down to 0.75 at 100.</summary>

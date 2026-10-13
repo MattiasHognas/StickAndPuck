@@ -540,7 +540,7 @@ public static class Penalties
 
     internal static PenaltyBook Book(World world)
     {
-        return Books.GetValue(world, _ => new PenaltyBook());
+        return Books.GetValue(world, w => new PenaltyBook { Rng = Seeds.Dice(w.Seed, "penalties", 14) });
     }
 
     internal static string Name(World world, Player p)
@@ -594,10 +594,8 @@ internal sealed class PenaltyBook
 
     public MatchPhase LastPhase { get; set; } = MatchPhase.Intro;
 
-    /// <summary>Gets or sets the dice; scenes and tests seed it.</summary>
-#pragma warning disable S2245 // gameplay dice, not security
-    public Random Rng { get; set; } = new(14);
-#pragma warning restore S2245
+    /// <summary>Gets or sets the dice: the match seed's stream (W67); scenes and tests seed it.</summary>
+    public required Random Rng { get; set; }
 
     /// <summary>Gets or sets a scripted call for the penalty scene: seconds after the first drop, or NaN.</summary>
     public float ScriptAfterDrop { get; set; } = float.NaN;

@@ -29,12 +29,13 @@ internal sealed class DefenceSystem : ISystem
 
     static readonly ConditionalWeakTable<World, DefenceBoard> Boards = [];
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 2;
+
     readonly Random rng;
 
     public DefenceSystem()
-#pragma warning disable S2245 // gameplay variation, not security
-        : this(new Random())
-#pragma warning restore S2245
+        : this(Seeds.Dice(Seeds.Environment, "defence", Fallback))
     {
     }
 
@@ -179,7 +180,7 @@ internal sealed class DefenceSystem : ISystem
         if (world.Time >= plan.ErrorUntil)
         {
             float angle = rng.NextSingle() * MathF.Tau, size = (1f - iq) * 2.2f * MathF.Sqrt(rng.NextSingle());
-            plan.Error = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * size;
+            plan.Error = new Vector2(SimMath.Cos(angle), SimMath.Sin(angle)) * size;
             plan.Watching = rng.NextSingle() < 0.3f * (1f - iq);
             plan.ErrorUntil = world.Time + 2.5f + rng.NextSingle() * 3f;
         }
@@ -206,7 +207,7 @@ internal sealed class DefenceSystem : ISystem
                 var away = at - other;
                 float d = away.Length();
                 if (d >= Spacing) continue;
-                var dir = d > 1e-3f ? away / d : new Vector2(MathF.Cos(p.Id), MathF.Sin(p.Id));
+                var dir = d > 1e-3f ? away / d : new Vector2(SimMath.Cos(p.Id), SimMath.Sin(p.Id));
                 push += dir * (Spacing - d) * 0.5f;
             }
             spots[p.Id] = TeamShape.Inside(at + push);

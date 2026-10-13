@@ -123,7 +123,7 @@ public static class SkatingModel
         else return;
 
         // heading 0 faces +z; a rink vector's y is +z
-        float target = MathF.Atan2(look.X, look.Y);
+        float target = SimMath.Atan2(look.X, look.Y);
         float delta = MathF.IEEERemainder(target - p.Heading, MathF.Tau);
         p.Heading = MathF.IEEERemainder(p.Heading + Math.Clamp(delta, -FaceTurn * dt, FaceTurn * dt), MathF.Tau);
     }
@@ -160,12 +160,12 @@ public static class SkatingModel
 
     static float Angle(Vector2 from, Vector2 to)
     {
-        return MathF.Atan2(from.X * to.Y - from.Y * to.X, Vector2.Dot(from, to));
+        return SimMath.Atan2(from.X * to.Y - from.Y * to.X, Vector2.Dot(from, to));
     }
 
     static Vector2 Rotate(Vector2 v, float radians)
     {
-        float c = MathF.Cos(radians), s = MathF.Sin(radians);
+        float c = SimMath.Cos(radians), s = SimMath.Sin(radians);
         return new Vector2(v.X * c - v.Y * s, v.X * s + v.Y * c);
     }
 }

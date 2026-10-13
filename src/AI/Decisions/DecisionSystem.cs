@@ -47,12 +47,13 @@ internal sealed class DecisionSystem : ISystem
     const float HoldFrom = 4f;      // metres short of the attacking blue line at which a carrier looks for teammates already over it
     const float HoldFor = 1.6f;     // longest a carrier holds up at the line before carrying on in
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 5;
+
     readonly Random rng;
 
     public DecisionSystem()
-#pragma warning disable S2245 // gameplay variation, not security
-        : this(new Random())
-#pragma warning restore S2245
+        : this(Seeds.Dice(Seeds.Environment, "decisions", Fallback))
     {
     }
 
@@ -341,7 +342,7 @@ internal sealed class DecisionSystem : ISystem
             aim = Vector2.Normalize(new Vector2(end * 0.8f, -side * 0.6f));
             picksCorner = true;
         }
-        if (!picksCorner || Vector2.Dot(aim, Vector2.Normalize(toNet)) < MathF.Cos(70f * MathF.PI / 180f)) aim = Vector2.Normalize(toNet);
+        if (!picksCorner || Vector2.Dot(aim, Vector2.Normalize(toNet)) < SimMath.Cos(70f * MathF.PI / 180f)) aim = Vector2.Normalize(toNet);
 
         AiCommand.Shoot(world, p, AiLayer.Decisions, aim, slap ? 28 + rng.Next(22) : 0, slap ? "slap shot" : "wrist shot");
     }

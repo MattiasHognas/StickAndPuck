@@ -44,7 +44,7 @@ public sealed record WarmupRoute(Vector2 Centre, Vector2 Radius, float Speed, fl
         // angular speed from the oval's mean radius, so every loop is skated at about its Speed
         float mean = (Radius.X + Radius.Y) / 2f;
         float angle = Phase + (Clockwise ? -1f : 1f) * Speed / mean * seconds;
-        return Centre + new Vector2(Radius.X * MathF.Cos(angle), Radius.Y * MathF.Sin(angle));
+        return Centre + new Vector2(Radius.X * SimMath.Cos(angle), Radius.Y * SimMath.Sin(angle));
     }
 
     /// <summary>Gets a spot just inside the blue line of the squad's end, where its skaters gather once start is pressed.</summary>

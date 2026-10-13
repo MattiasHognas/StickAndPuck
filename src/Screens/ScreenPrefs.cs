@@ -70,9 +70,22 @@ internal static class ScreenPrefsFile
         return new ScreenPrefs();
     }
 
+    /// <summary>Gets the settings as the file stores them (W67: a replay keeps them).</summary>
+    /// <param name="prefs">The settings.</param>
+    /// <returns>JSON.</returns>
+    public static string ToJson(ScreenPrefs prefs) => JsonSerializer.Serialize(prefs, Json);
+
+    /// <summary>Reads settings <see cref="ToJson"/> wrote.</summary>
+    /// <param name="json">JSON.</param>
+    /// <returns>The settings.</returns>
+    public static ScreenPrefs FromJson(string json) => JsonSerializer.Deserialize<ScreenPrefs>(json, Json) ?? new ScreenPrefs();
+
     /// <summary>Writes the settings; a failure is logged, never fatal.</summary>
+    /// <param name="prefs">The settings.</param>
+    /// <param name="path">The file, or null for the default.</param>
     public static void Write(ScreenPrefs prefs, string? path = null)
     {
+        if (DeviceInput.Playing) return;    // W67: a replay's menus never touch the saved settings
         path ??= DefaultPath;
         try
         {

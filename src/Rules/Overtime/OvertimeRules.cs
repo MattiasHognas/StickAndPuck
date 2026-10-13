@@ -29,12 +29,13 @@ internal sealed class OvertimeRules : ISystem
 {
     static readonly ConditionalWeakTable<World, OvertimeState> States = new();
 
+    /// <summary>The dice seed without a match seed (W67).</summary>
+    internal const int Fallback = 9;
+
     readonly Random rng;
 
     public OvertimeRules()
-#pragma warning disable S2245 // gameplay variation, not security
-        : this(new Random())
-#pragma warning restore S2245
+        : this(Seeds.Dice(Seeds.Environment, "overtime", Fallback))
     {
     }
 
@@ -328,14 +329,14 @@ internal sealed class OvertimeRules : ISystem
         float top = SkatingModel.TopSpeed(traits, shooter.Energy) * OvertimeTuning.SkateIn;
         float speed = Math.Min(top, shooter.Speed + (SkatingModel.Push(traits, shooter.Energy) * dt));
         shooter.Velocity = new Vector3(dir.X * speed, 0, dir.Y * speed);
-        shooter.Heading = MathF.Atan2(dir.X, dir.Y);
+        shooter.Heading = SimMath.Atan2(dir.X, dir.Y);
     }
 
     /// <summary>A wrist shot at a corner: the far side when coming in from a wing, or the given side after a deke.</summary>
     void Shoot(World world, Player shooter, Vector2 net, Vector2 here, int side)
     {
         var toNet = Vector2.Normalize(net - here);
-        shooter.Heading = MathF.Atan2(toNet.X, toNet.Y);
+        shooter.Heading = SimMath.Atan2(toNet.X, toNet.Y);
         // the puck leaves the blade lifted, so the stick that fired it cannot take it straight back
         // (puck handling guards only the shots it fires itself)
         var pk = world.Puck;

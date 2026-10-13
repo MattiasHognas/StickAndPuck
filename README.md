@@ -60,7 +60,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `SAP_SEASON=new`: starts a new season over the save in `season` and `playoffs`. Default: continue the save.
 - `SAP_ARCADE=new`: starts a new arcade run over the save. Default: continue the save.
 - `SAP_ARCADE_RULE`: `lives` (default) or `suddendeath`, the rule for a new arcade run.
-- `SAP_SEED`: integer; fixes the season schedule or the arcade opponent order. Default: random.
+- `SAP_SEED`: integer; fixes the season schedule or the arcade opponent order, and is the match seed (W67): every system draws its dice from its own stream of it, so the same seed and the same inputs play the same match on every machine. Default: random for a season or arcade and for a match started from the menus (printed on the "screens: match" line and kept in its replay), fixed test seeds for a scene.
 - `SAP_SAVE`, `SAP_ARCADE_SAVE`: paths for the season and arcade save files. Default: `season.json` and `arcade.json` in the settings folder above.
 - `SAP_VERSUS_P2`: `keyboard`, `pad1` or `pad2`, player two's device in `versus`. Default: the settings screen's player 2 controls (the first gamepad), or the keyboard when player one holds that device; OFF hands the visitors to the AI. Both players never get the same device.
 - `SAP_IQ_HOME`, `SAP_IQ_AWAY`: 0 to 100, sets every skater's hockey IQ for that club in `aimatch`. Default: each player's own value.
@@ -115,8 +115,18 @@ In one-player scenes the keyboard and the first gamepad both control your player
 - `SAP_SCREENSHOT=1`: saves screenshot.png after one second of game time and quits.
 - `SAP_SCREEN_KEYS="down enter ..."`: presses scripted menu buttons in the screens (`up down left right enter back pause`, `wait`, and `shot:name` saves name.png). Default: real input.
 - `SAP_RECORD=seconds`: saves every frame for that many seconds as numbered PNGs, then quits. `SAP_FRAMES` sets the folder (default `frames/`).
+- `SAP_STEPS=n`: runs n fixed steps as fast as the machine can, without waiting for the screen, then quits.
 - `tools/record.sh out.mp4 seconds [input.sh]`: records an mp4 headless (needs xvfb-run and ffmpeg; xdotool for input.sh). `SAP_AUDIO=1` records in real time with sound.
-- Test scenes run with no window, print one line per check and exit 0 when all pass, 1 otherwise: `pucktest`, `nettest`, `handlingtest`, `checkstest`, `goalietest`, `matchtest`, `offsidetest`, `overtimetest`, `refereetest`, `positioningtest`, `aimatchtest`, `linestest`, `lightingtest`, `hudtest`, `penaltytest`, `fighttest`, `seasontest`, `playofftest`, `arcadetest`, `statstest`, `versustest`, `warmuptest`. Example: `SAP_SCENE=matchtest dotnet run`.
+- Test scenes run with no window, print one line per check and exit 0 when all pass, 1 otherwise: `pucktest`, `nettest`, `handlingtest`, `checkstest`, `goalietest`, `matchtest`, `offsidetest`, `overtimetest`, `refereetest`, `positioningtest`, `aimatchtest`, `linestest`, `lightingtest`, `hudtest`, `penaltytest`, `fighttest`, `seasontest`, `playofftest`, `arcadetest`, `statstest`, `versustest`, `warmuptest`, `replaytest`. Example: `SAP_SCENE=matchtest dotnet run`.
+
+### Replays
+
+- Every match started from the menus is recorded to `replays/` beside the settings file (`~/.config/StickAndPuck/replays/` on Linux, `%APPDATA%\StickAndPuck\replays\` on Windows); the newest 50 are kept. `SAP_REPLAY_OUT=file` records to that file instead, and also records a `SAP_SCENE` match; `SAP_REPLAY_OUT=0` records nothing.
+- `SAP_REPLAY=file`: plays a replay back: the same clubs, rules, settings and seed, and every key, button and stick move on the step it happened.
+- `SAP_AT=2:12:30` (period 2 with 12:30 on the clock; `2:750` in seconds or `t3600` for a step also work): runs to that moment without drawing, prints the state (`STATE` lines: score, clock, puck, every player) and saves `replay_at.png`, then plays on from there. With `SAP_SCREENSHOT=1` it quits after the picture.
+- `SAP_TAKEOVER=1` with `SAP_AT`: from that moment your keyboard and pads play, and a new replay (`name_takeover.sapreplay`) records the match from the start.
+- `SAP_REPLAY=file SAP_SCREENSHOT=1`: replays the whole match headless as fast as it can and exits 0 when the score, every event and the world checksums match the recording, 1 when they do not.
+- `SAP_CHECKSUMS=file`: writes "step checksum" for every step of the recorded or replayed match, to compare two machines line by line.
 
 ### Building a release
 

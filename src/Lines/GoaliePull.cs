@@ -142,7 +142,7 @@ public static class GoaliePull
         {
             bool held = inputs[slot].Device switch
             {
-                InputDevice.KeyboardMouse => IsKeyDown(KeyboardKey.G) || (padFree && PadBack(0)),
+                InputDevice.KeyboardMouse => DeviceInput.KeyDown(KeyboardKey.G) || (padFree && PadBack(0)),
                 InputDevice.Gamepad1 => PadBack(0),
                 InputDevice.Gamepad2 => PadBack(1),
                 _ => false,
@@ -158,7 +158,7 @@ public static class GoaliePull
 
     static bool PadBack(int pad)
     {
-        return IsGamepadAvailable(pad) && IsGamepadButtonDown(pad, GamepadButton.MiddleLeft);
+        return DeviceInput.PadAvailable(pad) && DeviceInput.PadDown(pad, GamepadButton.MiddleLeft);
     }
 
     static Side Other(Side side)

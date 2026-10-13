@@ -126,7 +126,7 @@ public sealed class HandlingSelfTest : IScene
         {
             // sprint in circles, then straight into the side boards
             float a = i * 0.05f;
-            p.Command = new PlayerCommand { Move = i < 300 ? new Vector2(MathF.Cos(a), MathF.Sin(a)) : Vector2.UnitY, Sprint = true };
+            p.Command = new PlayerCommand { Move = i < 300 ? new Vector2(SimMath.Cos(a), SimMath.Sin(a)) : Vector2.UnitY, Sprint = true };
             var pk = x.Puck.Position;
             outside |= MathF.Abs(pk.Z) > RinkSpec.HalfWidth || MathF.Abs(pk.X) > RinkSpec.HalfLength;
             if (i > 10 && i < 300) worst = Math.Max(worst, Vector3.Distance(pk, PuckHandling.Blade(p)));
