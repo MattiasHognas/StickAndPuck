@@ -98,6 +98,19 @@ def lift(bones, z=0.0):
         if stick_low() < z: hi = mid
         else: lo = mid
 ARMS = ['clavicle.L', 'clavicle.R']      # their heads share one X line, so turning both is rigid
+if STICK and NAME == 'skater':
+    # the shaft in rest: from the top glove down to the blade; GRIP is where the glove holds it,
+    # SLIDE how far down the shaft its middle (knob to heel) lies from there
+    S0 = REST[SB][0]; low = min(c.z for c in STICK)
+    D0 = (sum((c for c in STICK if c.z < low + 0.04), V()) / len([c for c in STICK if c.z < low + 0.04]) - S0).normalized()
+    T = [(c - S0).dot(D0) for c in STICK]; tg = ((REST['hand.R'][0] + REST['hand.R'][1]) / 2 - S0).dot(D0)
+    GRIP = S0 + D0 * tg; SLIDE = (min(T) + max(T)) / 2 - tg
+def grip_mid(d):
+    """the top glove alone holds the stick at the middle of the shaft, the blade end pointing along d"""
+    p = PB[SB]; m = p.matrix @ B[SB].matrix_local.inverted(); w = V(d).normalized()
+    G = m @ GRIP; rd = (m.to_3x3() @ D0).normalized().rotation_difference(w).to_matrix().to_4x4()
+    p.matrix = Matrix.Translation(G) @ rd @ Matrix.Translation(-G) @ p.matrix; upd()
+    p.matrix = Matrix.Translation(-w * SLIDE) @ p.matrix; upd()
 
 # ---------------- clips ----------------
 # skate stroke for the left foot, relative to its rest ankle: out and back on the ice, then lifted
@@ -191,12 +204,14 @@ def skater_check(i):                        # load low, drive the left shoulder 
     lift(ARMS, [0.0, 0.08, 0.15, 0.04][i])
     if i in (1, 2): turn('upperarm.L', z=0.25, y=-0.2)      # elbow tucked in, shoulder leads
 
-def skater_celebrate(i):                    # stick thrown up over the head, pumping, one knee up on the glide
+def skater_celebrate(i):                    # both arms up in a V, pumping, the stick high in the top glove alone, one knee up on the glide
     shift(z=[-0.02, 0.02, -0.02, 0.0][i]); turn('pelvis', x=-0.04)
     leg('L', ANKLE['L'] + V((0, [0, -0.14, 0, -0.06][i], [0, 0.26, 0, 0.12][i])), pole=(0.3, -1, 0))
     leg('R', ANKLE['R'], pole=(0, -1, 0))
     turn('spine', x=-0.10); turn('neck', x=0.10); turn('head', x=0.18)
-    for c in ARMS: turn(c, x=[-2.3, -2.8, -2.4, -2.7][i])
+    up = [0.75, 1.0, 0.8, 0.95][i]
+    for s in 'LR': arm(s, (0.5, -0.1, up), (0.3, -0.15, 1.0))
+    grip_mid(([0.55, 0.45, 0.55, 0.45][i], -0.10, 0.85))
 
 FIGHT_GUARD = ((0.30, -0.45, -0.75), (-0.10, -0.55, 0.85))     # elbow low and out, fist up by the chin
 
