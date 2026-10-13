@@ -3,9 +3,9 @@ art/scene/renders/
 
 bin/
 obj/
-docs/
 publish/
 *.blend1
 *.sapreplay
 .claude/
 TestResults/
+__pycache__/

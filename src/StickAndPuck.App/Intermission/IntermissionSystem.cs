@@ -7,7 +7,7 @@ using StickAndPuck.App.Lines;
 using StickAndPuck.App.Rules;
 using static Raylib_cs.Raylib;
 
-namespace StickAndPuck.Intermission;
+namespace StickAndPuck.App.Intermission;
 
 /// <summary>
 /// W31: between periods the Zamboni comes out through the gate in the far boards, laps the ice

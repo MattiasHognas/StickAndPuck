@@ -1,5 +1,5 @@
 using StickAndPuck.App.Core;
-using StickAndPuck.Intermission;
+using StickAndPuck.App.Intermission;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
 

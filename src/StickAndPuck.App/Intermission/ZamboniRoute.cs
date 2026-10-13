@@ -1,7 +1,7 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
 
-namespace StickAndPuck.Intermission;
+namespace StickAndPuck.App.Intermission;
 
 /// <summary>
 /// The Zamboni's drive between periods: in through a gate in the far boards near the home end,

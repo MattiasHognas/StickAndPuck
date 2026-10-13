@@ -7,8 +7,4 @@
     <Nullable>enable</Nullable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Meziantou.Analyzer" Version="3.0.299" PrivateAssets="all" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138" PrivateAssets="all" />
-  </ItemGroup>
 </Project>

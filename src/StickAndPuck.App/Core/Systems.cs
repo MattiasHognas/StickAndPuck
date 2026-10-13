@@ -5,7 +5,7 @@ using StickAndPuck.App.Camera;
 using StickAndPuck.App.Fights;
 using StickAndPuck.App.Goalie;
 using StickAndPuck.App.Hud;
-using StickAndPuck.Intermission;
+using StickAndPuck.App.Intermission;
 using StickAndPuck.App.Lighting;
 using StickAndPuck.App.Lines;
 using StickAndPuck.App.Momentum;

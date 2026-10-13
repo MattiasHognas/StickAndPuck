@@ -1,6 +1,6 @@
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Hud;
-using StickAndPuck.Intermission;
+using StickAndPuck.App.Intermission;
 using StickAndPuck.App.Lines;
 using StickAndPuck.App.Rules;
 using StickAndPuck.App.Screens;

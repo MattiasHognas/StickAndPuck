@@ -4,7 +4,7 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Render;
 using static Raylib_cs.Raylib;
 
-namespace StickAndPuck.Intermission;
+namespace StickAndPuck.App.Intermission;
 
 /// <summary>
 /// Draws A7's Zamboni (art/zamboni/zamboni.glb: one mesh, its 64x64 texture embedded, no clips)

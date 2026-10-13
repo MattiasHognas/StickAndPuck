@@ -3,7 +3,7 @@ using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
 
-namespace StickAndPuck.Intermission;
+namespace StickAndPuck.App.Intermission;
 
 /// <summary>
 /// SAP_SCENE=zamboni: an exhibition with the AI on both sides that opens in the first intermission,
