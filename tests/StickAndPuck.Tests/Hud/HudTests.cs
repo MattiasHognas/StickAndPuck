@@ -5,7 +5,7 @@ using StickAndPuck.Render;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Hud;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The HUD's reading of match state and events: period and clock texts, stripes, banners, the

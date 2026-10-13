@@ -3,7 +3,7 @@ using StickAndPuck.Rules;
 using StickAndPuck.Season;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Season.Playoffs;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The SHL playoffs: seeding, the series and home order, reseeding, the human's series against the

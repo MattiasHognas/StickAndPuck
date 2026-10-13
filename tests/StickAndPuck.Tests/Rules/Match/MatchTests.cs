@@ -4,7 +4,7 @@ using StickAndPuck.Physics;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Rules.Match;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Whole matches with puck physics and the match rules (W7a): a full regulation match plays out

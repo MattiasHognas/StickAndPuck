@@ -4,7 +4,7 @@ using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Players.Puck;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The puck handling checks with skating, handling and puck physics. Covers the W4b "done when":

@@ -7,7 +7,7 @@ using StickAndPuck.Screens;
 using StickAndPuck.Season;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Core;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The rule presets and the player's changes (W44). Checks the presets, CUSTOM and back, that a

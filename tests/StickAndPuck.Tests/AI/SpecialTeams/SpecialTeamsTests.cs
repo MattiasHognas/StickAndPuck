@@ -6,7 +6,7 @@ using StickAndPuck.Tests.Support;
 using AiDecisions = StickAndPuck.AI.Decisions;
 using AiSpecialTeams = StickAndPuck.AI.SpecialTeams;
 
-namespace StickAndPuck.Tests.AI.SpecialTeams;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// W22c's special teams: the formation maths, then all-AI power plays (a skater of the short club

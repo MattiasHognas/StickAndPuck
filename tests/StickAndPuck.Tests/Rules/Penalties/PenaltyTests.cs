@@ -8,7 +8,7 @@ using StickAndPuck.Players;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Rules.Penalties;
+namespace StickAndPuck.Tests;
 
 // inside the namespace, so these win over the test namespaces of the same names (this one, and Tests.Referee)
 using StickAndPuck.Referee;

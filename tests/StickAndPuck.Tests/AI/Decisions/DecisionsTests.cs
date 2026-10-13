@@ -8,7 +8,7 @@ using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 using AiDecisions = StickAndPuck.AI.Decisions;
 
-namespace StickAndPuck.Tests.AI.Decisions;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Headless checks for W6b, formerly SAP_SCENE=aimatchtest.
@@ -191,11 +191,11 @@ public sealed class DecisionsTests : CheckedTest
 
     /// <summary>W22c: a power play with a man in the box throughout, seed 1 (specialteamstest runs other seeds).</summary>
     [Test]
-    public void PowerPlay() => SpecialTeamsSelfTest.PowerPlay(WorldBuilder.Clubs, new Settings(), 1, Check);
+    public void PowerPlay() => SpecialTeamsTests.PowerPlay(WorldBuilder.Clubs, new Settings(), 1, Check);
 
     /// <summary>W22d: a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in, seed 1.</summary>
     [Test]
-    public void TacticsCompare() => TacticsSelfTest.Compare(WorldBuilder.Clubs, new Settings(), 1, Check);
+    public void TacticsCompare() => TacticsTests.Compare(WorldBuilder.Clubs, new Settings(), 1, Check);
 
     /// <summary>W63: icings and offsides over full matches, per preset and per hockey IQ.</summary>
     [Test]

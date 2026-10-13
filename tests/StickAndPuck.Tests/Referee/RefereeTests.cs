@@ -6,7 +6,7 @@ using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 using Ref = StickAndPuck.Referee.Referee;
 
-namespace StickAndPuck.Tests.Referee;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The referee, run with puck physics and the match rules over a whole match with the match demo's

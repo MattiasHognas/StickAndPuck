@@ -10,7 +10,7 @@ using StickAndPuck.Referee;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Fights;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Scripted fights under the match rules, the bench, the penalty box and the referee, then full AI

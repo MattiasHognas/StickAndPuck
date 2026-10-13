@@ -8,7 +8,7 @@ using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 using Warmup = StickAndPuck.Pregame.Pregame;
 
-namespace StickAndPuck.Tests.Pregame;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The warm-up (W28), run with positioning, skating, puck physics and the match rules: both squads

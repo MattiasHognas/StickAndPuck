@@ -8,7 +8,7 @@ using StickAndPuck.Rules;
 using StickAndPuck.Lines;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Lines;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Fatigue, line changes and the goalie swap (W13): tired lines slow down and change, and the backup

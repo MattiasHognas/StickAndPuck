@@ -4,7 +4,7 @@ using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Players.Checks;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Checking and switching with switching, skating, checking, puck handling and puck physics (W4c):

@@ -5,7 +5,7 @@ using StickAndPuck.Players;
 using StickAndPuck.Render;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Players.Puck;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// W35 checks with skating, handling and puck physics: a held shot goes high and a tap stays low,

@@ -3,7 +3,7 @@ using StickAndPuck.Intermission;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Intermission;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The intermission (W31), run with the match rules through two period breaks, and a third match

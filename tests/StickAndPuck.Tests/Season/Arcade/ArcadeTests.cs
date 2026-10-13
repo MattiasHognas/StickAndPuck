@@ -2,7 +2,7 @@ using StickAndPuck.Core;
 using StickAndPuck.Season;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Season.Arcade;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The arcade run: the opponent order, that sudden death ends on the first loss and three lives on

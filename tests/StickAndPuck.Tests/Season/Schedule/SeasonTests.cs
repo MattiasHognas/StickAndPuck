@@ -2,7 +2,7 @@ using StickAndPuck.Core;
 using StickAndPuck.Season;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Season.Schedule;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Season mode: the schedule, the points, the table, the autosave after a match and continuing after

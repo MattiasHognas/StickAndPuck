@@ -11,7 +11,7 @@ using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 using Boost = StickAndPuck.Momentum.Momentum;
 
-namespace StickAndPuck.Tests.Momentum;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// W29's momentum: a goal fills the scoring club's boost and ends the other's, a big hit adds to it

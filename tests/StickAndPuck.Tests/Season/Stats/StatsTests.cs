@@ -2,7 +2,7 @@ using StickAndPuck.Core;
 using StickAndPuck.Season;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Season.Stats;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The goals, assists, shots and saves read from a match's event log, the player of the game, the

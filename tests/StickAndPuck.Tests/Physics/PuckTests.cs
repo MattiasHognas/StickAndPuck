@@ -3,7 +3,7 @@ using StickAndPuck.Core;
 using StickAndPuck.Physics;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Physics;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The puck physics (W3): corner shots rebound plausibly, and a goal counts only when the whole puck

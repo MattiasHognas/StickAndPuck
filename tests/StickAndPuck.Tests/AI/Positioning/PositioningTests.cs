@@ -9,7 +9,7 @@ using StickAndPuck.Tests.Support;
 using AiDecisions = StickAndPuck.AI.Decisions;
 using AiPositioning = StickAndPuck.AI.Positioning;
 
-namespace StickAndPuck.Tests.AI.Positioning;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// A full 5 on 5 period headless with positioning, skating, puck handling, the goalies, puck physics

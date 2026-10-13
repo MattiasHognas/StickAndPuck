@@ -7,7 +7,7 @@ using StickAndPuck.Players;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Rules.Overtime;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Tied matches with skating, puck handling, the goalies, puck physics and the match rules (W7c): a

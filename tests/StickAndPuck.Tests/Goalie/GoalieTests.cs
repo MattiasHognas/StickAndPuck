@@ -6,7 +6,7 @@ using StickAndPuck.Goalie;
 using StickAndPuck.Physics;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Goalie;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The goalie checks (W5): stops most straight shots, leaves some rebounds, and better reflexes

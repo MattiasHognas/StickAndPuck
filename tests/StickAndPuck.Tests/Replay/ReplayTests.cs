@@ -8,7 +8,7 @@ using StickAndPuck.Replays;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Replay;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Deterministic sim and replay (W67): the maths gives the same bits it gave when the test was

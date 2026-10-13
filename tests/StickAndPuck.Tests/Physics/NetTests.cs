@@ -3,7 +3,7 @@ using StickAndPuck.Core;
 using StickAndPuck.Physics;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Physics;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Fires pucks at both nets from behind, from both sides, over the top and from the front, loose

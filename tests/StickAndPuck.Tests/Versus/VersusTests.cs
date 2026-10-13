@@ -9,7 +9,7 @@ using StickAndPuck.Screens;
 using StickAndPuck.Tests.Support;
 using StickAndPuck.Versus;
 
-namespace StickAndPuck.Tests.Versus;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Player vs player (W17). Two devices cannot be pressed without hands, so the two human slots are

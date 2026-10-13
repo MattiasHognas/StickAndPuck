@@ -8,7 +8,7 @@ using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 using AiDecisions = StickAndPuck.AI.Decisions;
 
-namespace StickAndPuck.Tests.AI.Defence;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// W22b's defence: the coverage maths, then full all-AI matches (the aimatchtest system set) with the

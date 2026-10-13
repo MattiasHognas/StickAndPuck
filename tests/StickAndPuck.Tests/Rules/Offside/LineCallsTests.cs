@@ -4,7 +4,7 @@ using StickAndPuck.Physics;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Rules.Offside;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Scripted plays with puck physics, the match rules, offside and icing (W7b): offside and icing

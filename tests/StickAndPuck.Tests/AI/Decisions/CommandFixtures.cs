@@ -4,7 +4,7 @@ using StickAndPuck.Core;
 using StickAndPuck.Players;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.AI.Decisions;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// W68: checks who writes an AI skater's command and which write wins (<see cref="AiCommand"/>),
@@ -94,7 +94,7 @@ internal static class CommandFixtures
     internal static void PureReceiver(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
     {
         var world = Match(clubs, settings);
-        var systems = TacticsSelfTest.Systems(world, 41);
+        var systems = TacticsTests.Systems(world, 41);
         int weighed = 0, touched = 0, picks = 0, differ = 0;
         long n = 0;
         Play(world, systems, 4 * 60, _ =>
@@ -149,8 +149,8 @@ internal static class CommandFixtures
     {
         var press = new ClubTactics { Forecheck = Forecheck.Aggressive, Entry = ZoneEntry.DumpAndChase };
         var trap = new ClubTactics { Forecheck = Forecheck.Trap, Entry = ZoneEntry.Carry };
-        var world = TacticsSelfTest.Make(clubs, settings, press, trap);
-        var systems = TacticsSelfTest.Systems(world, 43);
+        var world = TacticsTests.Make(clubs, settings, press, trap);
+        var systems = TacticsTests.Systems(world, 43);
         int dumps = 0, wide = 0, overDump = 0, contains = 0, containHits = 0, hits = 0, meets = 0, armed = 0;
         Play(world, systems, 20 * 60, step =>
         {
@@ -181,8 +181,8 @@ internal static class CommandFixtures
         int clears = 0, over = 0, ownClears = 0;
         foreach (var kill in new[] { Side.Away, Side.Home })
         {
-            var world = SpecialTeamsSelfTest.ShortHanded(clubs, settings, kill);
-            var systems = SpecialTeamsSelfTest.Systems(world, 45 + (int)kill, special: true, rules: true);
+            var world = StickAndPuck.AI.SpecialTeamsSetup.ShortHanded(clubs, settings, kill);
+            var systems = StickAndPuck.AI.SpecialTeamsSetup.Systems(world, 45 + (int)kill, special: true, rules: true);
             Play(world, systems, 4 * 60, step =>
             {
                 foreach (var (id, writes) in step.All)
@@ -205,7 +205,7 @@ internal static class CommandFixtures
         human.Slot = 0;
         var input = new PlayerCommand { Move = new Vector2(0.3f, -0.2f), Sprint = true };
         string given = Fields(input);
-        var systems = TacticsSelfTest.Systems(world, 47);
+        var systems = TacticsTests.Systems(world, 47);
         int steps = 0, overwritten = 0, written = 0;
         Play(world, systems, 3 * 60, step =>
         {

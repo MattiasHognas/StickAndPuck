@@ -5,7 +5,7 @@ using StickAndPuck.Physics;
 using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Lighting;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The match flow with the light cues (W18): the presets differ, the intro is dim, the lights come

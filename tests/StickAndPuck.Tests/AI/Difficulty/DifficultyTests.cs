@@ -8,7 +8,7 @@ using StickAndPuck.Tests.Support;
 using Level = StickAndPuck.Core.Difficulty;
 using PassTally = StickAndPuck.AI.Decisions;
 
-namespace StickAndPuck.Tests.AI.Difficulty;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// W29's difficulty: the trait scaling (easy lowers, hard raises, normal and versus untouched, only

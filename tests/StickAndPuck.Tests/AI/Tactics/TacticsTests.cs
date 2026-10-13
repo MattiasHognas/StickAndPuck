@@ -7,7 +7,7 @@ using StickAndPuck.Rules;
 using StickAndPuck.Tests.Support;
 using AiTactics = StickAndPuck.AI.Tactics;
 
-namespace StickAndPuck.Tests.AI.Tactics;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// W22d's club tactics: every club file carries tactics, the league plays more than one way, and a

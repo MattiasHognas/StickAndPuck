@@ -4,7 +4,7 @@ using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Tests.Players.Puck;
+namespace StickAndPuck.Tests;
 
 /// <summary>
 /// W32's dekes and one-timers, with skating, checking, puck handling and puck physics. A carrier
