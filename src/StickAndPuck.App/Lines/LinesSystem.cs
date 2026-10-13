@@ -31,7 +31,7 @@ namespace StickAndPuck.App.Lines;
 /// back at the next whistle. See <see cref="GoaliePull"/>.</item>
 /// <item>Each new period starts with line 1 and pair 1, everyone rested.</item>
 /// </list>
-/// Each change publishes one <see cref="MatchEventKind.LineChange"/> (the first player on).
+/// Each change publishes one <see cref="LineChanged"/> (the first player on).
 /// Positioning (W6a) hands out roles again by itself whenever the skaters on the ice change.
 /// </summary>
 internal sealed class LinesSystem : ISystem
@@ -180,7 +180,7 @@ internal sealed class LinesSystem : ISystem
                 if (on != null && Backup(squad) is { } backup)
                 {
                     Put(on, backup, onTheFly: false);
-                    world.Events.Publish(new MatchEvent(MatchEventKind.LineChange, world.Time, side, backup.Id, backup.Position));
+                    world.Events.Publish(new LineChanged(world.Time, side, backup.Id, backup.Position));
                     b.Last[s] = ($"G{backup.Data.Number}", world.Time);
                     Log(world, $"{world.Setup.Club(side).ShortName} backup goalie {backup.Data.LastName} comes in");
                 }
@@ -303,7 +303,7 @@ internal sealed class LinesSystem : ISystem
         s.Done = true;
         if (change.Announced) return;
         change.Announced = true;
-        world.Events.Publish(new MatchEvent(MatchEventKind.LineChange, world.Time, change.Side, s.In.Id, s.In.Position));
+        world.Events.Publish(new LineChanged(world.Time, change.Side, s.In.Id, s.In.Position));
         b.Last[(int)change.Side] = (change.Incoming.Name, world.Time);
     }
 

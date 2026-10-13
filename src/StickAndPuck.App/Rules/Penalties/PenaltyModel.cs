@@ -29,16 +29,15 @@ public static class PenaltyModel
 {
     /// <summary>Judges one check event.</summary>
     /// <param name="world">The match, in the step the check landed (after <see cref="CheckingSystem"/>).</param>
-    /// <param name="check">The Check event.</param>
+    /// <param name="check">The check.</param>
     /// <param name="again">True when the checker hit the same skater within <see cref="PenaltyTuning.RoughingWindow"/> (W47).</param>
     /// <param name="afterWhistle">True when the hit came after play stopped (W47).</param>
     /// <returns>The foul it may be, or null for a clean hit or an unknown target.</returns>
-    public static Foul? Judge(World world, MatchEvent check, bool again = false, bool afterWhistle = false)
+    public static Foul? Judge(World world, CheckLanded check, bool again = false, bool afterWhistle = false)
     {
-        if (check.PlayerId < 0 || check.PlayerId >= world.Players.Count || check.Side is not { } side) return null;
-        var checker = world.Players[check.PlayerId];
+        var checker = world.Players[check.CheckerId];
         var target = world.Players
-            .Where(p => p.Side != side && p.OnIce && !p.IsGoalie)
+            .Where(p => p.Side != check.Side && p.OnIce && !p.IsGoalie)
             .MinBy(p => Vector3.DistanceSquared(p.Position, check.Position));
         if (target == null || Vector3.Distance(target.Position, check.Position) > 1f) return null;
 
@@ -61,7 +60,7 @@ public static class PenaltyModel
     }
 
     /// <summary>W47's calls on a check that come before W14's, each only with its switch on.</summary>
-    static (string Infraction, float Chance)? Worse(RuleSet rules, Puck pk, MatchEvent check, Player target, bool carrying, bool behind, bool again, bool afterWhistle)
+    static (string Infraction, float Chance)? Worse(RuleSet rules, Puck pk, CheckLanded check, Player target, bool carrying, bool behind, bool again, bool afterWhistle)
     {
         bool hard = check.Strength >= CheckingModel.HardHit;
         bool boards = BoardsDistance(target.Position) < PenaltyTuning.BoardsReach;

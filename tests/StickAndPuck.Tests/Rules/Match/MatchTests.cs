@@ -88,11 +88,11 @@ public sealed class MatchTests : CheckedTest
         Check(m.Phase == MatchPhase.Final, "a full match reaches the final");
         Check(m.Score[0] == 3 && m.Score[1] == 1, $"the score is 3-1 (got {m.Score[0]}-{m.Score[1]})");
         Check(m.Period == 3 && m.Clock == 0, "it ends in period 3 with the clock at 0:00");
-        Check(events.Count(e => e.Kind == MatchEventKind.Goal) == 4, "four goals published");
-        Check(events.Count(e => e.Kind == MatchEventKind.PeriodEnd) == 3, "three period ends");
-        var final = events.Where(e => e.Kind == MatchEventKind.MatchEnd).ToList();
-        Check(final.Count == 1 && final[0].Side == Side.Home, "one MatchEnd, home wins");
-        Check(events.Count(e => e.Kind == MatchEventKind.Faceoff) == 1 + 4 + 2, "faceoffs: opening, after each goal, start of periods 2 and 3");
+        Check(events.Count(e => e is GoalScored) == 4, "four goals published");
+        Check(events.Count(e => e is PeriodEnded) == 3, "three period ends");
+        var final = events.OfType<MatchEnded>().ToList();
+        Check(final.Count == 1 && final[0] is MatchWon { Winner: Side.Home }, "one MatchEnd, home wins");
+        Check(events.Count(e => e is PuckDropped) == 1 + 4 + 2, "faceoffs: opening, after each goal, start of periods 2 and 3");
         Check(Enumerable.Range(1, 3).All(p => MathF.Abs(playTime[p] - Period) < 2 * Game.Step),
             $"each period has {Period} s of running clock ({string.Join(", ", playTime.Skip(1).Select(t => t.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)))})");
         Check(defendsLeft[1] == Side.Home && defendsLeft[2] == Side.Away && defendsLeft[3] == Side.Home, "clubs swap ends every period");
@@ -114,7 +114,7 @@ public sealed class MatchTests : CheckedTest
         Check(w.Players.All(p => p.Velocity == Vector3.Zero) && Halves() && Same(w.Match.Clock, clock), "players hold their spots and the clock waits");
         Check(events.Count == 0, "nothing is published before the drop");
         events = Run(w, x => x.Match.Phase == MatchPhase.Play, null, 5);
-        Check(w.Puck.Live && events.Count(e => e.Kind == MatchEventKind.Faceoff) == 1, "the puck drops live with one Faceoff event");
+        Check(w.Puck.Live && events.Count(e => e is PuckDropped) == 1, "the puck drops live with one Faceoff event");
     }
 
     /// <summary>A puck that crosses after the clock runs out does not count.</summary>
@@ -125,8 +125,8 @@ public sealed class MatchTests : CheckedTest
         Run(w, x => x.Match.Phase == MatchPhase.Play && x.Match.Clock < 0.2f);
         Shoot(w, Side.Home, fromGoalLine: 12, speed: 15);
         var events = RunFor(w, 2);
-        Check(w.Match.Score[0] == 0 && events.All(e => e.Kind != MatchEventKind.Goal), "a shot still travelling at the horn is no goal");
-        Check(w.Match.Phase == MatchPhase.Intermission && events.Count(e => e.Kind == MatchEventKind.PeriodEnd) == 1, "the period ends into the intermission");
+        Check(w.Match.Score[0] == 0 && events.All(e => e is not GoalScored), "a shot still travelling at the horn is no goal");
+        Check(w.Match.Phase == MatchPhase.Intermission && events.Count(e => e is PeriodEnded) == 1, "the period ends into the intermission");
         Run(w, x => x.Match.Phase == MatchPhase.Play, null, 20);
         Check(w.Match.Period == 2 && w.Match.Clock <= Period, "period 2 starts with a full clock");
     }
@@ -137,11 +137,11 @@ public sealed class MatchTests : CheckedTest
     {
         var none = Make(OvertimeRule.None);
         var ev = Run(none, x => x.Match.Phase == MatchPhase.Final);
-        Check(ev.Count(e => e.Kind == MatchEventKind.MatchEnd && e.Side == null) == 1, "no overtime: a 0-0 tie ends the match with no winner");
+        Check(ev.Count(e => e is MatchTied) == 1, "no overtime: a 0-0 tie ends the match with no winner");
 
         var shl = Make(OvertimeRule.Shl);
         ev = Run(shl, x => x.Match.Phase is MatchPhase.Overtime or MatchPhase.Final);
-        Check(shl.Match.Phase == MatchPhase.Overtime && ev.All(e => e.Kind != MatchEventKind.MatchEnd), "SHL: a tie hands over to overtime, no MatchEnd yet");
+        Check(shl.Match.Phase == MatchPhase.Overtime && ev.All(e => e is not MatchEnded), "SHL: a tie hands over to overtime, no MatchEnd yet");
 
         var so = Make(OvertimeRule.ShootoutOnly);
         Run(so, x => x.Match.Phase is MatchPhase.Shootout or MatchPhase.Final);
@@ -163,8 +163,8 @@ public sealed class MatchTests : CheckedTest
         Check(Same(w.Match.Clock, MatchTuning.OvertimeSeconds) && w.Puck.Position == RinkSpec.CentreDot, "overtime starts at centre with a 5:00 clock");
         Shoot(w, Side.Away);
         var ev = RunFor(w, 1);
-        var end = ev.Where(e => e.Kind == MatchEventKind.MatchEnd).ToList();
-        Check(end.Count == 1 && end[0].Side == Side.Away && w.Match.Score[1] == 1, "an overtime goal wins it for the scorer");
+        var end = ev.OfType<MatchEnded>().ToList();
+        Check(end.Count == 1 && end[0] is MatchWon { Winner: Side.Away } && w.Match.Score[1] == 1, "an overtime goal wins it for the scorer");
         Celebrates(w, Side.Away);
     }
 
@@ -184,7 +184,7 @@ public sealed class MatchTests : CheckedTest
         Check(w.Players.Where(p => p.OnIce && p.IsGoalie && p.Side != winner).All(g => Celebration.Slumps(w, g)), "the losing goalie slumps");
         Check(w.Match.Phase == MatchPhase.Stopped && !w.Puck.Live, "the final waits for the celebration");
         var ev = RunFor(w, 2);
-        Check(w.Match.Phase == MatchPhase.Final && ev.All(e => e.Kind != MatchEventKind.MatchEnd), "then the match is final, with no second MatchEnd");
+        Check(w.Match.Phase == MatchPhase.Final && ev.All(e => e is not MatchEnded), "then the match is final, with no second MatchEnd");
     }
 
     /// <summary>W7b's entry point: a whistle stops the clock and leads to a faceoff at the given dot.</summary>
@@ -218,7 +218,7 @@ public sealed class MatchTests : CheckedTest
         var g = w.OnIce(Side.Away).First(p => p.IsGoalie);
         w.Puck.Carrier = g.Id;
         var ev = RunFor(w, MatchTuning.FreezeSeconds + 0.1f, x => x.Puck.Position = g.Position);
-        Check(ev.Any(e => e.Kind == MatchEventKind.Whistle) && w.Match.Phase == MatchPhase.Stopped, "a frozen puck brings a whistle");
+        Check(ev.Any(e => e is WhistleBlown) && w.Match.Phase == MatchPhase.Stopped, "a frozen puck brings a whistle");
         Run(w, x => x.Match.Phase == MatchPhase.Faceoff, null, 5);
         Check(MathF.Abs(MatchFlow.FaceoffDot(w).X) > 20 && w.Puck.Carrier < 0, "the faceoff is at an end-zone dot with the puck loose");
     }

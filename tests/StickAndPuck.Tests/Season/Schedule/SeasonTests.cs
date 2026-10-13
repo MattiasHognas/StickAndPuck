@@ -99,7 +99,7 @@ public sealed class SeasonTests : CheckedTest
         world.Match.Score[0] = 3;
         world.Match.Score[1] = 2;
         world.Match.Phase = MatchPhase.Final;
-        Step(w => w.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, w.Time, Side.Home)));
+        Step(w => w.Events.Publish(new MatchWon(w.Time, Side.Home)));
         Check(season.Games[game.Number].Result == new FixtureResult(3, 2, ResultKind.Shootout), "MatchEnd records 3-2 after a shootout");
         Check(season.Round(0).All(g => g.Played) && !season.Round(1).Any(g => g.Played), "the round's other six games are settled, the next round is not");
         Check(!SeasonSession.Unsaved, "the autosave ran after the match");
@@ -123,7 +123,7 @@ public sealed class SeasonTests : CheckedTest
         SeasonSession.End();
         SeasonSession.Continue(clubs, path);
         var other = new World(WorldBuilder.DefaultSetup, new Settings());
-        other.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, other.Time, Side.Home));
+        other.Events.Publish(new MatchWon(other.Time, Side.Home));
         new ScheduleSystem().Update(other, Game.Step);
         Check(SeasonSession.Current!.Games.Count(g => g.Played) == 7 && !SeasonSession.Unsaved, "a match that is not a season game records nothing");
     }

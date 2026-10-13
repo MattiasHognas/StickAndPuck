@@ -99,7 +99,7 @@ public sealed class PenaltyTests : CheckedTest
         bool sent = false;
         Run(w, x => sent, x =>
         {
-            x.Events.Publish(new MatchEvent(MatchEventKind.Goal, x.Time, scorer, -1, RinkSpec.NetMouth(1)));
+            x.Events.Publish(new GoalScored(x.Time, scorer, x.OnIce(scorer).First(p => !p.IsGoalie).Id, RinkSpec.NetMouth(1), 0));
             sent = true;
         }, 1);
     }
@@ -120,9 +120,9 @@ public sealed class PenaltyTests : CheckedTest
         w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.C).Id;
         var events = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
         w.Puck.Carrier = -1;
-        var call = events.Find(e => e.Kind == MatchEventKind.Penalty);
-        Check(w.Match.Phase == MatchPhase.Stopped && events.Exists(e => e.Kind == MatchEventKind.Whistle), "the whistle goes when the offending club touches the puck");
-        Check(call.Side == Side.Home && call.PlayerId == lw.Id && Math.Abs(call.Strength - Penalties.MinorSeconds(w)) < 0.01f, "a Penalty event names the club, the skater and the minutes");
+        var call = events.OfType<PenaltyCalled>().First();
+        Check(w.Match.Phase == MatchPhase.Stopped && events.Exists(e => e is WhistleBlown), "the whistle goes when the offending club touches the puck");
+        Check(call.Side == Side.Home && call.PlayerId == lw.Id && Math.Abs(call.Seconds - Penalties.MinorSeconds(w)) < 0.01f, "a Penalty event names the club, the skater and the minutes");
         Check(w.Match.Penalties is [{ Infraction: Infraction.Tripping, SecondsLeft: var left }] && Math.Abs(left - Penalties.MinorSeconds(w)) < 0.01f
             && Math.Abs(Penalties.MinorSeconds(w) - (2 * 60 * Period / 1200)) < 0.01f, "a two minute minor, shortened with the period");
         Check(!lw.OnIce && Penalties.InBox(w, lw.Id) && lw.Position.Z > RinkSpec.HalfWidth, "the skater goes to the box off the ice");
@@ -531,7 +531,7 @@ public sealed class PenaltyTests : CheckedTest
         bool hit = false;
         Run(w, _ => hit && (scene.Strength > 0 || w.Time > 1), x =>
         {
-            if (!hit && scene.Strength > 0) x.Events.Publish(new MatchEvent(MatchEventKind.Check, x.Time, Side.Away, checker.Id, target.Position, scene.Strength));
+            if (!hit && scene.Strength > 0) x.Events.Publish(new CheckLanded(x.Time, Side.Away, checker.Id, target.Position, scene.Strength));
             hit = true;
         }, scene.Strength > 0 ? 1 : 2);
         Penalties.Strictness = 1f;
@@ -716,7 +716,7 @@ public sealed class PenaltyTests : CheckedTest
         target.Position = new Vector3(0, 0, 0);
         target.Heading = MathF.PI / 2;      // facing +x
         checker.Position = new Vector3(-1, 0, 0);   // behind him
-        MatchEvent Hit(float strength) => new(MatchEventKind.Check, w.Time, Side.Away, checker.Id, target.Position, strength);
+        CheckLanded Hit(float strength) => new CheckLanded(w.Time, Side.Away, checker.Id, target.Position, strength);
 
         target.Begin(PlayerAction.Fallen);
         Check(PenaltyModel.Judge(w, Hit(1)) is { Infraction: Infraction.Tripping, Chance: > 0.05f } f1 && f1.PlayerId == checker.Id, "knocking a skater down from behind is tripping");
@@ -785,7 +785,7 @@ public sealed class PenaltyTests : CheckedTest
             w.Events.Clear();
             foreach (var s in systems) s.Update(w, Game.Step);
             w.Time += Game.Step; w.Tick++;
-            foreach (var e in w.Events.Of(MatchEventKind.Penalty))
+            foreach (var e in w.Events.Of<PenaltyCalled>())
             {
                 calls++;
                 string what = w.Match.Penalties.FindLast(p => p.PlayerId == e.PlayerId)?.Infraction ?? "?";

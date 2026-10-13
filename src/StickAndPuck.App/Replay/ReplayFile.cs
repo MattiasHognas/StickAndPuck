@@ -1,9 +1,12 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
+using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
+using static System.FormattableString;
 
 namespace StickAndPuck.App.Replays;
 
@@ -123,14 +126,47 @@ public sealed class ReplayFile
     /// <returns>The line, without the "e".</returns>
     public static string EventLine(long tick, MatchEvent e)
     {
-        var c = CultureInfo.InvariantCulture;
-        return string.Create(c, $"{tick} {e.Kind} {(e.Side is { } s ? s.ToString() : "-")} {e.PlayerId} {e.Time:R} {e.Position.X:R},{e.Position.Y:R},{e.Position.Z:R} {e.Strength:R}");
+        return string.Create(CultureInfo.InvariantCulture, $"{tick} {EventText(e)}");
     }
+
+    /// <summary>
+    /// Writes an event as "Type time fields...", every float round-trip exact. Replay lines, the
+    /// world checksum and the state dump all use it, so a new event type fails here until it has a line.
+    /// </summary>
+    /// <param name="e">The event.</param>
+    /// <returns>The text.</returns>
+    public static string EventText(MatchEvent e)
+    {
+        string fields = e switch
+        {
+            GoalScored g => Invariant($"{g.Side} {g.ScorerId} {V(g.Position)} {g.Speed:R}"),
+            PuckDropped f => V(f.Dot),
+            OffsideCalled o => Invariant($"{o.Attacker} {V(o.Position)}"),
+            IcingCalled i => Invariant($"{i.Offender} {i.PlayerId} {V(i.Position)}"),
+            PenaltyCalled p => Invariant($"{p.Side} {p.PlayerId} {V(p.Position)} {p.Seconds:R}"),
+            FightStarted f => Invariant($"{f.Side} {f.PlayerId} {V(f.Position)}"),
+            ShotSaved s => Invariant($"{s.Side} {s.GoalieId} {V(s.Position)} {s.Speed:R}"),
+            LineChanged l => Invariant($"{l.Side} {l.PlayerId} {V(l.Position)}"),
+            PeriodEnded p => Invariant($"{p.Period}"),
+            MatchWon w => Invariant($"{w.Winner}"),
+            MatchTied => "",
+            ShotTaken s => Invariant($"{s.Side} {s.ShooterId} {V(s.Position)} {s.Speed:R}"),
+            PassMade p => Invariant($"{p.Side} {p.PasserId} {V(p.Position)} {p.Speed:R}"),
+            CheckLanded c => Invariant($"{c.Side} {c.CheckerId} {V(c.Position)} {c.Strength:R}"),
+            PuckHitBoards b => Invariant($"{V(b.Position)} {b.Speed:R}"),
+            PuckHitPost p => Invariant($"{V(p.Position)} {p.Speed:R}"),
+            WhistleBlown w => V(w.Position),
+            _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
+        };
+        return Invariant($"{e.GetType().Name} {e.Time:R} {fields}").TrimEnd();
+    }
+
+    static string V(Vector3 v) => Invariant($"{v.X:R},{v.Y:R},{v.Z:R}");
 
     /// <summary>Whether the match ended on the step that just ran: the final horn, or the final phase.</summary>
     /// <param name="world">The world after the step.</param>
     /// <returns>True when it ended.</returns>
-    public static bool Ends(World world) => world.Match.Phase == MatchPhase.Final || world.Events.Current.Any(e => e.Kind == MatchEventKind.MatchEnd);
+    public static bool Ends(World world) => world.Match.Phase == MatchPhase.Final || world.Events.Current.Any(e => e is MatchEnded);
 
     /// <summary>Writes the end line for a world.</summary>
     /// <param name="world">The match.</param>

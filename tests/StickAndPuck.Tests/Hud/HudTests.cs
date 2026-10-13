@@ -46,14 +46,14 @@ public sealed class HudTests : CheckedTest
         var w = Make();
         var hud = new HudMessages();
         var scorer = w.OnIce(Side.Away).First(p => !p.IsGoalie);
-        w.Events.Publish(new MatchEvent(MatchEventKind.Goal, w.Time, Side.Away, scorer.Id));
+        w.Events.Publish(new GoalScored(w.Time, Side.Away, scorer.Id, default, 0));
         hud.Update(w);
         Check(hud.Current is { Title: "GOAL!" } g && string.Equals(g.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal) && string.Equals(g.Crest, w.Setup.Away.Id, StringComparison.Ordinal),
             "a goal shows GOAL! with the scorer and the scoring club's crest");
 
         var home = w.OnIce(Side.Home).First(p => !p.IsGoalie);
         w.Events.Clear();
-        w.Events.Publish(new MatchEvent(MatchEventKind.Goal, w.Time, Side.Away, home.Id));
+        w.Events.Publish(new GoalScored(w.Time, Side.Away, home.Id, default, 0));
         hud.Update(w);
         Check(string.Equals(hud.Current?.Detail, w.Setup.Away.Name, StringComparison.Ordinal), "an own goal names the club, not the defender");
 
@@ -62,13 +62,13 @@ public sealed class HudTests : CheckedTest
         hud.Update(w);
         Check(hud.Current == null, "the goal banner goes away");
 
-        w.Events.Publish(new MatchEvent(MatchEventKind.Icing, w.Time, Side.Home, home.Id));
+        w.Events.Publish(new IcingCalled(w.Time, Side.Home, home.Id, default));
         hud.Update(w);
         Check(hud.Current is { Title: "ICING" } ic && string.Equals(ic.Detail, w.Setup.Home.Name, StringComparison.Ordinal) && string.Equals(ic.Crest, w.Setup.Home.Id, StringComparison.Ordinal),
             "icing names the club that iced the puck");
 
         w.Events.Clear();
-        w.Events.Publish(new MatchEvent(MatchEventKind.Fight, w.Time));
+        w.Events.Publish(new FightStarted(w.Time, Side.Home, home.Id, default));
         hud.Update(w);
         Check(string.Equals(hud.Current?.Title, "ICING", StringComparison.Ordinal), "events the HUD does not announce leave the banner alone");
     }
@@ -84,7 +84,7 @@ public sealed class HudTests : CheckedTest
         void Goal(Side side, int player)
         {
             w.Events.Clear();
-            w.Events.Publish(new MatchEvent(MatchEventKind.Goal, w.Time, side, player));
+            w.Events.Publish(new GoalScored(w.Time, side, player, default, 0));
             w.Match.Score[(int)side]++;
             hud.Update(w);
         }
@@ -117,7 +117,7 @@ public sealed class HudTests : CheckedTest
         for (int i = 0; i < 2; i++)
         {
             w.Events.Clear();
-            w.Events.Publish(new MatchEvent(MatchEventKind.Goal, w.Time, Side.Away, other.Id));
+            w.Events.Publish(new GoalScored(w.Time, Side.Away, other.Id, default, 0));
             w.Match.Score[1]++;
             hud.Update(w);
         }
@@ -136,7 +136,7 @@ public sealed class HudTests : CheckedTest
     static HudMessage? Final(World w, HudMessages hud, Side winner)
     {
         w.Events.Clear();
-        w.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, w.Time, winner));
+        w.Events.Publish(new MatchWon(w.Time, winner));
         hud.Update(w);
         return hud.Current;
     }

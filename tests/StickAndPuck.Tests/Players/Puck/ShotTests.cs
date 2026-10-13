@@ -55,7 +55,7 @@ public sealed class ShotTests : CheckedTest
             if (w.Puck.Carrier < 0) released = true;
             if (released) peak = Math.Max(peak, after.Y);
             if (float.IsNaN(atLine) && released && before.X < RinkSpec.GoalLineX && after.X >= RinkSpec.GoalLineX) atLine = after.Y;
-            goal |= w.Events.Current.Any(e => e.Kind == MatchEventKind.Goal);
+            goal |= w.Events.Current.Any(e => e is GoalScored);
             w.Time += Game.Step; w.Tick++;
         }
         return (float.IsNaN(atLine) ? peak : atLine, peak, goal);

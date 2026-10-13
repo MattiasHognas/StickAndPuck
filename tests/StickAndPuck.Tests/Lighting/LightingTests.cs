@@ -48,7 +48,7 @@ public sealed class LightingTests : CheckedTest
         for (int i = 0; i < LightCues.LightsUpSeconds / Game.Step + 1; i++) Step();
         Check(cues.Current() == new CueLight(Vector3.One, true, false), "full light once they are up");
 
-        Step(w => w.Events.Publish(new MatchEvent(MatchEventKind.Goal, w.Time, Side.Home)));
+        Step(w => w.Events.Publish(new GoalScored(w.Time, Side.Home, w.Players.First(p => p.Side == Side.Home).Id, default, 0)));
         Check(cues.Flashing && cues.Current().Flash, "a goal starts a flash");
         bool dark = false;
         for (int i = 0; i < LightCues.FlashSeconds / Game.Step - 2; i++) { Step(); dark |= !cues.Current().Flash; }

@@ -79,7 +79,7 @@ public sealed class FightTests : CheckedTest
         bool sent = false;
         return Run(w, _ => sent, x =>
         {
-            x.Events.Publish(new MatchEvent(MatchEventKind.Check, x.Time, checker.Side, checker.Id, target.Position, strength));
+            x.Events.Publish(new CheckLanded(x.Time, checker.Side, checker.Id, target.Position, strength));
             sent = true;
         }, 1);
     }
@@ -124,7 +124,7 @@ public sealed class FightTests : CheckedTest
         var a = Skater(w, Side.Away, PlayingPosition.C);
         var h = Skater(w, Side.Home, PlayingPosition.C);
         Check(f != null && f.Checker.PlayerId == a.Id && f.Victim.PlayerId == h.Id, "a hard check (1.8) drops the gloves and both accept: the checker and the skater he hit fight");
-        Check(events.Exists(e => e.Kind == MatchEventKind.Fight) && events.Exists(e => e.Kind == MatchEventKind.Whistle) && w.Match.Phase == MatchPhase.Stopped,
+        Check(events.Exists(e => e is FightStarted) && events.Exists(e => e is WhistleBlown) && w.Match.Phase == MatchPhase.Stopped,
             "the fight publishes a Fight event and the referee whistles play dead");
         Check(a.Action == PlayerAction.Fight && h.Action == PlayerAction.Fight && Math.Abs(Vector3.Distance(a.Position, h.Position) - (2 * FightTuning.HalfGap)) < 0.01f
             && string.Equals(Fighting.Pose(w, a)?.Clip, "grab", StringComparison.Ordinal), "both square off, an arm's length apart, grabbing sweaters");
@@ -190,7 +190,7 @@ public sealed class FightTests : CheckedTest
         var call = w.Match.Penalties.Find(p => p.PlayerId == them.Id);
         Check(call != null && string.Equals(call.Infraction, FightTuning.Infraction, StringComparison.Ordinal) && Math.Abs(call.SecondsLeft - Penalties.MinorSeconds(w)) < 0.01f && !them.OnIce && Penalties.InBox(w, them.Id),
             "the loser goes to the box for two minutes for fighting");
-        Check(events.Exists(e => e.Kind == MatchEventKind.Penalty && e.PlayerId == them.Id) && me.OnIce && !Penalties.InBox(w, me.Id) && me.Action == PlayerAction.None,
+        Check(events.Exists(e => e is PenaltyCalled pen && pen.PlayerId == them.Id) && me.OnIce && !Penalties.InBox(w, me.Id) && me.Action == PlayerAction.None,
             "a Penalty event is published for him; the winner stays on the ice");
         Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
         var dot = MatchFlow.FaceoffDot(w);
@@ -316,7 +316,7 @@ public sealed class FightTests : CheckedTest
         var them = Skater(w, Side.Away, PlayingPosition.C);
         var events = HomeWins(w);
         Check(Fighting5(w, me) != null && Fighting5(w, them) != null && Penalties.InBox(w, me.Id) && Penalties.InBox(w, them.Id) && !me.OnIce && !them.OnIce
-            && events.Count(e => e.Kind == MatchEventKind.Penalty) == 2 && !Penalties.Ejected(w, me.Id) && !Penalties.Ejected(w, them.Id),
+            && events.Count(e => e is PenaltyCalled) == 2 && !Penalties.Ejected(w, me.Id) && !Penalties.Ejected(w, them.Id),
             "NHL: both fighters get a five minute major for fighting, winner and loser, and neither is ejected");
         Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
         Check(Skaters(w, Side.Home) == 5 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == null,
@@ -337,7 +337,7 @@ public sealed class FightTests : CheckedTest
         var homeSquad = Bench.SquadOf(w, Side.Home)!;
         var awaySquad = Bench.SquadOf(w, Side.Away)!;
         var events = HomeWins(w);
-        Check(Fighting5(w, me) != null && Fighting5(w, them) != null && events.Count(e => e.Kind == MatchEventKind.Penalty) == 2,
+        Check(Fighting5(w, me) != null && Fighting5(w, them) != null && events.Count(e => e is PenaltyCalled) == 2,
             "SHL: both fighters get a five minute major for fighting, winner and loser, on the scorebug");
         Check(Penalties.Ejected(w, me.Id) && Penalties.Ejected(w, them.Id) && homeSquad.UnitOf(me) == null && awaySquad.UnitOf(them) == null && !me.OnIce && !them.OnIce,
             "SHL: both also get a game misconduct and are off the squad, the lines refill without them");
@@ -416,7 +416,7 @@ public sealed class FightTests : CheckedTest
             w.Events.Clear();
             foreach (var s in systems) s.Update(w, Game.Step);
             w.Time += Game.Step; w.Tick++;
-            foreach (var e in w.Events.Of(MatchEventKind.Penalty))
+            foreach (var e in w.Events.Of<PenaltyCalled>())
                 if (string.Equals(w.Match.Penalties.FindLast(p => p.PlayerId == e.PlayerId)?.Infraction, FightTuning.Infraction, StringComparison.Ordinal)) boxed++;
             // strength is checked in play: between a whistle and the faceoff the bench is still filling the gaps (as W47's penaltytest does)
             if (w.Match.Phase != MatchPhase.Play) continue;

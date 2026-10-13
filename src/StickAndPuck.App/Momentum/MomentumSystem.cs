@@ -84,9 +84,8 @@ internal sealed class MomentumSystem : ISystem, IDisposable
     {
         foreach (var e in world.Events.Current)
         {
-            if (e.Side is not { } side) continue;
-            if (e.Kind == MatchEventKind.Goal) Boost(world, side, MomentumCause.Goal);
-            else if (e.Kind == MatchEventKind.Check && e.Strength >= MomentumTuning.BigHitStrength && Fighting.Current(world) == null) Boost(world, side, MomentumCause.BigHit);
+            if (e is GoalScored goal) Boost(world, goal.Side, MomentumCause.Goal);
+            else if (e is CheckLanded check && check.Strength >= MomentumTuning.BigHitStrength && Fighting.Current(world) == null) Boost(world, check.Side, MomentumCause.BigHit);
         }
 
         if (Fighting.Current(world) is { LoserId: >= 0 } fight && !ReferenceEquals(fight, credited))

@@ -27,6 +27,9 @@ public sealed class GoalieScene : IScene
             data = data with { Traits = data.Traits with { GoalieReflexes = reflexes } };
         var g = world.AddPlayer(Side.Away, data, new Vector3(RinkSpec.GoalLineX - 1f, 0, 0));
         g.Heading = -MathF.PI / 2;
+        // a home skater on the bench, clear of the puck, so the goals have someone to credit and play the horn
+        var skater = world.Setup.Home.Roster.FirstOrDefault(p => p.Position != PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.C };
+        world.AddPlayer(Side.Home, skater, Vector3.Zero).OnIce = false;
         world.Puck.Position = new Vector3(14, 0, 0);
         GoalieDemo.Enabled = true;
         return world;

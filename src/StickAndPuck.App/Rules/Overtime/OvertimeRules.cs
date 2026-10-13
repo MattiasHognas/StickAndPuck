@@ -275,7 +275,7 @@ internal sealed class OvertimeRules : ISystem
             s.Lane = -s.Deke * 1.6f;
             s.ShootFrom = 1.8f;
         }
-        world.Events.Publish(new MatchEvent(MatchEventKind.Faceoff, world.Time, shooter.Side, shooter.Id, RinkSpec.CentreDot));
+        world.Events.Publish(new PuckDropped(world.Time, RinkSpec.CentreDot));
     }
 
     /// <summary>Watches one attempt to its end; skates and shoots for an AI shooter.</summary>
@@ -287,7 +287,7 @@ internal sealed class OvertimeRules : ISystem
         s.AttemptTime += dt;
 
         // physics ran earlier this step, so a goal shows up here
-        if (world.Events.Of(MatchEventKind.Goal).Any(e => e.Side == shooter.Side)) { Finish(world, s, true); return; }
+        if (world.Events.Of<GoalScored>().Any(e => e.Side == shooter.Side)) { Finish(world, s, true); return; }
 
         bool carried = pk.Carrier == shooter.Id;
         if (pk.Carrier >= 0 && !carried) { Finish(world, s, false); return; }  // the goalie covered it
@@ -353,7 +353,7 @@ internal sealed class OvertimeRules : ISystem
         pk.LastTouch = shooter.Id;
         pk.Velocity = velocity;
         shooter.Begin(PlayerAction.Shoot);
-        world.Events.Publish(new MatchEvent(MatchEventKind.Shot, world.Time, shooter.Side, shooter.Id, from, velocity.Length()));
+        world.Events.Publish(new ShotTaken(world.Time, shooter.Side, shooter.Id, from, velocity.Length()));
     }
 
     static void Finish(World world, OvertimeState s, bool scored)

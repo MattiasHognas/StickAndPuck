@@ -41,7 +41,7 @@ internal sealed class PlayoffSystem : ISystem, IDisposable
 
         var series = PlayoffSession.Playing;
         if (series == null || !string.Equals(series.NextHome, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(series.NextAway, world.Setup.Away.Id, StringComparison.Ordinal)) return;
-        if (!world.Events.Of(MatchEventKind.MatchEnd).Any()) return;
+        if (!world.Events.Of<MatchEnded>().Any()) return;
 
         var m = world.Match;
         var kind = sawShootout ? ResultKind.Shootout : m.Period > world.Setup.Periods ? ResultKind.Overtime : ResultKind.Regulation;

@@ -9,10 +9,12 @@ namespace StickAndPuck.App.Physics;
 /// <summary>
 /// W3: the puck in flight. Moves a loose puck with <see cref="PuckMotion"/> (friction, boards,
 /// rounded corners, glass, posts, nets, body contact) and runs the goal-line test.
-/// Publishes <see cref="MatchEventKind.PuckBoards"/> (boards and glass) and
-/// <see cref="MatchEventKind.PuckPost"/> (posts and crossbar) with the impact speed as Strength,
-/// and <see cref="MatchEventKind.Goal"/> once when the whole puck is over the goal line of a net
-/// while the puck is live: Side is the scoring club, PlayerId the last touch. Rules (W7a) keep the
+/// Publishes <see cref="PuckHitBoards"/> (boards and glass) and
+/// <see cref="PuckHitPost"/> (posts and crossbar) with the impact speed,
+/// and <see cref="GoalScored"/> once when the whole puck is over the goal line of a net
+/// while the puck is live: Side is the scoring club, the scorer the last touch, or the nearest
+/// on-ice skater of the scoring club when nobody has touched the puck. A club with no players at all
+/// gets no event (the puck is still held as scored), so every event names a real player. Rules (W7a) keep the
 /// score and restart play; they move the puck out of the net for the faceoff.
 /// A goal needs the puck to have come in through the mouth: the cage is solid from behind, from the
 /// sides and from above, and a puck carried through the mesh on a stick and let go inside is pushed
@@ -128,8 +130,8 @@ internal sealed class PuckPhysics : ISystem, IDisposable
                     break;
             }
         }
-        if (boards is { } b) world.Events.Publish(new MatchEvent(MatchEventKind.PuckBoards, world.Time, Position: b.Position, Strength: b.Speed));
-        if (post is { } p) world.Events.Publish(new MatchEvent(MatchEventKind.PuckPost, world.Time, Position: p.Position, Strength: p.Speed));
+        if (boards is { } b) world.Events.Publish(new PuckHitBoards(world.Time, b.Position, b.Speed));
+        if (post is { } p) world.Events.Publish(new PuckHitPost(world.Time, p.Position, p.Speed));
     }
 
     /// <summary>A goal counts once, when the whole puck is over the line, inside a net it came into through the mouth, while the puck is live.</summary>
@@ -142,7 +144,20 @@ internal sealed class PuckPhysics : ISystem, IDisposable
         scored = end;
         // the net at -x belongs to the club defending the left end; the other club scores there
         var defender = end < 0 ? world.Match.DefendsLeft : Other(world.Match.DefendsLeft);
-        world.Events.Publish(new MatchEvent(MatchEventKind.Goal, world.Time, Other(defender), pk.LastTouch, pk.Position, pk.Velocity.Length()));
+        var scorer = Other(defender);
+        if (Scorer(world, scorer) is { } id) world.Events.Publish(new GoalScored(world.Time, scorer, id, pk.Position, pk.Velocity.Length()));
+        else Console.WriteLine($"SAP: puck: a goal for {scorer}, which has no players, publishes no event");
+    }
+
+    /// <summary>The last touch, or when that is no player, the scoring club's nearest on-ice skater (any player of the club as a last resort); null when the club has none.</summary>
+    static int? Scorer(World world, Side scorer)
+    {
+        var pk = world.Puck;
+        if (pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count) return pk.LastTouch;
+        var club = world.Players.Where(p => p.Side == scorer).ToList();
+        var skaters = club.Where(p => p.OnIce && !p.IsGoalie).ToList();
+        var pool = skaters.Count > 0 ? skaters : club;
+        return pool.MinBy(p => Vector3.DistanceSquared(p.Position, pk.Position))?.Id;
     }
 
     static Side Other(Side side)

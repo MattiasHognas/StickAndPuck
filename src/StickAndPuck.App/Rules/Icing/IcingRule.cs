@@ -112,10 +112,9 @@ internal sealed class IcingRule : ISystem
     {
         var dot = FaceoffDot(world.Match, offender, from);
         if (!MatchFlow.Whistle(world, dot)) return;
-        var call = new MatchEvent(MatchEventKind.Icing, world.Time, offender, touch, world.Puck.Position);
-        world.Events.Publish(call);
+        world.Events.Publish(new IcingCalled(world.Time, offender, touch, world.Puck.Position));
         if (world.Setup.Rules.IcingNoChange) HoldLines(world, offender);
-        LineCallsDemo.Log(call, dot);
+        LineCallsDemo.Log("Icing", offender, world.Puck.Position, dot);
     }
 
 

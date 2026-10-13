@@ -2,67 +2,140 @@ using System.Numerics;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>Kinds of match event.</summary>
-public enum MatchEventKind
+/// <summary>
+/// One thing that happened in a match. The hierarchy is closed: every kind is a sealed record
+/// below, carrying only its own fields, so consumers switch over the types.
+/// </summary>
+public abstract record MatchEvent
 {
-    /// <summary>A goal was scored.</summary>
-    Goal,
+    /// <summary>Initializes a new instance of the <see cref="MatchEvent"/> class.</summary>
+    /// <param name="time">Match time in seconds (<see cref="World.Time"/>) when it happened.</param>
+    private protected MatchEvent(float time)
+    {
+        Time = time;
+    }
 
-    /// <summary>The puck was dropped.</summary>
-    Faceoff,
-
-    /// <summary>Play stopped for offside.</summary>
-    Offside,
-
-    /// <summary>Play stopped for icing.</summary>
-    Icing,
-
-    /// <summary>A penalty was called.</summary>
-    Penalty,
-
-    /// <summary>A fight started.</summary>
-    Fight,
-
-    /// <summary>A goalie stopped a shot.</summary>
-    Save,
-
-    /// <summary>A line or goalie went on.</summary>
-    LineChange,
-
-    /// <summary>A period ended.</summary>
-    PeriodEnd,
-
-    /// <summary>The match ended.</summary>
-    MatchEnd,
-
-    /// <summary>A shot was taken.</summary>
-    Shot,
-
-    /// <summary>A pass was made.</summary>
-    Pass,
-
-    /// <summary>A body check landed.</summary>
-    Check,
-
-    /// <summary>The puck hit the boards or glass.</summary>
-    PuckBoards,
-
-    /// <summary>The puck hit a post or crossbar.</summary>
-    PuckPost,
-
-    /// <summary>The referee blew the whistle.</summary>
-    Whistle,
+    /// <summary>Gets the match time in seconds (<see cref="World.Time"/>) when it happened.</summary>
+    public float Time { get; init; }
 }
 
-/// <summary>One thing that happened in a match.</summary>
-/// <param name="Kind">What happened.</param>
-/// <param name="Time">Match time in seconds (<see cref="World.Time"/>) when it happened.</param>
-/// <param name="Side">The club it concerns, if any.</param>
-/// <param name="PlayerId">The player it concerns, or -1.</param>
-/// <param name="Position">Where on the ice.</param>
-/// <param name="Strength">How hard: shot speed, hit force; 0 when it does not apply.</param>
-public readonly record struct MatchEvent(
-    MatchEventKind Kind, float Time, Side? Side = null, int PlayerId = -1, Vector3 Position = default, float Strength = 0);
+/// <summary>A goal was scored.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Side">The scoring club.</param>
+/// <param name="ScorerId">The scorer: the last player to touch the puck (on an own goal, a player of
+/// the other club), or, when the last touch is no valid player, the nearest on-ice skater of the scoring
+/// club (any of its players as a last resort). Always a valid id: with no player of the scoring club at
+/// all, no goal is published.</param>
+/// <param name="Position">Where the puck crossed the line.</param>
+/// <param name="Speed">Puck speed in metres per second.</param>
+public sealed record GoalScored(float Time, Side Side, int ScorerId, Vector3 Position, float Speed) : MatchEvent(Time);
+
+/// <summary>The puck was dropped.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Dot">The faceoff dot.</param>
+public sealed record PuckDropped(float Time, Vector3 Dot) : MatchEvent(Time);
+
+/// <summary>Play stopped for offside.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Attacker">The club that was offside.</param>
+/// <param name="Position">Where the puck was.</param>
+public sealed record OffsideCalled(float Time, Side Attacker, Vector3 Position) : MatchEvent(Time);
+
+/// <summary>Play stopped for icing.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Offender">The club that iced the puck.</param>
+/// <param name="PlayerId">The player who iced it.</param>
+/// <param name="Position">Where the puck was.</param>
+public sealed record IcingCalled(float Time, Side Offender, int PlayerId, Vector3 Position) : MatchEvent(Time);
+
+/// <summary>A penalty was called.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Side">The offender's club.</param>
+/// <param name="PlayerId">The offender.</param>
+/// <param name="Position">Where the offender was.</param>
+/// <param name="Seconds">The penalty length shown.</param>
+public sealed record PenaltyCalled(float Time, Side Side, int PlayerId, Vector3 Position, float Seconds) : MatchEvent(Time);
+
+/// <summary>A fight started.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Side">A fighter's club.</param>
+/// <param name="PlayerId">That fighter.</param>
+/// <param name="Position">Where the fight is.</param>
+public sealed record FightStarted(float Time, Side Side, int PlayerId, Vector3 Position) : MatchEvent(Time);
+
+/// <summary>A goalie stopped a shot.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Side">The goalie's club.</param>
+/// <param name="GoalieId">The goalie.</param>
+/// <param name="Position">Where the puck was stopped.</param>
+/// <param name="Speed">Puck speed in metres per second.</param>
+public sealed record ShotSaved(float Time, Side Side, int GoalieId, Vector3 Position, float Speed) : MatchEvent(Time);
+
+/// <summary>A line or goalie went on.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Side">The club changing.</param>
+/// <param name="PlayerId">The first player on.</param>
+/// <param name="Position">Where that player is.</param>
+public sealed record LineChanged(float Time, Side Side, int PlayerId, Vector3 Position) : MatchEvent(Time);
+
+/// <summary>A period ended.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Period">The period that ended.</param>
+public sealed record PeriodEnded(float Time, int Period) : MatchEvent(Time);
+
+/// <summary>The match ended: <see cref="MatchWon"/> or <see cref="MatchTied"/>.</summary>
+/// <param name="Time">Match time in seconds.</param>
+public abstract record MatchEnded(float Time) : MatchEvent(Time);
+
+/// <summary>The match ended with a winner.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Winner">The winning club.</param>
+public sealed record MatchWon(float Time, Side Winner) : MatchEnded(Time);
+
+/// <summary>The match ended level.</summary>
+/// <param name="Time">Match time in seconds.</param>
+public sealed record MatchTied(float Time) : MatchEnded(Time);
+
+/// <summary>A shot was taken.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Side">The shooter's club.</param>
+/// <param name="ShooterId">The shooter.</param>
+/// <param name="Position">Where the puck left the stick.</param>
+/// <param name="Speed">Puck speed in metres per second.</param>
+public sealed record ShotTaken(float Time, Side Side, int ShooterId, Vector3 Position, float Speed) : MatchEvent(Time);
+
+/// <summary>A pass was made.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Side">The passer's club.</param>
+/// <param name="PasserId">The passer.</param>
+/// <param name="Position">Where the puck left the stick.</param>
+/// <param name="Speed">Puck speed in metres per second.</param>
+public sealed record PassMade(float Time, Side Side, int PasserId, Vector3 Position, float Speed) : MatchEvent(Time);
+
+/// <summary>A body check (or a punch in a fight) landed.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Side">The checker's club.</param>
+/// <param name="CheckerId">The checker.</param>
+/// <param name="Position">Where the target was.</param>
+/// <param name="Strength">How hard it hit.</param>
+public sealed record CheckLanded(float Time, Side Side, int CheckerId, Vector3 Position, float Strength) : MatchEvent(Time);
+
+/// <summary>The puck hit the boards or glass.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Position">Where it hit.</param>
+/// <param name="Speed">Impact speed in metres per second.</param>
+public sealed record PuckHitBoards(float Time, Vector3 Position, float Speed) : MatchEvent(Time);
+
+/// <summary>The puck hit a post or crossbar.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Position">Where it hit.</param>
+/// <param name="Speed">Impact speed in metres per second.</param>
+public sealed record PuckHitPost(float Time, Vector3 Position, float Speed) : MatchEvent(Time);
+
+/// <summary>The referee blew the whistle.</summary>
+/// <param name="Time">Match time in seconds.</param>
+/// <param name="Position">Where the puck was.</param>
+public sealed record WhistleBlown(float Time, Vector3 Position) : MatchEvent(Time);
 
 /// <summary>
 /// The events of the current step. Rules, physics and players publish; HUD, camera, referee,
@@ -83,12 +156,13 @@ public sealed class MatchEvents
         current.Add(e);
     }
 
-    /// <summary>Gets this step's events of one kind.</summary>
-    /// <param name="kind">The kind to look for.</param>
+    /// <summary>Gets this step's events of one type.</summary>
+    /// <typeparam name="T">The event type to look for.</typeparam>
     /// <returns>The matching events.</returns>
-    public IEnumerable<MatchEvent> Of(MatchEventKind kind)
+    public IEnumerable<T> Of<T>()
+        where T : MatchEvent
     {
-        return current.Where(e => e.Kind == kind);
+        return current.OfType<T>();
     }
 
     /// <summary>Clears the list. Only Game.cs calls this, at the start of each step.</summary>

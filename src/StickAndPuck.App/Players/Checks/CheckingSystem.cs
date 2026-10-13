@@ -11,7 +11,7 @@ namespace StickAndPuck.App.Players;
 /// <item>The target is shoved along the hit. A hard enough hit, against their resistance, knocks
 /// them down: they drop the puck, slide to a stop and lie for a moment, ignoring their stick.
 /// A carrier who stays up keeps the puck.</item>
-/// <item>Publishes <see cref="MatchEventKind.Check"/> for every hit: Side and PlayerId are the
+/// <item>Publishes <see cref="CheckLanded"/> for every hit: Side and PlayerId are the
 /// checker's, Position is the target's, Strength the hit's strength (about 1 for an average solid
 /// check, <see cref="CheckingModel.HardHit"/> and up is hard).</item>
 /// </list>
@@ -92,7 +92,7 @@ internal sealed class CheckingSystem : ISystem
         // the target takes the checker's push; the checker gives up some of their speed into the hit
         target.Velocity += dir * CheckingModel.Shove(strength);
         checker.Velocity -= dir * Math.Max(0, Vector3.Dot(checker.Velocity, dir)) * 0.5f;
-        world.Events.Publish(new MatchEvent(MatchEventKind.Check, world.Time, checker.Side, checker.Id, target.Position, strength));
+        world.Events.Publish(new CheckLanded(world.Time, checker.Side, checker.Id, target.Position, strength));
 
         if (rng.NextSingle() >= CheckingModel.KnockdownChance(strength)) return;
         downFor[target.Id] = CheckingModel.DownTime(strength);

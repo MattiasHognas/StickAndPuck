@@ -133,10 +133,10 @@ public sealed class ArcadeTests : CheckedTest
         world.Match.Score[(int)setup.Inputs[0].Side] = 2;
         world.Match.Score[1 - (int)setup.Inputs[0].Side] = 3;
         world.Match.Phase = MatchPhase.Final;
-        Step(w => w.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, w.Time, setup.Inputs[0].Side == Side.Home ? Side.Away : Side.Home)));
+        Step(w => w.Events.Publish(new MatchWon(w.Time, setup.Inputs[0].Side == Side.Home ? Side.Away : Side.Home)));
         Check(run.Games.Count == 1 && run.Games[0] is { Won: false, GoalsFor: 2, GoalsAgainst: 3 } && run.Games[0].Result.Kind == ResultKind.Shootout, "MatchEnd records a 2-3 shootout loss");
         Check(run.LivesLeft == 2, "the loss costs a life");
-        Step(w => w.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, w.Time, Side.Home)));
+        Step(w => w.Events.Publish(new MatchWon(w.Time, Side.Home)));
         Check(run.Games.Count == 1, "a second MatchEnd records nothing");
 
         // restart: nothing in memory, read the save back
@@ -159,7 +159,7 @@ public sealed class ArcadeTests : CheckedTest
 
         // a match that is not the arcade game records nothing
         var other = new World(WorldBuilder.DefaultSetup, settings);
-        other.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, other.Time, Side.Home));
+        other.Events.Publish(new MatchWon(other.Time, Side.Home));
         new ArcadeSystem().Update(other, Game.Step);
         Check(ArcadeSession.Current!.Games.Count == 3, "a match that is not an arcade game records nothing");
     }

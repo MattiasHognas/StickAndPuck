@@ -12,7 +12,14 @@ namespace StickAndPuck.Tests;
 public sealed class PuckTests : CheckedTest
 {
     /// <summary>An empty rink: the default setup and settings, nobody on the ice, the match flow not begun.</summary>
-    static World Make() => new WorldBuilder().NoStarters().NotBegun().Build();
+    // one skater per club on the bench (home 0, away 1), clear of the puck, so a goal always has someone to credit
+    static World Make()
+    {
+        var w = new WorldBuilder().NoStarters().NotBegun().Build();
+        var skater = WorldBuilder.Clubs[0].Roster.First(p => p.Position != PlayingPosition.G);
+        foreach (var side in new[] { Side.Home, Side.Away }) w.AddPlayer(side, skater, Vector3.Zero).OnIce = false;
+        return w;
+    }
 
     /// <summary>Runs the physics system alone for some seconds and returns every event it published.</summary>
     static List<MatchEvent> Run(World world, float seconds, PuckPhysics? physics = null, Action<World>? each = null)
@@ -57,7 +64,7 @@ public sealed class PuckTests : CheckedTest
         Shoot(w, new Vector3(18, 0, 0), dir * 20);
         var ev = Run(w, 1.2f);
         var v = w.Puck.Velocity;
-        Check(ev.Any(e => e.Kind == MatchEventKind.PuckBoards), "corner shot hits the boards");
+        Check(ev.Any(e => e is PuckHitBoards), "corner shot hits the boards");
         Check(Vector3.Dot(v, dir) < 0, $"corner shot comes back out of the corner (v = {v.X:0.0}, {v.Z:0.0})");
         Check(v.Length() is > 4 and < 16, $"corner rebound keeps some speed ({v.Length():0.0} of 20 m/s)");
         Check(InsideRink(w.Puck.Position), "corner shot stays inside the rink");
@@ -80,12 +87,12 @@ public sealed class PuckTests : CheckedTest
     public void GoalCountsOnce()
     {
         var w = Make();
-        w.Puck.LastTouch = 3;
+        w.Puck.LastTouch = 1;
         Shoot(w, new Vector3(18, 0, 0.2f), new Vector3(30, 1.5f, 0));
         var ev = Run(w, 2f);
-        var goals = ev.Where(e => e.Kind == MatchEventKind.Goal).ToList();
+        var goals = ev.OfType<GoalScored>().ToList();
         Check(goals.Count == 1, $"a shot into the net is one goal ({goals.Count})");
-        Check(goals.Count == 1 && goals[0].Side == w.Match.DefendsLeft && goals[0].PlayerId == 3,
+        Check(goals.Count == 1 && goals[0].Side == w.Match.DefendsLeft && goals[0].ScorerId == 1,
             "the goal goes to the club attacking that net, credited to the last touch");
         Check(PuckMotion.FullyOverGoalLine(w.Puck.Position, 1) && w.Puck.Velocity.Length() < 2,
             $"the mesh keeps the puck in the net (speed {w.Puck.Velocity.Length():0.0})");
@@ -100,13 +107,24 @@ public sealed class PuckTests : CheckedTest
         {
             var w = Make();
             Shoot(w, new Vector3(RinkSpec.GoalLineX + u, 0, 0.3f), Vector3.Zero);
-            int n = Run(w, 0.1f).Count(e => e.Kind == MatchEventKind.Goal);
+            int n = Run(w, 0.1f).Count(e => e is GoalScored);
             Check(n == (goal ? 1 : 0), $"puck at {u * 100:0.0} cm past the line centre: {(goal ? "goal" : "no goal")}");
         }
         var dead = Make();
         Shoot(dead, new Vector3(RinkSpec.GoalLineX + 0.3f, 0, 0), Vector3.Zero);
         dead.Puck.Live = false;
-        Check(Run(dead, 0.1f).All(e => e.Kind != MatchEventKind.Goal), "no goal while the puck is dead");
+        Check(Run(dead, 0.1f).All(e => e is not GoalScored), "no goal while the puck is dead");
+    }
+
+    [Test]
+    public void GoalWithNoPlayers()
+    {
+        // nobody to credit: the puck is held as scored but no event names a player that does not exist
+        var w = Make();
+        var empty = new World(w.Setup, w.Settings);
+        Shoot(empty, new Vector3(RinkSpec.GoalLineX + 0.3f, 0, 0.3f), Vector3.Zero);
+        var ev = Run(empty, 0.2f);
+        Check(ev.All(e => e is not GoalScored) && PuckMotion.FullyOverGoalLine(empty.Puck.Position, 1), "a goal in a world with no players publishes no event and does not throw");
     }
 
     [Test]
@@ -116,15 +134,15 @@ public sealed class PuckTests : CheckedTest
         // aimed at the far post's outer half: it rings off and stays out
         Shoot(w, new Vector3(18, 0, RinkSpec.NetWidth / 2 + 0.03f), new Vector3(30, 0, 0));
         var ev = Run(w, 1f);
-        Check(ev.Any(e => e.Kind == MatchEventKind.PuckPost), "a shot at the post rings off it");
-        Check(ev.All(e => e.Kind != MatchEventKind.Goal), "the post shot is no goal");
+        Check(ev.Any(e => e is PuckHitPost), "a shot at the post rings off it");
+        Check(ev.All(e => e is not GoalScored), "the post shot is no goal");
         Check(w.Puck.Position.X < RinkSpec.GoalLineX || MathF.Abs(w.Puck.Position.Z) > RinkSpec.NetWidth / 2,
             "the post shot ends up outside the net");
 
         var bar = new World(w.Setup, w.Settings);
         Shoot(bar, new Vector3(24, RinkSpec.NetHeight + 0.04f, 0), new Vector3(28, 0, 0));
         var bev = Run(bar, 0.6f);
-        Check(bev.Any(e => e.Kind == MatchEventKind.PuckPost), "a shot at the crossbar hits it");
+        Check(bev.Any(e => e is PuckHitPost), "a shot at the crossbar hits it");
     }
 
     [Test]
@@ -134,13 +152,13 @@ public sealed class PuckTests : CheckedTest
         // from behind the net into its back: bounces off, never a goal
         Shoot(w, new Vector3(RinkSpec.HalfLength - 0.5f, 0, 0.1f), new Vector3(-15, 0, 0));
         var ev = Run(w, 1.5f);
-        Check(ev.All(e => e.Kind != MatchEventKind.Goal), "a puck into the back of the net is no goal");
+        Check(ev.All(e => e is not GoalScored), "a puck into the back of the net is no goal");
         Check(w.Puck.Position.X > RinkSpec.GoalLineX + RinkSpec.NetDepth, "it stays behind the net");
 
         var side = new World(w.Setup, w.Settings);
         Shoot(side, new Vector3(RinkSpec.GoalLineX + 0.5f, 0, 4), new Vector3(0, 0, -15));
         var sev = Run(side, 1.5f);
-        Check(sev.All(e => e.Kind != MatchEventKind.Goal) && side.Puck.Position.Z > 0, "a puck into the side of the net bounces off it");
+        Check(sev.All(e => e is not GoalScored) && side.Puck.Position.Z > 0, "a puck into the side of the net bounces off it");
     }
 
     [Test]
@@ -151,7 +169,7 @@ public sealed class PuckTests : CheckedTest
         Shoot(w, new Vector3(0, 0, 4), new Vector3(0, 6, 22));
         bool glass = false;
         var ev = Run(w, 3f, each: x => glass |= x.Puck.Position.Z > RinkSpec.HalfWidth - 0.1f && x.Puck.Position.Y > RinkSpec.BoardHeight);
-        Check(glass && ev.Any(e => e.Kind == MatchEventKind.PuckBoards), "a high shot hits the glass above the boards");
+        Check(glass && ev.Any(e => e is PuckHitBoards), "a high shot hits the glass above the boards");
         Check(w.Puck.Position.Y == 0 && InsideRink(w.Puck.Position), "and falls back onto the ice");
     }
 
@@ -215,7 +233,7 @@ public sealed class PuckTests : CheckedTest
                 if (!InsideRink(p) || p.Y < 0) escapes++;
                 last = p;
             });
-            int g = ev.Count(e => e.Kind == MatchEventKind.Goal);
+            int g = ev.Count(e => e is GoalScored);
             goals += g;
             if (g > 0 && !mouth) sneaky++;
         }

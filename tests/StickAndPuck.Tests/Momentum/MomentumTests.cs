@@ -66,18 +66,20 @@ public sealed class MomentumTests : CheckedTest
     // nobody skates in these worlds, so keep the puck live as if play went on
     static void Live(World w) => w.Puck.Live = true;
 
-    static MatchEvent Goal(Side side) => new(MatchEventKind.Goal, 0, side, -1, RinkSpec.NetMouth(side == Side.Home ? 1 : -1));
+    static MatchEvent Goal(World w, Side side) => new GoalScored(0, side, Skater(w, side), RinkSpec.NetMouth(side == Side.Home ? 1 : -1), 0);
 
-    static MatchEvent Hit(Side side, float strength) => new(MatchEventKind.Check, 0, side, -1, Vector3.Zero, strength);
+    static MatchEvent Hit(World w, Side side, float strength) => new CheckLanded(0, side, Skater(w, side), Vector3.Zero, strength);
+
+    static int Skater(World w, Side side) => w.Players.First(p => p.Side == side && !p.IsGoalie).Id;
 
     [Test]
     public void Goals()
     {
         var w = Make();
-        Publish(w, Goal(Side.Home));
+        Publish(w, Goal(w, Side.Home));
         var s = Boost.State(w);
         Check(Boost.Of(w, Side.Home) > 0.99f && s.Cause[0] == MomentumCause.Goal && Boost.Leader(w) == Side.Home, "a goal fills the scoring club's boost");
-        Publish(w, Goal(Side.Away));
+        Publish(w, Goal(w, Side.Away));
         Check(Boost.Of(w, Side.Away) > 0.99f && Boost.Of(w, Side.Home) == 0f, "a goal against ends the other club's boost");
     }
 
@@ -85,13 +87,13 @@ public sealed class MomentumTests : CheckedTest
     public void Hits()
     {
         var w = Make();
-        Publish(w, Hit(Side.Away, 1.0f));
+        Publish(w, Hit(w, Side.Away, 1.0f));
         Check(Boost.Of(w, Side.Away) == 0f, "a soft check gives no boost");
-        Publish(w, Hit(Side.Away, 1.8f));
+        Publish(w, Hit(w, Side.Away, 1.8f));
         float one = Boost.Of(w, Side.Away);
         Check(Math.Abs(one - MomentumTuning.BigHit) < 0.01f && Boost.State(w).Cause[1] == MomentumCause.BigHit, $"a big hit gives the hitter's club a small boost ({one:0.00})");
-        Publish(w, Hit(Side.Away, 2f));
-        Publish(w, Hit(Side.Away, 2f));
+        Publish(w, Hit(w, Side.Away, 2f));
+        Publish(w, Hit(w, Side.Away, 2f));
         Check(Boost.Of(w, Side.Away) is > 0.99f and <= 1f, "big hits add up, to a full boost at most");
     }
 
@@ -100,7 +102,7 @@ public sealed class MomentumTests : CheckedTest
     {
         var live = Alone(Make());
         var dead = Alone(Make());
-        Publish(live, Goal(Side.Home));
+        Publish(live, Goal(live, Side.Home));
         float start = live.Time;
         Run(live, x => x.Time - start >= MomentumTuning.Seconds / 2, Live);
         float half = Boost.Of(live, Side.Home);
@@ -108,7 +110,7 @@ public sealed class MomentumTests : CheckedTest
         Run(live, x => x.Time - start >= MomentumTuning.Seconds + 0.1f, Live);
         Check(Boost.Of(live, Side.Home) == 0f && Boost.Leader(live) == null, $"the boost is gone after twenty seconds of play ({Boost.Of(live, Side.Home):0.00} and {Boost.Of(live, Side.Away):0.00})");
 
-        Publish(dead, Goal(Side.Home));
+        Publish(dead, Goal(dead, Side.Home));
         start = dead.Time;
         Run(dead, x => x.Time - start >= 10f, x => x.Puck.Live = false);
         Check(Boost.Of(dead, Side.Home) > 0.99f, "the boost waits while the puck is dead (goal celebration, faceoff)");
@@ -121,7 +123,7 @@ public sealed class MomentumTests : CheckedTest
         var home = w.OnIce(Side.Home).Where(p => !p.IsGoalie).ToList();
         var away = w.OnIce(Side.Away).Where(p => !p.IsGoalie).ToList();
         foreach (var p in home.Concat(away)) p.Energy = 0.6f;     // above the line change mark, so the same skaters stay on
-        Publish(w, Goal(Side.Home));
+        Publish(w, Goal(w, Side.Home));
         float start = w.Time;
         Run(w, x => x.Time - start >= MomentumTuning.Seconds, Live);
         float h = home.Average(p => p.Energy), a = away.Average(p => p.Energy);
@@ -132,7 +134,7 @@ public sealed class MomentumTests : CheckedTest
     public void Crowd()
     {
         var w = Make();
-        Publish(w, Goal(Side.Home));
+        Publish(w, Goal(w, Side.Home));
         float start = w.Time;
         var s = Boost.State(w);
         float first = s.CrowdVolume;
@@ -181,7 +183,7 @@ public sealed class MomentumTests : CheckedTest
         {
             world.Events.Clear();
             foreach (var s in systems) s.Update(world, Game.Step);
-            foreach (var e in world.Events.Of(MatchEventKind.Goal))
+            foreach (var e in world.Events.Of<GoalScored>())
             {
                 goals++;
                 if (e.Side is { } side && Boost.Leader(world) == side && Boost.Of(world, side) > 0.99f) boostedAfterGoal++;

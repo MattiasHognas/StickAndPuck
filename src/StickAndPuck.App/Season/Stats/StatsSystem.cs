@@ -34,7 +34,7 @@ internal sealed class StatsSystem : ISystem
         if (finished) return;
 
         tracker.Observe(world);
-        if (!world.Events.Of(MatchEventKind.MatchEnd).Any()) return;
+        if (!world.Events.Of<MatchEnded>().Any()) return;
         finished = true;
         catchUp = true;
         var sheet = tracker.Finish();

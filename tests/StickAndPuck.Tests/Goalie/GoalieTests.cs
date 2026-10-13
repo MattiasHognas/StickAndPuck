@@ -103,9 +103,9 @@ public sealed class GoalieTests : CheckedTest
             Run(world, goalie, physics, 0.6f);                          // settle back into the crease
             shot(world, dice);
             var events = Run(world, goalie, physics, 1.6f, w => inCrease &= InCrease(g));
-            int at = events.FindIndex(e => e.Kind is MatchEventKind.Save or MatchEventKind.Goal);
+            int at = events.FindIndex(e => e is ShotSaved or GoalScored);
             if (at < 0) continue;                                       // wide of the net
-            if (events[at].Kind == MatchEventKind.Goal)
+            if (events[at] is GoalScored)
             {
                 goals++;
             }
@@ -136,7 +136,7 @@ public sealed class GoalieTests : CheckedTest
         GoalieDemo.Fire(world, new Vector3(RinkSpec.GoalLineX - 6, 0, 0), new Vector3(RinkSpec.GoalLineX, 0.6f, 0), 9);
         var events = Run(world, goalie, physics, 1f);
         Check(world.Puck.Carrier == g.Id, "catches a soft shot at the chest");
-        Check(events.Any(e => e.Kind == MatchEventKind.Save && e.Side == Side.Away && e.PlayerId == g.Id), "publishes a Save for the goalie's club");
+        Check(events.Any(e => e is ShotSaved { Side: Side.Away } save && save.GoalieId == g.Id), "publishes a Save for the goalie's club");
         Run(world, goalie, physics, GoalieTuning.HoldSeconds + 0.5f);
         Check(world.Puck.Carrier < 0 && world.Puck.Velocity.Length() > 1f, "plays a held puck out when no whistle comes");
     }
@@ -187,9 +187,9 @@ public sealed class GoalieTests : CheckedTest
             var target = new Vector3(RinkSpec.GoalLineX, 0.55f + dice.NextSingle() * 0.6f, side * (0.35f + dice.NextSingle() * 0.45f));
             GoalieDemo.Fire(world, from, target, 20 + dice.NextSingle() * 12);
             var events = Run(world, goalie, physics, 1.6f);
-            int at = events.FindIndex(e => e.Kind is MatchEventKind.Save or MatchEventKind.Goal);
+            int at = events.FindIndex(e => e is ShotSaved or GoalScored);
             if (at < 0) continue;
-            if (events[at].Kind == MatchEventKind.Goal) goals++;
+            if (events[at] is GoalScored) goals++;
             else saves++;
         }
         return new Tally(saves, 0, goals, true);
@@ -226,7 +226,7 @@ public sealed class GoalieTests : CheckedTest
             bool saved = false;
             Run(world, goalie, physics, 1.2f, w =>
             {
-                if (saved || !w.Events.Current.Any(e => e.Kind == MatchEventKind.Save)) return;
+                if (saved || !w.Events.Current.Any(e => e is ShotSaved)) return;
                 saved = true;
                 saves++;
                 if (w.Puck.Carrier == g.Id) { held++; return; }
@@ -269,7 +269,7 @@ public sealed class GoalieTests : CheckedTest
             world.Puck.Live = true;
             world.Puck.Carrier = g.Id;
             var events = Run(world, goalie, physics, GoalieTuning.HoldSeconds + 0.6f);
-            if (events.Any(e => e.Kind == MatchEventKind.Pass && e.PlayerId == g.Id)) passes++;
+            if (events.Any(e => e is PassMade pass && pass.PasserId == g.Id)) passes++;
 
             world.Puck.Carrier = -1;
             g.Position = GoalieModel.Spot(1, new Vector3(14, 0, 0));
@@ -278,7 +278,7 @@ public sealed class GoalieTests : CheckedTest
             world.Puck.Velocity = Vector3.Zero;
             world.Puck.LastTouch = -1;
             events = Run(world, goalie, physics, 3f);
-            if (events.Any(e => e.Kind == MatchEventKind.Pass && e.PlayerId == g.Id) || world.Puck.LastTouch == g.Id) plays++;
+            if (events.Any(e => e is PassMade pass && pass.PasserId == g.Id) || world.Puck.LastTouch == g.Id) plays++;
             _ = mate;
         }
         return (passes, plays);

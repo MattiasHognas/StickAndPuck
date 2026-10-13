@@ -49,15 +49,15 @@ internal sealed class FightSystem : ISystem, IDisposable
     /// <summary>Every hard check this step may drop the gloves.</summary>
     static void Watch(World world, FightState s)
     {
-        foreach (var check in world.Events.Of(MatchEventKind.Check))
+        foreach (var check in world.Events.Of<CheckLanded>())
         {
-            if (check.Strength < CheckingModel.HardHit || check.Side is not { } side || check.PlayerId < 0) continue;
+            if (check.Strength < CheckingModel.HardHit) continue;
             var victim = world.Players
-                .Where(p => p.Side != side && p.OnIce && !p.IsGoalie)
+                .Where(p => p.Side != check.Side && p.OnIce && !p.IsGoalie)
                 .MinBy(p => Vector3.DistanceSquared(p.Position, check.Position));
             if (victim == null || Vector3.DistanceSquared(victim.Position, check.Position) > 1f) continue;
             if (s.Rng.NextSingle() >= s.OfferChance) continue;
-            if (Fighting.Offer(world, check.PlayerId, victim.Id)) return;
+            if (Fighting.Offer(world, check.CheckerId, victim.Id)) return;
         }
     }
 
@@ -130,7 +130,7 @@ internal sealed class FightSystem : ISystem, IDisposable
         pk.Carrier = -1;
         pk.Velocity = Vector3.Zero;
         pk.Position = spot + new Vector3(0, 0, 1.2f);
-        world.Events.Publish(new MatchEvent(MatchEventKind.Fight, world.Time, b.Side, b.Id, spot));
+        world.Events.Publish(new FightStarted(world.Time, b.Side, b.Id, spot));
         s.Log(world, "fight!");
     }
 
@@ -289,7 +289,7 @@ internal sealed class FightSystem : ISystem, IDisposable
         f.Landed++;
         fight.LandedAt = world.Time;
         // a landed punch sounds like a body check (audio is the only reader after this system)
-        world.Events.Publish(new MatchEvent(MatchEventKind.Check, world.Time, puncher.Side, puncher.Id, target.Position, 0.6f + (0.6f * quality)));
+        world.Events.Publish(new CheckLanded(world.Time, puncher.Side, puncher.Id, target.Position, 0.6f + (0.6f * quality)));
         if (other.Balance <= 0) Decide(world, s, fight, other, knockdown: true);
     }
 

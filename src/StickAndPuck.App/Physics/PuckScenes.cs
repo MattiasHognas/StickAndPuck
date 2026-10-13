@@ -16,6 +16,9 @@ public sealed class PuckScene : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
+        // one skater per club on the bench, clear of the puck, so the goal has someone to credit
+        var skater = clubs[0].Roster.First(p => p.Position != PlayingPosition.G);
+        foreach (var side in new[] { Side.Home, Side.Away }) world.AddPlayer(side, skater, Vector3.Zero).OnIce = false;
         PuckDemo.Enabled = true;
         return world;
     }

@@ -64,8 +64,8 @@ internal sealed class Impact
         {
             foreach (var e in world.Events.Current)
             {
-                if (e.Kind == MatchEventKind.Check && e.Strength >= CheckingModel.HardHit) HardCheck(world, e);
-                else if (e.Kind == MatchEventKind.Goal) Goal(world, e);
+                if (e is CheckLanded { Strength: >= CheckingModel.HardHit } check) HardCheck(world, check);
+                else if (e is GoalScored goal) Goal(world, goal);
             }
         }
 
@@ -88,14 +88,14 @@ internal sealed class Impact
         return camera;
     }
 
-    void HardCheck(World world, MatchEvent e)
+    void HardCheck(World world, CheckLanded e)
     {
         float over = Math.Clamp((e.Strength - CheckingModel.HardHit) / 1.5f, 0f, 1f);
         Hold(world, CheckHoldMin + (int)MathF.Round((CheckHoldMax - CheckHoldMin) * over));
         Kick(CheckShakeMin + ((CheckShakeMax - CheckShakeMin) * over), CheckShakeSeconds);
 
         // the checker feels it, the one hit feels it harder
-        if (e.PlayerId >= 0 && e.PlayerId < world.Players.Count) Pulse(world, world.Players[e.PlayerId].Slot, 0.45f + (0.4f * over), 0.6f, 0.16f);
+        Pulse(world, world.Players[e.CheckerId].Slot, 0.45f + (0.4f * over), 0.6f, 0.16f);
         var victim = world.Players
             .Where(p => p.Side != e.Side && p.OnIce)
             .MinBy(p => Vector3.DistanceSquared(p.Position, e.Position));
@@ -103,7 +103,7 @@ internal sealed class Impact
         Console.WriteLine($"SAP: impact: hard check {e.Strength.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}, hold {holdSteps} steps");
     }
 
-    void Goal(World world, MatchEvent e)
+    void Goal(World world, GoalScored e)
     {
         Hold(world, GoalHold);
         Kick(GoalShake, GoalShakeSeconds);

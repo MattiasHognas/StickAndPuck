@@ -74,7 +74,7 @@ public static class MatchFlow
         world.Puck.Live = false;
         s.Timer = MatchTuning.StoppageSeconds;
         s.Dot = dot;
-        world.Events.Publish(new MatchEvent(MatchEventKind.Whistle, world.Time, Position: world.Puck.Position));
+        world.Events.Publish(new WhistleBlown(world.Time, world.Puck.Position));
         return true;
     }
 
@@ -109,7 +109,7 @@ public static class MatchFlow
         world.Puck.Velocity = Vector3.Zero;
         world.Puck.Live = true;
         Draw(world, s);
-        world.Events.Publish(new MatchEvent(MatchEventKind.Faceoff, world.Time, Position: s.Dot));
+        world.Events.Publish(new PuckDropped(world.Time, s.Dot));
         return true;
     }
 

@@ -65,11 +65,13 @@ internal static class LineCallsDemo
     }
 
     /// <summary>Prints a call to the console while the demo runs.</summary>
-    /// <param name="e">The Offside or Icing event.</param>
+    /// <param name="call">The call, "Offside" or "Icing".</param>
+    /// <param name="side">The club it went against.</param>
+    /// <param name="at">Where the puck was.</param>
     /// <param name="dot">The faceoff dot it leads to.</param>
-    public static void Log(MatchEvent e, Vector3 dot)
+    public static void Log(string call, Side side, Vector3 at, Vector3 dot)
     {
-        if (Enabled) Console.WriteLine($"SAP: {e.Kind} by {e.Side} at ({e.Position.X:0.0}, {e.Position.Z:0.0}), faceoff at ({dot.X}, {dot.Z}), play {play}");
+        if (Enabled) Console.WriteLine($"SAP: {call} by {side} at ({at.X:0.0}, {at.Z:0.0}), faceoff at ({dot.X}, {dot.Z}), play {play}");
     }
 
     static int Attacks(World world)
