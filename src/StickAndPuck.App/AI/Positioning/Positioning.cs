@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
 
@@ -19,7 +18,6 @@ namespace StickAndPuck.App.AI;
 /// </summary>
 public static class Positioning
 {
-    static readonly ConditionalWeakTable<World, PositioningBoard> Boards = [];
 
     /// <summary>Gets a skater's role.</summary>
     /// <param name="world">The match.</param>
@@ -123,7 +121,7 @@ public static class Positioning
 
     internal static PositioningBoard Board(World world)
     {
-        return Boards.GetValue(world, _ => new PositioningBoard());
+        return world.Positioning.Get(() => new PositioningBoard());
     }
 }
 

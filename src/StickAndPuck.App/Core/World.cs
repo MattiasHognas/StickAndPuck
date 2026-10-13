@@ -52,6 +52,62 @@ public sealed class World
     /// </summary>
     public int Seed { get; set; } = Seeds.Environment;
 
+    // W56: each system's own state, made the first time the system asks for it (these were side tables keyed on the world)
+
+    /// <summary>Gets the AI layer that last set each player's command, by player id (<see cref="AI.AiCommand"/>).</summary>
+    internal Slot<Dictionary<int, AI.AiIntent>> AiIntents { get; } = new();
+
+    /// <summary>Gets the intents SAP_AI_TRACE last printed, by player id.</summary>
+    internal Slot<Dictionary<int, AI.AiIntent>> AiIntentsPrinted { get; } = new();
+
+    /// <summary>Gets the positioning system's board.</summary>
+    internal Slot<AI.PositioningBoard> Positioning { get; } = new();
+
+    /// <summary>Gets the decision system's board.</summary>
+    internal Slot<AI.DecisionBoard> Decisions { get; } = new();
+
+    /// <summary>Gets the defence system's board.</summary>
+    internal Slot<AI.DefenceBoard> Defence { get; } = new();
+
+    /// <summary>Gets the tactics system's board.</summary>
+    internal Slot<AI.TacticsBoard> Tactics { get; } = new();
+
+    /// <summary>Gets the special teams system's board.</summary>
+    internal Slot<AI.SpecialTeamsBoard> SpecialTeams { get; } = new();
+
+    /// <summary>Gets the fight in progress and the offer before it.</summary>
+    internal Slot<Fights.FightState> Fight { get; } = new();
+
+    /// <summary>Gets the lines, the bench and the changes in progress.</summary>
+    internal Slot<Lines.LinesBoard> Lines { get; } = new();
+
+    /// <summary>Gets each club's momentum.</summary>
+    internal Slot<Momentum.MomentumState> Momentum { get; } = new();
+
+    /// <summary>Gets or sets the last pass a human made, for the AI receiver to skate onto.</summary>
+    internal Maybe<Players.HumanPass> LastHumanPass { get; set; }
+
+    /// <summary>Gets the on-ice referee.</summary>
+    internal Slot<Referee.Referee> Referee { get; } = new();
+
+    /// <summary>Gets the pregame warm-up.</summary>
+    internal Slot<Pregame.WarmupState> Warmup { get; } = new();
+
+    /// <summary>Gets the icing rule's state.</summary>
+    internal Slot<Rules.IcingState> Icing { get; } = new();
+
+    /// <summary>Gets the match flow's state.</summary>
+    internal Slot<Rules.FlowState> Flow { get; } = new();
+
+    /// <summary>Gets the offside rule's state.</summary>
+    internal Slot<Rules.OffsideState> Offside { get; } = new();
+
+    /// <summary>Gets the overtime and shootout state.</summary>
+    internal Slot<Rules.OvertimeState> Overtime { get; } = new();
+
+    /// <summary>Gets the penalty book.</summary>
+    internal Slot<Rules.PenaltyBook> Penalties { get; } = new();
+
     /// <summary>Adds a player from a club's roster.</summary>
     /// <param name="side">Which club.</param>
     /// <param name="data">The roster entry.</param>

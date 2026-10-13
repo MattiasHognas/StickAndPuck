@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Lines;
@@ -10,7 +9,6 @@ namespace StickAndPuck.App.Lines;
 /// </summary>
 public static class Bench
 {
-    static readonly ConditionalWeakTable<World, LinesBoard> Boards = [];
 
     /// <summary>Gets a club's squad, or None in a world without the match flow.</summary>
     /// <param name="world">The match.</param>
@@ -18,7 +16,7 @@ public static class Bench
     /// <returns>The squad.</returns>
     public static Maybe<Squad> SquadOf(World world, Side side)
     {
-        return Boards.TryGetValue(world, out var b) ? b.Squads[(int)side] : Maybe<Squad>.None;
+        return world.Lines.TryGet(out var b) ? b.Squads[(int)side] : Maybe<Squad>.None;
     }
 
     /// <summary>Gets whether a club has a change on the fly under way: skaters heading for the bench.</summary>
@@ -27,7 +25,7 @@ public static class Bench
     /// <returns>True while skaters are leaving.</returns>
     public static bool IsChanging(World world, Side side)
     {
-        return Boards.TryGetValue(world, out var b) && b.Changing[(int)side].HasValue;
+        return world.Lines.TryGet(out var b) && b.Changing[(int)side].HasValue;
     }
 
     /// <summary>Gets whether a skater is on the way to the bench.</summary>
@@ -36,7 +34,7 @@ public static class Bench
     /// <returns>True while they leave.</returns>
     public static bool IsLeaving(World world, Player p)
     {
-        return Boards.TryGetValue(world, out var b) && b.Changing[(int)p.Side].TryGet(out var c) && c.Swaps.Exists(s => !s.Done && s.Out == p);
+        return world.Lines.TryGet(out var b) && b.Changing[(int)p.Side].TryGet(out var c) && c.Swaps.Exists(s => !s.Done && s.Out == p);
     }
 
     /// <summary>Gets the mean energy of a club's forwards or defencemen on the ice.</summary>
@@ -68,7 +66,7 @@ public static class Bench
     /// <param name="side">The club.</param>
     public static void RequestChange(World world, Side side)
     {
-        if (Boards.TryGetValue(world, out var b)) b.Requested[(int)side] = true;
+        if (world.Lines.TryGet(out var b)) b.Requested[(int)side] = true;
     }
 
     /// <summary>
@@ -121,7 +119,7 @@ public static class Bench
         p.Command = default;
         p.Begin(PlayerAction.None);
         if (world.Puck.Carrier == p.Id) world.Puck.Carrier = -1;
-        if (Boards.TryGetValue(world, out var b) && b.Changing[(int)p.Side].TryGet(out var change))
+        if (world.Lines.TryGet(out var b) && b.Changing[(int)p.Side].TryGet(out var change))
             foreach (var s in change.Swaps.Where(s => s.Out == p || s.In == p)) s.Done = true;
     }
 
@@ -169,7 +167,7 @@ public static class Bench
 
     internal static LinesBoard Board(World world)
     {
-        return Boards.GetValue(world, _ => new LinesBoard());
+        return world.Lines.Get(() => new LinesBoard());
     }
 }
 

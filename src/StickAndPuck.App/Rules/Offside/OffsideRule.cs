@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules;
@@ -24,14 +23,13 @@ internal sealed class OffsideRule : ISystem
     /// <summary>The x of the neutral-zone dots.</summary>
     public const float NeutralDotX = 6.1f;
 
-    static readonly ConditionalWeakTable<World, OffsideState> States = new();
 
     /// <summary>Gets the club with an offside pending (the linesman's arm is up), if any.</summary>
     /// <param name="world">The match state.</param>
     /// <returns>The offending club, or None.</returns>
     public static SideOrNone Pending(World world)
     {
-        var s = States.GetOrCreateValue(world);
+        var s = world.Offside.Get(() => new OffsideState());
         return s.PendingEnd != 0 ? Attacker(world.Match, s.PendingEnd).OrNone() : SideOrNone.None;
     }
 
@@ -65,7 +63,7 @@ internal sealed class OffsideRule : ISystem
     public void Update(World world, float dt)
     {
         LineCallsDemo.Update(world);
-        var s = States.GetOrCreateValue(world);
+        var s = world.Offside.Get(() => new OffsideState());
         var pk = world.Puck;
         if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live || !world.Setup.Rules.Offside)
         {

@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Momentum;
@@ -52,7 +51,6 @@ public sealed class MomentumState
 /// </summary>
 public static class Momentum
 {
-    static readonly ConditionalWeakTable<World, MomentumState> States = new();
 
     /// <summary>Gets a club's boost.</summary>
     /// <param name="world">The match.</param>
@@ -60,7 +58,7 @@ public static class Momentum
     /// <returns>0 (none) to 1.</returns>
     public static float Of(World world, Side side)
     {
-        return States.TryGetValue(world, out var s) ? s.Level[(int)side] : 0f;
+        return world.Momentum.TryGet(out var s) ? s.Level[(int)side] : 0f;
     }
 
     /// <summary>Gets the club with the bigger boost, or None when neither has one.</summary>
@@ -78,7 +76,7 @@ public static class Momentum
     /// <returns>The state.</returns>
     public static MomentumState State(World world)
     {
-        return States.GetValue(world, _ => new MomentumState());
+        return world.Momentum.Get(() => new MomentumState());
     }
 
     /// <summary>Gets the boost each cause gives.</summary>

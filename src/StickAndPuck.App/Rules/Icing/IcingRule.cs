@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules;
@@ -21,7 +20,6 @@ internal sealed class IcingRule : ISystem
     /// <summary>The x of the end-zone dots.</summary>
     public const float EndDotX = 20.7f;
 
-    static readonly ConditionalWeakTable<World, IcingState> States = new();
 
     /// <summary>Gets the faceoff dot after icing: the offending club's own end-zone dot on the side the puck was sent from.</summary>
     /// <param name="match">The match state.</param>
@@ -40,7 +38,7 @@ internal sealed class IcingRule : ISystem
     /// <returns>True from the icing whistle until play resumes.</returns>
     public static bool HoldsLines(World world, Side side)
     {
-        return States.TryGetValue(world, out var s) && s.Held[(int)side];
+        return world.Icing.TryGet(out var s) && s.Held[(int)side];
     }
 
     /// <summary>Holds a club's lines as an icing call under <see cref="RuleSet.IcingNoChange"/> does; for the test scenes.</summary>
@@ -48,12 +46,12 @@ internal sealed class IcingRule : ISystem
     /// <param name="side">The icing club.</param>
     internal static void HoldLines(World world, Side side)
     {
-        States.GetOrCreateValue(world).Held[(int)side] = true;
+        world.Icing.Get(() => new IcingState()).Held[(int)side] = true;
     }
 
     public void Update(World world, float dt)
     {
-        var s = States.GetOrCreateValue(world);
+        var s = world.Icing.Get(() => new IcingState());
         var pk = world.Puck;
         if (world.Match.Phase == MatchPhase.Play) Array.Clear(s.Held);   // the puck is down: the hold is over
         var call = world.Setup.Rules.Icing;

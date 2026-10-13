@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
 using static Raylib_cs.Raylib;
@@ -28,7 +27,6 @@ namespace StickAndPuck.App.Rules;
 /// </summary>
 internal sealed class OvertimeRules : ISystem
 {
-    static readonly ConditionalWeakTable<World, OvertimeState> States = new();
 
     /// <summary>The dice seed without a match seed (W67).</summary>
     internal const int Fallback = 9;
@@ -63,20 +61,20 @@ internal sealed class OvertimeRules : ISystem
     /// <returns>The tally.</returns>
     public static Maybe<ShootoutState> Shootout(World world)
     {
-        return States.TryGetValue(world, out var s) ? s.Shootout : Maybe<ShootoutState>.None;
+        return world.Overtime.TryGet(out var s) ? s.Shootout : Maybe<ShootoutState>.None;
     }
 
     public void Update(World world, float dt)
     {
         if (!MatchFlow.IsRunning(world)) return;
-        var s = States.GetOrCreateValue(world);
+        var s = world.Overtime.Get(() => new OvertimeState());
         if (world.Match.Phase == MatchPhase.Overtime) Overtime(world, s, dt);
         else if (world.Match.Phase == MatchPhase.Shootout) ShootoutStep(world, s, dt);
     }
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (States.TryGetValue(world, out var st) && st.Shootout.HasValue && !st.First.IsSet()) DrawChoice(world);
+        if (world.Overtime.TryGet(out var st) && st.Shootout.HasValue && !st.First.IsSet()) DrawChoice(world);
 
         // a plain shootout line under W7a's debug line, until W10's scorebug shows the tally
         if (!MatchRules.ShowLine || !Shootout(world).TryGet(out var so)) return;

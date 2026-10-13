@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
 
@@ -14,7 +13,6 @@ namespace StickAndPuck.App.Pregame;
 /// </summary>
 public static class Pregame
 {
-    static readonly ConditionalWeakTable<World, WarmupState> States = new();
 
     /// <summary>Gets a value indicating whether SAP_WARMUP=0 turned the warm-up off.</summary>
     public static bool Disabled => string.Equals(Environment.GetEnvironmentVariable("SAP_WARMUP"), "0", StringComparison.Ordinal);
@@ -38,7 +36,7 @@ public static class Pregame
     /// <returns>True while the squads warm up.</returns>
     public static bool IsWarmingUp(World world)
     {
-        return States.TryGetValue(world, out var s) && s.Running && !s.Started;
+        return world.Warmup.TryGet(out var s) && s.Running && !s.Started;
     }
 
     /// <summary>Gets the seconds the warm-up has run.</summary>
@@ -46,7 +44,7 @@ public static class Pregame
     /// <returns>The time, 0 before or without a warm-up.</returns>
     public static float Elapsed(World world)
     {
-        return States.TryGetValue(world, out var s) ? s.Elapsed : 0;
+        return world.Warmup.TryGet(out var s) ? s.Elapsed : 0;
     }
 
     /// <summary>Start pressed: the warm-up ends, the skaters gather and the opening faceoff follows.</summary>
@@ -70,7 +68,7 @@ public static class Pregame
 
     internal static WarmupState State(World world)
     {
-        return States.GetOrCreateValue(world);
+        return world.Warmup.Get(() => new WarmupState());
     }
 }
 
