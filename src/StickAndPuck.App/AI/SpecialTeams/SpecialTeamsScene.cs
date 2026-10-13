@@ -20,7 +20,7 @@ public sealed class SpecialTeamsScene : IScene
     {
         var kill = string.Equals(Env.Get("SAP_ST_KILL"), "home", StringComparison.OrdinalIgnoreCase) ? Side.Home : Side.Away;
         var world = SpecialTeamsSetup.ShortHanded(clubs, settings, kill);
-        SpecialTeamsSystem.ShowSpots = true;
+        world.Switches.SpecialTeamsSpots = true;
         if (Env.Is("SAP_ST_WAIT", "1")) Wait(world, kill == Side.Home ? Side.Away : Side.Home);
         return world;
     }

@@ -72,8 +72,8 @@ internal static class PlayoffScenes
 
         Console.WriteLine($"SAP: playoff {playoffs.Current.Name} game {series.Games.Count + 1}: {setup.Home.Name} vs {setup.Away.Name}, series {series.High} {series.HighWins}-{series.LowWins} {series.Low}");
         if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
-        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) OvertimeRules.PeriodSeconds = ot;
         var world = new World(setup, settings);
+        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) world.Switches.OvertimeSeconds = ot;
         Scenes.AddStarters(world);
         var side = setup.Inputs[0].Side;
         if (human && world.OnIce(side).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre) centre.Slot = 0;
@@ -86,7 +86,7 @@ internal static class PlayoffScenes
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         Scenes.AddStarters(world);
-        PlayoffSystem.ShowBracket = true;
+        world.Switches.PlayoffBracket = true;
         return world;
     }
 

@@ -23,18 +23,22 @@ public sealed class HandlingDemoScene : IScene
 }
 
 /// <summary>The script behind <see cref="HandlingDemoScene"/>, driven from <see cref="PuckHandlingSystem"/>.</summary>
-internal static class HandlingDemo
+internal sealed class HandlingDemo
 {
-    static Maybe<Player> carrier, receiver, defender, goalie;
-    static float start;
-    static int got = -1, shotAt = -1, round;
-
-    /// <summary>Gets a value indicating whether the demo runs.</summary>
-    public static bool Enabled { get; private set; }
+    Maybe<Player> carrier, receiver, defender, goalie;
+    float start;
+    int got = -1, shotAt = -1, round;
 
     /// <summary>Adds the players for the demo.</summary>
     /// <param name="world">The world to fill.</param>
     public static void Setup(World world)
+    {
+        var demo = new HandlingDemo();
+        world.Dev.Handling.Set(demo);
+        demo.Fill(world);
+    }
+
+    void Fill(World world)
     {
         var home = world.Setup.Home.Roster.Where(p => p.Position != PlayingPosition.G).ToList();
         var away = world.Setup.Away.Roster.Where(p => p.Position != PlayingPosition.G).ToList();
@@ -44,11 +48,10 @@ internal static class HandlingDemo
         defender = world.AddPlayer(Side.Away, Pick(away, 3), Vector3.Zero);
         if (world.Setup.Away.Roster.FirstOrDefault(p => p.Position == PlayingPosition.G) is { } g)
             goalie = world.AddPlayer(Side.Away, g, new Vector3(RinkSpec.GoalLineX - 1f, 0, 0));
-        Enabled = true;
         Reset(world);
     }
 
-    static void Reset(World world)
+    void Reset(World world)
     {
         if (!carrier.TryGet(out var c) || !receiver.TryGet(out var r) || !defender.TryGet(out var d)) return;   // never: Setup adds them first
         Place(c, new Vector3(-8, 0, 2 + (round % 2) * 3), MathF.PI / 2);
@@ -79,7 +82,12 @@ internal static class HandlingDemo
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (!Enabled || !carrier.TryGet(out var c) || !receiver.TryGet(out var r)) return;
+        if (world.Dev.Handling.TryGet(out var demo)) demo.Run(world);
+    }
+
+    void Run(World world)
+    {
+        if (!carrier.TryGet(out var c) || !receiver.TryGet(out var r)) return;
         var pk = world.Puck;
         int step = (int)MathF.Round((world.Time - start) / Game.Step);
         if (step == 80)

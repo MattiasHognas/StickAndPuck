@@ -31,4 +31,11 @@ public sealed class Slot<T>
 
         return state;
     }
+
+    /// <summary>Sets the state.</summary>
+    /// <param name="state">The state.</param>
+    public void Set(T state) => value = state;
+
+    /// <summary>Drops the state; the next ask makes a new one.</summary>
+    public void Clear() => value = Maybe<T>.None;
 }

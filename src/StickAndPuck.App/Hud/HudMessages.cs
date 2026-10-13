@@ -48,7 +48,6 @@ internal sealed class HudMessages
     /// Gets or sets how many goals a club has scored earlier this season, or None outside season mode.
     /// The default reads the season being played; the hud scene swaps in a fake.
     /// </summary>
-    public static Func<World, Side, Maybe<int>> SeasonGoals { get; set; } = SeasonGoalsBefore;
 
     /// <summary>Gets the banner showing now, or None.</summary>
     public Maybe<HudMessage> Current { get; private set; }
@@ -123,7 +122,7 @@ internal sealed class HudMessages
     {
         var scorer = e.Side;
         int clubBefore = goals.Count(g => g.Side == scorer);
-        var seasonBefore = SeasonGoals(world, scorer);
+        var seasonBefore = world.Switches.SeasonGoals(world, scorer);
         int player = Scorer(world, e).TryGet(out var p) ? p.Id : -1;
         goals.Add((scorer, player));
 
@@ -170,7 +169,7 @@ internal sealed class HudMessages
     }
 
     /// <summary>Goals a club scored in the season's earlier games, or None when this match is not a season game.</summary>
-    static Maybe<int> SeasonGoalsBefore(World world, Side side)
+    internal static Maybe<int> SeasonGoalsBefore(World world, Side side)
     {
         if (!SeasonSession.Current.TryGet(out var season) || !SeasonSession.Playing.HasValue) return Maybe<int>.None;
         string club = world.Setup.Club(side).Id;

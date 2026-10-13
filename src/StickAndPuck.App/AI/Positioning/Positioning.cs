@@ -116,7 +116,7 @@ public static class Positioning
     /// <returns>True when positioning and decisions drive the AI skaters.</returns>
     public static bool Drives(World world)
     {
-        return MatchFlow.IsRunning(world) || StandInPlay.Enabled;
+        return MatchFlow.IsRunning(world) || StandInPlay.Running(world);
     }
 
     internal static PositioningBoard Board(World world)

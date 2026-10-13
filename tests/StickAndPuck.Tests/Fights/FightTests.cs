@@ -40,9 +40,9 @@ public sealed class FightTests : CheckedTest
 
     static World Make(int period, Func<Settings, Settings> options, Maybe<RuleSet> rules = default)
     {
-        Penalties.Strictness = 0;
         return new WorldBuilder()
             .Setup(s => s with { PeriodSeconds = Period })
+            .Switches(s => s.PenaltyStrictness = 0)
             .Rules(rules.Or(RuleSet.Arcade))
             .Settings(options)
             .Then(w =>
@@ -386,7 +386,6 @@ public sealed class FightTests : CheckedTest
     [Test]
     public void FullMatches()
     {
-        Penalties.Strictness = 1;
         RuleSet[] presets = [RuleSet.Arcade, RuleSet.Shl, RuleSet.Nhl];
         var played = Matches.Play(presets.Length * Seeds.Length, i => Match(WorldBuilder.DefaultSetup.WithRules(presets[i / Seeds.Length]) with { PeriodSeconds = 600 }, Seeds[i % Seeds.Length]));
         for (int r = 0; r < presets.Length; r++)

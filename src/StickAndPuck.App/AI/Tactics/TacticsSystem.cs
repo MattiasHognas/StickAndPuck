@@ -53,8 +53,6 @@ internal sealed class TacticsSystem : ISystem
         this.rng = rng;
     }
 
-    /// <summary>Gets or sets a value indicating whether the tactics line is drawn on the HUD without the match debug setting.</summary>
-    public static bool ShowLine { get; set; } = Env.Is("SAP_TACTICS_LINE", "1");
 
     public void Update(World world, float dt)
     {
@@ -344,7 +342,7 @@ internal sealed class TacticsSystem : ISystem
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (!ShowLine && !world.Settings.MatchDebug) return;
+        if (!world.Switches.TacticsLine && !world.Settings.MatchDebug) return;
         string Club(Side side)
         {
             var t = Tactics.Of(world, side);

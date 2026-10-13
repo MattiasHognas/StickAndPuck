@@ -19,8 +19,6 @@ internal sealed class PlayoffSystem : ISystem, IDisposable
     float finishedAt = float.PositiveInfinity;
     Maybe<HudArt> art;
 
-    /// <summary>Gets or sets a value indicating whether the bracket always shows (the playoffbracket scene).</summary>
-    public static bool ShowBracket { get; set; }
 
     public bool RunsWhilePaused => true;
 
@@ -57,7 +55,7 @@ internal sealed class PlayoffSystem : ISystem, IDisposable
     public void DrawHud(World world, RenderContext render)
     {
         if (!art.TryGet(out var hud) || !PlayoffSession.Current.TryGet(out var playoffs)) return;
-        if (ShowBracket || world.Time - finishedAt >= BracketDelay) PlayoffBracket.Draw(hud, playoffs, SeasonSession.Clubs);
+        if (world.Switches.PlayoffBracket || world.Time - finishedAt >= BracketDelay) PlayoffBracket.Draw(hud, playoffs, SeasonSession.Clubs);
     }
 
     public void Dispose()

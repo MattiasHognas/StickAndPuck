@@ -21,14 +21,15 @@ public sealed class OvertimeScene : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         float period = Seconds("SAP_PERIOD", 5);
-        OvertimeRules.PeriodSeconds = Seconds("SAP_OT", 15);
+        float overtime = Seconds("SAP_OT", 15);
         bool human = Env.Is("SAP_HUMAN", "1");
         bool playoff = Env.Is("SAP_PLAYOFF", "1");
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Overtime = OvertimeRule.Shl };
         if (Enum.TryParse<RulePreset>(Env.Get("SAP_RULES"), ignoreCase: true, out var preset)) setup = setup with { Rules = RuleSet.Of(preset) };
-        if (playoff) setup = setup with { OvertimeFormat = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = OvertimeRules.PeriodSeconds } };
+        if (playoff) setup = setup with { OvertimeFormat = OvertimeFormat.ShlPlayoffs with { PeriodSeconds = overtime } };
         if (!human) setup = setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
         var world = new World(setup, settings);
+        world.Switches.OvertimeSeconds = overtime;
         Scenes.AddStarters(world);
         if (human && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre) centre.Slot = 0;
         MatchFlow.Begin(world);
@@ -42,7 +43,7 @@ public sealed class OvertimeScene : IScene
             world.Match.Phase = shootout ? MatchPhase.Shootout : MatchPhase.Overtime;
         }
 
-        MatchRules.ShowLine = true;
+        world.Switches.MatchLine = true;
         return world;
     }
 

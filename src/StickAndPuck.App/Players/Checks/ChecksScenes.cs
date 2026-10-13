@@ -39,14 +39,9 @@ public sealed class ChecksDemoScene : IScene
 }
 
 /// <summary>The script behind <see cref="ChecksScene"/> and <see cref="ChecksDemoScene"/>, driven from <see cref="SwitchingSystem"/> so its commands land before skating.</summary>
-internal static class ChecksDemo
+internal sealed class ChecksDemo(ChecksCast cast, bool scripted)
 {
-    static Maybe<ChecksCast> cast;
-    static bool scripted;
-    static float start, lostAt = float.PositiveInfinity;
-
-    /// <summary>Gets a value indicating whether a checks scene runs.</summary>
-    public static bool Enabled { get; private set; }
+    float start, lostAt = float.PositiveInfinity;
 
     /// <summary>Adds the players.</summary>
     /// <param name="world">The world to fill.</param>
@@ -61,11 +56,10 @@ internal static class ChecksDemo
         var mate2 = world.AddPlayer(Side.Home, home[2 % home.Count], Vector3.Zero);
         var carrier = world.AddPlayer(Side.Away, away.MinBy(p => p.Traits.Checking)!, Vector3.Zero);
         var c = new ChecksCast(carrier, hunter, mate1, mate2);
-        cast = c;
-        scripted = script;
-        Enabled = true;
+        var demo = new ChecksDemo(c, script);
+        world.Dev.Checks.Set(demo);
         if (!script) hunter.Slot = 0;
-        Reset(world, c);
+        demo.Reset(world, c);
     }
 
     static List<PlayerData> Skaters(ClubData club)
@@ -74,7 +68,7 @@ internal static class ChecksDemo
         return list.Count > 0 ? list : [new PlayerData { Position = PlayingPosition.C }];
     }
 
-    static void Reset(World world, ChecksCast c)
+    void Reset(World world, ChecksCast c)
     {
         Place(c.Carrier, new Vector3(4, 0, 1), -MathF.PI / 2);
         Place(c.Hunter, new Vector3(7.5f, 0, 1.5f), -MathF.PI / 2);
@@ -104,7 +98,12 @@ internal static class ChecksDemo
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (!Enabled || !cast.TryGet(out var c)) return;
+        if (world.Dev.Checks.TryGet(out var demo)) demo.Run(world);
+    }
+
+    void Run(World world)
+    {
+        var c = cast;
         var (carrier, hunter) = (c.Carrier, c.Hunter);
         float t = world.Time - start;
 

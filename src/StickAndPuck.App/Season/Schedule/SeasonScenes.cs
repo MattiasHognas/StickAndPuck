@@ -28,8 +28,8 @@ public sealed class SeasonScene : IScene
 
         Console.WriteLine($"SAP: season game {game.Number + 1} of {season.Games.Count}, round {game.Round + 1} of {season.Rounds}: {setup.Home.Name} vs {setup.Away.Name}");
         if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
-        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) OvertimeRules.PeriodSeconds = ot;
         var world = new World(setup, settings);
+        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) world.Switches.OvertimeSeconds = ot;
         Scenes.AddStarters(world);
         var side = setup.Inputs[0].Side;
         if (human && world.OnIce(side).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre) centre.Slot = 0;
@@ -77,7 +77,7 @@ internal static class SeasonScenes
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         Scenes.AddStarters(world);
-        ScheduleSystem.ShowTable = true;
+        world.Switches.ScheduleTable = true;
         return world;
     }
 

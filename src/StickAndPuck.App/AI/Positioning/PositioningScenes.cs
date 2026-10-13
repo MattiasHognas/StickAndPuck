@@ -26,10 +26,10 @@ public sealed class PositioningScene : IScene
             centre.Slot = 0;
         }
 
-        StandInPlay.Start(world);
+        var standIn = StandInPlay.Start(world);
         MatchFlow.Begin(world, log: false);
-        StandInPlay.FollowCamera = true;
-        StandInPlay.ShowTargets = Env.Is("SAP_AI_TARGETS", "1");
+        standIn.FollowCamera = true;
+        standIn.ShowTargets = Env.Is("SAP_AI_TARGETS", "1");
         return world;
     }
 }

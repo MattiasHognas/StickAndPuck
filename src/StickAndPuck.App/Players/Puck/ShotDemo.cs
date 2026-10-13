@@ -23,33 +23,40 @@ public sealed class ShotDemoScene : IScene
 }
 
 /// <summary>The script behind <see cref="ShotDemoScene"/>, driven from <see cref="PuckHandlingSystem"/>.</summary>
-internal static class ShotDemo
+internal sealed class ShotDemo
 {
     /// <summary>Steps shoot is held in each round: a tap, a half hold, a full wind-up.</summary>
     static readonly int[] Holds = [2, 30, 66];
 
-    static Maybe<Player> shooter;
-    static float start;
-    static int round;
-
-    /// <summary>Gets a value indicating whether the demo runs.</summary>
-    public static bool Enabled { get; private set; }
+    Maybe<Player> shooter;
+    float start;
+    int round;
 
     /// <summary>Gets the hold, in steps, of the current round.</summary>
-    public static int Hold => Holds[round % Holds.Length];
+    int Hold => Holds[round % Holds.Length];
 
     /// <summary>Adds the shooter.</summary>
     /// <param name="world">The world to fill.</param>
     public static void Setup(World world)
     {
         var data = world.Setup.Home.Roster.FirstOrDefault(p => p.Position != PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.C };
-        shooter = world.AddPlayer(Side.Home, data, Vector3.Zero);
-        Enabled = true;
-        round = -1;
-        Reset(world);
+        var d = new ShotDemo { shooter = world.AddPlayer(Side.Home, data, Vector3.Zero), round = -1 };
+        world.Dev.Shot.Set(d);
+        d.Reset(world);
     }
 
-    static void Reset(World world)
+    /// <summary>Writes this step's commands.</summary>
+    /// <param name="world">The match state.</param>
+    public static void Update(World world)
+    {
+        if (!world.Dev.Shot.TryGet(out var d) || !d.shooter.TryGet(out var p)) return;
+        int step = (int)MathF.Round((world.Time - d.start) / Game.Step);
+        const int press = 30;
+        p.Command = new PlayerCommand { Shoot = step >= press && step < press + d.Hold };   // standing still, shooting the way they face
+        if (step > press + d.Hold + 120) d.Reset(world);
+    }
+
+    void Reset(World world)
     {
         round++;
         if (!shooter.TryGet(out var p)) return;
@@ -64,16 +71,5 @@ internal static class ShotDemo
         pk.Velocity = Vector3.Zero;
         pk.Live = false;   // a dead puck scores no goal, so no replay cuts in between shots
         start = world.Time;
-    }
-
-    /// <summary>Writes this step's commands.</summary>
-    /// <param name="world">The match state.</param>
-    public static void Update(World world)
-    {
-        if (!Enabled || !shooter.TryGet(out var p)) return;
-        int step = (int)MathF.Round((world.Time - start) / Game.Step);
-        const int press = 30;
-        p.Command = new PlayerCommand { Shoot = step >= press && step < press + Hold };   // standing still, shooting the way they face
-        if (step > press + Hold + 120) Reset(world);
     }
 }

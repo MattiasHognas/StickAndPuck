@@ -31,8 +31,8 @@ public sealed class ArcadeScene : IScene
 
         Console.WriteLine($"SAP: arcade stage {run.Stage + 1} of {run.Opponents.Count}, {run.LivesLeft} of {run.StartLives} lives: {setup.Home.Name} vs {setup.Away.Name}");
         if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
-        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) OvertimeRules.PeriodSeconds = ot;
         var world = new World(setup, settings);
+        if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) world.Switches.OvertimeSeconds = ot;
         Scenes.AddStarters(world);
         var side = setup.Inputs[0].Side;
         if (human && world.OnIce(side).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre) centre.Slot = 0;
@@ -86,7 +86,7 @@ internal static class ArcadeScenes
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         Scenes.AddStarters(world);
-        ArcadeSystem.ShowSummary = true;
+        world.Switches.ArcadeSummary = true;
         return world;
     }
 }

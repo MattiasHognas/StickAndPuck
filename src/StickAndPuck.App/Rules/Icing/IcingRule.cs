@@ -112,7 +112,7 @@ internal sealed class IcingRule : ISystem
         if (!MatchFlow.Whistle(world, dot)) return;
         world.Events.Publish(new IcingCalled(world.Time, offender, touch, world.Puck.Position));
         if (world.Setup.Rules.IcingNoChange) HoldLines(world, offender);
-        LineCallsDemo.Log("Icing", offender, world.Puck.Position, dot);
+        LineCallsDemo.Log(world, "Icing", offender, world.Puck.Position, dot);
     }
 
 

@@ -33,7 +33,7 @@ public sealed class AiMatchScene : IScene
         }
 
         MatchFlow.Begin(world);
-        DecisionScenes.ShowLine = true;
+        world.Switches.DecisionLine = true;
         return world;
     }
 
@@ -46,8 +46,6 @@ public sealed class AiMatchScene : IScene
 /// <summary>Helpers shared by the decision scenes and the self-test.</summary>
 internal static class DecisionScenes
 {
-    /// <summary>Gets or sets a value indicating whether the pass, shot and check line is drawn.</summary>
-    public static bool ShowLine { get; set; }
 
     /// <summary>Gives every skater of a club the same hockey IQ.</summary>
     /// <param name="world">The match, before it starts.</param>
@@ -68,7 +66,7 @@ internal static class DecisionScenes
     /// <param name="world">The match.</param>
     public static void DrawLine(World world)
     {
-        if (!ShowLine) return;
+        if (!world.Switches.DecisionLine) return;
         var h = Decisions.Tally(world, Side.Home);
         var a = Decisions.Tally(world, Side.Away);
         string text = $"{world.Setup.Home.ShortName} PASS {h.Completed}/{h.Passes} SH {h.Shots} HIT {h.Checks}   "

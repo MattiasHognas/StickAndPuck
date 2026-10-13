@@ -70,11 +70,7 @@ public readonly record struct AiIntent(AiLayer Owner, string Reason, long Tick);
 public static class AiCommand
 {
 
-    /// <summary>Gets or sets a value indicating whether owner changes are printed (SAP_AI_TRACE=1 sets it).</summary>
-    public static bool Trace { get; set; } = Env.Is("SAP_AI_TRACE", "1");
 
-    /// <summary>Gets or sets a hook that sees every AI write as it happens, for the W68 fixtures (a no-op by default).</summary>
-    internal static Action<Player, AiIntent> Watch { get; set; } = Unwatched;
 
     /// <summary>Gets who last wrote a skater's command, and why.</summary>
     /// <param name="world">The match.</param>
@@ -93,7 +89,7 @@ public static class AiCommand
     internal static void Base(World world, Player p, PlayerCommand move, string reason)
     {
         if (p.Slot >= 0) return;
-        if (Trace) Print(world, p);
+        if (world.Switches.AiTrace) Print(world, p);
         Owns(world, p, AiLayer.Positioning, reason);
         p.Command = move;
     }
@@ -188,16 +184,8 @@ public static class AiCommand
         if (p.Slot >= 0) return false;
         var intent = new AiIntent(layer, reason, world.Tick);
         world.AiIntents.Get(() => [])[p.Id] = intent;
-        Watch(p, intent);
+        world.Switches.AiWatch(p, intent);
         return true;
-    }
-
-    /// <summary>The default <see cref="Watch"/>: sees nothing.</summary>
-    /// <param name="p">The skater.</param>
-    /// <param name="intent">The write.</param>
-    internal static void Unwatched(Player p, AiIntent intent)
-    {
-        // nobody is watching: a fixture sets its own hook
     }
 
     /// <summary>Prints who had a skater at the end of the last step he was written, when that changed.</summary>

@@ -30,7 +30,7 @@ public sealed record OvertimeFormat
     /// <summary>Gets the skaters per club in overtime; 0 plays no overtime period.</summary>
     public int Skaters { get; init; }
 
-    /// <summary>Gets the length of one overtime period in game seconds, or None for <see cref="OvertimeRules.PeriodSeconds"/> (the SHL 5 minutes, which scenes shorten).</summary>
+    /// <summary>Gets the length of one overtime period in game seconds, or None for <see cref="WorldSwitches.OvertimeSeconds"/> (the SHL 5 minutes, which scenes shorten).</summary>
     public Maybe<float> PeriodSeconds { get; init; }
 
     /// <summary>Gets a value indicating whether overtime periods go on until a goal (true) or stop after one (false).</summary>

@@ -61,6 +61,7 @@ public static class Game
                 if (replay.Is(p => !p.Live)) break;    // the replayed match is over
                 if (loop.Recorder.TryGet(out var recorder)) recorder.Finish(world);
                 loop.Recorder = ReplayRecorder.Begin(next, "");
+                next.Switches = world.Switches.Copy();    // W56: the scene's switches stay on, as the statics they were did
                 (world, systems) = (next, Restart(next, systems));
             }
 

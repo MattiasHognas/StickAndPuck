@@ -17,53 +17,51 @@ namespace StickAndPuck.App.AI;
 /// match flow runs it keeps the clock, goals and faceoffs; without it the stand-in restarts after
 /// goals and runs its own clock. It never runs in a normal match.
 /// </summary>
-internal static class StandInPlay
+internal sealed class StandInPlay
 {
-    static Random dice = new(3);
-    static float goalAt = float.NaN, stillSince, faceoffAt = float.NegativeInfinity;
-    static Vector3 stillAt;
-    static int dropIn;
+    readonly Random dice;
+    float goalAt = float.NaN, stillSince, faceoffAt = float.NegativeInfinity;
+    Vector3 stillAt;
+    int dropIn;
 
-    /// <summary>Gets a value indicating whether the stand-in runs.</summary>
-    public static bool Enabled { get; private set; }
+    StandInPlay(int seed, float clock)
+    {
+#pragma warning disable S2245 // gameplay variation, not security
+        dice = new Random(seed);
+#pragma warning restore S2245
+        Clock = clock;
+    }
 
     /// <summary>Gets or sets a value indicating whether the stand-in moves the camera with the puck.</summary>
-    public static bool FollowCamera { get; set; }
+    public bool FollowCamera { get; set; }
 
     /// <summary>Gets or sets a value indicating whether each AI skater's target is drawn as a marker.</summary>
-    public static bool ShowTargets { get; set; }
+    public bool ShowTargets { get; set; }
 
     /// <summary>Gets the stand-in clock: game seconds left in the period.</summary>
-    public static float Clock { get; private set; }
+    public float Clock { get; private set; }
 
     /// <summary>Gets the goals per side, indexed by <see cref="Side"/>.</summary>
-    public static int[] Goals { get; } = new int[2];
+    public int[] Goals { get; } = new int[2];
 
     /// <summary>Gets how many times a puck lay dead for long enough to need a faceoff.</summary>
-    public static int DeadPucks { get; private set; }
+    public int DeadPucks { get; private set; }
+
+    /// <summary>Gets a value indicating whether the stand-in runs on a world.</summary>
+    /// <param name="world">The match.</param>
+    /// <returns>Whether it does.</returns>
+    public static bool Running(World world) => world.Dev.StandIn.HasValue;
 
     /// <summary>Turns the stand-in on for a world and drops the puck at centre ice.</summary>
     /// <param name="world">The match.</param>
     /// <param name="seed">Seed for the stand-in's choices, so tests repeat.</param>
-    public static void Start(World world, int seed = 3)
+    /// <returns>The stand-in.</returns>
+    public static StandInPlay Start(World world, int seed = 3)
     {
-        Enabled = true;
-#pragma warning disable S2245 // gameplay variation, not security
-        dice = new Random(seed);
-#pragma warning restore S2245
-        goalAt = float.NaN;
-        Clock = world.Setup.PeriodSeconds;
-        Array.Clear(Goals);
-        DeadPucks = 0;
+        var standIn = new StandInPlay(seed, world.Setup.PeriodSeconds);
+        world.Dev.StandIn.Set(standIn);
         Faceoff(world, RinkSpec.CentreDot);
-    }
-
-    /// <summary>Turns the stand-in off.</summary>
-    public static void Stop()
-    {
-        Enabled = false;
-        FollowCamera = false;
-        ShowTargets = false;
+        return standIn;
     }
 
     /// <summary>Runs the clock, restarts after goals and dead pucks, and moves the camera. Called first in positioning's update.</summary>
@@ -71,7 +69,11 @@ internal static class StandInPlay
     /// <param name="dt">The step.</param>
     public static void Before(World world, float dt)
     {
-        if (!Enabled) return;
+        if (world.Dev.StandIn.TryGet(out var standIn)) standIn.Run(world, dt);
+    }
+
+    void Run(World world, float dt)
+    {
         if (FollowCamera) Follow(world);
         if (MatchFlow.IsRunning(world)) { DeadPuck(world, () => MatchFlow.Whistle(world, MatchFlow.NearestDot(world.Puck.Position))); return; }
         var pk = world.Puck;
@@ -101,7 +103,7 @@ internal static class StandInPlay
     }
 
     /// <summary>A loose puck nobody gets to, or one a goalie keeps, is faced off again at the nearest dot.</summary>
-    static void DeadPuck(World world, Action restart)
+    void DeadPuck(World world, Action restart)
     {
         var pk = world.Puck;
         bool goalieHolds = pk.Carrier >= 0 && world.Players[pk.Carrier].IsGoalie;
@@ -140,13 +142,14 @@ internal static class StandInPlay
         pk.Position = dot with { Y = 0 };
         pk.Velocity = Vector3.Zero;
         pk.Live = false;
-        dropIn = 30;
-        goalAt = float.NaN;
-        stillAt = pk.Position;
-        stillSince = faceoffAt = world.Time;
+        if (!world.Dev.StandIn.TryGet(out var standIn)) return;
+        standIn.dropIn = 30;
+        standIn.goalAt = float.NaN;
+        standIn.stillAt = pk.Position;
+        standIn.stillSince = standIn.faceoffAt = world.Time;
     }
 
-    static void Follow(World world)
+    void Follow(World world)
     {
         var cam = BroadcastCamera.Straight();
         float want = Math.Clamp(world.Puck.Position.X, -17f, 17f);
@@ -159,7 +162,7 @@ internal static class StandInPlay
     /// <param name="world">The match.</param>
     public static void DrawTargets(World world)
     {
-        if (!Enabled || !ShowTargets) return;
+        if (!world.Dev.StandIn.TryGet(out var standIn) || !standIn.ShowTargets) return;
         foreach (var p in world.Players)
         {
             if (!p.OnIce || p.IsGoalie || p.Slot >= 0) continue;
@@ -173,10 +176,10 @@ internal static class StandInPlay
     /// <param name="world">The match.</param>
     public static void DrawHud(World world)
     {
-        if (!Enabled) return;
+        if (!world.Dev.StandIn.TryGet(out var standIn)) return;
         bool rules = MatchFlow.IsRunning(world);
-        int[] goals = rules ? world.Match.Score : Goals;
-        string clock = MatchFlow.ClockText(rules ? world.Match.Clock : Clock);
+        int[] goals = rules ? world.Match.Score : standIn.Goals;
+        string clock = MatchFlow.ClockText(rules ? world.Match.Clock : standIn.Clock);
         string text = $"{world.Setup.Home.ShortName} {goals[0]} - {goals[1]} {world.Setup.Away.ShortName}   {clock}   SHOTS {Decisions.Tally(world, Side.Home).Shots}-{Decisions.Tally(world, Side.Away).Shots}   PASSES {Pct(world, Side.Home)}-{Pct(world, Side.Away)}";
         DrawText(text, 6, 6, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }

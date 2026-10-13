@@ -58,8 +58,6 @@ internal sealed class SpecialTeamsSystem : ISystem
         this.on = on;
     }
 
-    /// <summary>Gets or sets whether the spots are drawn on the ice (SAP_ST_SPOTS=1 sets it).</summary>
-    public static bool ShowSpots { get; set; } = Env.Is("SAP_ST_SPOTS", "1");
 
     public void Update(World world, float dt)
     {
@@ -174,7 +172,7 @@ internal sealed class SpecialTeamsSystem : ISystem
 
     public void DrawScene(World world, RenderContext render)
     {
-        if (!ShowSpots && !world.Settings.MatchDebug) return;
+        if (!world.Switches.SpecialTeamsSpots && !world.Settings.MatchDebug) return;
         var board = SpecialTeams.Board(world);
         foreach (var side in new[] { Side.Home, Side.Away })
         {
@@ -186,7 +184,7 @@ internal sealed class SpecialTeamsSystem : ISystem
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (!ShowSpots && !world.Settings.MatchDebug) return;
+        if (!world.Switches.SpecialTeamsSpots && !world.Settings.MatchDebug) return;
         var board = SpecialTeams.Board(world);
         if (!board.PowerPlay.TryGetSide(out var pp)) return;
         var kill = pp == Side.Home ? Side.Away : Side.Home;

@@ -32,7 +32,7 @@ public sealed class TacticsScene : IScene
         var world = new World(setup with { Home = home, Away = away, PeriodSeconds = period }, settings);
         Scenes.AddStarters(world);
         MatchFlow.Begin(world);
-        TacticsSystem.ShowLine = true;
+        world.Switches.TacticsLine = true;
         return world;
     }
 

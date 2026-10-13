@@ -36,8 +36,6 @@ namespace StickAndPuck.App.Lines;
 /// </summary>
 internal sealed class LinesSystem : ISystem
 {
-    /// <summary>Gets or sets a value indicating whether the energy panel is drawn; SAP_LINES_DEBUG=1 turns it on.</summary>
-    public static bool ShowPanel { get; set; } = Env.Is("SAP_LINES_DEBUG", "1");
 
     static readonly Side[] BothSides = [Side.Home, Side.Away];
     static readonly Group[] BothGroups = [Group.Forwards, Group.Defence];
@@ -84,7 +82,7 @@ internal sealed class LinesSystem : ISystem
 
     static void Tire(World world, bool play, float dt)
     {
-        float pace = LinesTuning.Pace;
+        float pace = world.Switches.FatiguePace;
         foreach (var p in world.Players)
         {
             if (p.IsGoalie) continue;
@@ -392,7 +390,7 @@ internal sealed class LinesSystem : ISystem
     /// <summary>Draws a small panel per club along the bottom: the unit on the ice for forwards and defence with an energy bar, and the goalie.</summary>
     public void DrawHud(World world, RenderContext render)
     {
-        if (!ShowPanel || !MatchFlow.IsRunning(world)) return;
+        if (!world.Switches.LinesPanel || !MatchFlow.IsRunning(world)) return;
         var b = Bench.Board(world);
         var cream = new Color(0xef, 0xe0, 0xc2, 255);
         foreach (var side in BothSides)

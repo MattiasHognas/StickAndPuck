@@ -31,27 +31,28 @@ public sealed class GoalieScene : IScene
         var skater = world.Setup.Home.Roster.FirstOrDefault(p => p.Position != PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.C };
         world.AddPlayer(Side.Home, skater, Vector3.Zero).OnIce = false;
         world.Puck.Position = new Vector3(14, 0, 0);
-        GoalieDemo.Enabled = true;
+        world.Dev.Goalie.Set(new GoalieDemo());
         return world;
     }
 }
 
 /// <summary>The shot loop and tally behind <see cref="GoalieScene"/>.</summary>
-internal static class GoalieDemo
+internal sealed class GoalieDemo
 {
-    static readonly Random Dice = new(11);
-    static float shotAt = float.NegativeInfinity;
-    static bool scored;
-    static int shots, saves, rebounds, goals;
-
-    /// <summary>Gets or sets a value indicating whether the loop runs.</summary>
-    public static bool Enabled { get; set; }
+    readonly Random dice = new(11);
+    float shotAt = float.NegativeInfinity;
+    bool scored;
+    int shots, saves, rebounds, goals;
 
     /// <summary>Starts the next shot when the last one is done, and counts goals.</summary>
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (!Enabled) return;
+        if (world.Dev.Goalie.TryGet(out var demo)) demo.Run(world);
+    }
+
+    void Run(World world)
+    {
         var cam = BroadcastCamera.Straight();
         world.Camera = cam with { Position = cam.Position + new Vector3(17, 0, 0), Target = cam.Target + new Vector3(17, 0, 0) };
         var pk = world.Puck;
@@ -59,7 +60,7 @@ internal static class GoalieDemo
         if (pk.Carrier >= 0) return;
         float since = world.Time - shotAt;
         if (since < 3.5f && (since < 1.4f || pk.Velocity.Length() > 0.8f)) return;
-        Shoot(world, Dice);
+        Shoot(world, dice);
         shots++;
         scored = false;
         shotAt = world.Time;
@@ -93,21 +94,22 @@ internal static class GoalieDemo
     }
 
     /// <summary>Counts a save.</summary>
+    /// <param name="world">The match state.</param>
     /// <param name="caught">Whether the goalie held it.</param>
-    public static void Saved(bool caught)
+    public static void Saved(World world, bool caught)
     {
-        if (!Enabled) return;
-        saves++;
-        if (!caught) rebounds++;
+        if (!world.Dev.Goalie.TryGet(out var demo)) return;
+        demo.saves++;
+        if (!caught) demo.rebounds++;
     }
 
     /// <summary>Draws the tally in the corner.</summary>
     /// <param name="world">The match state.</param>
     public static void DrawHud(World world)
     {
-        if (!Enabled) return;
+        if (!world.Dev.Goalie.TryGet(out var demo)) return;
         string who = world.Players.Find(p => p.IsGoalie) is not { Data.Traits: { } t } g ? "" : $"{g.Data.LastName.ToUpperInvariant()} REF {t.GoalieReflexes} POS {t.HockeyIq} GLV {t.GoalieGlove} BLK {t.GoalieBlocker} REB {t.GoalieReboundControl} PH {t.GoaliePuckHandling}";
         DrawText(who, 6, 6, 10, new Color(0xef, 0xe0, 0xc2, 255));
-        DrawText($"SHOTS {shots}  SAVES {saves}  REBOUNDS {rebounds}  GOALS {goals}", 6, 18, 10, new Color(0xef, 0xe0, 0xc2, 255));
+        DrawText($"SHOTS {demo.shots}  SAVES {demo.saves}  REBOUNDS {demo.rebounds}  GOALS {demo.goals}", 6, 18, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }
 }

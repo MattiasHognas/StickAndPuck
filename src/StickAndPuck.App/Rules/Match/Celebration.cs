@@ -24,8 +24,6 @@ public static class Celebration
     const float BrakeSeconds = 0.5f;
     const float PileX = 10f;
 
-    /// <summary>Gets or sets a value indicating whether the celebration plays at all (tests turn it off).</summary>
-    public static bool Enabled { get; set; } = true;
 
     /// <summary>Gets a value indicating whether a celebration is on or has played in this match, so the final poses hold until the summary.</summary>
     /// <param name="world">The match state.</param>
@@ -78,7 +76,7 @@ public static class Celebration
     /// <returns>True when the celebration runs, so the caller holds the final.</returns>
     internal static bool Begin(World world, FlowState s, SideOrNone winner)
     {
-        if (!Enabled || !winner.TryGetSide(out var win) || s.Celebration.HasValue) return false;
+        if (!world.Switches.Celebrations || !winner.TryGetSide(out var win) || s.Celebration.HasValue) return false;
         Pour(world, Side.Home);
         Pour(world, Side.Away);
         var skaters = world.Players.Where(p => p.OnIce && !p.IsGoalie).ToList();

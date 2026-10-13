@@ -140,8 +140,6 @@ public readonly record struct DelayedPenalty(Side Side, int PlayerId, string Inf
 public static class Penalties
 {
 
-    /// <summary>Gets or sets how strict the referee is: 1 is normal, 0 calls nothing. Scenes raise it to see calls often.</summary>
-    public static float Strictness { get; set; } = 1f;
 
     /// <summary>Gets the calls signalled and not yet made.</summary>
     /// <param name="world">The match.</param>

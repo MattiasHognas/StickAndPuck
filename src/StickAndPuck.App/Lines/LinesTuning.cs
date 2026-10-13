@@ -1,4 +1,3 @@
-using StickAndPuck.App.Core;
 namespace StickAndPuck.App.Lines;
 
 /// <summary>W13: how fast skaters tire and rest, and when lines and goalies change. Energy runs from 1 (fresh) to 0 (spent).</summary>
@@ -55,8 +54,6 @@ public static class LinesTuning
     /// <summary>The same for defence pairs.</summary>
     public static readonly float[] PairBias = [0f, 0.03f, 0.06f];
 
-    /// <summary>Gets or sets how much faster than normal skaters tire and rest; demo scenes and SAP_FATIGUE raise it.</summary>
-    public static float Pace { get; set; } = EnvPace();
 
     /// <summary>Gets how much a skater's shots keep of their speed: 1 when fresh, 0.85 when spent.</summary>
     /// <param name="energy">Energy from 1 to 0.</param>
@@ -66,9 +63,4 @@ public static class LinesTuning
         return 0.85f + 0.15f * Math.Clamp(energy, 0f, 1f);
     }
 
-    static float EnvPace()
-    {
-        return float.TryParse(Env.Get("SAP_FATIGUE"), System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture, out float pace) && pace > 0 ? pace : 1f;
-    }
 }

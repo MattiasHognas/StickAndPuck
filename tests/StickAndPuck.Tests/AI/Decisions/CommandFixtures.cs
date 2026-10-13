@@ -44,7 +44,7 @@ internal static class CommandFixtures
     static void Play(World world, ISystem[] systems, float seconds, Action<StepWrites> afterDecisions, Maybe<Action> beforeStep = default)
     {
         var step = new StepWrites();
-        AiCommand.Watch = step.Add;
+        world.Switches.AiWatch = step.Add;
         try
         {
             int steps = (int)(seconds / Game.Step);
@@ -64,7 +64,7 @@ internal static class CommandFixtures
         }
         finally
         {
-            AiCommand.Watch = AiCommand.Unwatched;
+            world.Switches.AiWatch = new WorldSwitches().AiWatch;
         }
     }
 

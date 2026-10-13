@@ -28,10 +28,10 @@ public sealed class LinesScene : IScene
             centre.Slot = 0;
         }
 
-        StandInPlay.Start(world);
+        var standIn = StandInPlay.Start(world);
         MatchFlow.Begin(world);
-        StandInPlay.FollowCamera = true;
-        LinesScenes.Demo();
+        standIn.FollowCamera = true;
+        LinesScenes.Demo(world);
         return world;
     }
 
@@ -58,8 +58,8 @@ public sealed class GoalieSwapScene : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var world = MatchScenes.Exhibition(clubs, settings, LinesScene.Period(120));
-        MatchDemo.Enabled = true;
-        LinesScenes.Demo();
+        world.Dev.Match.Set(new MatchDemo());
+        LinesScenes.Demo(world);
         return world;
     }
 }
@@ -90,7 +90,7 @@ public sealed class GoaliePullScene : IScene
         MatchFlow.Begin(world);
         world.Match.Score[1] = 1;
         MatchFlow.StartPeriod(world, world.Setup.Periods, GoaliePull.PullSeconds(world) + 8f);
-        LinesSystem.ShowPanel = true;
+        world.Switches.LinesPanel = true;
         if (float.TryParse(Env.Get("SAP_PENALTY_SKIP"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float skip) && skip > 0)
             PenaltyScenes.FastForward(world, skip);
         return world;
@@ -101,9 +101,10 @@ public sealed class GoaliePullScene : IScene
 internal static class LinesScenes
 {
     /// <summary>Fast fatigue (unless SAP_FATIGUE says otherwise) and the panel on.</summary>
-    public static void Demo()
+    /// <param name="world">The match.</param>
+    public static void Demo(World world)
     {
-        if (Env.Get("SAP_FATIGUE") is not { Length: > 0 }) LinesTuning.Pace = 6f;
-        LinesSystem.ShowPanel = true;
+        if (Env.Get("SAP_FATIGUE") is not { Length: > 0 }) world.Switches.FatiguePace = 6f;
+        world.Switches.LinesPanel = true;
     }
 }

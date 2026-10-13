@@ -39,8 +39,8 @@ public sealed class MatchDemoScene : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var world = MatchScenes.Exhibition(clubs, settings, 25);
-        MatchDemo.Enabled = true;
-        MatchRules.ShowLine = true;
+        world.Dev.Match.Set(new MatchDemo());
+        world.Switches.MatchLine = true;
         return world;
     }
 }
@@ -62,21 +62,22 @@ internal static class MatchScenes
 }
 
 /// <summary>The shot loop and camera behind <see cref="MatchDemoScene"/>.</summary>
-internal static class MatchDemo
+internal sealed class MatchDemo
 {
-    static readonly Random Dice = new(7);
-    static float shotAt = float.NegativeInfinity;
-    static float cameraX;
-    static Side next = Side.Home;
-
-    /// <summary>Gets or sets a value indicating whether the loop runs.</summary>
-    public static bool Enabled { get; set; }
+    readonly Random dice = new(7);
+    float shotAt = float.NegativeInfinity;
+    float cameraX;
+    Side next = Side.Home;
 
     /// <summary>Fires the next shot a moment after the puck drops or settles, and pans the camera to the puck.</summary>
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (!Enabled) return;
+        if (world.Dev.Match.TryGet(out var demo)) demo.Run(world);
+    }
+
+    void Run(World world)
+    {
         Pan(world);
         var pk = world.Puck;
         if (world.Match.Phase != MatchPhase.Play) { shotAt = world.Time; return; }
@@ -88,21 +89,21 @@ internal static class MatchDemo
         shotAt = world.Time;
     }
 
-    static void Shoot(World world, Side shooter)
+    void Shoot(World world, Side shooter)
     {
         int end = -FaceoffFormation.DefendedEnd(world.Match, shooter);
-        var from = new Vector3(end * (RinkSpec.GoalLineX - 6 - Dice.NextSingle() * 8), 0, (Dice.NextSingle() * 2 - 1) * 6);
+        var from = new Vector3(end * (RinkSpec.GoalLineX - 6 - dice.NextSingle() * 8), 0, (dice.NextSingle() * 2 - 1) * 6);
         // aimed at the corners of the net, so some beat the goalie
-        float aim = (0.55f + Dice.NextSingle() * 0.3f) * (Dice.Next(2) * 2 - 1);
+        float aim = (0.55f + dice.NextSingle() * 0.3f) * (dice.Next(2) * 2 - 1);
         var target = new Vector3(end * RinkSpec.GoalLineX, 0, aim);
         var pk = world.Puck;
         pk.Carrier = -1;
         pk.LastTouch = world.OnIce(shooter).FirstOrDefault(p => !p.IsGoalie)?.Id ?? -1;
         pk.Position = from;
-        pk.Velocity = Vector3.Normalize(target - from) * (28 + Dice.NextSingle() * 10);
+        pk.Velocity = Vector3.Normalize(target - from) * (28 + dice.NextSingle() * 10);
     }
 
-    static void Pan(World world)
+    void Pan(World world)
     {
         float goal = Math.Clamp(world.Puck.Position.X, -17f, 17f);
         cameraX += (goal - cameraX) * 0.06f;

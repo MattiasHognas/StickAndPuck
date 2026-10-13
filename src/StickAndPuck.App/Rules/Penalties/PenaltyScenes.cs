@@ -30,13 +30,13 @@ public sealed class PenaltyScene : IScene
             centre.Slot = 0;
         }
 
-        if (Env.Float("SAP_PENALTY_STRICT").TryGet(out float strict) && strict >= 0) Penalties.Strictness = strict;
+        if (Env.Float("SAP_PENALTY_STRICT").TryGet(out float strict) && strict >= 0) world.Switches.PenaltyStrictness = strict;
         MatchFlow.Begin(world);
         if (Env.Is("SAP_PENALTY_OT", "1"))
         {
             Lines.LinesSystem.SetUp(world);
             OvertimeRules.ThreeOnThree(world);
-            MatchFlow.StartPeriod(world, world.Setup.Periods + 1, OvertimeRules.PeriodSeconds);
+            MatchFlow.StartPeriod(world, world.Setup.Periods + 1, world.Switches.OvertimeSeconds);
         }
         else
         {

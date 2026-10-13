@@ -10,7 +10,7 @@ namespace StickAndPuck.App.Hud;
 /// <summary>
 /// W10: scorebug with crests and short names, clock, period and goal messages, drawn in DrawHud at
 /// 480x270 from <see cref="World.Match"/> and <see cref="World.Events"/>. Shows only in worlds
-/// that run the match flow (or when <see cref="ShowAlways"/> is set), so test scenes stay clean.
+/// that run the match flow (or when <see cref="WorldSwitches.HudAlways"/> is set), so test scenes stay clean.
 /// W24 adds the power play tag beside the scorebug (PP 5V4), the shootout panel under it with every
 /// round and who scored, and the extra banner lines (hat trick, shutout, game winner, first goal of the season).
 /// </summary>
@@ -25,8 +25,6 @@ internal sealed class HudSystem : ISystem
     readonly HudMessages messages = new();
     Maybe<HudArt> art;
 
-    /// <summary>Gets or sets a value indicating whether the scorebug shows in a world without the match flow (the hud scene).</summary>
-    public static bool ShowAlways { get; set; }
 
     public bool RunsWhilePaused => true;
 
@@ -44,7 +42,7 @@ internal sealed class HudSystem : ISystem
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (!art.TryGet(out var hud) || !(ShowAlways || MatchFlow.IsRunning(world))) return;
+        if (!art.TryGet(out var hud) || !(world.Switches.HudAlways || MatchFlow.IsRunning(world))) return;
         DrawScorebug(world, hud);
         string pp = PowerPlayText(world);
         if (pp.Length > 0) DrawPowerPlay(world, hud, pp);

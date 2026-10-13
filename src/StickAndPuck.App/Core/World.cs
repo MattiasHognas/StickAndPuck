@@ -52,6 +52,12 @@ public sealed class World
     /// </summary>
     public int Seed { get; set; } = Seeds.Environment;
 
+    /// <summary>Gets or sets the switches dev scenes and tests turn (W56; these were statics).</summary>
+    public WorldSwitches Switches { get; set; } = new();
+
+    /// <summary>Gets the dev scenes' loops (W56; these were statics).</summary>
+    public DevScenes Dev { get; } = new();
+
     // W56: each system's own state, made the first time the system asks for it (these were side tables keyed on the world)
 
     /// <summary>Gets the AI layer that last set each player's command, by player id (<see cref="AI.AiCommand"/>).</summary>

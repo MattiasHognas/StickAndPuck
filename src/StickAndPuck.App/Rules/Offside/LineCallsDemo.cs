@@ -18,27 +18,28 @@ public sealed class LineCallsDemoScene : IScene
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         var world = MatchScenes.Exhibition(clubs, settings, 120);
-        LineCallsDemo.Enabled = true;
+        world.Dev.LineCalls.Set(new LineCallsDemo());
         return world;
     }
 }
 
 /// <summary>The scripted plays and camera behind <see cref="LineCallsDemoScene"/>.</summary>
-internal static class LineCallsDemo
+internal sealed class LineCallsDemo
 {
-    static float playFrom = float.NegativeInfinity;
-    static int play = -1;
-    static bool sent;
-    static float cameraX;
-
-    /// <summary>Gets or sets a value indicating whether the script runs.</summary>
-    public static bool Enabled { get; set; }
+    float playFrom = float.NegativeInfinity;
+    int play = -1;
+    bool sent;
+    float cameraX;
 
     /// <summary>A second after the puck drops, places the players and sends the puck; pans the camera to the puck.</summary>
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (!Enabled) return;
+        if (world.Dev.LineCalls.TryGet(out var demo)) demo.Run(world);
+    }
+
+    void Run(World world)
+    {
         Pan(world);
         if (world.Match.Phase != MatchPhase.Play)
         {
@@ -65,13 +66,14 @@ internal static class LineCallsDemo
     }
 
     /// <summary>Prints a call to the console while the demo runs.</summary>
+    /// <param name="world">The match state.</param>
     /// <param name="call">The call, "Offside" or "Icing".</param>
     /// <param name="side">The club it went against.</param>
     /// <param name="at">Where the puck was.</param>
     /// <param name="dot">The faceoff dot it leads to.</param>
-    public static void Log(string call, Side side, Vector3 at, Vector3 dot)
+    public static void Log(World world, string call, Side side, Vector3 at, Vector3 dot)
     {
-        if (Enabled) Console.WriteLine($"SAP: {call} by {side} at ({at.X:0.0}, {at.Z:0.0}), faceoff at ({dot.X}, {dot.Z}), play {play}");
+        if (world.Dev.LineCalls.TryGet(out var demo)) Console.WriteLine($"SAP: {call} by {side} at ({at.X:0.0}, {at.Z:0.0}), faceoff at ({dot.X}, {dot.Z}), play {demo.play}");
     }
 
     static int Attacks(World world)
@@ -85,7 +87,7 @@ internal static class LineCallsDemo
     }
 
     /// <summary>Places the players for the coming play.</summary>
-    static void Stage(World world)
+    void Stage(World world)
     {
         int e = Attacks(world);
         var rw = Home(world, PlayingPosition.RW);
@@ -126,7 +128,7 @@ internal static class LineCallsDemo
     }
 
     /// <summary>The pass, carry or dump of the current play.</summary>
-    static void Send(World world)
+    void Send(World world)
     {
         int e = Attacks(world);
         var pk = world.Puck;
@@ -165,7 +167,7 @@ internal static class LineCallsDemo
         pk.Velocity = velocity;
     }
 
-    static void Pan(World world)
+    void Pan(World world)
     {
         float goal = Math.Clamp(world.Puck.Position.X, -17f, 17f);
         cameraX += (goal - cameraX) * 0.06f;

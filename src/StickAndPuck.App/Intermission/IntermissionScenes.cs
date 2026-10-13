@@ -27,7 +27,7 @@ public sealed class ZamboniScene : IScene
         MatchFlow.State(world).Timer = 4f;
         if (float.TryParse(Env.Get("SAP_ZAMBONI_AT"), NumberStyles.Float, CultureInfo.InvariantCulture, out float at) && at > 0)
         {
-            IntermissionSystem.StartAt = at;
+            world.Switches.ZamboniStartAt = at;
             foreach (var (p, spot) in IntermissionSystem.WaitSpots(world))
             {
                 p.Position = new Vector3(spot.X, 0, spot.Y);

@@ -120,7 +120,7 @@ internal sealed class OffsideRule : ISystem
         var dot = FaceoffDot(end, at);
         if (!MatchFlow.Whistle(world, dot)) return;
         world.Events.Publish(new OffsideCalled(world.Time, attacker, at));
-        LineCallsDemo.Log("Offside", attacker, at, dot);
+        LineCallsDemo.Log(world, "Offside", attacker, at, dot);
     }
 
     /// <summary>Gets a value indicating whether any attacker but the carrier is wholly inside the zone.</summary>

@@ -23,16 +23,16 @@ public sealed class HudScene : IScene
         m.Score[1] = 1;
         m.Period = 2;
         m.Clock = 734.4f;
-        HudSystem.ShowAlways = true;
-        HudDemo.Message = Env.Get("SAP_HUD_MESSAGE") is { Length: > 0 } s ? s : "goal";
-        if (string.Equals(HudDemo.Message, "intro", StringComparison.Ordinal)) m.Phase = MatchPhase.Intro;
-        if (string.Equals(HudDemo.Message, "shutout", StringComparison.Ordinal)) m.Score[1] = 0;
-        if (string.Equals(HudDemo.Message, "firstgoal", StringComparison.Ordinal))
+        world.Switches.HudAlways = true;
+        world.Switches.HudMessage = Env.Get("SAP_HUD_MESSAGE") is { Length: > 0 } s ? s : "goal";
+        if (string.Equals(world.Switches.HudMessage, "intro", StringComparison.Ordinal)) m.Phase = MatchPhase.Intro;
+        if (string.Equals(world.Switches.HudMessage, "shutout", StringComparison.Ordinal)) m.Score[1] = 0;
+        if (string.Equals(world.Switches.HudMessage, "firstgoal", StringComparison.Ordinal))
         {
             m.Score[0] = 0;
-            HudMessages.SeasonGoals = (_, _) => 0;    // as if the club had not scored yet this season
+            world.Switches.SeasonGoals = (_, _) => 0;    // as if the club had not scored yet this season
         }
-        if (string.Equals(HudDemo.Message, "pp", StringComparison.Ordinal) && world.OnIce(Side.Away).FirstOrDefault(p => !p.IsGoalie) is { } boxed)
+        if (string.Equals(world.Switches.HudMessage, "pp", StringComparison.Ordinal) && world.OnIce(Side.Away).FirstOrDefault(p => !p.IsGoalie) is { } boxed)
             m.Penalties.Add(new PenaltyState(boxed.Id, Side.Away, "tripping", 74));
         return world;
     }
@@ -41,21 +41,20 @@ public sealed class HudScene : IScene
 /// <summary>Publishes the hud scene's one event on the first step.</summary>
 internal static class HudDemo
 {
-    /// <summary>Gets or sets the banner the hud scene shows, or empty outside it.</summary>
-    public static string Message { get; set; } = "";
 
     /// <summary>Publishes the chosen event on the first step.</summary>
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (Message.Length == 0 || world.Tick != 0) return;
+        string message = world.Switches.HudMessage;
+        if (message.Length == 0 || world.Tick != 0) return;
         int scorer = world.OnIce(Side.Home).First(p => !p.IsGoalie).Id;
         int other = world.OnIce(Side.Away).First(p => !p.IsGoalie).Id;
         var at = world.Puck.Position;
-        if (string.Equals(Message, "hattrick", StringComparison.Ordinal) || string.Equals(Message, "gwg", StringComparison.Ordinal))
+        if (string.Equals(message, "hattrick", StringComparison.Ordinal) || string.Equals(message, "gwg", StringComparison.Ordinal))
         {
             // the earlier goals of the match, so the tally knows them: two by the scorer, or home, away, home
-            bool hat = string.Equals(Message, "hattrick", StringComparison.Ordinal);
+            bool hat = string.Equals(message, "hattrick", StringComparison.Ordinal);
             world.Events.Publish(new GoalScored(world.Time, Side.Home, scorer, at, 0));
             world.Events.Publish(hat ? new GoalScored(world.Time, Side.Home, scorer, at, 0) : new GoalScored(world.Time, Side.Away, other, at, 0));
             world.Events.Publish(new GoalScored(world.Time, Side.Home, scorer, at, 0));
@@ -64,7 +63,7 @@ internal static class HudDemo
             return;
         }
 
-        var e = Message switch
+        var e = message switch
         {
             "goal" or "firstgoal" => new GoalScored(world.Time, Side.Home, scorer, at, 0),
             "shutout" or "final" => new MatchWon(world.Time, Side.Home),
