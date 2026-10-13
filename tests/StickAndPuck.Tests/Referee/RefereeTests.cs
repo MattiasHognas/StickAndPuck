@@ -1,51 +1,24 @@
 using System.Numerics;
 using StickAndPuck.Core;
 using StickAndPuck.Physics;
+using StickAndPuck.Referee;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
+using Ref = StickAndPuck.Referee.Referee;
 
-namespace StickAndPuck.Referee;
+namespace StickAndPuck.Tests.Referee;
 
 /// <summary>
-/// SAP_SCENE=refereetest: plays a whole match with puck physics, the match rules and the referee, no
-/// window, with the match demo's shots so goals, saves and frozen pucks bring faceoffs all over the
-/// ice. Prints one line per check and exits with 0 when all pass, 1 otherwise. Covers the W8
-/// "done when": the referee drops every faceoff and stays out of the play, and W27's: ten faceoffs
-/// in a row drop at visibly different moments within the hold span, the same again for the same seed.
+/// The referee, run with puck physics and the match rules over a whole match with the match demo's
+/// shots, so goals, saves and frozen pucks bring faceoffs all over the ice. Covers W8: the referee
+/// drops every faceoff and stays out of the play; and W27: ten faceoffs in a row drop at visibly
+/// different moments within the hold span, the same again for the same seed. Formerly
+/// SAP_SCENE=refereetest.
 /// </summary>
-public sealed class RefereeSelfTest : IScene
+public sealed class RefereeTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "refereetest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 25, Overtime = OvertimeRule.None };
-        World Make()
-        {
-            var w = new World(setup, settings);
-            Scenes.AddStarters(w);
-            MatchFlow.Begin(w, log: false);
-            return w;
-        }
-
-        WaitsForReferee(Make());
-        FarDot(Make());
-        DropSpread(Make, 11);
-        WholeMatch(Make());
-
-        Console.WriteLine(failures == 0 ? "REFEREETEST: all checks passed" : $"REFEREETEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
+    /// <summary>A 25-second match with no overtime, the starters on and the match flow begun.</summary>
+    static World Make() => new WorldBuilder().Setup(s => s with { PeriodSeconds = 25, Overtime = OvertimeRule.None }).Build();
 
     /// <summary>Runs physics, rules and the referee step by step until <paramref name="until"/> or the limit; <paramref name="each"/> sees every step after it ran.</summary>
     static void Run(World world, Func<World, bool> until, float limit, Action<World>? each = null, RefereeSystem? referee = null)
@@ -65,24 +38,28 @@ public sealed class RefereeSelfTest : IScene
         return new Vector2(a.X - b.X, a.Z - b.Z).Length();
     }
 
-    void WaitsForReferee(World w)
+    [Test]
+    public void WaitsForReferee()
     {
-        var r = Referee.Of(w);
+        var w = Make();
+        var r = Ref.Of(w);
         r.Position = new Vector3(-20, 0, 11);
         float dropAt = float.NaN;
         Run(w, x => x.Match.Phase == MatchPhase.Play, 20, x => { if (x.Events.Of(MatchEventKind.Faceoff).Any()) dropAt = x.Time; });
         Check(w.Match.Phase == MatchPhase.Play, "the opening faceoff is dropped");
         Check(dropAt > MatchTuning.IntroSeconds + MatchTuning.FaceoffSeconds, $"the drop waits for the referee to skate from the corner ({dropAt:0.0} s)");
-        Check(Distance(r.Position, Referee.DropSpot(RinkSpec.CentreDot)) <= RefereeTuning.Arrived, "the referee is at the centre dot when the puck drops");
+        Check(Distance(r.Position, Ref.DropSpot(RinkSpec.CentreDot)) <= RefereeTuning.Arrived, "the referee is at the centre dot when the puck drops");
         Check(r.LateDrops == 0, "no drop needed the safety net");
     }
 
-    void FarDot(World w)
+    [Test]
+    public void FarDot()
     {
+        var w = Make();
         Run(w, x => x.Match.Phase == MatchPhase.Play, 20);
         var dot = new Vector3(20.7f, 0, 6.7f);
         MatchFlow.Whistle(w, dot);
-        var r = Referee.Of(w);
+        var r = Ref.Of(w);
         float start = w.Time, dropAt = float.NaN, setAt = float.NaN;
         Run(w, x => x.Match.Phase == MatchPhase.Play, 20, x =>
         {
@@ -90,7 +67,7 @@ public sealed class RefereeSelfTest : IScene
             if (x.Events.Of(MatchEventKind.Faceoff).Any()) dropAt = x.Time;
         });
         Check(w.Match.Phase == MatchPhase.Play && Distance(w.Puck.Position, dot) < 0.5f, "a whistle in the far end is followed by a drop at that dot");
-        Check(Distance(r.Position, Referee.DropSpot(dot)) <= RefereeTuning.Arrived, "the referee skated the length of the rink to that dot");
+        Check(Distance(r.Position, Ref.DropSpot(dot)) <= RefereeTuning.Arrived, "the referee skated the length of the rink to that dot");
 
         // W67: timed to when the referee is set at the dot, so the dice roll for the hold (W27, 0.5 to 1.8 s) never fails a seed;
         // with the shortest hold the puck still drops inside the 7 s this check always asked for
@@ -98,14 +75,16 @@ public sealed class RefereeSelfTest : IScene
     }
 
     /// <summary>Ten faceoffs in a row at centre ice with seeded dice: every hold lies inside the span, they differ visibly, and the same seed repeats them.</summary>
-    void DropSpread(Func<World> make, int seed)
+    [Test]
+    public void DropSpread()
     {
-        List<float> Holds(World w)
+        const int seed = 11;
+        static List<float> Holds(World w)
         {
 #pragma warning disable S2245 // a fixed seed so the check repeats
             var referee = new RefereeSystem(new Random(seed));
 #pragma warning restore S2245
-            var r = Referee.Of(w);
+            var r = Ref.Of(w);
             var holds = new List<float>();
             void Record(World x)
             {
@@ -120,8 +99,8 @@ public sealed class RefereeSelfTest : IScene
             return holds;
         }
 
-        var first = Holds(make());
-        var again = Holds(make());
+        var first = Holds(Make());
+        var again = Holds(Make());
         float min = first.Min(), max = first.Max();
         float smallestChange = first.Zip(first.Skip(1), (a, b) => MathF.Abs(a - b)).Min();
         string list = string.Join(" ", first.Select(h => h.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)));
@@ -131,10 +110,12 @@ public sealed class RefereeSelfTest : IScene
         Check(first.SequenceEqual(again), "the same seed drops at the same moments again");
     }
 
-    void WholeMatch(World w)
+    [Test]
+    public void WholeMatch()
     {
+        var w = Make();
         MatchDemo.Enabled = true;
-        var r = Referee.Of(w);
+        var r = Ref.Of(w);
         int setups = 0, drops = 0, atDot = 0, playSteps = 0, nearPuck = 0, nearPlayer = 0;
         float closestPlayer = float.MaxValue, droppedAt = float.NegativeInfinity;
         var last = w.Match.Phase;
@@ -146,7 +127,7 @@ public sealed class RefereeSelfTest : IScene
             {
                 drops++;
                 droppedAt = x.Time;
-                if (Distance(r.Position, Referee.DropSpot(x.Puck.Position)) <= RefereeTuning.Arrived) atDot++;
+                if (Distance(r.Position, Ref.DropSpot(x.Puck.Position)) <= RefereeTuning.Arrived) atDot++;
             }
             // the referee stands at the dot for the drop and needs a moment to back off
             if (x.Match.Phase != MatchPhase.Play || x.Time - droppedAt < RefereeTuning.BackOffSeconds) return;

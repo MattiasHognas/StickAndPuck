@@ -1,46 +1,28 @@
 using System.Numerics;
 using StickAndPuck.Core;
 using StickAndPuck.Physics;
+using StickAndPuck.Players;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Players;
+namespace StickAndPuck.Tests.Players.Puck;
 
 /// <summary>
-/// SAP_SCENE=deketest: W32 checks with skating, checking, puck handling and puck physics and no
-/// window. A carrier rushes a defender who checks once in reach: with no deke the carrier loses
-/// the puck, a deke pressed in the sweet spot beats the defender most times, a press too early
-/// mostly fails, and auto-deke beats them less often than a timed press. A shot pressed while a
-/// pass is on its way is struck on arrival without the receiver ever carrying the puck, and with
-/// <see cref="Settings.OneTimers"/> off the receiver takes the pass first. Prints one line per
-/// check and exits 0 when all pass.
+/// W32's dekes and one-timers, with skating, checking, puck handling and puck physics. A carrier
+/// rushes a defender who checks once in reach: with no deke the carrier loses the puck, a deke
+/// pressed in the sweet spot beats the defender most times, a press too early mostly fails, and
+/// auto-deke beats them less often than a timed press. A shot pressed while a pass is on its way is
+/// struck on arrival without the receiver ever carrying the puck, and with
+/// <see cref="Settings.OneTimers"/> off the receiver takes the pass first. Formerly
+/// SAP_SCENE=deketest.
 /// </summary>
-public sealed class DekeSelfTest : IScene
+public sealed class DekeTests : CheckedTest
 {
     const int Trials = 40;
-    int failures;
     int seed = 1;
 
-    /// <inheritdoc/>
-    public string Name => "deketest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    static World Make(bool autoDeke = false, bool oneTimers = true)
     {
-        var setup = Scenes.DefaultSetup(clubs);
-        World Make(bool autoDeke = false, bool oneTimers = true) => new(setup, settings with { AutoDeke = autoDeke, OneTimers = oneTimers });
-
-        Dekes(Make);
-        Model();
-        OneTimers(Make);
-
-        Console.WriteLine(failures == 0 ? "DEKETEST: all checks passed" : $"DEKETEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        return new WorldBuilder().Settings(s => s with { AutoDeke = autoDeke, OneTimers = oneTimers }).NoStarters().NotBegun().Build();
     }
 
     List<MatchEvent> Run(World w, float seconds, Action<int> each)
@@ -75,9 +57,9 @@ public sealed class DekeSelfTest : IScene
     /// (never when NaN). Returns whether the carrier got past with the puck, and the closest the
     /// carrier came to the defender's line sideways (for the shimmy check).
     /// </summary>
-    bool Rush(Func<bool, bool, World> make, float pressAt, bool auto = false, bool human = true, int puckControl = 70, float defenderAt = 9f)
+    bool Rush(float pressAt, bool auto = false, bool human = true, int puckControl = 70, float defenderAt = 9f)
     {
-        var w = make(auto, true);
+        var w = Make(auto, true);
         var carrier = Add(w, Side.Home, Vector3.Zero, MathF.PI / 2, new Traits { PuckControl = puckControl, Checking = 40 });
         var defender = Add(w, Side.Away, new Vector3(defenderAt, 0, 0.3f), -MathF.PI / 2, new Traits { Checking = 85 });
         carrier.Velocity = new Vector3(5, 0, 0);
@@ -99,16 +81,27 @@ public sealed class DekeSelfTest : IScene
         return w.Puck.Carrier == carrier.Id && carrier.Position.X > defender.Position.X + 1f;
     }
 
-    int Beats(Func<bool, bool, World> make, float pressAt, bool auto = false, bool human = true, int puckControl = 70)
+    int Beats(float pressAt, bool auto = false, bool human = true, int puckControl = 70)
     {
-        return Enumerable.Range(0, Trials).Count(_ => Rush(make, pressAt, auto, human, puckControl));
+        return Enumerable.Range(0, Trials).Count(_ => Rush(pressAt, auto, human, puckControl));
     }
 
-    void Dekes(Func<bool, bool, World> make)
+    /// <summary>
+    /// The dekes, then the one-timers: every run takes the next seed from the same counter, so the
+    /// one-timers' seeds follow on from the dekes' and the two stay in one test, in this order.
+    /// </summary>
+    [Test]
+    public void DekesThenOneTimers()
     {
-        int none = Beats(make, float.NaN), timed = Beats(make, 2.0f), early = Beats(make, 3.45f);
-        int auto = Beats(make, float.NaN, auto: true), autoAi = Beats(make, float.NaN, auto: true, human: false);
-        int clumsy = Beats(make, 2.0f, puckControl: 5);
+        Dekes();
+        OneTimers();
+    }
+
+    void Dekes()
+    {
+        int none = Beats(float.NaN), timed = Beats(2.0f), early = Beats(3.45f);
+        int auto = Beats(float.NaN, auto: true), autoAi = Beats(float.NaN, auto: true, human: false);
+        int clumsy = Beats(2.0f, puckControl: 5);
         Check(none <= Trials / 10, $"with no deke the defender's check wins the puck ({Trials - none}/{Trials} lost)");
         Check(timed >= Trials * 3 / 4, $"a deke pressed in the sweet spot beats the defender ({timed}/{Trials})");
         Check(early < timed / 2, $"a deke pressed too early mostly fails ({early}/{Trials} vs {timed} timed)");
@@ -117,7 +110,7 @@ public sealed class DekeSelfTest : IScene
         Check(autoAi <= Trials / 10, $"auto-deke is for the human: an AI carrier is left alone ({autoAi}/{Trials})");
 
         // a shimmy in open ice: nothing to beat, the puck stays and the carrier steps sideways
-        var w = make(false, true);
+        var w = Make(false, true);
         var p = Add(w, Side.Home, Vector3.Zero, MathF.PI / 2, new Traits { PuckControl = 70 });
         p.Velocity = new Vector3(5, 0, 0);
         w.Puck.Carrier = p.Id;
@@ -131,7 +124,8 @@ public sealed class DekeSelfTest : IScene
         Check(w.Puck.Carrier == p.Id && widest > 0.5f, $"a deke in open ice keeps the puck and steps aside ({widest:0.00} m)");
     }
 
-    void Model()
+    [Test]
+    public void Model()
     {
         Check(DekeModel.Timing(2f) > 0.99f && DekeModel.Timing(0.5f) < 1e-6f && DekeModel.Timing(DekeModel.Range + 0.1f) < 1e-6f, "timing peaks in the sweet spot and is gone too close or too far");
         Check(DekeModel.Chance(1f, 50) > DekeModel.AutoChance(50) + 0.3f, $"a timed press is far likelier than auto-deke ({DekeModel.Chance(1f, 50):0.00} vs {DekeModel.AutoChance(50):0.00})");
@@ -143,9 +137,9 @@ public sealed class DekeSelfTest : IScene
     /// <paramref name="shootFrom"/> for <paramref name="shootFor"/> steps. Returns whether the
     /// receiver ever carried the puck, the step they shot on (or -1), and the step they first had it.
     /// </summary>
-    (bool Carried, int ShotStep, int HadStep, float ShotSpeed) Pass(Func<bool, bool, World> make, bool oneTimers, int shootFrom, int shootFor, bool opponentInLane = false)
+    (bool Carried, int ShotStep, int HadStep, float ShotSpeed) Pass(bool oneTimers, int shootFrom, int shootFor, bool opponentInLane = false)
     {
-        var w = make(false, oneTimers);
+        var w = Make(false, oneTimers);
         int end = PuckHandling.AttackEnd(w, Side.Home);
         float face = end > 0 ? MathF.PI / 2 : -MathF.PI / 2;
         var passer = Add(w, Side.Home, new Vector3(end * 12f, 0, -5f), face, new Traits { HockeyIq = 90 });
@@ -177,20 +171,20 @@ public sealed class DekeSelfTest : IScene
         return (carried, shotStep, hadStep, shotSpeed);
     }
 
-    void OneTimers(Func<bool, bool, World> make)
+    void OneTimers()
     {
-        var on = Pass(make, true, 8, 30);
+        var on = Pass(true, 8, 30);
         Check(on.ShotStep >= 0 && !on.Carried, $"a shot held as the pass comes is struck on arrival, never carried (shot at step {on.ShotStep})");
         Check(on.ShotSpeed > 25f, $"a one-timer is struck hard ({on.ShotSpeed:0.0} m/s)");
-        var tap = Pass(make, true, 8, 1);
+        var tap = Pass(true, 8, 1);
         Check(tap.ShotStep >= 0 && !tap.Carried, "a tap of shoot while the pass is on its way still one-times it");
-        var off = Pass(make, false, 8, 70);
+        var off = Pass(false, 8, 70);
         Check(off.Carried && off.ShotStep > off.HadStep, $"with one-timers off the receiver takes the pass first, then shoots (had it at {off.HadStep}, shot at {off.ShotStep})");
-        var offTap = Pass(make, false, 8, 1);
+        var offTap = Pass(false, 8, 1);
         Check(offTap.Carried && offTap.ShotStep < 0, "with one-timers off a tap before the puck arrives is a swing at nothing");
-        var late = Pass(make, true, 200, 30);
+        var late = Pass(true, 200, 30);
         Check(late.Carried && late.ShotStep < 0, "no shoot press, no one-timer: the receiver takes the pass");
-        var cut = Pass(make, true, 8, 30, opponentInLane: true);
+        var cut = Pass(true, 8, 30, opponentInLane: true);
         Check(cut.ShotStep < 0, "an opponent in the lane intercepts: the one-timer never fires");
     }
 }

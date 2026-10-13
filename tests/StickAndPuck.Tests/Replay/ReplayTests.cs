@@ -4,51 +4,31 @@ using StickAndPuck.Core;
 using StickAndPuck.Goalie;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
+using StickAndPuck.Replays;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Replays;
+namespace StickAndPuck.Tests.Replay;
 
 /// <summary>
-/// SAP_SCENE=replaytest (W67): no window. Checks the maths gives the same bits it gave when the
-/// test was written, so this machine computes like the others; the seed streams; the replay file's
-/// round trip; and that two AI matches with the same seed play step for step the same, to a
-/// checksum written down from the cloud, while another seed plays a different match. Prints one
-/// line per check and exits with 0 when all pass, 1 otherwise. SAP_REPLAYTEST_PRINT=1 prints the
-/// values to write down after a deliberate change to the game.
+/// Deterministic sim and replay (W67): the maths gives the same bits it gave when the test was
+/// written, so this machine computes like the others; the seed streams; the replay file's round
+/// trip; and that two AI matches with the same seed play step for step the same, to a checksum
+/// written down from the cloud, while another seed plays a different match. SAP_REPLAYTEST_PRINT=1
+/// prints the values to write down after a deliberate change to the game. Formerly
+/// SAP_SCENE=replaytest.
 /// </summary>
-public sealed class ReplaySelfTest : IScene
+public sealed class ReplayTests : CheckedTest
 {
     // written down from the cloud run; his machine and the Windows build must give the same
     const string SinCosBits = "3f576aa4 3f0a5140 3f7e9262 4081c433 3f9e830c 3ed227eb";
     const string SeedValues = "610514733 1889226249 14";
     const string MatchSum = "7eec0a0d1c1b063c";
 
-    int failures;
-    bool print;
+    readonly bool print = string.Equals(Environment.GetEnvironmentVariable("SAP_REPLAYTEST_PRINT"), "1", StringComparison.Ordinal);
 
-    /// <inheritdoc/>
-    public string Name => "replaytest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        print = string.Equals(Environment.GetEnvironmentVariable("SAP_REPLAYTEST_PRINT"), "1", StringComparison.Ordinal);
-        Maths();
-        SeedStreams();
-        FileRoundTrip(clubs, settings);
-        SameSeedSameMatch(clubs, settings);
-        Console.WriteLine(failures == 0 ? "REPLAYTEST: all checks passed" : $"REPLAYTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return new World(Scenes.DefaultSetup(clubs), settings);
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
-    void Maths()
+    [Test]
+    public void Maths()
     {
         double worst = 0;
         for (int i = -4000; i <= 4000; i++)
@@ -73,7 +53,8 @@ public sealed class ReplaySelfTest : IScene
         Check(string.Equals(bits, SinCosBits, StringComparison.Ordinal), $"they give the same bits as on the machine the test was written on ({bits})");
     }
 
-    void SeedStreams()
+    [Test]
+    public void SeedStreams()
     {
         string seeds = string.Join(" ", Seeds.For(1, "decisions", 5), Seeds.For(-77, "referee", 8), Seeds.For(0, "penalties", 14));
         if (print) Console.WriteLine($"      seeds: {seeds}");
@@ -81,13 +62,14 @@ public sealed class ReplaySelfTest : IScene
         Check(Seeds.For(1, "decisions", 5) != Seeds.For(1, "defence", 5) && Seeds.For(1, "decisions", 5) != Seeds.For(2, "decisions", 5), "each system and each seed gets its own stream");
     }
 
-    void FileRoundTrip(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Test]
+    public void FileRoundTrip()
     {
         var frame = new InputFrame([32, 263, 265], [32], 3, [new PadFrame(true, 0b1010, 0b10, [0.25f, -1f, 0f, 0.5f, -0.000244140625f, 1f]), PadFrame.None, PadFrame.None, PadFrame.None], "Pause");
         var back = InputFrame.Read(frame.Write());
         Check(string.Equals(back.Write(), frame.Write(), StringComparison.Ordinal) && back.Pads[0].Axes.SequenceEqual(frame.Pads[0].Axes), $"a device frame reads back as written ({frame.Write()})");
 
-        var setup = Scenes.DefaultSetup(clubs).WithRules(RuleSet.Shl);
+        var setup = WorldBuilder.DefaultSetup.WithRules(RuleSet.Shl);
         var file = new ReplayFile
         {
             Header = new ReplayHeader { Seed = 99, Setup = ReplaySetup.Of(setup), Env = new Dictionary<string, string>(StringComparer.Ordinal) { ["SAP_PERIOD"] = "60" } },
@@ -101,20 +83,20 @@ public sealed class ReplaySelfTest : IScene
         file.Write(path);
         var read = ReplayFile.Read(path);
         File.Delete(path);
-        var rebuilt = read.Header.Setup!.ToSetup(clubs);
+        var rebuilt = read.Header.Setup!.ToSetup(WorldBuilder.Clubs);
         Check(read.Header.Seed == 99 && string.Equals(read.Header.Env["SAP_PERIOD"], "60", StringComparison.Ordinal) && read.Inputs.Count == 1 && read.Checks[0] == 0xdeadbeefcafef00dUL && read.Events.Count == 1 && read.LastTick == 100,
             "a replay file reads back as written");
         Check(rebuilt.Home == setup.Home && rebuilt.Away == setup.Away && rebuilt.Rules == setup.Rules && rebuilt.Overtime == setup.Overtime && rebuilt.OvertimeFormat == setup.OvertimeFormat && rebuilt.Inputs.SequenceEqual(setup.Inputs),
             "the match setup comes back the same: clubs, rules, overtime and inputs");
-        _ = settings;
     }
 
-    void SameSeedSameMatch(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Test]
+    public void SameSeedSameMatch()
     {
         const int Steps = 15000;
-        var a = Play(clubs, settings, 31, Steps);
-        var b = Play(clubs, settings, 31, Steps);
-        var c = Play(clubs, settings, 32, Steps);
+        var a = Play(31, Steps);
+        var b = Play(31, Steps);
+        var c = Play(32, Steps);
         int same = a.Sums.Zip(b.Sums).TakeWhile(p => p.First == p.Second).Count();
         Check(same == Steps, $"two matches with seed 31 agree on the world's checksum at every one of {Steps} steps ({same})");
         Check(a.Sums.Zip(c.Sums).Any(p => p.First != p.Second), "seed 32 plays a different match");
@@ -123,12 +105,12 @@ public sealed class ReplaySelfTest : IScene
         Check(string.Equals(last, MatchSum, StringComparison.Ordinal), $"seed 31 ends on the checksum written down from the cloud ({last}, {a.Summary})");
     }
 
-    static (List<ulong> Sums, string Summary) Play(IReadOnlyList<ClubData> clubs, Settings settings, int seed, int steps)
+    static (List<ulong> Sums, string Summary) Play(int seed, int steps)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 120, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
-        var world = new World(setup, settings) { Seed = seed };
-        Scenes.AddStarters(world);
-        MatchFlow.Begin(world, log: false);
+        var world = new WorldBuilder()
+            .Setup(s => s with { PeriodSeconds = 120, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] })
+            .Seed(seed)
+            .Build();
         ISystem[] systems =
         [
             new PositioningSystem(Seeds.Dice(seed, "positioning", PositioningSystem.Fallback)), new DefenceSystem(Seeds.Dice(seed, "defence", DefenceSystem.Fallback)),

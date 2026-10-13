@@ -6,43 +6,21 @@ using StickAndPuck.Physics;
 using StickAndPuck.Players;
 using StickAndPuck.Rules;
 using StickAndPuck.Screens;
+using StickAndPuck.Tests.Support;
+using StickAndPuck.Versus;
 
-namespace StickAndPuck.Versus;
+namespace StickAndPuck.Tests.Versus;
 
 /// <summary>
-/// SAP_SCENE=versustest: headless checks for W17, one line each, exit 0 when all pass. Two
-/// devices cannot be pressed without hands, so the two human slots are driven with scripted
-/// commands: a short match with player one skating the home centre and player two the away
-/// centre, the rest AI, checked for both humans moving their own skater, control never crossing
-/// clubs, and the match reaching its final.
+/// Player vs player (W17). Two devices cannot be pressed without hands, so the two human slots are
+/// driven with scripted commands: a short match with player one skating the home centre and player
+/// two the away centre, the rest AI, checked for both humans moving their own skater, control never
+/// crossing clubs, and the match reaching its final. Formerly SAP_SCENE=versustest.
 /// </summary>
-public sealed class VersusSelfTest : IScene
+public sealed class VersusTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "versustest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        ModeOnList();
-        Devices();
-        SetupFromPicks(clubs);
-        var world = ScriptedMatch(clubs, settings);
-        InputSlots(clubs, settings);
-        Console.WriteLine(failures == 0 ? "VERSUSTEST: all checks passed" : $"VERSUSTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return world;
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
-    void ModeOnList()
+    [Test]
+    public void ModeOnList()
     {
         var modes = GameModes.All();
         int versus = modes.ToList().FindIndex(m => m is VersusMode);
@@ -52,7 +30,8 @@ public sealed class VersusSelfTest : IScene
             "each player picks a club under their own heading");
     }
 
-    void Devices()
+    [Test]
+    public void Devices()
     {
         Environment.SetEnvironmentVariable("SAP_VERSUS_P2", null);
         var inputs = VersusMode.Inputs(InputDevice.KeyboardMouse);
@@ -69,8 +48,10 @@ public sealed class VersusSelfTest : IScene
         Check(ai.All(s => s.Device == InputDevice.None), "with no human (SAP_HUMAN=0) both clubs go to the AI");
     }
 
-    void SetupFromPicks(IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void SetupFromPicks()
     {
+        var clubs = WorldBuilder.Clubs;
         var picks = clubs.Count > 1 ? new[] { clubs[1], clubs[0] } : new[] { clubs[0], clubs[0] };
         var setup = new VersusMode().Setup(new GameModeStart(clubs, picks, InputDevice.KeyboardMouse));
         Check(setup != null && setup.Home == picks[0] && setup.Away == picks[1], "player one's pick is the home club, player two's the visitors");
@@ -80,10 +61,11 @@ public sealed class VersusSelfTest : IScene
     }
 
     /// <summary>A one-period match with both humans scripted: each skates for the puck and shoots when carrying it.</summary>
-    World ScriptedMatch(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Test]
+    public void ScriptedMatch()
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 60, Periods = 1, Overtime = OvertimeRule.None, Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse) };
-        var world = new World(setup, settings);
+        var setup = WorldBuilder.DefaultSetup with { PeriodSeconds = 60, Periods = 1, Overtime = OvertimeRule.None, Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse) };
+        var world = new World(setup, new Settings());
         Scenes.AddStarters(world);
         VersusMode.AssignSlots(world);
         var first = (world.Controlled(0), world.Controlled(1));
@@ -120,7 +102,6 @@ public sealed class VersusSelfTest : IScene
         Check(!crossed, "control switching keeps each player on their own club");
         Check(carried[0] > 0 && carried[1] > 0, "both humans get the puck during the period");
         Check(world.Controlled(0) != null && world.Controlled(1) != null, "both slots still control a skater at the final");
-        return world;
     }
 
     /// <summary>What the scripted humans did over the match.</summary>
@@ -169,11 +150,10 @@ public sealed class VersusSelfTest : IScene
     }
 
     /// <summary>The real input system on two devices with nothing pressed: both slots read, nobody gets a stale press.</summary>
-    void InputSlots(IReadOnlyList<ClubData> clubs, Settings settings)
+    [Test]
+    public void InputSlots()
     {
-        var setup = Scenes.DefaultSetup(clubs) with { Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse) };
-        var world = new World(setup, settings);
-        Scenes.AddStarters(world);
+        var world = new WorldBuilder().Setup(s => s with { Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse) }).NotBegun().Build();
         VersusMode.AssignSlots(world);
         var input = new InputSystem();
         var one = world.Controlled(0)!;

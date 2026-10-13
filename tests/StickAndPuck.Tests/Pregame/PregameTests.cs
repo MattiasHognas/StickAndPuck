@@ -3,53 +3,31 @@ using StickAndPuck.AI;
 using StickAndPuck.Core;
 using StickAndPuck.Physics;
 using StickAndPuck.Players;
+using StickAndPuck.Pregame;
 using StickAndPuck.Rules;
+using StickAndPuck.Tests.Support;
+using Warmup = StickAndPuck.Pregame.Pregame;
 
-namespace StickAndPuck.Pregame;
+namespace StickAndPuck.Tests.Pregame;
 
 /// <summary>
-/// SAP_SCENE=warmuptest: runs the warm-up with positioning, skating, puck physics and the match
-/// rules, no window. Prints one line per check and exits with 0 when all pass, 1 otherwise. Covers
-/// the W28 "done when": both squads skate around until start is pressed, then the opening faceoff
-/// follows; and that a match without a human, or with SAP_WARMUP=0, keeps the plain intro.
+/// The warm-up (W28), run with positioning, skating, puck physics and the match rules: both squads
+/// skate around until start is pressed, then the opening faceoff follows; and a match without a
+/// human keeps the plain intro. Formerly SAP_SCENE=warmuptest.
 /// </summary>
-public sealed class PregameSelfTest : IScene
+public sealed class PregameTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "warmuptest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    /// <summary>A 25-second match with no overtime, the starters on and the match flow begun.</summary>
+    static World Make(bool human)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = 25, Overtime = OvertimeRule.None };
-        World Make(bool human)
-        {
-            var w = new World(setup, settings);
-            Scenes.AddStarters(w);
-            if (human && w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.C) is { } centre) centre.Slot = 0;
-            MatchFlow.Begin(w, log: false);
-            return w;
-        }
-
-        SkatesUntilStart(Make(human: true));
-        NoHumanNoWarmup(Make(human: false));
-        Forced(Make(human: false));
-
-        Console.WriteLine(failures == 0 ? "WARMUPTEST: all checks passed" : $"WARMUPTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return Make(human: true);
+        var builder = new WorldBuilder().Setup(s => s with { PeriodSeconds = 25, Overtime = OvertimeRule.None });
+        return (human ? builder.Human() : builder).Build();
     }
 
-    void Check(bool ok, string what)
+    [Test]
+    public void SkatesUntilStart()
     {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
-
-    void SkatesUntilStart(World w)
-    {
+        var w = Make(human: true);
         var skaters = w.Players.Where(p => !p.IsGoalie).ToList();
         var travelled = skaters.ToDictionary(p => p.Id, _ => 0f);
         var last = skaters.ToDictionary(p => p.Id, p => p.Position);
@@ -66,34 +44,38 @@ public sealed class PregameSelfTest : IScene
                 topSpeed = Math.Max(topSpeed, p.Speed);
             }
         });
-        Check(w.Match.Phase == MatchPhase.Intro && Pregame.IsWarmingUp(w), "after 12 s with nobody pressing start the match is still in its intro");
+        Check(w.Match.Phase == MatchPhase.Intro && Warmup.IsWarmingUp(w), "after 12 s with nobody pressing start the match is still in its intro");
         Check(skaters.All(p => travelled[p.Id] > 30f), $"every skater has skated at least 30 m (least {travelled.Values.Min():0} m: {string.Join(" ", skaters.Select(p => $"{p.Data.Position}{travelled[p.Id]:0}"))})");
         Check(stayedHome, "nobody crossed centre during the warm-up");
         Check(topSpeed > 3f, $"the warm-up is skated at a real pace (top {topSpeed:0.0} m/s)");
         Check(w.Players.Where(p => p.IsGoalie).All(p => MathF.Abs(p.Position.X) > RinkSpec.GoalLineX - 4f), "both goalies stay by their nets");
 
-        Check(Pregame.Start(w), "start is taken while warming up");
+        Check(Warmup.Start(w), "start is taken while warming up");
         float pressedAt = w.Time;
         Run(w, world => world.Match.Phase == MatchPhase.Faceoff, 5f);
         Check(w.Match.Phase == MatchPhase.Faceoff && w.Time - pressedAt < 3f, $"the opening faceoff follows start ({w.Time - pressedAt:0.0} s after the press)");
         Check(skaters.Count(p => p.Side == Side.Home) == 5 && skaters.All(p => p.Speed < 0.01f), "the skaters stand on their faceoff spots");
         Run(w, world => world.Match.Phase == MatchPhase.Play, 3f);
         Check(w.Match.Phase == MatchPhase.Play && w.Puck.Live, "the puck drops and play starts");
-        Check(!Pregame.Start(w), "start does nothing once the game is on");
+        Check(!Warmup.Start(w), "start does nothing once the game is on");
     }
 
-    void NoHumanNoWarmup(World w)
+    [Test]
+    public void NoHumanNoWarmup()
     {
+        var w = Make(human: false);
         Run(w, world => world.Match.Phase != MatchPhase.Intro, 5f);
         Check(w.Match.Phase == MatchPhase.Faceoff && w.Time <= MatchTuning.IntroSeconds + Game.Step * 2, $"an AI-only match keeps the plain intro ({w.Time:0.0} s)");
     }
 
-    void Forced(World w)
+    [Test]
+    public void Forced()
     {
-        Pregame.Enable(w);
+        var w = Make(human: false);
+        Warmup.Enable(w);
         Run(w, world => world.Match.Phase != MatchPhase.Intro, 5f);
-        Check(w.Match.Phase == MatchPhase.Intro && Pregame.Elapsed(w) > 4.5f, "Pregame.Enable asks for the warm-up in a match with no human");
-        Pregame.Enable(w, on: false);
+        Check(w.Match.Phase == MatchPhase.Intro && Warmup.Elapsed(w) > 4.5f, "Pregame.Enable asks for the warm-up in a match with no human");
+        Warmup.Enable(w, on: false);
         Run(w, world => world.Match.Phase != MatchPhase.Intro, 5f);
         Check(w.Match.Phase == MatchPhase.Faceoff, "Pregame.Enable(false) lets the intro end");
     }

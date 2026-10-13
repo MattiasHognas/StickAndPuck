@@ -1,50 +1,27 @@
 using StickAndPuck.Core;
 using StickAndPuck.Rules;
+using StickAndPuck.Season;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Season;
+namespace StickAndPuck.Tests.Season.Playoffs;
 
 /// <summary>
-/// SAP_SCENE=playofftest: checks the SHL seeding, the series and home order, reseeding, the human's
-/// series against the simulated ones, a champion at the end, recording a playoff game at MatchEnd
-/// and continuing the playoffs after a restart, with a save in a temporary folder; no window.
-/// Prints one line per check and exits with 0 when all pass, 1 otherwise.
+/// The SHL playoffs: seeding, the series and home order, reseeding, the human's series against the
+/// simulated ones, a champion at the end, recording a playoff game at MatchEnd and continuing the
+/// playoffs after a restart, with a save in a temporary folder. Formerly SAP_SCENE=playofftest.
 /// </summary>
-public sealed class PlayoffSelfTest : IScene
+public sealed class PlayoffTests : CheckedTest
 {
-    int failures;
+    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-playofftest-{Environment.ProcessId}");
 
-    /// <inheritdoc/>
-    public string Name => "playofftest";
+    string SavePath => Path.Combine(folder, "season.json");
 
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    [After(Test)]
+    public void EndSessions()
     {
-        string folder = Path.Combine(Path.GetTempPath(), $"sap-playofftest-{Environment.ProcessId}");
-        string path = Path.Combine(folder, "season.json");
-        try
-        {
-            Series();
-            Seeding(clubs, path);
-            TopSeedRun(clubs, path);
-            MatchEndAndRestart(clubs, settings, path);
-            MissedPlayoffs(clubs, path);
-        }
-        finally
-        {
-            SeasonSession.End();
-            PlayoffSession.End();
-            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
-        }
-
-        Console.WriteLine(failures == 0 ? "PLAYOFFTEST: all checks passed" : $"PLAYOFFTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return new World(Scenes.DefaultSetup(clubs), settings);
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        SeasonSession.End();
+        PlayoffSession.End();
+        if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
     }
 
     static bool Same(string? a, string? b) => string.Equals(a, b, StringComparison.Ordinal);
@@ -59,7 +36,8 @@ public sealed class PlayoffSelfTest : IScene
         return SeasonSession.Current!;
     }
 
-    void Series()
+    [Test]
+    public void Series()
     {
         var bo3 = new PlayoffSeries { HighSeed = 7, LowSeed = 10, High = "a", Low = "b", BestOf = 3 };
         Check(Same(bo3.NextHome, "b") && !bo3.HighHosts(0) && bo3.HighHosts(1) && bo3.HighHosts(2), "play-in: the lower seed hosts game 1, the higher seed games 2 and 3");
@@ -75,9 +53,11 @@ public sealed class PlayoffSelfTest : IScene
         Check(bo7.IsOver && Same(bo7.Winner, "b") && bo7.LowWins == 4, "four wins take a best of seven");
     }
 
-    void Seeding(IReadOnlyList<ClubData> clubs, string path)
+    [Test]
+    public void Seeding()
     {
-        var season = FinishedSeason(clubs, path, 2026);
+        var clubs = WorldBuilder.Clubs;
+        var season = FinishedSeason(clubs, SavePath, 2026);
         var table = season.Table.Select(r => r.ClubId).ToList();
         var p = PlayoffState.New(season);
         Check(p.Seeds.SequenceEqual(table), "the seeds are the final table");
@@ -111,9 +91,10 @@ public sealed class PlayoffSelfTest : IScene
         Check(Same(again.Champion, p.Champion), "the same season gives the same champion");
     }
 
-    void TopSeedRun(IReadOnlyList<ClubData> clubs, string path)
+    [Test]
+    public void TopSeedRun()
     {
-        var season = FinishedSeason(clubs, path, 77);
+        var season = FinishedSeason(WorldBuilder.Clubs, SavePath, 77);
         var table = season.Table.Select(r => r.ClubId).ToList();
         season.UserClub = table[0];
         Check(PlayoffSession.NextSetup() is { } setup && Same(setup.Home.Id, table[0]), "the top seed skips the play-in and opens the quarter-finals at home");
@@ -144,8 +125,11 @@ public sealed class PlayoffSelfTest : IScene
         Check(!PlayoffSession.Finish(Win(true)) && PlayoffSession.NextSetup() == null, "nothing is left to play after the final");
     }
 
-    void MatchEndAndRestart(IReadOnlyList<ClubData> clubs, Settings settings, string path)
+    [Test]
+    public void MatchEndAndRestart()
     {
+        var clubs = WorldBuilder.Clubs;
+        string path = SavePath;
         var season = FinishedSeason(clubs, path, 5);
         season.UserClub = season.Table[7].ClubId;
         var setup = PlayoffSession.NextSetup()!;
@@ -162,7 +146,7 @@ public sealed class PlayoffSelfTest : IScene
         Check(!PlayoffSession.Finish(new FixtureResult(2, 2, ResultKind.Regulation)), "a tie is not a playoff result");
 
         // the match goes to overtime and the home side wins 3-2
-        var world = new World(setup, settings);
+        var world = new World(setup, new Settings());
         var system = new PlayoffSystem();
         var autosave = new AutosaveSystem();
         world.Match.Period = 4;
@@ -189,9 +173,10 @@ public sealed class PlayoffSelfTest : IScene
         Check(Same(File.ReadAllText(path), before), "continuing does not rewrite the save");
     }
 
-    void MissedPlayoffs(IReadOnlyList<ClubData> clubs, string path)
+    [Test]
+    public void MissedPlayoffs()
     {
-        var season = FinishedSeason(clubs, path, 11);
+        var season = FinishedSeason(WorldBuilder.Clubs, SavePath, 11);
         season.UserClub = season.Table[11].ClubId;
         Check(PlayoffSession.NextSetup() == null && PlayoffSession.Current is { IsOver: true, UserQualified: false }, "a club placed 12th has no playoff game and the playoffs play out at once");
         SeasonSession.End();

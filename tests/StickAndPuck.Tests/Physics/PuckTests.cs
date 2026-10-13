@@ -1,47 +1,18 @@
 using System.Numerics;
 using StickAndPuck.Core;
+using StickAndPuck.Physics;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Physics;
+namespace StickAndPuck.Tests.Physics;
 
 /// <summary>
-/// SAP_SCENE=pucktest: runs the puck physics checks without opening a window, prints one line per
-/// check and exits with 0 when all pass, 1 otherwise. Covers the W3 "done when": corner shots
-/// rebound plausibly, and a goal counts only when the whole puck is over the line.
+/// The puck physics (W3): corner shots rebound plausibly, and a goal counts only when the whole puck
+/// is over the line. Formerly SAP_SCENE=pucktest.
 /// </summary>
-public sealed class PuckSelfTest : IScene
+public sealed class PuckTests : CheckedTest
 {
-    int failures;
-
-    /// <inheritdoc/>
-    public string Name => "pucktest";
-
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
-    {
-        var setup = Scenes.DefaultSetup(clubs);
-        Func<World> make = () => new World(setup, settings);
-
-        CornerRebound(make());
-        RimAroundCorner(make());
-        GoalCountsOnce(make());
-        GoalLineEdge(make);
-        PostRingsOut(make());
-        BehindTheNet(make());
-        GlassAboveBoards(make());
-        BodyBlock(make, clubs);
-        FrictionStops(make());
-        Fuzz(make);
-
-        Console.WriteLine(failures == 0 ? "PUCKTEST: all checks passed" : $"PUCKTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return make();
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
-    }
+    /// <summary>An empty rink: the default setup and settings, nobody on the ice, the match flow not begun.</summary>
+    static World Make() => new WorldBuilder().NoStarters().NotBegun().Build();
 
     /// <summary>Runs the physics system alone for some seconds and returns every event it published.</summary>
     static List<MatchEvent> Run(World world, float seconds, PuckPhysics? physics = null, Action<World>? each = null)
@@ -77,8 +48,10 @@ public sealed class PuckSelfTest : IScene
         return true;
     }
 
-    void CornerRebound(World w)
+    [Test]
+    public void CornerRebound()
     {
+        var w = Make();
         // a hard pass straight into the rounded corner comes back out, slower, still on the ice
         var dir = Vector3.Normalize(new Vector3(1, 0, 1));
         Shoot(w, new Vector3(18, 0, 0), dir * 20);
@@ -90,8 +63,10 @@ public sealed class PuckSelfTest : IScene
         Check(InsideRink(w.Puck.Position), "corner shot stays inside the rink");
     }
 
-    void RimAroundCorner(World w)
+    [Test]
+    public void RimAroundCorner()
     {
+        var w = Make();
         // a shot along the side boards rims round the corner and comes out along the end boards
         Shoot(w, new Vector3(10, 0, RinkSpec.HalfWidth - 0.3f), new Vector3(25, 0, 0.5f));
         Run(w, 1.6f);
@@ -101,8 +76,10 @@ public sealed class PuckSelfTest : IScene
         Check(v.Z < -3, $"rim leaves the corner along the end boards (vz = {v.Z:0.0})");
     }
 
-    void GoalCountsOnce(World w)
+    [Test]
+    public void GoalCountsOnce()
     {
+        var w = Make();
         w.Puck.LastTouch = 3;
         Shoot(w, new Vector3(18, 0, 0.2f), new Vector3(30, 1.5f, 0));
         var ev = Run(w, 2f);
@@ -114,25 +91,28 @@ public sealed class PuckSelfTest : IScene
             $"the mesh keeps the puck in the net (speed {w.Puck.Velocity.Length():0.0})");
     }
 
-    void GoalLineEdge(Func<World> make)
+    [Test]
+    public void GoalLineEdge()
     {
         // a puck sliding to a stop on the line: only a puck wholly past the line's far edge counts
         float r = RinkSpec.PuckRadius, half = PuckMotion.GoalLineHalfWidth;
         foreach (var (u, goal) in new[] { (0f, false), (r, false), (r + half - 0.003f, false), (r + half + 0.003f, true) })
         {
-            var w = make();
+            var w = Make();
             Shoot(w, new Vector3(RinkSpec.GoalLineX + u, 0, 0.3f), Vector3.Zero);
             int n = Run(w, 0.1f).Count(e => e.Kind == MatchEventKind.Goal);
             Check(n == (goal ? 1 : 0), $"puck at {u * 100:0.0} cm past the line centre: {(goal ? "goal" : "no goal")}");
         }
-        var dead = make();
+        var dead = Make();
         Shoot(dead, new Vector3(RinkSpec.GoalLineX + 0.3f, 0, 0), Vector3.Zero);
         dead.Puck.Live = false;
         Check(Run(dead, 0.1f).All(e => e.Kind != MatchEventKind.Goal), "no goal while the puck is dead");
     }
 
-    void PostRingsOut(World w)
+    [Test]
+    public void PostRingsOut()
     {
+        var w = Make();
         // aimed at the far post's outer half: it rings off and stays out
         Shoot(w, new Vector3(18, 0, RinkSpec.NetWidth / 2 + 0.03f), new Vector3(30, 0, 0));
         var ev = Run(w, 1f);
@@ -147,8 +127,10 @@ public sealed class PuckSelfTest : IScene
         Check(bev.Any(e => e.Kind == MatchEventKind.PuckPost), "a shot at the crossbar hits it");
     }
 
-    void BehindTheNet(World w)
+    [Test]
+    public void BehindTheNet()
     {
+        var w = Make();
         // from behind the net into its back: bounces off, never a goal
         Shoot(w, new Vector3(RinkSpec.HalfLength - 0.5f, 0, 0.1f), new Vector3(-15, 0, 0));
         var ev = Run(w, 1.5f);
@@ -161,8 +143,10 @@ public sealed class PuckSelfTest : IScene
         Check(sev.All(e => e.Kind != MatchEventKind.Goal) && side.Puck.Position.Z > 0, "a puck into the side of the net bounces off it");
     }
 
-    void GlassAboveBoards(World w)
+    [Test]
+    public void GlassAboveBoards()
     {
+        var w = Make();
         // a lifted puck high off the side glass drops back onto the ice
         Shoot(w, new Vector3(0, 0, 4), new Vector3(0, 6, 22));
         bool glass = false;
@@ -171,25 +155,28 @@ public sealed class PuckSelfTest : IScene
         Check(w.Puck.Position.Y == 0 && InsideRink(w.Puck.Position), "and falls back onto the ice");
     }
 
-    void BodyBlock(Func<World> make, IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void BodyBlock()
     {
-        var w = make();
-        var skater = clubs[0].Roster.FirstOrDefault(p => p.Position != PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.D };
+        var w = Make();
+        var skater = WorldBuilder.Clubs[0].Roster.FirstOrDefault(p => p.Position != PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.D };
         var block = w.AddPlayer(Side.Away, skater, new Vector3(5, 0, 0));
         Shoot(w, new Vector3(0, 0, 0), new Vector3(20, 0, 0));
         Run(w, 0.5f);
         Check(w.Puck.Velocity.X < 0 && w.Puck.Velocity.Length() < 8, $"a shot into a body drops off it ({w.Puck.Velocity.X:0.0} m/s)");
         Check(w.Puck.LastTouch == block.Id, "the blocker becomes the last touch");
 
-        var over = make();
+        var over = Make();
         over.AddPlayer(Side.Away, skater, new Vector3(5, 0, 0));
         Shoot(over, new Vector3(0, 1.2f, 0), new Vector3(20, 9, 0));
         Run(over, 0.5f);
         Check(over.Puck.Position.X > 6, "a puck lifted over a body flies past it");
     }
 
-    void FrictionStops(World w)
+    [Test]
+    public void FrictionStops()
     {
+        var w = Make();
         Shoot(w, new Vector3(-20, 0, -5), new Vector3(9, 0, 0));
         Run(w, 6f);
         float v1 = w.Puck.Velocity.Length();
@@ -198,7 +185,8 @@ public sealed class PuckSelfTest : IScene
         Check(w.Puck.Velocity.Length() < 0.01f, "and comes to rest");
     }
 
-    void Fuzz(Func<World> make)
+    [Test]
+    public void Fuzz()
     {
         // many random shots: the puck never leaves the rink, never gets into a net except through the mouth
 #pragma warning disable S2245 // a fixed seed so every run fuzzes the same shots
@@ -207,7 +195,7 @@ public sealed class PuckSelfTest : IScene
         int escapes = 0, sneaky = 0, goals = 0;
         for (int i = 0; i < 600; i++)
         {
-            var w = make();
+            var w = Make();
             var from = new Vector3((float)(rng.NextDouble() * 2 - 1) * 28, 0, (float)(rng.NextDouble() * 2 - 1) * 11.5f);
             if (MathF.Abs(MathF.Abs(from.X) - RinkSpec.GoalLineX - 0.6f) < 1.2f && MathF.Abs(from.Z) < 1.5f) continue;
             if (!InsideRink(from)) continue;

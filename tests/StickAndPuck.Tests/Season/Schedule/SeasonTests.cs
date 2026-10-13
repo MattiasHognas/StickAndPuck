@@ -1,55 +1,32 @@
 using StickAndPuck.Core;
+using StickAndPuck.Season;
+using StickAndPuck.Tests.Support;
 
-namespace StickAndPuck.Season;
+namespace StickAndPuck.Tests.Season.Schedule;
 
 /// <summary>
-/// SAP_SCENE=seasontest: checks the schedule, the points, the table, the autosave after a match and
-/// continuing after a restart, with a save in a temporary folder; no window. Prints one line per
-/// check and exits with 0 when all pass, 1 otherwise.
+/// Season mode: the schedule, the points, the table, the autosave after a match and continuing after
+/// a restart, with a save in a temporary folder. Formerly SAP_SCENE=seasontest.
 /// </summary>
-public sealed class SeasonSelfTest : IScene
+public sealed class SeasonTests : CheckedTest
 {
-    int failures;
+    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-seasontest-{Environment.ProcessId}");
 
-    /// <inheritdoc/>
-    public string Name => "seasontest";
+    string SavePath => Path.Combine(folder, "season.json");
 
-    /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    [After(Test)]
+    public void EndSession()
     {
-        string folder = Path.Combine(Path.GetTempPath(), $"sap-seasontest-{Environment.ProcessId}");
-        string path = Path.Combine(folder, "season.json");
-        try
-        {
-            Schedule(clubs);
-            Points();
-            AutosaveAndContinue(clubs, settings, path);
-            WholeSeason(clubs, path);
-            SimGame(clubs, path);
-            BadSave(path);
-        }
-        finally
-        {
-            SeasonSession.End();
-            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
-        }
-
-        Console.WriteLine(failures == 0 ? "SEASONTEST: all checks passed" : $"SEASONTEST: {failures} check(s) failed");
-        Environment.Exit(failures == 0 ? 0 : 1);
-        return new World(Scenes.DefaultSetup(clubs), settings);
-    }
-
-    void Check(bool ok, string what)
-    {
-        Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  {what}");
-        if (!ok) failures++;
+        SeasonSession.End();
+        if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
     }
 
     static bool Same(string a, string b) => string.Equals(a, b, StringComparison.Ordinal);
 
-    void Schedule(IReadOnlyList<ClubData> clubs)
+    [Test]
+    public void Schedule()
     {
-        var ids = clubs.Select(c => c.Id).ToList();
+        var ids = WorldBuilder.Clubs.Select(c => c.Id).ToList();
         var games = SeasonSchedule.Build(ids, 42);
         int n = ids.Count, rounds = games.Max(g => g.Round) + 1;
         Check(n == 14, $"14 SHL clubs load ({n})");
@@ -68,7 +45,8 @@ public sealed class SeasonSelfTest : IScene
         Check(!SeasonSchedule.Build(ids, 43).SequenceEqual(games), "another seed gives another schedule");
     }
 
-    void Points()
+    [Test]
+    public void Points()
     {
         Check(new FixtureResult(3, 1, ResultKind.Regulation) is { HomePoints: 3, AwayPoints: 0 }, "regulation win 3, loss 0");
         Check(new FixtureResult(2, 3, ResultKind.Overtime) is { HomePoints: 1, AwayPoints: 2 }, "overtime win 2, loss 1");
@@ -87,8 +65,11 @@ public sealed class SeasonSelfTest : IScene
         Check(c is { Played: 2, OvertimeWins: 1, Losses: 1, GoalsFor: 2, GoalsAgainst: 6 }, "a club's line counts games, wins, losses and goals");
     }
 
-    void AutosaveAndContinue(IReadOnlyList<ClubData> clubs, Settings settings, string path)
+    [Test]
+    public void AutosaveAndContinue()
     {
+        var clubs = WorldBuilder.Clubs;
+        string path = SavePath;
         string user = clubs[^1].Id;
         var season = SeasonSession.StartNew(clubs, user, seed: 7, path: path);
         Check(SeasonSave.Exists(path), "a new season is saved at once");
@@ -100,7 +81,7 @@ public sealed class SeasonSelfTest : IScene
             "keyboard and mouse play the human's club, SHL overtime");
 
         // the match ends 2-2 after regulation and goes to a shootout the home side wins 3-2
-        var world = new World(setup, settings);
+        var world = new World(setup, new Settings());
         var schedule = new ScheduleSystem();
         var autosave = new AutosaveSystem();
         void Step(Action<World>? publish = null)
@@ -123,10 +104,10 @@ public sealed class SeasonSelfTest : IScene
         Check(season.Round(0).All(g => g.Played) && !season.Round(1).Any(g => g.Played), "the round's other six games are settled, the next round is not");
         Check(!SeasonSession.Unsaved, "the autosave ran after the match");
 
-        Restart(clubs, settings, path, season, user);
+        Restart(clubs, path, season, user);
     }
 
-    void Restart(IReadOnlyList<ClubData> clubs, Settings settings, string path, SeasonState season, string user)
+    void Restart(IReadOnlyList<ClubData> clubs, string path, SeasonState season, string user)
     {
         // restart: nothing in memory, read the save back
         string before = File.ReadAllText(path);
@@ -141,14 +122,17 @@ public sealed class SeasonSelfTest : IScene
         // a game that is not a season game records nothing
         SeasonSession.End();
         SeasonSession.Continue(clubs, path);
-        var other = new World(Scenes.DefaultSetup(clubs), settings);
+        var other = new World(WorldBuilder.DefaultSetup, new Settings());
         other.Events.Publish(new MatchEvent(MatchEventKind.MatchEnd, other.Time, Side.Home));
         new ScheduleSystem().Update(other, Game.Step);
         Check(SeasonSession.Current!.Games.Count(g => g.Played) == 7 && !SeasonSession.Unsaved, "a match that is not a season game records nothing");
     }
 
-    void WholeSeason(IReadOnlyList<ClubData> clubs, string path)
+    [Test]
+    public void WholeSeason()
     {
+        var clubs = WorldBuilder.Clubs;
+        string path = SavePath;
         var season = SeasonSession.StartNew(clubs, clubs[0].Id, seed: 2026, path: path);
         int games = 0;
         while (SeasonSession.NextSetup() != null)
@@ -177,6 +161,17 @@ public sealed class SeasonSelfTest : IScene
         var resumed = SeasonSession.Continue(clubs, path);
         Check(resumed != null && resumed.IsOver && resumed.Table.SequenceEqual(table), "a finished season reads back with the same table");
         Check(SeasonSession.NextSetup() == null, "a finished season has no next game");
+    }
+
+    /// <summary>
+    /// Sim this game, then a broken save. The broken save is written into the folder the simmed
+    /// season's save created, so the two stay in one test, in this order.
+    /// </summary>
+    [Test]
+    public void SimGameThenBadSave()
+    {
+        SimGame(WorldBuilder.Clubs, SavePath);
+        BadSave(SavePath);
     }
 
     void SimGame(IReadOnlyList<ClubData> clubs, string path)
