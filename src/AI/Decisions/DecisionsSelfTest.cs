@@ -149,7 +149,8 @@ public sealed class DecisionsSelfTest : IScene
         Check(world.Match.Phase == MatchPhase.Final, "three periods play out to the final");
         Check(h.Passes > 80 && a.Passes > 80, "both clubs pass the puck around");
         Check(h.Completion > 0.5f && a.Completion > 0.5f, "most passes reach a teammate");
-        Check(world.Match.Shots[0] >= 10 && world.Match.Shots[1] >= 10 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
+        // W66: the default home club plays dump and chase, which trades shots for dumps: over 50 matches it got 8 to 38 on goal, about 20 on average
+        Check(world.Match.Shots[0] >= 8 && world.Match.Shots[1] >= 8 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
         Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 10, "goals are scored, about as many as in a real match");
         Check(h.Checks is >= 15 and <= 30 && a.Checks is >= 15 and <= 30, "the AI throws 15 to 30 checks a side, like a real match (W22b)");
         Check(still < 15f, "the AI never leaves a loose puck lying");
