@@ -8,3 +8,4 @@ publish/
 *.blend1
 *.sapreplay
 replay_at.png
+.claude/
