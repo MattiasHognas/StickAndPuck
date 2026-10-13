@@ -76,8 +76,7 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         string path = Assets.KitAtlas(world.Setup.Club(g.Side).Id, g.Side, "goalie", g.Data.Number);
         if (!kits.TryGetValue(path, out var tex))
         {
-            tex = LoadTexture(path);
-            SetTextureFilter(tex, TextureFilter.Point);
+            tex = Camera.FarTexture.Load(path);   // W58: mipmapped so stripes hold still at broadcast range
             kits[path] = tex;
         }
         return tex;
