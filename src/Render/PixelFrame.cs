@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using StickAndPuck.Core;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.Render;
@@ -13,7 +14,8 @@ namespace StickAndPuck.Render;
 /// (<see cref="RenderScale"/>), so the post pass and its outline run on the coarser grid, and the
 /// mask carries each pixel's depth so the post pass can also draw lines inside a player where an
 /// arm or stick passes in front of the body. W60: toon band edges and palette snaps are dithered
-/// with a 4x4 Bayer pattern on the scene's pixel grid (see <see cref="Dither"/>).
+/// with a 4x4 Bayer pattern on the scene's pixel grid, on players and on what stands inside the
+/// boards only (see <see cref="Dither"/>).
 /// </summary>
 public sealed class PixelFrame : IDisposable
 {
@@ -73,6 +75,7 @@ public sealed class PixelFrame : IDisposable
         Toon = LoadShader("shaders/toon.vs", "shaders/toon.fs");
         SetShaderValue(Toon, GetShaderLocation(Toon, "lightDir"), new Vector3(-0.45f, 0.75f, 0.5f), ShaderUniformDataType.Vec3);
         SetShaderValue(Toon, GetShaderLocation(Toon, "bandWidth"), Dither ? BandWidth : 0f, ShaderUniformDataType.Float);
+        SetShaderValue(Toon, GetShaderLocation(Toon, "rink"), new Vector3(RinkSpec.HalfLength, RinkSpec.HalfWidth, RinkSpec.CornerRadius), ShaderUniformDataType.Vec3);
         Mask = LoadShader(null, "shaders/mask.fs");
         SetShaderValue(Mask, GetShaderLocation(Mask, "nearPlane"), (float)Rlgl.GetCullDistanceNear(), ShaderUniformDataType.Float);
         SetShaderValue(Mask, GetShaderLocation(Mask, "farPlane"), (float)Rlgl.GetCullDistanceFar(), ShaderUniformDataType.Float);

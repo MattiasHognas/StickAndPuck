@@ -8,7 +8,9 @@
 // W60: a colour that falls between two close palette colours is not snapped hard to the nearer
 // one: near the midpoint the two are mixed with a 4x4 ordered Bayer pattern on the scene's pixel
 // grid, so gradients (a dimmed rink, light falling off) step through checker rows, not a seam.
-// The pattern starts at ditherOrigin, as in toon.fs, so it moves with the rink, not the screen.
+// The pattern starts at ditherOrigin, as in toon.fs. Only player pixels are mixed: the arena keeps
+// hard snaps, because its boards and crowd sit at depths where a camera step is not a whole pixel
+// and a pattern there would crawl.
 in vec2 fragTexCoord;
 uniform sampler2D texture0;
 uniform sampler2D maskTex;
@@ -66,7 +68,7 @@ void main() {
         else if (dd < nd) { nd = dd; next = palette[i]; }
     }
     vec3 gap = next - best; float g = dot(gap, gap);
-    if (ditherSpread > 0.0 && g > 0.0 && g < ditherGap * ditherGap) {
+    if (ditherSpread > 0.0 && here > 0.0 && g > 0.0 && g < ditherGap * ditherGap) {
         // where c sits from best (0) to next (1); the nearer colour is best, so this is at most about 0.5
         float along = clamp(dot(c - best, gap) / g, 0.0, 1.0);
         float mix = clamp((along - 0.5) / (2.0 * ditherSpread) + 0.5, 0.0, 1.0);
