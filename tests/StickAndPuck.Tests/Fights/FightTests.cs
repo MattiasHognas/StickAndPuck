@@ -382,29 +382,25 @@ public sealed class FightTests : CheckedTest
             "SHL: a club serving two penalties can still fight, since coincidental majors never leave it shorter");
     }
 
-    /// <summary>Full AI matches under each preset, with the referee at full strictness.</summary>
+    /// <summary>Full AI matches under each preset, with the referee at full strictness, all at once.</summary>
     [Test]
-    [Arguments("Arcade")]
-    [Arguments("SHL")]
-    [Arguments("NHL")]
-    public void FullMatches(string preset)
+    public void FullMatches()
     {
-        var rules = preset switch
-        {
-            "SHL" => RuleSet.Shl,
-            "NHL" => RuleSet.Nhl,
-            _ => RuleSet.Arcade,
-        };
         Penalties.Strictness = 1;
-        var setup = WorldBuilder.DefaultSetup.WithRules(rules);
-        int perFight = setup.Rules.FightPenalty == FightPenalty.LoserMinor ? 1 : 2;
-        int fights = 0, boxed = 0, broken = 0, open = 0;
-        foreach (var (f, b, x, o) in Matches.Play(Seeds.Length, i => Match(setup with { PeriodSeconds = 600 }, Seeds[i])))
+        RuleSet[] presets = [RuleSet.Arcade, RuleSet.Shl, RuleSet.Nhl];
+        var played = Matches.Play(presets.Length * Seeds.Length, i => Match(WorldBuilder.DefaultSetup.WithRules(presets[i / Seeds.Length]) with { PeriodSeconds = 600 }, Seeds[i % Seeds.Length]));
+        for (int r = 0; r < presets.Length; r++)
         {
-            fights += f; boxed += b; broken += x; open += o;
+            var setup = WorldBuilder.DefaultSetup.WithRules(presets[r]);
+            int perFight = setup.Rules.FightPenalty == FightPenalty.LoserMinor ? 1 : 2;
+            int fights = 0, boxed = 0, broken = 0, open = 0;
+            foreach (var (f, b, x, o) in played.Skip(r * Seeds.Length).Take(Seeds.Length))
+            {
+                fights += f; boxed += b; broken += x; open += o;
+            }
+            Check(fights >= 1 && boxed == fights * perFight && broken == 0 && open == 0,
+                $"{setup.Rules.Preset}: AI matches of 3 x 10:00: {fights} fight(s) in {Seeds.Length} matches, {boxed} fighting penalties ({perFight} a fight), clubs short by exactly their penalties");
         }
-        Check(fights >= 1 && boxed == fights * perFight && broken == 0 && open == 0,
-            $"{setup.Rules.Preset}: AI matches of 3 x 10:00: {fights} fight(s) in {Seeds.Length} matches, {boxed} fighting penalties ({perFight} a fight), clubs short by exactly their penalties");
     }
 
     static readonly int[] Seeds = [2, 3, 4, 5];

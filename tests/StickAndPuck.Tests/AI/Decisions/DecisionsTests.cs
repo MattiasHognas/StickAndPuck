@@ -154,11 +154,19 @@ public sealed class DecisionsTests : CheckedTest
     void HockeyIq(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         int smartTotal = 0, smartDone = 0, poorPasses = 0, poorDone = 0, smartLost = 0, poorLost = 0;
-        foreach (var smartSide in new[] { Side.Home, Side.Away })
+        Side[] smartSides = [Side.Home, Side.Away];
+        var played = Matches.Play(smartSides.Length, i =>
         {
+            bool home = smartSides[i] == Side.Home;
+            var world = Make(clubs, settings, 15 * 60, home ? 90 : 20, home ? 20 : 90);
+            Play(world, Systems(world, home ? 21 : 22), 2 * 15 * 60 + 300, stopAfter: 3);
+            return world;
+        });
+        for (int i = 0; i < smartSides.Length; i++)
+        {
+            var smartSide = smartSides[i];
             var poorSide = smartSide == Side.Home ? Side.Away : Side.Home;
-            var world = Make(clubs, settings, 15 * 60, smartSide == Side.Home ? 90 : 20, smartSide == Side.Home ? 20 : 90);
-            Play(world, Systems(world, smartSide == Side.Home ? 21 : 22), 2 * 15 * 60 + 300, stopAfter: 3);
+            var world = played[i];
             var s = AiDecisions.Tally(world, smartSide);
             var p = AiDecisions.Tally(world, poorSide);
             smartTotal += s.Passes; smartDone += s.Completed; smartLost += s.Intercepted;
@@ -205,7 +213,11 @@ public sealed class DecisionsTests : CheckedTest
     {
         const int Seeds = 4;
         int icings = 0, offsides = 0, fewest = int.MaxValue, most = 0, clears = 0, holds = 0;
-        var shl = Matches.Play(Seeds, i => Calls(clubs, settings, RuleSet.Shl, 31 + i, Maybe<int>.None, Maybe<int>.None));
+        int[] iqSeeds = [51, 53];
+
+        var played = LineCallMatches(clubs, settings, Seeds, iqSeeds);
+        var shl = played[..Seeds];
+        var iq = played[(Seeds + 1)..];
         for (int seed = 31; seed < 31 + Seeds; seed++)
         {
             var (ice, off, world) = shl[seed - 31];
@@ -224,7 +236,7 @@ public sealed class DecisionsTests : CheckedTest
         Check(fewest >= 1 && most <= 18, $"every match has some of each and none is full of them ({fewest} to {most})");
         Check(clears > 0 && holds > 0, "the AI clears its own zone under pressure and holds up at the blue line for a teammate offside");
 
-        var (aIce, aOff, arcade) = Calls(clubs, settings, RuleSet.Arcade, 41, Maybe<int>.None, Maybe<int>.None);
+        var (aIce, aOff, arcade) = played[Seeds];
         int arcadeClears = AiDecisions.Tally(arcade, Side.Home).Clears + AiDecisions.Tally(arcade, Side.Away).Clears;
         Console.WriteLine($"      Arcade: {aIce[0] + aIce[1]} icings, {aOff[0] + aOff[1]} offsides, {arcadeClears} clears");
         Check(aIce[0] + aIce[1] == 0 && aOff[0] + aOff[1] == 0 && arcade.Match.Phase == MatchPhase.Final, "under Arcade, rules off, a full match has no icing and no offside");
@@ -232,12 +244,6 @@ public sealed class DecisionsTests : CheckedTest
         // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round, twice (W66: a 30 club
         // comes up to the line with a teammate offside only a handful of times a match)
         int[] smartTotals = new int[5], poorTotals = new int[5];
-        int[] iqSeeds = [51, 53];
-        var iq = Matches.Play(4, i =>
-        {
-            var smart = (Side)(i % 2);
-            return Calls(clubs, settings, RuleSet.Shl, iqSeeds[i / 2] + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
-        });
         for (int s = 0; s < iqSeeds.Length; s++)
         {
             foreach (var smart in new[] { Side.Home, Side.Away })
@@ -265,6 +271,17 @@ public sealed class DecisionsTests : CheckedTest
 
     [Test]
     public void HumanUntouched() => CommandFixtures.HumanUntouched(WorldBuilder.Clubs, new Settings(), Check);
+
+    /// <summary>Plays every LineCalls match at once: the SHL seeds 31 on, the Arcade match, then hockey IQ 85 against 30 both ways round per IQ seed.</summary>
+    static (int[] Icings, int[] Offsides, World World)[] LineCallMatches(IReadOnlyList<ClubData> clubs, Settings settings, int seeds, int[] iqSeeds) =>
+        Matches.Play(seeds + 1 + (iqSeeds.Length * 2), i =>
+        {
+            if (i < seeds) return Calls(clubs, settings, RuleSet.Shl, 31 + i, Maybe<int>.None, Maybe<int>.None);
+            if (i == seeds) return Calls(clubs, settings, RuleSet.Arcade, 41, Maybe<int>.None, Maybe<int>.None);
+            int j = i - seeds - 1;
+            var smart = (Side)(j % 2);
+            return Calls(clubs, settings, RuleSet.Shl, iqSeeds[j / 2] + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
+        });
 
     static void Add(int[] totals, int icings, int offsides, DecisionTally tally)
     {
