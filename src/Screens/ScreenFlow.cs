@@ -274,21 +274,22 @@ internal static class ScreenFlow
 
     /// <summary>
     /// W67: rebuilds a match from its replay, as <see cref="Start"/> built it: the screens run with the
-    /// replay's settings (never saved) and no menus, and the match starts at once.
+    /// replay's settings (nothing is saved) and no menus, and the match starts at once.
     /// </summary>
     /// <param name="clubs">Every club.</param>
     /// <param name="prefs">The settings the match was played with.</param>
     /// <param name="setup">The setup it started from.</param>
+    /// <param name="mode">The game mode's type name, "" for a season game.</param>
     /// <param name="seed">Its seed.</param>
     /// <returns>The match.</returns>
-    public static World BeginReplay(IReadOnlyList<ClubData> clubs, ScreenPrefs prefs, MatchSetup setup, int seed)
+    public static World BeginReplay(IReadOnlyList<ClubData> clubs, ScreenPrefs prefs, MatchSetup setup, int seed, string mode)
     {
         Active = true;
         Clubs = clubs;
         Prefs = prefs;
         Stack.Clear();
         var world = Build(setup, seed);
-        Playing = new MatchPlan(null, []);
+        Playing = new MatchPlan(GameModes.Named(mode), [setup.Home, setup.Away]);    // the results screen offers what it offered in the match
         Backdrop = setup;
         Started = setup;
         return world;

@@ -62,6 +62,9 @@ public sealed record ReplayHeader
     /// <summary>Gets the setup a screens match started from.</summary>
     public ReplaySetup? Setup { get; init; }
 
+    /// <summary>Gets the game mode a screens match was played in, by its type name ("" for a season game).</summary>
+    public string Mode { get; init; } = "";
+
     /// <summary>Gets the screens' saved settings at the start of a screens match, as JSON.</summary>
     public string Prefs { get; init; } = "";
 

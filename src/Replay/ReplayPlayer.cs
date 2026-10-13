@@ -94,7 +94,7 @@ public sealed class ReplayPlayer
         if (string.Equals(h.Kind, "match", StringComparison.Ordinal))
         {
             var setup = (h.Setup ?? throw new InvalidDataException("a match replay without its setup")).ToSetup(clubs);
-            world = ScreenFlow.BeginReplay(clubs, ScreenPrefsFile.FromJson(h.Prefs), setup, h.Seed);
+            world = ScreenFlow.BeginReplay(clubs, ScreenPrefsFile.FromJson(h.Prefs), setup, h.Seed, h.Mode);
         }
         else
         {

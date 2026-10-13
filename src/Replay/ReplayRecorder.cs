@@ -82,6 +82,7 @@ public sealed class ReplayRecorder
             Scene = scene ?? "",
             Env = Variables(),
             Setup = screensMatch ? ReplaySetup.Of(ScreenFlow.Started!) : null,
+            Mode = screensMatch ? ScreenFlow.Playing!.Mode?.GetType().Name ?? "" : "",
             Prefs = screensMatch ? ScreenPrefsFile.ToJson(ScreenFlow.Prefs) : "",
             Clubs = ClubsHash(world.Setup.Home, world.Setup.Away),
             Recorded = string.Create(CultureInfo.InvariantCulture, $"{Environment.MachineName}, {RuntimeInformation.OSDescription}, {RuntimeInformation.ProcessArchitecture}, .NET {Environment.Version}, {DateTime.Now:yyyy-MM-dd HH:mm}"),

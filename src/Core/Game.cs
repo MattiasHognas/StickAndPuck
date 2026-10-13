@@ -67,6 +67,7 @@ public static class Game
             if (loop.AfterDraw(world, systems.Count)) break;
         }
 
+        loop.ReportOnce(world);    // a recording that went on to the menus or a quit ends the loop before its last step
         loop.Recorder?.Finish(world);
         ReplayRecorder.CloseChecksums();
         foreach (var s in systems.OfType<IDisposable>()) s.Dispose();
@@ -140,6 +141,17 @@ public static class Game
             }
         }
 
+        /// <summary>Prints the replay's report the first time it is asked for.</summary>
+        /// <param name="world">The world the replay ended on.</param>
+        /// <returns>True when it printed now.</returns>
+        public bool ReportOnce(World world)
+        {
+            if (Replay == null || reported) return false;
+            reported = true;
+            ExitCode = Replay.Report(world);
+            return true;
+        }
+
         /// <summary>Saves what this frame should save; true when the game should quit.</summary>
         public bool AfterDraw(World world, int systemCount)
         {
@@ -150,12 +162,7 @@ public static class Game
                 Console.WriteLine($"SAP: replay: replay_at.png saved");
                 if (Headless && Replay is { Live: false }) return true;
             }
-            if (Replay is { Ended: true } && !reported)
-            {
-                reported = true;
-                ExitCode = Replay.Report(world);
-                if (Headless) return true;
-            }
+            if (Replay is { Ended: true } && ReportOnce(world) && Headless) return true;
             if (Frames?.Save(world) == true) return true;
             if (Limit > 0 && world.Tick >= Limit)
             {

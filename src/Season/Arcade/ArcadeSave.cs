@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StickAndPuck.Core;
 using System.Text.Json.Serialization;
 
 namespace StickAndPuck.Season;
@@ -37,6 +38,7 @@ public static class ArcadeSave
     /// <param name="path">The file, by default <see cref="DefaultPath"/>.</param>
     public static void Write(ArcadeRun run, string? path = null)
     {
+        if (DeviceInput.Playing) return;    // W67: a replay never touches the saves
         path ??= DefaultPath;
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         run.Saved = DateTime.UtcNow;
