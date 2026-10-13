@@ -108,7 +108,7 @@ internal sealed class CheckingSystem : ISystem
         float closing = Vector3.Dot(checker.Velocity - target.Velocity, dir);
         var pk = world.Puck;
         bool carrying = pk.Carrier == target.Id;
-        float strength = CheckingModel.Strength(checker, target, closing, carrying);
+        float strength = CheckingModel.Strength(checker, target, closing, carrying) * CheckingModel.StrengthScale(checker, world.Settings.Difficulty);
 
         // the target takes the checker's push; the checker gives up some of their speed into the hit
         target.Velocity += dir * CheckingModel.Shove(strength);

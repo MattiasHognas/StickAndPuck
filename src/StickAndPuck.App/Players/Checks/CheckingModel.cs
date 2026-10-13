@@ -34,8 +34,11 @@ public static class CheckingModel
     /// <summary>Half the angle in front of the checker where a check can land: wider than a right angle, so a skater alongside can be hit.</summary>
     public const float Cone = 100f * MathF.PI / 180f;
 
-    /// <summary>How far a human's check reaches at each difficulty (W99): Easy is forgiving, Hard asks for a squarer, closer hit. AI checks always use Normal's.</summary>
-    static readonly CheckReach EasyReach = new(2.6f, 110f * MathF.PI / 180f), NormalReach = new(Contact, Cone), HardReach = new(1.8f, 75f * MathF.PI / 180f);
+    /// <summary>How far an AI skater's check reaches: <see cref="Contact"/> and <see cref="Cone"/>, whatever the difficulty.</summary>
+    public static readonly CheckReach AiReach = new(Contact, Cone);
+
+    /// <summary>How far a human's check reaches at each difficulty (W99): Easy as far as the AI's, Hard asks for a square, close hit.</summary>
+    static readonly CheckReach EasyReach = new(2.2f, 100f * MathF.PI / 180f), NormalReach = new(1.9f, 90f * MathF.PI / 180f), HardReach = new(1.6f, 65f * MathF.PI / 180f);
 
     /// <summary>Metres a target's angle off the checker's way adds to their distance when picking whom to hit, per unit of 1 - cos(angle): one alongside counts as this much further.</summary>
     public const float AnglePenalty = 1f;
@@ -93,6 +96,21 @@ public static class CheckingModel
         return Impact(checker, closing) / Resistance(target, carrying) / AverageImpact;
     }
 
+    /// <summary>Gets how a check's strength is scaled: 1 for an AI checker, for a human by the difficulty (Easy hits harder, Hard softer).</summary>
+    /// <param name="checker">The checker.</param>
+    /// <param name="difficulty">The match's difficulty.</param>
+    /// <returns>The factor.</returns>
+    public static float StrengthScale(Player checker, Difficulty difficulty)
+    {
+        if (checker.Slot < 0) return 1f;
+        return difficulty switch
+        {
+            Difficulty.Easy => 1.1f,
+            Difficulty.Hard => 0.85f,
+            _ => 1f,
+        };
+    }
+
     /// <summary>Gets whether a check started at a target waits for the bodies to meet: when they are further apart than <see cref="Meet"/> but closing fast enough to get there within <see cref="Window"/>.</summary>
     /// <param name="distance">Metres between the bodies when the check starts.</param>
     /// <param name="closing">The speed they close at before the lunge, in metres per second.</param>
@@ -126,13 +144,13 @@ public static class CheckingModel
         return Math.Min(6f, 1.5f + 2f * strength);
     }
 
-    /// <summary>Gets how far a check reaches: <see cref="Contact"/> and <see cref="Cone"/>, or for a human checker those of the difficulty.</summary>
+    /// <summary>Gets how far a check reaches: <see cref="AiReach"/> for an AI checker, the difficulty's for a human.</summary>
     /// <param name="checker">The checker.</param>
     /// <param name="difficulty">The match's difficulty.</param>
     /// <returns>The reach.</returns>
     public static CheckReach Reach(Player checker, Difficulty difficulty)
     {
-        if (checker.Slot < 0) return NormalReach;
+        if (checker.Slot < 0) return AiReach;
         return difficulty switch
         {
             Difficulty.Easy => EasyReach,

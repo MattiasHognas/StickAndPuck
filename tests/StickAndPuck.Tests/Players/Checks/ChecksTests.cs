@@ -405,17 +405,24 @@ public sealed class ChecksTests : CheckedTest
         Check(!Hits(human, reach.Contact + 0.1f, 0), $"{difficulty}: just outside it ({reach.Contact + 0.1f:0.0} m) whiffs");
         Check(Hits(human, 1.2f, reach.Cone - 0.05f) && !Hits(human, 1.2f, reach.Cone + 0.05f), $"{difficulty}: the cone ends at {reach.Cone * 180 / MathF.PI:0}°");
         Check(Hits(ai, CheckingModel.Contact - 0.1f, MathF.PI / 2) && !Hits(ai, CheckingModel.Contact + 0.1f, 0),
-            $"{difficulty}: an AI check reaches the Normal {CheckingModel.Contact} m, alongside too");
+            $"{difficulty}: an AI check reaches its own {CheckingModel.Contact} m, alongside too");
     }
 
     [Test]
     public void AlongsideReachByDifficulty()
     {
         SeedFrom(53);
-        foreach (var (difficulty, lands) in new[] { (Difficulty.Easy, true), (Difficulty.Normal, false), (Difficulty.Hard, false) })
+        foreach (var (difficulty, far, near) in new[] { (Difficulty.Easy, true, true), (Difficulty.Normal, false, true), (Difficulty.Hard, false, false) })
         {
-            var (hits, _, _) = Pester(new Vector3(0, 0, 2.4f), new Vector3(5, 0, 0), Vector2.UnitX, difficulty);
-            Check(hits > 0 == lands, $"{difficulty}: a human check at an opponent alongside 2.4 m away {(lands ? "lands" : "whiffs")} ({hits} hits)");
+            var (farHits, _, _) = Pester(new Vector3(0, 0, 2f), new Vector3(5, 0, 0), Vector2.UnitX, difficulty);
+            var (nearHits, _, _) = Pester(new Vector3(0, 0, 1.3f), new Vector3(5, 0, 0), Vector2.UnitX, difficulty);
+            Check(farHits > 0 == far, $"{difficulty}: a human check at an opponent alongside 2 m away {(far ? "lands" : "whiffs")} ({farHits} hits)");
+            Check(nearHits > 0 == near, $"{difficulty}: alongside 1.3 m away it {(near ? "lands" : "whiffs")} ({nearHits} hits)");
         }
+
+        var (squareHits, _, hard) = Pester(new Vector3(-1.5f, 0, 0), new Vector3(5, 0, 0), Vector2.UnitX, Difficulty.Hard);
+        var (_, _, normal) = Pester(new Vector3(-1.5f, 0, 0), new Vector3(5, 0, 0), Vector2.UnitX);
+        Check(squareHits > 0, $"Hard: a square-on check from 1.5 m behind lands ({squareHits} hits)");
+        Check(hard < normal - 0.05f, $"Hard: the same hit is softer than on Normal ({hard:0.00} vs {normal:0.00})");
     }
 }
