@@ -1,15 +1,6 @@
 namespace StickAndPuck.App.Season;
 
 /// <summary>One club's line in the table.</summary>
-/// <param name="ClubId">The club id.</param>
-/// <param name="Played">Games played.</param>
-/// <param name="Wins">Regulation wins (3 points).</param>
-/// <param name="OvertimeWins">Overtime and shootout wins (2 points).</param>
-/// <param name="OvertimeLosses">Overtime and shootout losses (1 point).</param>
-/// <param name="Losses">Regulation losses.</param>
-/// <param name="GoalsFor">Goals scored, shootout winners included.</param>
-/// <param name="GoalsAgainst">Goals let in.</param>
-/// <param name="Points">SHL points.</param>
 public sealed record StandingRow(
     string ClubId, int Played, int Wins, int OvertimeWins, int OvertimeLosses, int Losses, int GoalsFor, int GoalsAgainst, int Points)
 {
@@ -20,13 +11,8 @@ public sealed record StandingRow(
 /// <summary>Works out the SHL table from the played games.</summary>
 public static class Standings
 {
-    /// <summary>
-    /// The table, best first: points, then goal difference, then goals scored, then regulation
-    /// wins, then club id so the order never flickers.
-    /// </summary>
-    /// <param name="clubIds">Every club in the season, so clubs without a game still get a line.</param>
-    /// <param name="games">The schedule; unplayed games are skipped.</param>
-    /// <returns>One row per club.</returns>
+    /// <summary>The table, best first: points, then goal difference, then goals scored, then regulation
+    /// wins, then club id so the order never flickers.</summary>
     public static IReadOnlyList<StandingRow> Compute(IEnumerable<string> clubIds, IEnumerable<Fixture> games)
     {
         var rows = clubIds.ToDictionary(id => id, id => new StandingRow(id, 0, 0, 0, 0, 0, 0, 0, 0), StringComparer.Ordinal);

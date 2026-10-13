@@ -3,11 +3,9 @@ using StickAndPuck.App.AI;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// W22d: how a club plays, from the <c>tactics</c> field of its file in data/clubs/. A club with
+/// <summary>How a club plays, from the <c>tactics</c> field of its file in data/clubs/. A club with
 /// no field plays balanced, carries the puck in and mixes its power play. An unknown key or value
-/// fails the club load, as an unknown trait does.
-/// </summary>
+/// fails the club load, as an unknown trait does.</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ClubTactics
 {
@@ -21,7 +19,7 @@ public sealed record ClubTactics
     public PowerPlayShape PowerPlay { get; init; } = PowerPlayShape.Mixed;
 }
 
-/// <summary>How a club meets the other side's breakout (W22d).</summary>
+/// <summary>How a club meets the other side's breakout.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<Forecheck>))]
 public enum Forecheck
 {
@@ -35,7 +33,7 @@ public enum Forecheck
     Trap,
 }
 
-/// <summary>How a club gets the puck into the attacking zone (W22d).</summary>
+/// <summary>How a club gets the puck into the attacking zone.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<ZoneEntry>))]
 public enum ZoneEntry
 {
@@ -46,7 +44,7 @@ public enum ZoneEntry
     DumpAndChase,
 }
 
-/// <summary>The power play shape a club sets up (W22d picks W22c's formation).</summary>
+/// <summary>The power play shape a club sets up (it picks the special teams formation).</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<PowerPlayShape>))]
 public enum PowerPlayShape
 {
@@ -60,7 +58,7 @@ public enum PowerPlayShape
     OneThreeOne,
 }
 
-/// <summary>Maps a club's power play choice to W22c's formation.</summary>
+/// <summary>Maps a club's power play choice to the special teams formation.</summary>
 internal static class PowerPlayShapes
 {
     public static Maybe<Formation> Formation(PowerPlayShape shape) => shape switch

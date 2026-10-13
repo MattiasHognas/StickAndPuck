@@ -2,10 +2,8 @@ using System.Numerics;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// What one player wants to do this step. Keyboard and mouse, gamepad and AI all produce it,
-/// so the systems that act on it never know who is in control.
-/// </summary>
+/// <summary>What one player wants to do this step. Keyboard and mouse, gamepad and AI all produce it,
+/// so the systems that act on it never know who is in control.</summary>
 public struct PlayerCommand
 {
     /// <summary>Gets or sets the stick direction on the rink: x along the rink, y toward the camera (+z). Length 0 to 1.</summary>
@@ -23,7 +21,7 @@ public struct PlayerCommand
     /// <summary>Gets or sets a value indicating whether check was pressed this step.</summary>
     public bool Check { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether deke is held (W32: the puck handling system acts on the press).</summary>
+    /// <summary>Gets or sets a value indicating whether deke is held (the puck handling system acts on the press).</summary>
     public bool Deke { get; set; }
 
     /// <summary>Gets or sets a value indicating whether the human asked to switch to another player.</summary>

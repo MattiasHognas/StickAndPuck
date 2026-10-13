@@ -10,8 +10,8 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// Tied matches with skating, puck handling, the goalies, puck physics and the match rules (W7c): a
-/// tied match goes to 3 on 3 and then to a shootout; and W19's: under the playoff format a tie goes
+/// Tied matches with skating, puck handling, the goalies, puck physics and the match rules: a
+/// tied match goes to 3 on 3 and then to a shootout; and under the playoff format a tie goes
 /// to 5 on 5 and ends on the first goal, with no shootout. Formerly SAP_SCENE=overtimetest.
 /// </summary>
 public sealed class OvertimeTests : CheckedTest
@@ -262,7 +262,7 @@ public sealed class OvertimeTests : CheckedTest
         Check(w.Players[so.ShooterId].Slot < 0 && !w.Controlled(0).HasValue, "an away shooter is the AI's; the home human controls nobody");
     }
 
-    /// <summary>W45: shooters and order from the rules: SHL three each with away first, five when set, home first when set, NHL home choosing.</summary>
+    /// <summary>Shooters and order from the rules: SHL three each with away first, five when set, home first when set, NHL home choosing.</summary>
     [Test]
     public void ShootoutRules()
     {
@@ -287,7 +287,7 @@ public sealed class OvertimeTests : CheckedTest
         Check(So(nhl).TryGet(out var son) && son is { Winner: not SideOrNone.None } && son.Shots[0].Side == Side.Home, "NHL preset with an AI home club: home shoots first");
     }
 
-    /// <summary>W45: a human home club under NHL rules picks the order; nobody shoots until it does, and a home club that never picks shoots first.</summary>
+    /// <summary>A human home club under NHL rules picks the order; nobody shoots until it does, and a home club that never picks shoots first.</summary>
     [Test]
     public void HomeChooses()
     {

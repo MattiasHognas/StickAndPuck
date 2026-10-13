@@ -10,14 +10,12 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Intermission;
 
-/// <summary>
-/// W31: between periods the Zamboni comes out through the gate in the far boards, laps the ice
+/// <summary>Between periods the Zamboni comes out through the gate in the far boards, laps the ice
 /// spiralling in toward the centre and drives back out, and the next period's faceoff follows.
 /// While it drives, the AI skaters wait at their bench doors, the camera pans after the machine and
-/// enter, space or the A button skips it. W7a's intermission pause is held open until the Zamboni is
+/// enter, space or the A button skips it. The match's intermission pause is held open until the Zamboni is
 /// gone, the same way the goal replay holds the restart. Runs after the camera system, so its
-/// camera wins while the Zamboni is out and hands back smoothly before the faceoff.
-/// </summary>
+/// camera wins while the Zamboni is out and hands back smoothly before the faceoff.</summary>
 internal sealed class IntermissionSystem : ISystem, IDisposable
 {
     /// <summary>Seconds of the intermission pause kept in hand while the Zamboni drives.</summary>
@@ -49,7 +47,6 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     }
 
     /// <summary>Initializes a new instance of the <see cref="IntermissionSystem"/> class with its own skip button, for the self test.</summary>
-    /// <param name="skipPressed">Whether the skip was pressed this step.</param>
     public IntermissionSystem(Func<bool> skipPressed)
     {
         this.skipPressed = skipPressed;
@@ -58,10 +55,8 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     /// <summary>Gets the route every Zamboni drive follows.</summary>
     public static ZamboniRoute Route { get; } = new();
 
-    /// <summary>
-    /// Gets or sets the seconds into its drive the next Zamboni starts at. SAP_ZAMBONI_AT sets it for
-    /// headless screenshots of a chosen moment; the scene sets it back to 0 once used.
-    /// </summary>
+    /// <summary>Gets or sets the seconds into its drive the next Zamboni starts at. SAP_ZAMBONI_AT sets it for
+    /// headless screenshots of a chosen moment; the scene sets it back to 0 once used.</summary>
 
     /// <summary>Gets the Zamboni's drive in this world while one is under way, or None.</summary>
     public Maybe<Drive> Current { get; private set; }
@@ -121,8 +116,6 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     }
 
     /// <summary>Gets where each AI skater on the ice waits: spread along the boards either side of the bench door.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>Each skater with its spot (x, z).</returns>
     internal static IEnumerable<(Player Player, Vector2 Spot)> WaitSpots(World world)
     {
         foreach (var side in new[] { Side.Home, Side.Away })

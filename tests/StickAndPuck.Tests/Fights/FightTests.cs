@@ -14,8 +14,8 @@ namespace StickAndPuck.Tests;
 
 /// <summary>
 /// Scripted fights under the match rules, the bench, the penalty box and the referee, then full AI
-/// matches. Covers W15: a fight can start, be won by timing, and sends the loser to the box; and
-/// W48: each preset's fight penalty (Arcade the loser's minor, NHL coincidental majors, SHL majors
+/// matches. Covers that a fight can start, be won by timing, and sends the loser to the box; and
+/// Each preset's fight penalty (Arcade the loser's minor, NHL coincidental majors, SHL majors
 /// and game misconducts that take both fighters off the squad). Formerly SAP_SCENE=fighttest.
 /// </summary>
 public sealed class FightTests : CheckedTest
@@ -23,7 +23,7 @@ public sealed class FightTests : CheckedTest
     const float Period = 600;
 
     /// <summary>
-    /// A match in play with 10:00 periods, under Arcade unless other rules are given (W15's checks:
+    /// A match in play with 10:00 periods, under Arcade unless other rules are given (for the checks of
     /// the loser's two minutes). The scripted hits must not be called as slashing or tripping first,
     /// so it turns the referee's strictness down to 0 before building, as the scene did.
     /// </summary>
@@ -83,7 +83,7 @@ public sealed class FightTests : CheckedTest
         return w.OnIce(side).First(p => p.Data.Position == position);
     }
 
-    /// <summary>A hit from the away centre on the home centre, published as W4c would.</summary>
+    /// <summary>A hit from the away centre on the home centre, published as checking would.</summary>
     static List<MatchEvent> Hit(World w, float strength)
     {
         var checker = Skater(w, Side.Away, PlayingPosition.C);
@@ -428,7 +428,7 @@ public sealed class FightTests : CheckedTest
             w.Time += Game.Step; w.Tick++;
             foreach (var e in w.Events.Of<PenaltyCalled>())
                 if (string.Equals(w.Match.Penalties.FindLast(p => p.PlayerId == e.PlayerId)?.Infraction, FightTuning.Infraction, StringComparison.Ordinal)) boxed++;
-            // strength is checked in play: between a whistle and the faceoff the bench is still filling the gaps (as W47's penaltytest does)
+            // strength is checked in play: between a whistle and the faceoff the bench is still filling the gaps (as the penalty tests do)
             if (w.Match.Phase != MatchPhase.Play) continue;
             foreach (var side in new[] { Side.Home, Side.Away })
                 if (w.OnIce(side).Count(p => !p.IsGoalie) != Penalties.TargetSkaters(w, side)) broken++;

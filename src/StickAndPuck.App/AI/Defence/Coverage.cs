@@ -17,8 +17,7 @@ public enum DefenceZone
     Forecheck,
 }
 
-/// <summary>
-/// W22b: the maths behind the defensive reads, with no state and no Raylib, so tests can ask where
+/// <summary>The maths behind the defensive reads, with no state and no Raylib, so tests can ask where
 /// a defender ought to stand. All spots are on the ice as (x, z); <c>net</c> is the net the
 /// defending side protects.
 /// <list type="bullet">
@@ -29,8 +28,7 @@ public enum DefenceZone
 /// goal side; men far out are covered by sitting in the lane.</item>
 /// <item>Home: the defenceman away from the puck stays in front of his net, goal side of whoever
 /// is in the slot.</item>
-/// </list>
-/// </summary>
+/// </list></summary>
 public static class Coverage
 {
     /// <summary>How close to a passing lane a defender's body has to be to cover it, in metres.</summary>
@@ -52,27 +50,24 @@ public static class Coverage
     const float Blue = RinkSpec.BlueLineX;
 
     /// <summary>Gets the net a side defends.</summary>
-    /// <param name="attackEnd">The end the defending side attacks: +1 or -1.</param>
-    /// <returns>The middle of the goal line it protects (x, z).</returns>
     public static Vector2 OwnNet(int attackEnd)
     {
         return new Vector2(-attackEnd * G, 0);
     }
 
     /// <summary>Gets the zone the carrier is in, as the defending side sees it.</summary>
-    /// <param name="attackEnd">The end the defending side attacks.</param>
-    /// <param name="carrier">The carrier (x, z).</param>
-    /// <returns>The zone.</returns>
     public static DefenceZone ZoneOf(int attackEnd, Vector2 carrier)
     {
         float a = attackEnd * carrier.X;
-        return a < -Blue ? DefenceZone.Own : a > Blue ? DefenceZone.Forecheck : DefenceZone.Neutral;
+        return a switch
+        {
+            < -Blue => DefenceZone.Own,
+            > Blue => DefenceZone.Forecheck,
+            _ => DefenceZone.Neutral,
+        };
     }
 
     /// <summary>Gets how dangerous an attacker without the puck is: high in the slot and in front of the net, low at the points and behind the net.</summary>
-    /// <param name="net">The defended net (x, z).</param>
-    /// <param name="attacker">The attacker (x, z).</param>
-    /// <returns>0 to about 1.2.</returns>
     public static float Danger(Vector2 net, Vector2 attacker)
     {
         float out_ = MathF.Sign(-net.X) * (attacker.X - net.X);   // metres out in front of the goal line
@@ -84,15 +79,8 @@ public static class Coverage
         return 0.1f + range * (0.4f + 0.7f * open);
     }
 
-    /// <summary>
-    /// Gets the spot that marks an attacker: goal side of him, pulled toward the lane the carrier
-    /// would pass along. The more dangerous the man, the tighter and more goal side the mark.
-    /// </summary>
-    /// <param name="zone">Where the carrier is.</param>
-    /// <param name="net">The defended net (x, z).</param>
-    /// <param name="carrier">The puck carrier (x, z).</param>
-    /// <param name="attacker">The attacker to mark (x, z), already led by where he is going.</param>
-    /// <returns>The spot (x, z), inside the rink.</returns>
+    /// <summary>Gets the spot that marks an attacker: goal side of him, pulled toward the lane the carrier
+    /// would pass along. The more dangerous the man, the tighter and more goal side the mark.</summary>
     public static Vector2 MarkSpot(DefenceZone zone, Vector2 net, Vector2 carrier, Vector2 attacker)
     {
         float danger = Danger(net, attacker);
@@ -103,14 +91,8 @@ public static class Coverage
         return TeamShape.Inside(Vector2.Lerp(goalSide, inLane, lean));
     }
 
-    /// <summary>
-    /// Gets a marker's spot kept within reach of his place in the team shape: he covers the man and
-    /// the lane in his own area, but never leaves the slot open to follow a man across the ice.
-    /// </summary>
-    /// <param name="shape">The marker's spot in the team shape (x, z).</param>
-    /// <param name="mark">The spot that marks his man (x, z).</param>
-    /// <param name="zone">Where the carrier is.</param>
-    /// <returns>The spot (x, z).</returns>
+    /// <summary>Gets a marker's spot kept within reach of his place in the team shape: he covers the man and
+    /// the lane in his own area, but never leaves the slot open to follow a man across the ice.</summary>
     public static Vector2 Leash(Vector2 shape, Vector2 mark, DefenceZone zone)
     {
         float reach = zone == DefenceZone.Own ? OwnLeash : NeutralLeash;
@@ -120,10 +102,6 @@ public static class Coverage
     }
 
     /// <summary>Gets where the stay-home defenceman stands: in front of the net, goal side of the most dangerous man near it.</summary>
-    /// <param name="net">The defended net (x, z).</param>
-    /// <param name="carrier">The puck carrier (x, z).</param>
-    /// <param name="threat">The attacker nearest the net front, or None with nobody there.</param>
-    /// <returns>The spot (x, z).</returns>
     public static Vector2 HomeSpot(Vector2 net, Vector2 carrier, Maybe<Vector2> threat)
     {
         float outward = MathF.Sign(-net.X);
@@ -137,30 +115,17 @@ public static class Coverage
         return spot;
     }
 
-    /// <summary>
-    /// Gets where the skater on the carrier stands while containing him: goal side, at a gap that
-    /// shrinks as the carrier gets closer to the net, a little ahead of where he is going.
-    /// </summary>
-    /// <param name="zone">Where the carrier is.</param>
-    /// <param name="net">The defended net (x, z).</param>
-    /// <param name="carrier">The carrier (x, z), already led by where he is going.</param>
-    /// <returns>The spot (x, z).</returns>
+    /// <summary>Gets where the skater on the carrier stands while containing him: goal side, at a gap that
+    /// shrinks as the carrier gets closer to the net, a little ahead of where he is going.</summary>
     public static Vector2 ContainSpot(DefenceZone zone, Vector2 net, Vector2 carrier)
     {
         float gap = zone switch { DefenceZone.Own => 1.2f, DefenceZone.Neutral => 2.6f, _ => 1.8f };
         return TeamShape.Inside(carrier + Dir(carrier, net) * gap, SkatingModel.BodyRadius + 0.2f);
     }
 
-    /// <summary>
-    /// Gets the chance the skater on the carrier plays the body on this approach, rather than only
+    /// <summary>Gets the chance the skater on the carrier plays the body on this approach, rather than only
     /// containing: likeliest on a carrier in front of the net, then along the boards and on the
-    /// forecheck, rarely in open ice; a better checking trait raises it.
-    /// </summary>
-    /// <param name="zone">Where the carrier is.</param>
-    /// <param name="net">The defended net (x, z).</param>
-    /// <param name="carrier">The carrier (x, z).</param>
-    /// <param name="checking">The checker's checking trait, 0 to 100.</param>
-    /// <returns>0 to 1.</returns>
+    /// forecheck, rarely in open ice; a better checking trait raises it.</summary>
     public static float EngageChance(DefenceZone zone, Vector2 net, Vector2 carrier, int checking)
     {
         bool boards = MathF.Abs(carrier.Y) > RinkSpec.HalfWidth - 3.5f || MathF.Abs(carrier.X) > G - 1f;
@@ -173,15 +138,10 @@ public static class Coverage
         return Math.Clamp(where * (boards ? 1.6f : 1f) * Traits.Scale(checking, 0.7f, 1.3f), 0f, 1f);
     }
 
-    /// <summary>
-    /// Gets how much a side's appetite for the body is scaled so a match ends with about
+    /// <summary>Gets how much a side's appetite for the body is scaled so a match ends with about
     /// <see cref="HitsPerMatch"/> hits: more willing when behind that pace, less when ahead.
-    /// W66: the ratio is cubed; a plain ratio settled near 18 hits a side, too weak to pull the
-    /// engage odds up to the pace, so one match in ten fell under 15.
-    /// </summary>
-    /// <param name="hits">Checks the side has thrown so far.</param>
-    /// <param name="played">The share of regulation played, 0 to 1.</param>
-    /// <returns>0.2 to 5.</returns>
+    /// The ratio is cubed; a plain ratio settled near 18 hits a side, too weak to pull the
+    /// engage odds up to the pace, so one match in ten fell under 15.</summary>
     public static float HitPace(int hits, float played)
     {
         float expected = HitsPerMatch * Math.Clamp(played, 0f, 1f);
@@ -190,9 +150,6 @@ public static class Coverage
     }
 
     /// <summary>Keeps a spot at least <see cref="CarrierRoom"/> from the carrier, so only the man on the puck goes to him.</summary>
-    /// <param name="spot">The spot (x, z).</param>
-    /// <param name="carrier">The carrier (x, z).</param>
-    /// <returns>The spot, pushed out from the carrier if needed.</returns>
     public static Vector2 Room(Vector2 spot, Vector2 carrier)
     {
         var off = spot - carrier;
@@ -202,9 +159,6 @@ public static class Coverage
     }
 
     /// <summary>Gets whether a passing lane from the carrier to a teammate has a defender's body on it.</summary>
-    /// <param name="carrier">The carrier (x, z).</param>
-    /// <param name="receiver">The teammate (x, z).</param>
-    /// <param name="defenders">The defending skaters (x, z).</param>
     /// <returns>True when a defender is within <see cref="LaneReach"/> of the lane, away from the passer's blade.</returns>
     public static bool LaneCovered(Vector2 carrier, Vector2 receiver, IEnumerable<Vector2> defenders)
     {

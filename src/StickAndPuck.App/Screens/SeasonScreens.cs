@@ -7,12 +7,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// W33: the season stats page, opened between games from the results, the table or the bracket.
+/// <summary>The season stats page, opened between games from the results, the table or the bracket.
 /// Left and right on SHOW pick points, goals, assists, hits, goalies, player-of-the-game stars or
 /// the human's own club; GAMES switches between the regular season and the playoffs once they run.
-/// The latest player of the game sits underneath. Reads W25's <see cref="SeasonStats"/>.
-/// </summary>
+/// The latest player of the game sits underneath. Reads <see cref="SeasonStats"/>.</summary>
 internal sealed class SeasonStatsScreen : MenuScreen
 {
     const int PanelW = 440, Line = 11, Rows = 10;
@@ -33,8 +31,6 @@ internal sealed class SeasonStatsScreen : MenuScreen
     }
 
     /// <summary>Shows one view, for the headless captures.</summary>
-    /// <param name="name">The view's name, as on the SHOW row.</param>
-    /// <returns>This screen.</returns>
     public SeasonStatsScreen Showing(string name)
     {
         int i = Array.FindIndex(Views, v => string.Equals(v, name, StringComparison.OrdinalIgnoreCase) || string.Equals(Text.Get(v), name, StringComparison.OrdinalIgnoreCase));
@@ -140,13 +136,9 @@ internal sealed class SeasonStatsScreen : MenuScreen
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
 }
 
-/// <summary>
-/// W33: a game settled with "sim this game" (W26's <see cref="SeasonSession.SimCurrentGame"/>):
+/// <summary>A game settled with "sim this game" (<see cref="SeasonSession.SimCurrentGame"/>):
 /// the stage, both crests and the score with how it was decided, then the next step. When the sim
-/// decided the final, CHAMPIONS opens the trophy screen.
-/// </summary>
-/// <param name="game">The game simmed.</param>
-/// <param name="crowned">True when this game crowned the champion.</param>
+/// decided the final, CHAMPIONS opens the trophy screen.</summary>
 internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScreen
 {
     const int PanelW = 300;
@@ -189,11 +181,9 @@ internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScree
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
 }
 
-/// <summary>
-/// W33: the trophy screen. For the SHL champion (after the final, played or simmed, and from the
+/// <summary>The trophy screen. For the SHL champion (after the final, played or simmed, and from the
 /// bracket) the cup with the champion's crest, the final's score and the season's award winners;
-/// for an arcade champion the cup, the run and its place on the best runs board.
-/// </summary>
+/// for an arcade champion the cup, the run and its place on the best runs board.</summary>
 internal sealed class TrophyScreen : MenuScreen
 {
     const int PanelW = 400, Line = 12;
@@ -214,7 +204,6 @@ internal sealed class TrophyScreen : MenuScreen
     }
 
     /// <summary>The SHL champion of the season being played.</summary>
-    /// <returns>The screen.</returns>
     public static TrophyScreen Season()
     {
         var clubs = ScreenFlow.Clubs;
@@ -248,8 +237,6 @@ internal sealed class TrophyScreen : MenuScreen
     }
 
     /// <summary>An arcade run won by beating every club.</summary>
-    /// <param name="run">The run.</param>
-    /// <returns>The screen.</returns>
     public static TrophyScreen Arcade(ArcadeRun run)
     {
         var clubs = ScreenFlow.Clubs;
@@ -327,67 +314,6 @@ internal sealed class TrophyScreen : MenuScreen
     {
         var club = clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
         return club is { ShortName.Length: > 0 } ? club.ShortName : id;
-    }
-
-    static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
-}
-
-/// <summary>
-/// W33: the arcade best runs board (W25's <see cref="ArcadeRun.Records"/>, kept across runs in
-/// arcade.json): place, club, rule, how far the run got, losses, goals and its top scorer, the run
-/// just finished in gold. Opened after a run ends and from the new game list.
-/// </summary>
-internal sealed class ArcadeBoardScreen : MenuScreen
-{
-    const int PanelW = 460, Line = 12;
-
-    readonly (IReadOnlyList<ArcadeRecord> Records, int Place) board = Board();
-
-    /// <inheritdoc/>
-    public override IReadOnlyList<MenuItem> Items() => [new MenuItem(Text.Get(K.Back), Back)];
-
-    /// <summary>Gets a value indicating whether there is a board to show (any run ever finished). Reads the save.</summary>
-    /// <returns>True when a run is on the board.</returns>
-    public static bool Any() => Board().Records.Count > 0;
-
-    /// <inheritdoc/>
-    public override void Draw(ScreenArt art, World world)
-    {
-        var (records, place) = board;
-        var clubs = ScreenFlow.Clubs;
-        int rows = Math.Max(1, records.Count);
-        int h = 5 + ScreenArt.Row + 2 + Line + (rows * Line) + 8 + ScreenArt.Row + 6;
-        var (x, top) = art.Panel(Text.Get(K.ArcadeBestRuns), PanelW, h, Math.Max(4, (Game.Height - h - 16) / 2));
-        (string Head, int X)[] columns = [(K.ColClub, 24), (K.ColRule, 146), (K.ColRun, 198), (K.ColL, 262), (K.ColGoals, 278), (K.ColTopScorer, 322)];
-        foreach (var (head, cx) in columns) art.Left(Text.Get(head), x + cx, top, ScreenArt.Muted);
-        top += Line;
-        if (records.Count == 0) art.Left(Text.Get(K.NoRunsYet), x + 24, top, ScreenArt.Muted);
-        for (int i = 0; i < records.Count; i++)
-        {
-            var r = records[i];
-            var ink = i + 1 == place ? art.Gold : art.Text;
-            string name = clubs.FirstOrNone(c => string.Equals(c.Id, r.Club, StringComparison.Ordinal)).Select(c => c.Name).Or(r.Club);
-            art.Right(N(i + 1), x + 18, top, ink);
-            if (r.Champion) art.Hud.DrawIcon("star", x + 251, top + 2);
-            art.Left(art.Clip(name, 118), x + 24, top, ink);
-            art.Left(Text.Get(r.Rule == ArcadeRule.SuddenDeath ? K.RuleSudden : K.RuleLives), x + 146, top, ink);
-            art.Left(r.Champion ? Text.Get(K.Champions) : Text.Format(K.Beaten, r.Beaten), x + 198, top, ink);
-            art.Left(N(r.Losses), x + 262, top, ink);
-            art.Left($"{N(r.GoalsFor)}-{N(r.GoalsAgainst)}", x + 278, top, ink);
-            string scorer = r.TopScorer.Length > 0 ? $"{r.TopScorer} {N(r.TopPoints)}" : "-";
-            art.Left(art.Clip(scorer, PanelW - 330), x + 322, top, ink);
-            top += Line;
-        }
-        if (records.Count == 0) top += Line;
-        art.Menu(Items(), Selected, x + 170, PanelW - 340, top + 8);
-    }
-
-    /// <summary>The board: the open run's, else the save's; the place is the run just finished, or 0.</summary>
-    static (IReadOnlyList<ArcadeRecord> Records, int Place) Board()
-    {
-        var open = ArcadeSession.Current.HasValue ? ArcadeSession.Current : ArcadeSave.Read(ArcadeSession.SavePath.Length > 0 ? ArcadeSession.SavePath : ArcadeSave.DefaultPath);
-        if (!open.TryGet(out var run)) return ([], 0);
-        return (run.Records, run.IsOver ? run.Place : 0);
     }
 
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);

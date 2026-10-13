@@ -4,11 +4,9 @@ using StickAndPuck.App.Screens;
 
 namespace StickAndPuck.App.Versus.Dev;
 
-/// <summary>
-/// SAP_SCENE=versus: a player vs player match straight away, keyboard and mouse on the home centre
+/// <summary>SAP_SCENE=versus: a player vs player match straight away, keyboard and mouse on the home centre
 /// and the first gamepad on the away centre (SAP_VERSUS_P2 changes the pad, SAP_HOME and SAP_AWAY
-/// the clubs, SAP_PERIOD=seconds the period length, SAP_HUMAN=0 gives both clubs to the AI).
-/// </summary>
+/// the clubs, SAP_PERIOD=seconds the period length, SAP_HUMAN=0 gives both clubs to the AI).</summary>
 public sealed class VersusScene : IScene
 {
     /// <inheritdoc/>
@@ -34,11 +32,9 @@ public sealed class VersusScene : IScene
     }
 }
 
-/// <summary>
-/// SAP_SCENE=versussetup: the start screen flow opened on player vs player's team select, so the
-/// two picks, the match and the results run through W11's screens. SAP_SCREEN_KEYS scripts the
-/// picks for headless runs ("enter down enter" picks the first two clubs).
-/// </summary>
+/// <summary>SAP_SCENE=versussetup: the start screen flow opened on player vs player's team select, so the
+/// two picks, the match and the results run through the screens. SAP_SCREEN_KEYS scripts the
+/// picks for headless runs ("enter down enter" picks the first two clubs).</summary>
 public sealed class VersusSetupScene : IScene
 {
     /// <inheritdoc/>

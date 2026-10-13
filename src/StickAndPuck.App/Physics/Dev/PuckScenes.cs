@@ -3,10 +3,8 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Physics.Dev;
 
-/// <summary>
-/// SAP_SCENE=puck: an empty rink where the puck plays a loop of shots by itself: rims round the
-/// corners, a post, a goal, a shot off the glass and a dump behind the net. For watching the bounces.
-/// </summary>
+/// <summary>SAP_SCENE=puck: an empty rink where the puck plays a loop of shots by itself: rims round the
+/// corners, a post, a goal, a shot off the glass and a dump behind the net. For watching the bounces.</summary>
 public sealed class PuckScene : IScene
 {
     /// <inheritdoc/>
@@ -41,7 +39,6 @@ internal sealed class PuckDemo
     float shotAt = float.NegativeInfinity;
 
     /// <summary>Starts the next shot when the puck is done with the last one.</summary>
-    /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         if (!world.Dev.Puck.TryGet(out var d) || world.Puck.Carrier >= 0) return;

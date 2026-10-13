@@ -9,37 +9,24 @@ internal sealed record MenuItem
     static readonly Action<int> NoChange = _ => { };
 
     /// <summary>Initializes a new instance of the <see cref="MenuItem"/> class: a row that does nothing (a heading).</summary>
-    /// <param name="label">The text.</param>
-    /// <param name="enabled">Whether the row can be picked.</param>
     public MenuItem(string label, bool enabled = true)
         : this(label, NoPick, Maybe<string>.None, NoChange, enabled)
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="MenuItem"/> class: a row enter picks.</summary>
-    /// <param name="label">The text.</param>
-    /// <param name="pick">What enter does.</param>
-    /// <param name="enabled">Whether the row can be picked.</param>
     public MenuItem(string label, Action pick, bool enabled = true)
         : this(label, pick, Maybe<string>.None, NoChange, enabled)
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="MenuItem"/> class: a row enter picks, showing a value.</summary>
-    /// <param name="label">The text.</param>
-    /// <param name="pick">What enter does.</param>
-    /// <param name="value">The current value of a setting, shown on the right.</param>
-    /// <param name="enabled">Whether the row can be picked.</param>
     public MenuItem(string label, Action pick, string value, bool enabled = true)
         : this(label, pick, Maybe.Some(value), NoChange, enabled)
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="MenuItem"/> class: a setting left and right change; enter steps it forward.</summary>
-    /// <param name="label">The text.</param>
-    /// <param name="value">The current value of the setting, shown on the right.</param>
-    /// <param name="change">What left (-1) and right (+1) do to the value.</param>
-    /// <param name="enabled">Whether the row can be picked.</param>
     public MenuItem(string label, string value, Action<int> change, bool enabled = true)
         : this(label, () => change(1), Maybe.Some(value), change, enabled)
     {
@@ -54,7 +41,6 @@ internal sealed record MenuItem
         Enabled = enabled;
     }
 
-    /// <summary>Gets the text.</summary>
     public string Label { get; init; }
 
     /// <summary>Gets what enter does: nothing on a heading, a step forward on a setting.</summary>
@@ -77,13 +63,9 @@ internal abstract class Screen
     public virtual bool Dims => true;
 
     /// <summary>Handles this step's presses.</summary>
-    /// <param name="world">The world on show.</param>
-    /// <param name="press">The buttons pressed this step.</param>
     public abstract void Update(World world, IReadOnlySet<MenuButton> press);
 
     /// <summary>Draws the screen.</summary>
-    /// <param name="art">The art.</param>
-    /// <param name="world">The world on show.</param>
     public abstract void Draw(ScreenArt art, World world);
 }
 
@@ -94,7 +76,6 @@ internal abstract class MenuScreen : Screen
     protected int Selected { get; private set; }
 
     /// <summary>Gets the rows, built fresh each step so values and enabled states stay current.</summary>
-    /// <returns>The rows.</returns>
     public abstract IReadOnlyList<MenuItem> Items();
 
     /// <summary>What back does; by default leaves the screen.</summary>
@@ -137,7 +118,6 @@ internal abstract class MenuScreen : Screen
     }
 
     /// <summary>Selects the row with this label, if there is one and it can be picked.</summary>
-    /// <param name="label">The label.</param>
     public void Select(string label)
     {
         var items = Items();

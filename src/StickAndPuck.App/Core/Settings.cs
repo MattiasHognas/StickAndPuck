@@ -23,7 +23,7 @@ public enum LineChanges
     Manual,
 }
 
-/// <summary>The arena lighting mood a match starts with (W18's time of day).</summary>
+/// <summary>The arena lighting mood a match starts with (its time of day).</summary>
 public enum LightingMood
 {
     /// <summary>Default: a random mood each match.</summary>
@@ -39,7 +39,7 @@ public enum LightingMood
     Late,
 }
 
-/// <summary>How hard the AI plays (W29 scales the AI by it).</summary>
+/// <summary>How hard the AI plays (the AI club's traits scale by it).</summary>
 public enum Difficulty
 {
     /// <summary>The AI makes more mistakes.</summary>
@@ -52,11 +52,9 @@ public enum Difficulty
     Hard,
 }
 
-/// <summary>
-/// Player options from the settings screen, with the defaults from the plan's Decisions. Every
-/// switch lives here (W20); systems only read them from <see cref="World.Settings"/>.
-/// <see cref="FromEnvironment()"/> lays the SAP_* variables over them for headless runs.
-/// </summary>
+/// <summary>Player options from the settings screen, with the defaults from the plan's Decisions. Every
+/// switch lives here; systems only read them from <see cref="World.Settings"/>.
+/// <see cref="FromEnvironment()"/> lays the SAP_* variables over them for headless runs.</summary>
 public sealed record Settings
 {
     /// <summary>Gets how control moves between players.</summary>
@@ -80,16 +78,16 @@ public sealed record Settings
     /// <summary>Gets a value indicating whether the referee calls penalties.</summary>
     public bool Penalties { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether a marker shows under each controlled skater (SAP_CONTROL_MARKER=0|1; W30 draws it).</summary>
+    /// <summary>Gets a value indicating whether a marker shows under each controlled skater (SAP_CONTROL_MARKER=0|1).</summary>
     public bool ControlMarker { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether a season game can be simmed instead of played (SAP_SIM_GAME=0|1; W26 offers it).</summary>
+    /// <summary>Gets a value indicating whether a season game can be simmed instead of played (SAP_SIM_GAME=0|1).</summary>
     public bool SimGame { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether dekes happen on their own; off means the deke button only (SAP_AUTO_DEKE=0|1; W32 reads it).</summary>
+    /// <summary>Gets a value indicating whether dekes happen on their own; off means the deke button only (SAP_AUTO_DEKE=0|1).</summary>
     public bool AutoDeke { get; init; }
 
-    /// <summary>Gets a value indicating whether a shot straight off a pass fires as a one-timer (SAP_ONE_TIMERS=0|1; W32 reads it).</summary>
+    /// <summary>Gets a value indicating whether a shot straight off a pass fires as a one-timer (SAP_ONE_TIMERS=0|1).</summary>
     public bool OneTimers { get; init; } = true;
 
     /// <summary>Gets a value indicating whether the home and away kits are swapped (SAP_SWAP_KITS=0|1). Tab toggles it in play.</summary>
@@ -104,27 +102,22 @@ public sealed record Settings
     /// <summary>Gets a value indicating whether the energy panel showing each unit on the ice shows (SAP_LINES_DEBUG=0|1).</summary>
     public bool LinesDebug { get; init; }
 
-    /// <summary>Gets the language the game shows (W53; SAP_LANGUAGE=english|swedish).</summary>
+    /// <summary>Gets the language the game shows (SAP_LANGUAGE=english|swedish).</summary>
     public Language Language { get; init; } = Language.English;
 
     /// <summary>Gets the sound effect volume, 0 to 1.</summary>
     public float Volume { get; init; } = 0.8f;
 
-    /// <summary>Gets the rebound keys and gamepad buttons (W39); an action missing here keeps its default. Read them with <see cref="KeyBindings.Of"/>.</summary>
+    /// <summary>Gets the rebound keys and gamepad buttons; an action missing here keeps its default. Read them with <see cref="KeyBindings.Of"/>.</summary>
     public IReadOnlyDictionary<GameAction, KeyBinding> Keys { get; init; } = new Dictionary<GameAction, KeyBinding>();
 
-    /// <summary>
-    /// Lays the SAP_* overrides over these settings: SAP_DIFFICULTY, SAP_CAMERA_ZOOM, SAP_LIGHTING,
+    /// <summary>Lays the SAP_* overrides over these settings: SAP_DIFFICULTY, SAP_CAMERA_ZOOM, SAP_LIGHTING,
     /// SAP_CONTROL_MARKER, SAP_SIM_GAME, SAP_AUTO_DEKE, SAP_ONE_TIMERS, SAP_SWAP_KITS, SAP_FPS,
     /// SAP_MATCH_DEBUG, SAP_LINES_DEBUG and SAP_LANGUAGE. A variable that is unset or empty changes nothing, so
-    /// the saved settings stay in charge; a bad value is an error, like SAP_LIGHTING always was.
-    /// </summary>
-    /// <returns>The settings to run with.</returns>
+    /// the saved settings stay in charge; a bad value is an error, like SAP_LIGHTING always was.</summary>
     public static Settings FromEnvironment() => FromEnvironment(new Settings());
 
     /// <summary>Lays the SAP_* overrides over saved settings, as <see cref="FromEnvironment()"/> does over the defaults.</summary>
-    /// <param name="saved">The saved settings.</param>
-    /// <returns>The settings to run with.</returns>
     public static Settings FromEnvironment(Settings saved)
     {
         var s = saved;

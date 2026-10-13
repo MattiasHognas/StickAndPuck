@@ -6,13 +6,11 @@ using StickAndPuck.App.AI.Dev;
 
 namespace StickAndPuck.App.Lines.Dev;
 
-/// <summary>
-/// SAP_SCENE=lines: a 5 on 5 match with every skater AI (W6a's stand-in play) where skaters tire
+/// <summary>SAP_SCENE=lines: a 5 on 5 match with every skater AI (the stand-in play) where skaters tire
 /// six times faster than normal (SAP_FATIGUE sets the pace), so lines change on the fly every
 /// few seconds. The bottom panel shows each club's unit on the ice, its energy and the goalie.
 /// SAP_PERIOD=seconds shortens the periods; SAP_AI_HUMAN=1 puts the keyboard on the home centre
-/// (L or gamepad LB changes line early).
-/// </summary>
+/// (L or gamepad LB changes line early).</summary>
 public sealed class LinesScene : IScene
 {
     /// <inheritdoc/>
@@ -37,19 +35,15 @@ public sealed class LinesScene : IScene
     }
 
     /// <summary>Gets the period length from SAP_PERIOD, or a default.</summary>
-    /// <param name="fallback">Seconds when SAP_PERIOD is not set.</param>
-    /// <returns>The period in seconds.</returns>
     internal static float Period(float fallback)
     {
         return float.TryParse(Env.Get("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0 ? s : fallback;
     }
 }
 
-/// <summary>
-/// SAP_SCENE=goalieswap: W7a's match demo (shots at each net in turn) with two-minute periods and
+/// <summary>SAP_SCENE=goalieswap: the match demo (shots at each net in turn) with two-minute periods and
 /// the energy panel, so a goalie soon lets in three in a short spell and the backup comes in at
-/// the next faceoff.
-/// </summary>
+/// the next faceoff.</summary>
 public sealed class GoalieSwapScene : IScene
 {
     /// <inheritdoc/>
@@ -65,13 +59,11 @@ public sealed class GoalieSwapScene : IScene
     }
 }
 
-/// <summary>
-/// SAP_SCENE=goaliepull (W23): an all-AI exhibition that starts late in the third period with the
+/// <summary>SAP_SCENE=goaliepull: an all-AI exhibition that starts late in the third period with the
 /// home club a goal down, so it pulls its goalie for a sixth skater inside the last two minutes.
 /// SAP_PERIOD=seconds sets the period length (default 5:00, the pull window shortens with it);
 /// SAP_AI_HUMAN=1 puts the keyboard on the home centre, where G pulls and returns the goalie
-/// instead of the AI doing it; SAP_PENALTY_SKIP=seconds plays that long off screen first.
-/// </summary>
+/// instead of the AI doing it; SAP_PENALTY_SKIP=seconds plays that long off screen first.</summary>
 public sealed class GoaliePullScene : IScene
 {
     /// <inheritdoc/>
@@ -102,7 +94,6 @@ public sealed class GoaliePullScene : IScene
 internal static class LinesScenes
 {
     /// <summary>Fast fatigue (unless SAP_FATIGUE says otherwise) and the panel on.</summary>
-    /// <param name="world">The match.</param>
     public static void Demo(World world)
     {
         if (Env.Get("SAP_FATIGUE") is not { Length: > 0 }) world.Switches.FatiguePace = 6f;

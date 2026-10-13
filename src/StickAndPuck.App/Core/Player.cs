@@ -88,7 +88,6 @@ public sealed class Player
     public float Speed => new Vector2(Velocity.X, Velocity.Z).Length();
 
     /// <summary>Starts a body action from its first frame.</summary>
-    /// <param name="action">The action to start.</param>
     public void Begin(PlayerAction action)
     {
         Action = action;
@@ -96,6 +95,5 @@ public sealed class Player
     }
 
     /// <summary>Notes the list this player is in, so going on or off the ice counts as a change to it.</summary>
-    /// <param name="list">The list.</param>
     internal void Join(PlayerList list) => roster = list;
 }

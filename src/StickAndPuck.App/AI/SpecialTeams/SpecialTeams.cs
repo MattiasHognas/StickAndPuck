@@ -55,32 +55,23 @@ public sealed class SpecialTeamsTally
     public float KillShape => KillSeconds <= 0 ? 0 : KillOnSpot / KillSeconds;
 }
 
-/// <summary>W22c: the special teams' state for a match, and what other code may read of it.</summary>
+/// <summary>The special teams' state for a match, and what other code may read of it.</summary>
 public static class SpecialTeams
 {
 
     /// <summary>Gets a club's special teams tally for this match.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>The tally.</returns>
     public static SpecialTeamsTally Tally(World world, Side side)
     {
         return Board(world).Tally[(int)side];
     }
 
     /// <summary>Gets the shape a club plays this step.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>Its formation, or <see cref="Formation.None"/> when special teams are not steering it.</returns>
     public static Formation FormationOf(World world, Side side)
     {
         return Board(world).Shape[(int)side];
     }
 
     /// <summary>Gets a skater's spot in his club's special teams shape this step.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="p">The skater.</param>
-    /// <returns>The spot (x, z), or None.</returns>
     public static Maybe<Vector2> SpotOf(World world, Player p)
     {
         return Board(world).Spots[(int)p.Side].TryGetValue(p.Id, out var spot) ? spot : Maybe<Vector2>.None;
@@ -137,11 +128,6 @@ internal sealed class SpecialTeamsBoard
 }
 
 /// <summary>A clear on its way: who fired it, whether it was flipped, when it was decided and when it left the stick (below 0 until then).</summary>
-/// <param name="Side">The killing club.</param>
-/// <param name="Player">The killer.</param>
-/// <param name="Flip">Whether it was flipped high.</param>
-/// <param name="At">When the killer let it go.</param>
-/// <param name="Released">When the puck left his stick, or -1.</param>
 internal sealed record ClearWatch(Side Side, int Player, bool Flip, float At, float Released = -1f);
 
 /// <summary>One skater's misread of his spot.</summary>

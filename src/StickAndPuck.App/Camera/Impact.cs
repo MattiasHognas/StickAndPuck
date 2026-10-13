@@ -5,11 +5,9 @@ using StickAndPuck.App.Players;
 
 namespace StickAndPuck.App.Camera;
 
-/// <summary>
-/// W30: how big moments feel. A hard check (strength 1.5 and up) or a goal freezes the skaters and
+/// <summary>How big moments feel. A hard check (strength 1.5 and up) or a goal freezes the skaters and
 /// the puck for a few steps (hit-stop), shakes the camera in whole pixels and rumbles the pads of
-/// the people involved. The fight close-up moved to <see cref="CloseUp"/> (W61).
-/// </summary>
+/// the people involved. The fight close-up moved to <see cref="CloseUp"/>.</summary>
 /// <remarks>
 /// The hit-stop works like the replay: it runs after every gameplay system and puts the players and
 /// puck back where the hit left them each step, so for those steps nothing moves on the ice. Timers
@@ -43,8 +41,6 @@ internal sealed class Impact
     public int Holding => holdSteps;
 
     /// <summary>Runs one step: holds the ice still during a hit-stop, starts new ones, and moves shake and close-up along.</summary>
-    /// <param name="world">The match state, after every gameplay system has run this step.</param>
-    /// <param name="dt">The step length.</param>
     public void Update(World world, float dt)
     {
         Rumble.Update(dt);
@@ -73,9 +69,6 @@ internal sealed class Impact
     }
 
     /// <summary>Moves a camera by this step's shake.</summary>
-    /// <param name="camera">The gameplay camera.</param>
-    /// <param name="pixel">One pixel at the far boards, in metres.</param>
-    /// <returns>The camera to draw with.</returns>
     public Camera3D Apply(Camera3D camera, float pixel)
     {
         var offset = ShakeOffset;
@@ -130,10 +123,8 @@ internal sealed class Impact
         shakeStep = 0;
     }
 
-    /// <summary>
-    /// A new offset every other step, swinging side to side and shrinking to nothing; whole pixels so
-    /// the boards stay crisp.
-    /// </summary>
+    /// <summary>A new offset every other step, swinging side to side and shrinking to nothing; whole pixels so
+    /// the boards stay crisp.</summary>
     void Shake(float dt)
     {
         if (shakeLeft <= 0) return;

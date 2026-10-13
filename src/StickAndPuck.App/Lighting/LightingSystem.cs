@@ -5,14 +5,12 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Lighting;
 
-/// <summary>
-/// W18: the match start time (early, afternoon, late) picks a lighting preset; intros dim and
+/// <summary>The match start time (early, afternoon, late) picks a lighting preset; intros dim and
 /// goals flash. Each match draws a random start time; SAP_LIGHTING=early|afternoon|late fixes
 /// it. The preset and cues set the toon shader's three tones and light direction, and the
 /// ice, scratch, ice band and glass tones in <see cref="ArenaLook"/>, so the arena and every
-/// player follow. The ice sheet and its scratches are flat palette greys per preset (W21), so
-/// the ice stays cold under the warm evening key light; only the cues dim or brighten them.
-/// </summary>
+/// player follow. The ice sheet and its scratches are flat palette greys per preset, so
+/// the ice stays cold under the warm evening key light; only the cues dim or brighten them.</summary>
 internal sealed class LightingSystem : ISystem
 {
     /// <summary>The gold the bands and glass turn in a goal flash (#f2c14e).</summary>
@@ -28,12 +26,12 @@ internal sealed class LightingSystem : ISystem
 
     public void Start(World world)
     {
-        // W67: a seeded match (and so its replay) always gets the same mood; the unseeded menu backdrop varies
+        // A seeded match (and so its replay) always gets the same mood; the unseeded menu backdrop varies
         var dice = world.Seed != 0 ? Seeds.Dice(world.Seed, "lighting", 0) : Random.Shared;
         var time = Env.Get("SAP_LIGHTING") is { Length: > 0 } name
             ? Enum.TryParse<TimeOfDay>(name, ignoreCase: true, out var t) ? t
                 : throw new InvalidOperationException($"SAP_LIGHTING={name}: use early, afternoon or late")
-            : Enum.TryParse<TimeOfDay>(world.Settings.Lighting.ToString(), out var chosen) ? chosen    // W20: the settings screen's mood
+            : Enum.TryParse<TimeOfDay>(world.Settings.Lighting.ToString(), out var chosen) ? chosen    // the settings screen's mood
             : (TimeOfDay)dice.Next(3);
         preset = LightPresets.For(time);
         string startTime = preset.StartTimes[dice.Next(preset.StartTimes.Length)];
@@ -52,7 +50,12 @@ internal sealed class LightingSystem : ISystem
     {
         var cue = cues.Current();
         var look = world.Look;
-        look.IceBand = cue.Flash ? FlashBand : cue.Bands ? preset.IceBand : preset.IceBand with { A = 0 };
+        look.IceBand = (cue.Flash, cue.Bands) switch
+        {
+            (true, _) => FlashBand,
+            (_, true) => preset.IceBand,
+            _ => preset.IceBand with { A = 0 },
+        };
         look.Glass = cue.Flash ? FlashGlass : preset.Glass;
         look.Ice = Dimmed(preset.Ice, cue.Tone);
         look.Scratch = Dimmed(preset.Scratch, cue.Tone);
@@ -81,6 +84,6 @@ internal sealed class LightingSystem : ISystem
         SetShaderValue(shader, midLoc, preset.Mid * tone, ShaderUniformDataType.Vec3);
         SetShaderValue(shader, fullLoc, preset.Full * tone, ShaderUniformDataType.Vec3);
         SetShaderValue(shader, dirLoc, preset.LightDir, ShaderUniformDataType.Vec3);
-        Render.DitherGrid.Apply(world.Camera, shader);     // W60: the dither pattern hangs from the ice, not the screen
+        Render.DitherGrid.Apply(world.Camera, shader);     // the dither pattern hangs from the ice, not the screen
     }
 }

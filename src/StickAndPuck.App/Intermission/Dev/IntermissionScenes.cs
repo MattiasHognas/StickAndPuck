@@ -6,12 +6,10 @@ using StickAndPuck.App.Rules.Dev;
 
 namespace StickAndPuck.App.Intermission.Dev;
 
-/// <summary>
-/// SAP_SCENE=zamboni: an exhibition with the AI on both sides that opens in the first intermission,
+/// <summary>SAP_SCENE=zamboni: an exhibition with the AI on both sides that opens in the first intermission,
 /// so the Zamboni comes out at once, and plays on into the second period after it. SAP_ZAMBONI_AT=seconds
 /// starts the drive that far in with the skaters already waiting at their bench doors, for headless
-/// screenshots of a chosen moment (SAP_SCREENSHOT takes one a second in).
-/// </summary>
+/// screenshots of a chosen moment (SAP_SCREENSHOT takes one a second in).</summary>
 public sealed class ZamboniScene : IScene
 {
     /// <inheritdoc/>

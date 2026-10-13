@@ -1,9 +1,7 @@
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// W56: the state of the dev scenes' loops, which were statics. A loop runs while its slot is set;
-/// a normal match never sets one.
-/// </summary>
+/// <summary>The state of the dev scenes' loops, which were statics. A loop runs while its slot is set;
+/// a normal match never sets one.</summary>
 public sealed class DevScenes
 {
     /// <summary>Gets the goalie scene's shot loop and tally.</summary>

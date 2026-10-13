@@ -7,8 +7,7 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// W22c: the AI's special teams. Runs after the defence (W22b) and before decisions (W6b), and
+/// <summary>The AI's special teams. Runs after the defence and before decisions, and
 /// only while one club has a man advantage from penalties (<see cref="Penalties.PowerPlay"/>).
 /// <list type="bullet">
 /// <item>Power play: once the puck is in the zone with the power play on it, its AI skaters take
@@ -20,14 +19,13 @@ namespace StickAndPuck.App.AI;
 /// presser) while the carrier is near his spot; one further out is left to the shape.</item>
 /// <item>Clear: a killer who gets the puck in his own half fires it down the ice, along the boards
 /// or through the middle, whichever is less crowded, and flips it over sticks when every lane is.
-/// Icing is waved off for the short club (W7b).</item>
+/// Icing is waved off for the short club.</item>
 /// <item>Hockey IQ sets the odds: the kill reads the power play's shape at each zone entry, a smart
 /// one picking the right answer, a fumbling one the wrong one; a smart skater finds his spot
 /// exactly and clears at once, a poor one stands a little off and hesitates with the puck.</item>
 /// </list>
-/// SAP_ST_SPOTS=1 or the match debug setting draws the spots on the ice.
-/// </summary>
-internal sealed class SpecialTeamsSystem : ISystem
+/// SAP_ST_SPOTS=1 or the match debug setting draws the spots on the ice.</summary>
+internal sealed partial class SpecialTeamsSystem : ISystem
 {
     const float PressFrom = 6.5f;       // a killer presses a carrier this close to his spot; further out he holds the shape
     const float Switch = 2.5f;          // a new pairing of skaters and spots has to save this many metres to replace the old
@@ -38,7 +36,7 @@ internal sealed class SpecialTeamsSystem : ISystem
     const float SlotShot = 0.4f;        // a power play carrier with a lane shoots from a spot this good
     const float PerimeterShot = 0.12f;  // and from the point or the half wall on this share of his looks
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 3;
 
     readonly Random rng;
@@ -120,10 +118,8 @@ internal sealed class SpecialTeamsSystem : ISystem
         if (!carrier.HasValue) NoChase(world, killTeam, ppTeam);
     }
 
-    /// <summary>
-    /// A man short, the kill does not join a rush: out of its own zone with the puck, one killer
-    /// (the nearest) supports the carrier and the rest skate back to their defensive spots.
-    /// </summary>
+    /// <summary>A man short, the kill does not join a rush: out of its own zone with the puck, one killer
+    /// (the nearest) supports the carrier and the rest skate back to their defensive spots.</summary>
     static void StayBack(World world, List<Player> team, Player carrier)
     {
         int end = PuckHandling.AttackEnd(world, carrier.Side);
@@ -137,10 +133,8 @@ internal sealed class SpecialTeamsSystem : ISystem
         }
     }
 
-    /// <summary>
-    /// A man short, the kill does not chase a cleared puck into the other end: its chaser goes only
-    /// when he is clearly first to it, and otherwise skates back to his defensive spot.
-    /// </summary>
+    /// <summary>A man short, the kill does not chase a cleared puck into the other end: its chaser goes only
+    /// when he is clearly first to it, and otherwise skates back to his defensive spot.</summary>
     static void NoChase(World world, List<Player> killers, List<Player> powerPlay)
     {
         var puck = world.Puck.Position;
@@ -161,7 +155,7 @@ internal sealed class SpecialTeamsSystem : ISystem
         return end * spot.X > -BackFrom ? spot with { X = -end * BackFrom } : spot;
     }
 
-    /// <summary>A new power play: it picks its shape (W22d's club tactics may pick it later).</summary>
+    /// <summary>A new power play: it picks its shape (club tactics may pick it later).</summary>
     void Begin(SpecialTeamsBoard board, Side pp)
     {
         board.PowerPlay = pp.OrNone();
@@ -202,227 +196,6 @@ internal sealed class SpecialTeamsSystem : ISystem
             Formation.Diamond => "DIAMOND",
             _ => "-",
         };
-    }
-
-    /// <summary>The kill reads the power play's shape as the puck comes in: the right answer by the odds of its hockey IQ, the wrong one on a fumble.</summary>
-    Formation ReadShape(Formation pp, List<Player> killers)
-    {
-        int iq = killers.Count == 0 ? 50 : (int)killers.Average(p => p.Data.Traits.HockeyIq);
-        var (outcome, read) = Jitter.Roll(rng, iq);
-        var right = Formations.Answer(pp);
-        var wrong = right == Formation.Box ? Formation.Diamond : Formation.Box;
-        if (outcome == ReadOutcome.Fumble) return wrong;
-        return rng.NextSingle() < 0.35f + 0.6f * Traits.Unit(read) ? right : Formation.Box;
-    }
-
-    /// <summary>The power play's AI skaters take their spots; the carrier drifts toward his, leaving the play with the puck to decisions.</summary>
-    void PowerPlay(World world, SpecialTeamsBoard board, Side side, List<Player> team, int end, Vector2 puck, Maybe<Player> carrier, float dt)
-    {
-        var spots = Formations.Spots(board.PpShape, team.Count, end, puck);
-        var pairs = Pair(world, board, side, team, spots);
-        var tally = board.Tally[(int)side];
-        tally.Seconds += dt;
-        if (board.PpShape == Formation.Umbrella) tally.Umbrella += dt; else tally.OneThreeOne += dt;
-        int held = 0;
-        foreach (var (p, spot) in pairs)
-        {
-            if (Vector2.Distance(Flat(p.Position), spot) < OnSpot) held++;
-            if (p.Slot >= 0 || Positioning.JobOf(world, p) == Job.Chase) continue;
-            board.Spots[(int)side][p.Id] = spot;
-            if (carrier.TryGet(out var holder) && holder == p)
-            {
-                // the carrier is positioning's and decisions': he skates and passes as usual, and shoots more readily
-                Shoot(world, board, p, end);
-                continue;
-            }
-            Take(world, p, carrier.TryGet(out var mate) ? Open(world, board, p, mate, spot) : Read(world, board, p, spot, 1.2f), "power play spot");
-        }
-        tally.OnSpot += dt * held / Math.Max(1, pairs.Count);
-    }
-
-    /// <summary>The kill holds its box or diamond; the killer on the carrier presses him while he is near his spot.</summary>
-    void Kill(World world, SpecialTeamsBoard board, Side side, List<Player> team, int end, Vector2 puck, Maybe<Player> carrier, float dt)
-    {
-        var spots = Formations.Spots(board.KillShape, team.Count, end, puck);
-        var pairs = Pair(world, board, side, team, spots);
-        var tally = board.Tally[(int)side];
-        tally.KillSeconds += dt;
-        if (board.KillShape == Formation.Box) tally.Box += dt; else tally.Diamond += dt;
-        int held = 0;
-        foreach (var (p, spot) in pairs)
-        {
-            board.Spots[(int)side][p.Id] = spot;
-            bool presses = carrier.TryGet(out var onPuck) && DefenceSystem.DutyOf(world, p) is Duty.Contain or Duty.Engage
-                && Vector2.Distance(Flat(onPuck.Position), spot) < PressFrom;
-            if (presses || Vector2.Distance(Flat(p.Position), spot) < OnSpot) held++;
-            if (presses || p.Slot >= 0 || Positioning.JobOf(world, p) == Job.Chase) continue;
-            Take(world, p, Read(world, board, p, spot, 1.6f), "kill spot");
-        }
-        tally.KillOnSpot += dt * held / Math.Max(1, pairs.Count);
-    }
-
-    /// <summary>Pairs a club's skaters with the spots, keeping the old pairing unless a new one saves real distance.</summary>
-    static List<(Player P, Vector2 Spot)> Pair(World world, SpecialTeamsBoard board, Side side, List<Player> team, IReadOnlyList<Vector2> spots)
-    {
-        var who = team.Select(p => (Flat(p.Position), Roles.IsDefence(Positioning.RoleOf(world, p)))).ToList();
-        var (fresh, freshCost) = Formations.Assign(who, spots);
-        var old = board.Pairing[(int)side];
-        float oldCost = 0;
-        bool valid = old.Count == Math.Min(team.Count, spots.Count) && team.Take(spots.Count).All(p => old.ContainsKey(p.Id))
-            && old.Values.Distinct().Count() == old.Count && old.Values.All(s => s < spots.Count);
-        if (valid)
-        {
-            for (int i = 0; i < team.Count; i++)
-                if (old.TryGetValue(team[i].Id, out int s)) oldCost += Formations.Cost(who[i], spots[s], s);
-        }
-
-        if (!valid || freshCost < oldCost - Switch)
-        {
-            old.Clear();
-            for (int i = 0; i < team.Count; i++)
-                if (fresh[i] >= 0) old[team[i].Id] = fresh[i];
-        }
-        return [.. team.Where(p => old.ContainsKey(p.Id)).Select(p => (p, spots[old[p.Id]]))];
-    }
-
-    /// <summary>The spot as this skater reads it: a smart one finds it, a poor one stands a little off, re-read every few seconds.</summary>
-    Vector2 Read(World world, SpecialTeamsBoard board, Player p, Vector2 spot, float off)
-    {
-        var plan = board.For(p.Id);
-        if (world.Time >= plan.ErrorUntil)
-        {
-            float angle = rng.NextSingle() * MathF.Tau, size = (1f - p.Data.Traits.Iq) * off * MathF.Sqrt(rng.NextSingle());
-            plan.Error = new Vector2(SimMath.Cos(angle), SimMath.Sin(angle)) * size;
-            plan.ErrorUntil = world.Time + 3f + rng.NextSingle() * 3f;
-        }
-        return TeamShape.Inside(spot + plan.Error);
-    }
-
-    /// <summary>
-    /// A power play shoots more than at even strength: the carrier looks every moment, and with a
-    /// clear lane he lets a shot go from the slot, and now and then from the point or the half wall,
-    /// a slap shot when he has time, for a tip or a rebound. Decisions hold the shot (W6b).
-    /// </summary>
-    void Shoot(World world, SpecialTeamsBoard board, Player p, int end)
-    {
-        var plan = board.For(p.Id);
-        var brain = Decisions.Board(world).For(p.Id);
-        if (p.Slot >= 0 || AiCommand.Committed(world, p) || brain.LatePass.HasValue || world.Time < plan.ShotLook) return;
-        plan.ShotLook = world.Time + Choices.ThinkEvery(p.Data.Traits.HockeyIq) * (0.8f + 0.4f * rng.NextSingle());
-        if (world.Time - brain.GotAt < 0.25f) return;
-        var at = Flat(world.Puck.Position);
-        var blockers = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).Where(o => !o.IsGoalie).Select(o => Flat(o.Position)).ToList();
-        float lane = Choices.ShotLane(end, at, blockers);
-        float quality = Choices.ShotQuality(end, at);
-        bool pressed = blockers.Any(b => Vector2.Distance(b, at) < 2.6f);
-        var (outcome, _) = Jitter.Roll(world, p, rng);
-        if (outcome == ReadOutcome.Fumble || lane < 0.85f) return;
-        if (quality < SlotShot && !(quality > 0.05f && rng.NextSingle() < PerimeterShot)) return;
-
-        var net = new Vector2(end * RinkSpec.GoalLineX, 0);
-        float distance = Vector2.Distance(net, at);
-        int side = at.Y > 0 ? -1 : 1;
-        var aim = Vector2.Normalize(net - at + new Vector2(0, side * 0.6f));
-        AiCommand.Shoot(world, p, AiLayer.SpecialTeams, aim, distance > 13f && !pressed ? 30 + rng.Next(20) : 2, "power play shot");
-        brain.NextThink = Math.Max(brain.NextThink, world.Time + 0.2f);
-        board.Tally[(int)p.Side].Shots++;
-    }
-
-    /// <summary>
-    /// With a teammate on the puck, an off-puck skater looks for the open ice around his spot, where
-    /// a pass gets through (W22a's <see cref="GetOpen"/>), read again every moment, quicker for a smart one.
-    /// </summary>
-    Vector2 Open(World world, SpecialTeamsBoard board, Player p, Player carrier, Vector2 spot)
-    {
-        var plan = board.For(p.Id);
-        bool stale = !plan.Open.TryGet(out var open) || Vector2.Distance(open, spot) > OpenRadius * 1.6f;
-        if (!stale && world.Time < plan.OpenNext) return open;
-        int iq = Jitter.Roll(world, p, rng).Iq;
-        float minA = RinkSpec.BlueLineX + 0.8f, maxA = RinkSpec.HalfLength;
-        var best = GetOpen.Best(world, p, carrier, spot, OpenRadius, minA, maxA, iq, rng, plan.Open);
-        plan.Open = best;
-        plan.OpenNext = world.Time + Traits.Scale(p.Data.Traits.HockeyIq, 0.7f, 0.3f) * (0.8f + 0.4f * rng.NextSingle());
-        return best;
-    }
-
-    /// <summary>Takes a skater over from positioning and the defence, as the defence does, and skates him to his spot.</summary>
-    static void Take(World world, Player p, Vector2 target, string reason)
-    {
-        float far = Vector2.Distance(target, Flat(p.Position));
-        AiCommand.Take(world, p, AiLayer.SpecialTeams, target, Steering.Toward(p, target, 1.6f, sprint: far > 6f), reason);
-    }
-
-    /// <summary>
-    /// A killer with the puck in his own half clears it: after a beat (shorter for a smart one,
-    /// longer on a fumbled read) he fires it down the ice through the least crowded lane, and flips
-    /// it high when every lane has a stick in it. Decisions hold the shot (W6b's slap shot hold).
-    /// </summary>
-    void Clear(World world, SpecialTeamsBoard board, Player p)
-    {
-        if (p.Slot >= 0) return;
-        int end = PuckHandling.AttackEnd(world, p.Side);
-        var at = Flat(world.Puck.Position);
-        if (end * at.X > 0f) { board.ClearCarrier = -1; return; }   // over the red line: a short-handed rush is decisions' play
-        if (board.ClearCarrier != p.Id)
-        {
-            board.ClearCarrier = p.Id;
-            var (outcome, iq) = Jitter.Roll(world, p, rng);
-            float beat = Traits.Scale(iq, 0.5f, 0.12f);
-            if (outcome == ReadOutcome.Fumble) beat += 0.5f + 0.5f * rng.NextSingle();
-            board.ClearAt = world.Time + beat;
-        }
-        if (AiCommand.Committed(world, p)) return;
-        AiCommand.Hold(world, p);   // no carry, pass or shot of decisions' own in the meantime
-        if (world.Time < board.ClearAt) return;
-
-        float side = at.Y >= 0 ? 1f : -1f;
-        // up the boards on either side, never straight at the far net
-        Vector2[] lanes = [new(end, 0.45f * side), new(end, 0.2f * side), new(end, -0.3f * side)];
-        var opponents = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).Where(o => !o.IsGoalie).Select(o => Flat(o.Position)).ToList();
-        var best = lanes.Select(Vector2.Normalize).MinBy(d => Crowd(at, d, opponents) + MathF.Abs(MathF.Abs(d.Y) - 0.41f));
-        bool flip = Crowd(at, best, opponents) > 0;
-        AiCommand.Shoot(world, p, AiLayer.SpecialTeams, best, flip ? 20 : 4, "kill clear");   // a flip is a short slap wind-up, lifted (W35's held shot), a clear along the ice a tap
-        board.Clearing = new ClearWatch(p.Side, p.Id, flip, world.Time);
-        board.ClearCarrier = -1;
-    }
-
-    /// <summary>
-    /// Counts a clear once the puck leaves the killer's stick (a wind-up broken by a check is no
-    /// clear), and as out once it crosses the killers' blue line, going away, within three seconds.
-    /// </summary>
-    static void TrackClear(World world, SpecialTeamsBoard board)
-    {
-        if (!board.Clearing.TryGet(out var c)) return;
-        var pk = world.Puck;
-        var tally = board.Tally[(int)c.Side];
-        if (c.Released < 0)
-        {
-            if (pk.Carrier == c.Player && world.Time - c.At < 1.5f) return;
-            if (pk.Carrier >= 0 || pk.LastTouch != c.Player || !pk.Live) { board.Clearing = Maybe<ClearWatch>.None; return; }
-            tally.Clears++;
-            if (c.Flip) tally.Flips++;
-            board.Clearing = c with { Released = world.Time };
-            return;
-        }
-        if (world.Time - c.Released > 3f) { board.Clearing = Maybe<ClearWatch>.None; return; }
-        if (PuckHandling.AttackEnd(world, c.Side) * pk.Position.X > -RinkSpec.BlueLineX)
-        {
-            tally.ClearedOut++;
-            board.Clearing = Maybe<ClearWatch>.None;
-        }
-    }
-
-    /// <summary>How many opponents stand near a lane in its first 14 metres.</summary>
-    static int Crowd(Vector2 from, Vector2 dir, List<Vector2> opponents)
-    {
-        int n = 0;
-        foreach (var o in opponents)
-        {
-            float along = Vector2.Dot(o - from, dir);
-            if (along is < 0.5f or > 14f) continue;
-            if (Vector2.Distance(from + dir * along, o) < 1.8f) n++;
-        }
-        return n;
     }
 
     static List<Player> Skaters(World world, Side side)

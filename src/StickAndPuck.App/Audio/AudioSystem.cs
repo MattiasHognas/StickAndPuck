@@ -5,13 +5,11 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Audio;
 
-/// <summary>
-/// W12: plays the generated 8-bit effects for each match event and puck contact. Runs after every
+/// <summary>Plays the generated 8-bit effects for each match event and puck contact. Runs after every
 /// publisher, reads this step's <see cref="MatchEvents"/> and maps them through
 /// <see cref="SoundCues"/>; it also watches the puck, so a pickup or a deflection nobody published
 /// still clicks. With no audio device it stays silent and the game runs on.
-/// SAP_SFX=demo plays every event's sounds in turn, for listening to the set in the game.
-/// </summary>
+/// SAP_SFX=demo plays every event's sounds in turn, for listening to the set in the game.</summary>
 internal sealed class AudioSystem : ISystem, IDisposable
 {
     const int Voices = 4;              // copies of each effect, so quick repeats overlap instead of cutting off

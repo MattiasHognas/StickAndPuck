@@ -2,12 +2,10 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// Settles the games the human does not play from the clubs' traits, in an instant: goals are
+/// <summary>Settles the games the human does not play from the clubs' traits, in an instant: goals are
 /// Poisson draws around about three a side, tilted by attack against defence and goalie, with a
 /// small home edge. A tie goes to 3 on 3 overtime or a shootout, which adds one goal to the winner
-/// as in a played match. The same season seed and game always give the same score.
-/// </summary>
+/// as in a played match. The same season seed and game always give the same score.</summary>
 public static class QuickSim
 {
     const double GoalsPerSide = 2.9;
@@ -15,10 +13,6 @@ public static class QuickSim
     const double OvertimeGoalShare = 0.55;
 
     /// <summary>Plays one game on paper.</summary>
-    /// <param name="home">The home club.</param>
-    /// <param name="away">The away club.</param>
-    /// <param name="seed">The season seed mixed with the game number.</param>
-    /// <returns>The result.</returns>
     public static FixtureResult Play(ClubData home, ClubData away, int seed)
     {
 #pragma warning disable S2245 // seeded so a game always plays out the same, not security

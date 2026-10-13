@@ -10,29 +10,22 @@ namespace StickAndPuck.App.Rules;
 /// <param name="Chance">The chance the referee calls it, before <see cref="WorldSwitches.PenaltyStrictness"/>.</param>
 public readonly record struct Foul(int PlayerId, string Infraction, float Chance);
 
-/// <summary>
-/// W14's judgement, pure so tests can ask it directly. A check (W4c's Check event, Side and PlayerId
+/// <summary>The judgement, pure so tests can ask it directly. A check (the Check event, Side and PlayerId
 /// the checker, Position the target) is judged by what it did: a knockdown of a skater without the
 /// puck or from behind is tripping; a hit from behind that leaves the carrier standing is hooking; a
 /// hard hit away from the puck is slashing; any other check has a small chance of a slash. A
 /// defender trailing close behind a fast carrier can be called for hooking a little every second.
 /// A skater with a high checking trait hits cleaner: the chance runs from 125 % at 0 to 75 % at 100.
-/// W47 adds, each only while its switch in <see cref="MatchSetup.Rules"/> is on and judged before
-/// W14's calls so a switched-off one leaves the hit to them: boarding (a hard hit from behind near
+/// Adds, each only while its switch in <see cref="MatchSetup.Rules"/> is on and judged before
+/// tripping, hooking and slashing so a switched-off one leaves the hit to them: boarding (a hard hit from behind near
 /// the boards), checking from behind (the same in open ice, with Full severity only), roughing (the
 /// same skater hit again at once, or any hit after the whistle), cross-checking (a hard hit from the
 /// front on the carrier), interference (a hit on a skater far from the puck) and high-sticking (a
 /// face-to-face check otherwise clean). Holding is a chase like hooking: a defender hanging on
-/// behind a slowed carrier. <see cref="Grade"/> says what each call costs.
-/// </summary>
+/// behind a slowed carrier. <see cref="Grade"/> says what each call costs.</summary>
 public static class PenaltyModel
 {
     /// <summary>Judges one check event.</summary>
-    /// <param name="world">The match, in the step the check landed (after <see cref="CheckingSystem"/>).</param>
-    /// <param name="check">The check.</param>
-    /// <param name="again">True when the checker hit the same skater within <see cref="PenaltyTuning.RoughingWindow"/> (W47).</param>
-    /// <param name="afterWhistle">True when the hit came after play stopped (W47).</param>
-    /// <returns>The foul it may be, or None for a clean hit or an unknown target.</returns>
     public static Maybe<Foul> Judge(World world, CheckLanded check, bool again = false, bool afterWhistle = false)
     {
         var checker = world.Players[check.CheckerId];
@@ -59,7 +52,7 @@ public static class PenaltyModel
         return new Foul(checker.Id, infraction, chance * Discipline(checker));
     }
 
-    /// <summary>W47's calls on a check that come before W14's, each only with its switch on.</summary>
+    /// <summary>Calls on a check that come before tripping, hooking and slashing, each only with its switch on.</summary>
     static Maybe<(string Infraction, float Chance)> Worse(RuleSet rules, Puck pk, CheckLanded check, Player target, bool carrying, bool behind, bool again, bool afterWhistle)
     {
         bool hard = check.Strength >= CheckingModel.HardHit;
@@ -74,18 +67,11 @@ public static class PenaltyModel
         return Maybe<(string Infraction, float Chance)>.None;
     }
 
-    /// <summary>
-    /// Gets what a call costs (W47). With <see cref="PenaltySeverity.MinorsOnly"/> every call is a
+    /// <summary>Gets what a call costs. With <see cref="PenaltySeverity.MinorsOnly"/> every call is a
     /// minor. Otherwise boarding and cross-checking are a major with a game misconduct from
     /// <see cref="PenaltyTuning.MajorHit"/> up, checking from behind is that or a minor and
     /// misconduct, a high stick that draws blood is a double minor, and roughing now and then
-    /// earns a misconduct on top. The rest are minors.
-    /// </summary>
-    /// <param name="rules">The match rules.</param>
-    /// <param name="infraction">The call.</param>
-    /// <param name="strength">The hit's strength, 0 for a chase.</param>
-    /// <param name="roll">A dice roll from 0 to 1.</param>
-    /// <returns>The severity.</returns>
+    /// earns a misconduct on top. The rest are minors.</summary>
     public static Severity Grade(RuleSet rules, string infraction, float strength, float roll)
     {
         if (rules.PenaltySeverity == PenaltySeverity.MinorsOnly) return Severity.Minor;
@@ -100,10 +86,7 @@ public static class PenaltyModel
         };
     }
 
-    /// <summary>W47: finds defenders hanging on behind a slowed carrier, holding him.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="dt">The step length.</param>
-    /// <returns>Holding fouls with this step's chance; none with the switch off.</returns>
+    /// <summary>Finds defenders hanging on behind a slowed carrier, holding him.</summary>
     public static IEnumerable<Foul> Holds(World world, float dt)
     {
         var pk = world.Puck;
@@ -119,10 +102,7 @@ public static class PenaltyModel
         }
     }
 
-    /// <summary>Gets whether a hit from <paramref name="from"/> lands on the target's front, face to face (W47).</summary>
-    /// <param name="from">Where the checker stands.</param>
-    /// <param name="target">The skater hit.</param>
-    /// <returns>True within 60 degrees of straight ahead of him.</returns>
+    /// <summary>Gets whether a hit from <paramref name="from"/> lands on the target's front, face to face.</summary>
     public static bool FaceToFace(Vector3 from, Player target)
     {
         var push = new Vector2(target.Position.X - from.X, target.Position.Z - from.Z);
@@ -131,9 +111,7 @@ public static class PenaltyModel
         return Vector2.Dot(Vector2.Normalize(push), facing) < -0.5f;
     }
 
-    /// <summary>Gets how far a spot is from the boards, rounded corners included (W47).</summary>
-    /// <param name="at">The spot.</param>
-    /// <returns>Metres, 0 at the boards.</returns>
+    /// <summary>Gets how far a spot is from the boards, rounded corners included.</summary>
     public static float BoardsDistance(Vector3 at)
     {
         float ax = MathF.Abs(at.X), az = MathF.Abs(at.Z);
@@ -143,9 +121,6 @@ public static class PenaltyModel
     }
 
     /// <summary>Finds defenders trailing the carrier close enough to hook him this step.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="dt">The step length.</param>
-    /// <returns>Hooking fouls with this step's chance.</returns>
     public static IEnumerable<Foul> Chases(World world, float dt)
     {
         var pk = world.Puck;
@@ -165,9 +140,6 @@ public static class PenaltyModel
     }
 
     /// <summary>Gets whether a hit from <paramref name="from"/> lands on the target's back.</summary>
-    /// <param name="from">Where the checker stands.</param>
-    /// <param name="target">The skater hit.</param>
-    /// <returns>True within <see cref="PenaltyTuning.BehindDegrees"/> of straight behind.</returns>
     public static bool FromBehind(Vector3 from, Player target)
     {
         var push = new Vector2(target.Position.X - from.X, target.Position.Z - from.Z);
@@ -178,8 +150,6 @@ public static class PenaltyModel
     }
 
     /// <summary>Gets how much a skater's checking trait scales his chance of a foul: 1.25 at 0 down to 0.75 at 100.</summary>
-    /// <param name="p">The skater.</param>
-    /// <returns>The factor.</returns>
     public static float Discipline(Player p)
     {
         return 1.25f - (0.5f * Traits.Unit(p.Data.Traits.Checking));

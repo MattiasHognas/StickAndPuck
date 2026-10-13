@@ -17,7 +17,7 @@ internal sealed class ModeScreen : MenuScreen
     public override IReadOnlyList<MenuItem> Items()
     {
         var items = modes.Select(m => new MenuItem(m.Title, () => Choose(m))).ToList();
-        if (board) items.Add(new MenuItem(Text.Get(K.ArcadeBestRunsItem), () => ScreenFlow.Push(new ArcadeBoardScreen())));    // W33
+        if (board) items.Add(new MenuItem(Text.Get(K.ArcadeBestRunsItem), () => ScreenFlow.Push(new ArcadeBoardScreen())));
         return items;
     }
 
@@ -31,7 +31,6 @@ internal sealed class ModeScreen : MenuScreen
     }
 
     /// <summary>Asks for the mode's clubs one at a time, then starts it.</summary>
-    /// <param name="mode">The mode.</param>
     public static void Choose(IGameMode mode)
     {
         var picks = new List<ClubData>();
@@ -56,16 +55,10 @@ internal sealed class ModeScreen : MenuScreen
     }
 }
 
-/// <summary>
-/// Team select: every club's crest and name in two columns, and a RULES row under them (W44) with
+/// <summary>Team select: every club's crest and name in two columns, and a RULES row under them with
 /// the rule preset the match plays. Arrows move, enter picks; down from a column's last club reaches
 /// RULES, where left and right pick SHL, ARCADE or NHL (clearing changed rules) and the choice is
-/// saved with the settings. A mode fixed to a preset (arcade) shows it greyed out.
-/// </summary>
-/// <param name="heading">What is being picked.</param>
-/// <param name="taken">A club already picked, shown greyed and skipped, or None.</param>
-/// <param name="picked">What to do with the pick.</param>
-/// <param name="fixedRules">The rules the mode always plays, or None when the player picks.</param>
+/// saved with the settings. A mode fixed to a preset (arcade) shows it greyed out.</summary>
 internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Action<ClubData> picked, Maybe<RuleSet> fixedRules = default) : Screen
 {
     const int ColW = 150, RowH = 20, PanelW = (ColW * 2) + 24, StrengthH = 40;
@@ -171,7 +164,7 @@ internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Ac
         art.Right(onRules && !fixedRules.HasValue ? $"< {Rules.Name} >" : Rules.Name, x + PanelW - 14, y, ink);
     }
 
-    /// <summary>W33: the selected club's strengths as bars in two columns, and how it plays.</summary>
+    /// <summary>The selected club's strengths as bars in two columns, and how it plays.</summary>
     static void DrawStrengths(ScreenArt art, ClubData club, int x, int y)
     {
         var s = ClubStrengths.Of(club);
@@ -203,8 +196,6 @@ internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Ac
 }
 
 /// <summary>A yes or no question; yes runs the action, no goes back.</summary>
-/// <param name="question">The question.</param>
-/// <param name="yes">What yes does.</param>
 internal sealed class ConfirmScreen(string question, Action yes) : MenuScreen
 {
     /// <inheritdoc/>

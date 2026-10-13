@@ -5,20 +5,15 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// A plain arcade panel in the A3 pixel font: the human's club, the rule, clubs beaten and lives
+/// <summary>A plain arcade panel in the A3 pixel font: the human's club, the rule, clubs beaten and lives
 /// left, then every game with W or L, the score and how it was decided. The heading says whether the
 /// run goes on, ended on a loss, or ended as champions, and after the run the best runs so far
-/// (W25's <see cref="ArcadeRun.Records"/>). A stand-in until W33's trophy screen, which reads the same <see cref="ArcadeRun"/>.
-/// </summary>
+/// (<see cref="ArcadeRun.Records"/>). The trophy screen reads the same <see cref="ArcadeRun"/>.</summary>
 internal static class ArcadeSummary
 {
     const int Line = 12, Pad = 6, Width = 300, BestShown = 3;
 
     /// <summary>Draws the panel centred on the 480x270 frame.</summary>
-    /// <param name="art">The HUD art.</param>
-    /// <param name="run">The run.</param>
-    /// <param name="clubs">Every club, for names.</param>
     public static void Draw(HudArt art, ArcadeRun run, IReadOnlyList<ClubData> clubs)
     {
         string Name(string id) => clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).Select(c => c.Name).Or(id);
@@ -55,7 +50,7 @@ internal static class ArcadeSummary
         if (!run.IsOver) art.DrawText(Text.Format(run.NextAtHome ? K.NextVs : K.NextAt, Name(run.NextOpponent.Or(""))), left, top, art.Score);
         if (best.Count == 0) return;
 
-        // W25: the best runs so far, this one marked
+        // The best runs so far, this one marked
         art.DrawText(Text.Get(K.BestRunsHead), left, top, art.Score);
         top += Line;
         for (int i = 0; i < best.Count; i++)

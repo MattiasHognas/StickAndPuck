@@ -4,25 +4,15 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// W33: a club's strengths for team select, 0 to 100, from the traits in its data file: attack
+/// <summary>A club's strengths for team select, 0 to 100, from the traits in its data file: attack
 /// (forwards' shooting, puck control and hockey IQ), defence (defenders' checking, IQ and puck
 /// control), speed (every skater's acceleration and top speed), goalie (the best goalie's five
-/// traits) and overall (W16c's <see cref="ArcadeRun.Strength"/>), plus how it plays (W22d's tactics).
-/// </summary>
-/// <param name="Attack">Forwards' attack.</param>
-/// <param name="Defence">Defenders' defence.</param>
-/// <param name="Speed">Skating.</param>
-/// <param name="Goalie">The best goalie.</param>
-/// <param name="Overall">The whole roster.</param>
-/// <param name="Plays">The club's tactics, put in words by <see cref="Describe"/>.</param>
+/// traits) and overall (<see cref="ArcadeRun.Strength"/>), plus how it plays (its tactics).</summary>
 internal sealed record ClubStrengths(int Attack, int Defence, int Speed, int Goalie, int Overall, ClubTactics Plays)
 {
     static readonly Dictionary<string, ClubStrengths> Cache = new(StringComparer.Ordinal);
 
     /// <summary>Gets a club's strengths (worked out once per club).</summary>
-    /// <param name="club">The club.</param>
-    /// <returns>The strengths.</returns>
     public static ClubStrengths Of(ClubData club)
     {
         if (Cache.TryGetValue(club.Id, out var known)) return known;
@@ -47,8 +37,6 @@ internal sealed record ClubStrengths(int Attack, int Defence, int Speed, int Goa
     }
 
     /// <summary>Puts a club's tactics in words, in the language shown.</summary>
-    /// <param name="tactics">The tactics.</param>
-    /// <returns>The forecheck, the zone entry and the power play.</returns>
     public static string Describe(ClubTactics tactics)
     {
         string forecheck = Text.Get(tactics.Forecheck switch

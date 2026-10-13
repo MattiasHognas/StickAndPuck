@@ -16,11 +16,11 @@ using Penalties = StickAndPuck.App.Rules.Penalties;
 
 /// <summary>
 /// Scripted calls under the match rules, the bench and the referee, then a full AI match. Covers
-/// W14: calls happen, the penalised club plays short, time is served correctly,
-/// and W23's: a penalty in 3 on 3 overtime gives 4 on 3, the goalie is pulled on a delayed call
-/// and when trailing late; W46's: a penalty running at 60:00 continues in overtime, a third penalty
+/// calls happen, the penalised club plays short, time is served correctly,
+/// and that a penalty in 3 on 3 overtime gives 4 on 3, the goalie is pulled on a delayed call
+/// and when trailing late; that a penalty running at 60:00 continues in overtime, a third penalty
 /// is served after the first expires, coincidental minors stay 5 on 5 under SHL and play 4 on 4
-/// under NHL; W47's: a major with a game misconduct ejects the skater and refills the lines, a
+/// under NHL; that a major with a game misconduct ejects the skater and refills the lines, a
 /// power play goal ends half a double minor and never a major, a misconduct keeps the skater out
 /// while a teammate serves, Arcade calls only minors, and each new infraction is called and stays
 /// silent when its switch is off. In period 1 home defends -x. Formerly SAP_SCENE=penaltytest.
@@ -455,7 +455,7 @@ public sealed class PenaltyTests : CheckedTest
             "W48's hook: Give hands out a major and a game misconduct at once");
     }
 
-    /// <summary>One W47 infraction: how to stage it, the rules with its switch off, and the hit (0 for a chase).</summary>
+    /// <summary>One switchable infraction: how to stage it, the rules with its switch off, and the hit (0 for a chase).</summary>
     sealed record InfractionScene(string Infraction, Func<RuleSet, RuleSet> Off, Action<World, Player, Player> SetUp, float Strength, bool Late = false);
 
     static readonly InfractionScene[] InfractionScenes =
@@ -503,7 +503,7 @@ public sealed class PenaltyTests : CheckedTest
         checker.Begin(PlayerAction.None);
     }
 
-    /// <summary>W47: stages an infraction with a referee who calls everything he sees, once with its switch on and once off.</summary>
+    /// <summary>Stages an infraction with a referee who calls everything he sees, once with its switch on and once off.</summary>
     [Test]
     [Arguments(Infraction.Interference)]
     [Arguments(Infraction.Holding)]
@@ -795,7 +795,7 @@ public sealed class PenaltyTests : CheckedTest
             // penalties end with regulation, leaving the box empty for overtime
             foreach (var side in w.Match.Phase is MatchPhase.Final or MatchPhase.Overtime or MatchPhase.Shootout ? [] : new[] { Side.Home, Side.Away })
             {
-                // in play: a call at a stoppage can leave a club a skater short until the faceoff brings it to strength (a third penalty waiting, W46)
+                // in play: a call at a stoppage can leave a club a skater short until the faceoff brings it to strength (a third penalty waiting)
                 if (w.Match.Phase == MatchPhase.Play && Skaters(w, side) != Penalties.TargetSkaters(w, side))
                     broken++;
                 if (w.Match.Penalties.Exists(p => w.Players[p.PlayerId].OnIce)) broken++;

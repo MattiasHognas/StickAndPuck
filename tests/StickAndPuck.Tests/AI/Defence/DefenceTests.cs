@@ -11,8 +11,8 @@ using AiDecisions = StickAndPuck.App.AI.Decisions;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W22b's defence: the coverage maths, then full all-AI matches (the aimatchtest system set) with the
-/// defence on and, for comparison, off, checking the W22b "done when": 15 to 30 hits a side, no swarm
+/// The defence: the coverage maths, then full all-AI matches (the aimatchtest system set) with the
+/// defence on and, for comparison, off, checking that 15 to 30 hits a side, no swarm
 /// on the carrier, and more passing lanes covered in the own zone. Formerly SAP_SCENE=defencetest.
 /// </summary>
 public sealed class DefenceTests : CheckedTest

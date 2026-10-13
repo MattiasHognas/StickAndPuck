@@ -2,12 +2,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// One rule on the rules page: its key in settings.json, its label and group, the values it takes
-/// (as stored, enum names or On and Off) and how to read and change it on a <see cref="RuleSet"/>.
-/// </summary>
+/// <summary>One rule on the rules page: its key in settings.json, its label and group, the values it takes
+/// (as stored, enum names or On and Off) and how to read and change it on a <see cref="RuleSet"/>.</summary>
 /// <param name="Key">The key in settings.json, the <see cref="RuleSet"/> property's name.</param>
-/// <param name="Label">The string table key of its label on the rules page (W53).</param>
+/// <param name="Label">The string table key of its label on the rules page.</param>
 /// <param name="Group">The string table key of the group heading it sits under.</param>
 /// <param name="Plays">True when the game plays the rule; a rule a later task wires stays off the page until then.</param>
 /// <param name="Values">The values, as stored.</param>
@@ -16,8 +14,6 @@ namespace StickAndPuck.App.Core;
 public sealed record RuleRow(string Key, string Label, string Group, bool Plays, IReadOnlyList<string> Values, Func<RuleSet, string> Get, Func<RuleSet, string, RuleSet> Set)
 {
     /// <summary>Gets a value as the rules page shows it.</summary>
-    /// <param name="value">One of <see cref="Values"/>.</param>
-    /// <returns>The text, in capitals.</returns>
     public static string Show(string value) => value switch
     {
         "On" => Text.Get(K.RuleValueOn),
@@ -45,9 +41,6 @@ public sealed record RuleRow(string Key, string Label, string Group, bool Plays,
     };
 
     /// <summary>The value one step along from the current one, wrapping.</summary>
-    /// <param name="rules">The rules.</param>
-    /// <param name="dir">-1 or 1.</param>
-    /// <returns>The value.</returns>
     public string Next(RuleSet rules, int dir)
     {
         int i = Math.Max(0, Values.ToList().IndexOf(Get(rules)));
@@ -55,10 +48,8 @@ public sealed record RuleRow(string Key, string Label, string Group, bool Plays,
     }
 }
 
-/// <summary>
-/// Every rule switch, in page order: Game (offside, icing, goalie pull), Overtime, Penalties,
-/// Infractions (W47) and Fights. W45 to W49 flip their row's <see cref="RuleRow.Plays"/> when they wire the rule.
-/// </summary>
+/// <summary>Every rule switch, in page order: Game (offside, icing, goalie pull), Overtime, Penalties,
+/// Infractions and Fights. <see cref="RuleRow.Plays"/> says whether the game plays a row's rule.</summary>
 public static class RuleRows
 {
     const string On = "On", Off = "Off";

@@ -3,11 +3,9 @@ using StickAndPuck.App.Hud;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// W16c: when an arcade game ends (MatchEnd), records its result in <see cref="ArcadeSession"/>,
+/// <summary>When an arcade game ends (MatchEnd), records its result in <see cref="ArcadeSession"/>,
 /// which saves the run at once. A few seconds after the final a stand-in panel shows: the run so far
-/// and the lives left, or the results summary when the run is over (until W11's results screen).
-/// </summary>
+/// and the lives left, or the results summary when the run is over (without the results screen).</summary>
 internal sealed class ArcadeSystem : ISystem, IDisposable
 {
     /// <summary>Seconds after the final before the panel shows.</summary>

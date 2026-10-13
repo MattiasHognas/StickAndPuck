@@ -11,8 +11,8 @@ namespace StickAndPuck.Tests;
 
 /// <summary>
 /// The referee, run with puck physics and the match rules over a whole match with the match demo's
-/// shots, so goals, saves and frozen pucks bring faceoffs all over the ice. Covers W8: the referee
-/// drops every faceoff and stays out of the play; and W27: ten faceoffs in a row drop at visibly
+/// shots, so goals, saves and frozen pucks bring faceoffs all over the ice. Covers that the referee
+/// drops every faceoff and stays out of the play, and that ten faceoffs in a row drop at visibly
 /// different moments within the hold span, the same again for the same seed. Formerly
 /// SAP_SCENE=refereetest.
 /// </summary>
@@ -74,7 +74,7 @@ public sealed class RefereeTests : CheckedTest
         Check(w.Match.Phase == MatchPhase.Play && Distance(w.Puck.Position, dot) < 0.5f, "a whistle in the far end is followed by a drop at that dot");
         Check(Distance(r.Position, Ref.DropSpot(dot)) <= RefereeTuning.Arrived, "the referee skated the length of the rink to that dot");
 
-        // W67: timed to when the referee is set at the dot, so the dice roll for the hold (W27, 0.5 to 1.8 s) never fails a seed;
+        // Timed to when the referee is set at the dot, so the dice roll for the hold (0.5 to 1.8 s) never fails a seed;
         // with the shortest hold the puck still drops inside the 7 s this check always asked for
         Check(setAt - start < 7 - RefereeTuning.SetSeconds, $"and got there in good time (set {setAt - start:0.0} s after the whistle, dropped at {dropAt - start:0.0} s)");
     }

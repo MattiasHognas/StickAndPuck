@@ -18,19 +18,16 @@ internal sealed record HudMessage(string Panel, string Title, string Detail, str
     /// <summary>Gets the extra gold lines under the detail: game-winning goal, shutout, first goal of the season.</summary>
     public IReadOnlyList<string> Notes { get; init; } = [];
 
-    /// <summary>Gets the extra lines.</summary>
     public IReadOnlyList<string> Lines => Notes;
 }
 
-/// <summary>
-/// Turns this step's <see cref="MatchEvents"/> into the banner the HUD shows: goal (with hat trick
+/// <summary>Turns this step's <see cref="MatchEvents"/> into the banner the HUD shows: goal (with hat trick
 /// and first goal of the season), end of period, final (with the game-winning goal and a shutout),
 /// offside, icing with the club name, and penalties. Keeps a tally of the match's goals so it can
-/// tell a hat trick or the game winner from the events alone; W25's stats are not needed.
-/// </summary>
+/// tell a hat trick or the game winner from the events alone; the season stats are not needed.</summary>
 internal sealed class HudMessages
 {
-    /// <summary>How long a goal banner stays up, a little under W7a's goal pause.</summary>
+    /// <summary>How long a goal banner stays up, a little under the match's goal pause.</summary>
     public const float GoalSeconds = 3.5f;
 
     /// <summary>How long an end-of-period banner stays up at least.</summary>
@@ -44,10 +41,8 @@ internal sealed class HudMessages
 
     readonly List<(Side Side, int PlayerId)> goals = [];
 
-    /// <summary>
-    /// Gets or sets how many goals a club has scored earlier this season, or None outside season mode.
-    /// The default reads the season being played; the hud scene swaps in a fake.
-    /// </summary>
+    /// <summary>Gets or sets how many goals a club has scored earlier this season, or None outside season mode.
+    /// The default reads the season being played; the hud scene swaps in a fake.</summary>
 
     /// <summary>Gets the banner showing now, or None.</summary>
     public Maybe<HudMessage> Current { get; private set; }
@@ -56,7 +51,6 @@ internal sealed class HudMessages
     public IReadOnlyList<(Side Side, int PlayerId)> Goals => goals;
 
     /// <summary>Reads this step's events. Call from Update; the HUD runs after rules and physics.</summary>
-    /// <param name="world">The match state.</param>
     public void Update(World world)
     {
         foreach (var e in world.Events.Current)
@@ -75,9 +69,6 @@ internal sealed class HudMessages
     }
 
     /// <summary>Builds the banner for one event, or None for events the HUD does not announce. Goals and the final are tallied.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="e">The event.</param>
-    /// <returns>The banner, or None.</returns>
     public Maybe<HudMessage> For(World world, MatchEvent e)
     {
         var m = world.Match;
@@ -100,7 +91,7 @@ internal sealed class HudMessages
                 // the club that iced the puck, by name, with its crest
                 return new HudMessage("panel", Text.Get(K.Icing), world.Setup.Club(icing.Offender).Name, world.Setup.Club(icing.Offender).Id, e.Time + CallSeconds);
             case PenaltyCalled penalty:
-                // W14: the infraction and minutes, then the player
+                // The infraction and minutes, then the player
                 var called = m.Penalties.FindLast(p => p.PlayerId == penalty.PlayerId);
                 var who = world.Players[penalty.PlayerId].Data;
                 return new HudMessage("panel_red", Text.Format(K.PenaltyBanner, Infraction.Label(called is { } served ? served.Infraction : ""), MatchFlow.ClockText(penalty.Seconds)), Text.Format(K.PlayerTag, who.Number, who.LastName), world.Setup.Club(penalty.Side).Id, e.Time + CallSeconds + 1);
@@ -110,8 +101,6 @@ internal sealed class HudMessages
     }
 
     /// <summary>Gets the player's goals so far this match.</summary>
-    /// <param name="playerId">The player.</param>
-    /// <returns>The count.</returns>
     public int GoalsBy(int playerId)
     {
         return playerId < 0 ? 0 : goals.Count(g => g.PlayerId == playerId);

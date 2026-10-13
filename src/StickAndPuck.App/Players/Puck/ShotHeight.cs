@@ -2,12 +2,10 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W35: how high a shot goes. The longer shoot is held, the higher the shot: a tap skims the ice,
+/// <summary>How high a shot goes. The longer shoot is held, the higher the shot: a tap skims the ice,
 /// a full wind-up goes for the top of the net (about the crossbar). Shot accuracy sets how far the
 /// height strays from that, and a high shot strays more than a low one, so a wild shooter's full
-/// wind-up can sail over the net while a sharp shooter's tap stays on the ice.
-/// </summary>
+/// wind-up can sail over the net while a sharp shooter's tap stays on the ice.</summary>
 public static class ShotHeight
 {
     /// <summary>Shoot held this long or less is a tap: the lowest shot.</summary>
@@ -26,8 +24,6 @@ public static class ShotHeight
     public const float FullLift = 5f;
 
     /// <summary>Gets how much of the full lift a hold of shoot gives, from 0 (a tap) to 1 (a full wind-up).</summary>
-    /// <param name="held">Seconds shoot was held.</param>
-    /// <returns>The share of the full lift.</returns>
     public static float Lift(float held)
     {
         float f = Math.Clamp((held - Tap) / (PuckHandling.FullCharge - Tap), 0f, 1f);
@@ -35,26 +31,18 @@ public static class ShotHeight
     }
 
     /// <summary>Gets how far a shot's height strays, as a share; 0 for a perfect shooter, 1 for the worst.</summary>
-    /// <param name="accuracy">The shooter's shot accuracy trait.</param>
-    /// <returns>The stray.</returns>
     public static float Stray(int accuracy)
     {
         return 1f - Traits.Unit(accuracy);
     }
 
     /// <summary>Gets the height a shot at the net crosses the goal line, before it strays.</summary>
-    /// <param name="held">Seconds shoot was held.</param>
-    /// <returns>Metres above the ice.</returns>
     public static float Aim(float held)
     {
         return Low + ((High - Low) * Lift(held));
     }
 
     /// <summary>Gets the height a shot at the net crosses the goal line: the aim plus a stray set by shot accuracy.</summary>
-    /// <param name="held">Seconds shoot was held.</param>
-    /// <param name="accuracy">The shooter's shot accuracy trait.</param>
-    /// <param name="rng">Randomness.</param>
-    /// <returns>Metres above the ice, at least 0.02.</returns>
     public static float AtNet(float held, int accuracy, Random rng)
     {
         float lift = Lift(held);
@@ -63,10 +51,6 @@ public static class ShotHeight
     }
 
     /// <summary>Gets the upward speed of a shot not aimed at the net.</summary>
-    /// <param name="held">Seconds shoot was held.</param>
-    /// <param name="accuracy">The shooter's shot accuracy trait.</param>
-    /// <param name="rng">Randomness.</param>
-    /// <returns>Metres per second upward, at least 0.</returns>
     public static float Upward(float held, int accuracy, Random rng)
     {
         float lift = Lift(held);

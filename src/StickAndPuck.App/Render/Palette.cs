@@ -4,10 +4,8 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Render;
 
-/// <summary>
-/// The palette the whole frame snaps to, read from the GIMP palette file the art uses
-/// (art/palette/stickandpuck_dusk.gpl), so the game and the Blender post pass always agree.
-/// </summary>
+/// <summary>The palette the whole frame snaps to, read from the GIMP palette file the art uses
+/// (art/palette/stickandpuck_dusk.gpl), so the game and the Blender post pass always agree.</summary>
 public static class Palette
 {
     /// <summary>The most colours the post shader takes; the palette may grow to about 48 for club kits.</summary>
@@ -18,12 +16,10 @@ public static class Palette
     /// <summary>Gets the palette from <see cref="Assets.Palette"/>, loaded on first use.</summary>
     public static IReadOnlyList<Vector3> Current => current.Value;
 
-    /// <summary>
-    /// Gets the index of the first reserved kit colour: colours from here on are written by
+    /// <summary>Gets the index of the first reserved kit colour: colours from here on are written by
     /// art/scripts/make_kits.py below its marker line, and only player pixels may snap to them,
     /// so adding club colours never changes how the arena and crowd look. Equals the palette
-    /// size when the file has no kit block.
-    /// </summary>
+    /// size when the file has no kit block.</summary>
     public static int KitStart => kitStart.Value;
 
     static readonly Lazy<int> kitStart = new(() => FindKitStart(Assets.Palette));
@@ -51,8 +47,6 @@ public static class Palette
     public static Vector3 Outline => Current.MinBy(c => c.X * 0.299f + c.Y * 0.587f + c.Z * 0.114f);
 
     /// <summary>Reads a GIMP .gpl palette: one "r g b [name]" line per colour, 0-255 each.</summary>
-    /// <param name="path">The .gpl file.</param>
-    /// <returns>The colours in file order, 0-1 per channel.</returns>
     public static IReadOnlyList<Vector3> Load(string path)
     {
         var colours = new List<Vector3>();

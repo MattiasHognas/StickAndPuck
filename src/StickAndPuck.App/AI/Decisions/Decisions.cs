@@ -21,16 +21,16 @@ public sealed class DecisionTally
     /// <summary>Gets or sets the checks the AI threw.</summary>
     public int Checks { get; set; }
 
-    /// <summary>Gets or sets the AI passes aimed at a teammate who was skating (over 2 m/s) when the puck left (W22a).</summary>
+    /// <summary>Gets or sets the AI passes aimed at a teammate who was skating (over 2 m/s) when the puck left.</summary>
     public int ToMoving { get; set; }
 
-    /// <summary>Gets or sets the AI passes aimed at a teammate with no opponent within 3 m when the puck left (W22a).</summary>
+    /// <summary>Gets or sets the AI passes aimed at a teammate with no opponent within 3 m when the puck left.</summary>
     public int ToOpen { get; set; }
 
     /// <summary>Gets or sets the AI passes aimed at a teammate.</summary>
     public int Aimed { get; set; }
 
-    /// <summary>Gets or sets the reads and executions the AI rolled against hockey IQ (W22a's jitter).</summary>
+    /// <summary>Gets or sets the reads and executions the AI rolled against hockey IQ (the jitter).</summary>
     public int Rolls { get; set; }
 
     /// <summary>Gets or sets the rolls that came out as a fumble.</summary>
@@ -45,30 +45,27 @@ public sealed class DecisionTally
     /// <summary>Gets or sets the fumbles by skaters with hockey IQ 95 or more.</summary>
     public int StarFumbles { get; set; }
 
-    /// <summary>Gets or sets the times an AI carrier fired the puck out of his own zone under pressure (W63).</summary>
+    /// <summary>Gets or sets the times an AI carrier fired the puck out of his own zone under pressure.</summary>
     public int Clears { get; set; }
 
-    /// <summary>Gets or sets the clears fired hard up the ice, the kind that may go the length for icing (W63).</summary>
+    /// <summary>Gets or sets the clears fired hard up the ice, the kind that may go the length for icing.</summary>
     public int HardClears { get; set; }
 
-    /// <summary>Gets or sets the times an AI carrier held up at the blue line for a teammate offside to tag up (W63).</summary>
+    /// <summary>Gets or sets the times an AI carrier held up at the blue line for a teammate offside to tag up.</summary>
     public int HoldUps { get; set; }
 
-    /// <summary>Gets or sets the times an AI carrier came up to the blue line with a teammate offside and weighed holding up (W66).</summary>
+    /// <summary>Gets or sets the times an AI carrier came up to the blue line with a teammate offside and weighed holding up.</summary>
     public int HoldLooks { get; set; }
 
     /// <summary>Gets the share of passes that reached a teammate, 0 to 1.</summary>
     public float Completion => Passes == 0 ? 0f : (float)Completed / Passes;
 }
 
-/// <summary>W6b: the decisions' state for a match, and the tallies other code may read.</summary>
+/// <summary>The decisions' state for a match, and the tallies other code may read.</summary>
 public static class Decisions
 {
 
     /// <summary>Gets a club's tally for this match.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>The tally.</returns>
     public static DecisionTally Tally(World world, Side side)
     {
         return Board(world).Tally[(int)side];
@@ -90,7 +87,7 @@ internal sealed class DecisionBoard
     /// <summary>Gets or sets the pass in flight, until someone takes it or it dies.</summary>
     public Maybe<InFlight> Pass { get; set; }
 
-    /// <summary>Gets or sets the human receiver the AI skates to meet the pass in flight, until the player steers him (W96).</summary>
+    /// <summary>Gets or sets the human receiver the AI skates to meet the pass in flight, until the player steers him.</summary>
     public Maybe<HumanMeet> Meet { get; set; }
 
     /// <summary>Gets or sets the side whose shot is in flight and when it left the stick, for the rebound chase.</summary>
@@ -118,13 +115,10 @@ internal sealed class DecisionBoard
 /// <param name="At">When it left the stick.</param>
 internal sealed record InFlight(int Passer, int Receiver, Side Side, float At);
 
-/// <summary>
-/// W96: a human's pass in flight to a teammate the human now controls. The AI skates him to meet
-/// it until the player gives fresh stick input: the stick held as the pass left does not count.
-/// </summary>
+/// <summary>A human's pass in flight to a teammate the human now controls. The AI skates him to meet
+/// it until the player gives fresh stick input: the stick held as the pass left does not count.</summary>
 internal sealed class HumanMeet(int receiver, Vector2 held)
 {
-    /// <summary>Gets the receiver.</summary>
     public int Receiver { get; } = receiver;
 
     /// <summary>Gets the stick held as the pass left.</summary>
@@ -164,18 +158,18 @@ internal sealed class Brain
     /// <summary>Gets or sets when a late pass is released.</summary>
     public float PassAt { get; set; }
 
-    /// <summary>Gets or sets the possession (its <see cref="GotAt"/>) whose blue-line hold-up was decided, so it is rolled once (W63).</summary>
+    /// <summary>Gets or sets the possession (its <see cref="GotAt"/>) whose blue-line hold-up was decided, so it is rolled once.</summary>
     public float HoldRun { get; set; } = float.NaN;
 
     /// <summary>Gets or sets until when the carrier holds up short of the blue line; past it he carries on.</summary>
     public float HoldUntil { get; set; } = float.NegativeInfinity;
 
-    /// <summary>Gets or sets the possession whose own-zone clear was rolled, so a carrier weighs it once per pressing (W63).</summary>
+    /// <summary>Gets or sets the possession whose own-zone clear was rolled, so a carrier weighs it once per pressing.</summary>
     public float ClearRun { get; set; } = float.NaN;
 
     /// <summary>Gets or sets until when this skater goes for a hit on the carrier.</summary>
     public float HitUntil { get; set; } = float.NegativeInfinity;
 
-    /// <summary>Gets or sets the step on which special teams or tactics last claimed this carrier's next action (W68, <see cref="AiCommand.Hold"/>).</summary>
+    /// <summary>Gets or sets the step on which special teams or tactics last claimed this carrier's next action (<see cref="AiCommand.Hold"/>).</summary>
     public long HeldTick { get; set; } = long.MinValue;
 }

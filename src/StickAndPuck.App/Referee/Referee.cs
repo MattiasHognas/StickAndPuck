@@ -4,17 +4,15 @@ using StickAndPuck.App.Render;
 
 namespace StickAndPuck.App.Referee;
 
-/// <summary>A penalty the referee has signalled and will call at the next stoppage (W14 decides calls).</summary>
+/// <summary>A penalty the referee has signalled and will call at the next stoppage (the penalty rules decide calls).</summary>
 /// <param name="Infraction">What is being called: tripping, hooking or slashing.</param>
 /// <param name="PlayerId">The offending player.</param>
 /// <param name="Time">When the arm went up, in <see cref="World.Time"/>.</param>
 public readonly record struct RefereeCall(string Infraction, int PlayerId, float Time);
 
-/// <summary>
-/// The one referee on the ice: where it is and what it is doing. <see cref="RefereeSystem"/> moves it;
+/// <summary>The one referee on the ice: where it is and what it is doing. <see cref="RefereeSystem"/> moves it;
 /// camera, HUD and penalties read it through <see cref="Of"/>. It lives beside the world (not in
-/// <see cref="World"/>, which is Core's) and exists only in worlds that run the match flow.
-/// </summary>
+/// <see cref="World"/>, which is Core's) and exists only in worlds that run the match flow.</summary>
 public sealed class Referee
 {
 
@@ -54,38 +52,28 @@ public sealed class Referee
     /// <summary>Gets or sets how many faceoffs dropped by the safety net instead of the referee at the dot.</summary>
     public int LateDrops { get; set; }
 
-    /// <summary>
-    /// Gets the penalty signalled and not yet called, if any. W14 raises it with <see cref="Signal"/>
+    /// <summary>Gets the penalty signalled and not yet called, if any. The penalty rules raise it with <see cref="Signal"/>
     /// when it sees tripping, hooking or slashing; the referee clears it at the next whistle or
-    /// faceoff. A2 adds the arm-up and call clips the renderer will play for it.
-    /// </summary>
+    /// faceoff. A2 adds the arm-up and call clips the renderer will play for it.</summary>
     public Maybe<RefereeCall> Call { get; private set; }
 
     /// <summary>Gets the referee of a world.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>The referee, made on first use.</returns>
     public static Referee Of(World world)
     {
         return world.Referee.Get(() => new Referee());
     }
 
-    /// <summary>W14's hook: the referee raises an arm for a penalty, to be called at the next stoppage.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="infraction">What is being called.</param>
-    /// <param name="playerId">The offending player.</param>
+    /// <summary>Hook: the referee raises an arm for a penalty, to be called at the next stoppage.</summary>
     public static void Signal(World world, string infraction, int playerId)
     {
         var r = Of(world);
         if (!r.Call.HasValue) r.Call = new RefereeCall(infraction, playerId, world.Time);
     }
 
-    /// <summary>Gets the penalty the referee last called at a stoppage; the renderer shows its signal for a moment (W14).</summary>
+    /// <summary>Gets the penalty the referee last called at a stoppage; the renderer shows its signal for a moment.</summary>
     public Maybe<RefereeCall> Announced { get; private set; }
 
-    /// <summary>W14's hook: the referee calls a penalty at the stoppage and shows its signal.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="infraction">What is called: tripping, hooking or slashing.</param>
-    /// <param name="playerId">The penalised player.</param>
+    /// <summary>Hook: the referee calls a penalty at the stoppage and shows its signal.</summary>
     public static void Announce(World world, string infraction, int playerId)
     {
         Of(world).Announced = new RefereeCall(infraction, playerId, world.Time);
@@ -98,8 +86,6 @@ public sealed class Referee
     }
 
     /// <summary>Gets the spot the referee drops the puck from: just behind the dot, toward the far boards.</summary>
-    /// <param name="dot">The faceoff dot.</param>
-    /// <returns>Where to stand.</returns>
     public static Vector3 DropSpot(Vector3 dot)
     {
         return new Vector3(dot.X, 0, dot.Z - RefereeTuning.DropOffset);

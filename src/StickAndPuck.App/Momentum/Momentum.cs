@@ -43,27 +43,20 @@ public sealed class MomentumState
     public float CrowdVolume { get; set; }
 }
 
-/// <summary>
-/// W29: a short team boost after a goal, a fight won or a big hit. The boost tops up the energy of the
+/// <summary>A short team boost after a goal, a fight won or a big hit. The boost tops up the energy of the
 /// club's skaters on the ice (a second wind: skating and shots already read energy), drains over
 /// about twenty seconds of live play, swells the crowd and shows on the HUD. A goal ends the other
-/// club's boost. Others read it through <see cref="Of"/>.
-/// </summary>
+/// club's boost. Others read it through <see cref="Of"/>.</summary>
 public static class Momentum
 {
 
     /// <summary>Gets a club's boost.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>0 (none) to 1.</returns>
     public static float Of(World world, Side side)
     {
         return world.Momentum.TryGet(out var s) ? s.Level[(int)side] : 0f;
     }
 
     /// <summary>Gets the club with the bigger boost, or None when neither has one.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The side, or None.</returns>
     public static SideOrNone Leader(World world)
     {
         float home = Of(world, Side.Home), away = Of(world, Side.Away);
@@ -72,16 +65,12 @@ public static class Momentum
     }
 
     /// <summary>Gets a match's momentum, made on first use.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The state.</returns>
     public static MomentumState State(World world)
     {
         return world.Momentum.Get(() => new MomentumState());
     }
 
     /// <summary>Gets the boost each cause gives.</summary>
-    /// <param name="cause">The cause.</param>
-    /// <returns>0 to 1.</returns>
     public static float Size(MomentumCause cause) => cause switch
     {
         MomentumCause.Goal => MomentumTuning.Goal,
@@ -91,9 +80,6 @@ public static class Momentum
     };
 
     /// <summary>Gives a club a boost. A goal fills it and ends the other club's; a fight or a hit adds to it, up to full.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <param name="cause">What happened.</param>
     public static void Boost(World world, Side side, MomentumCause cause)
     {
         var s = State(world);
@@ -107,7 +93,7 @@ public static class Momentum
     }
 }
 
-/// <summary>W29: the momentum numbers.</summary>
+/// <summary>The momentum numbers.</summary>
 public static class MomentumTuning
 {
     /// <summary>The boost a goal gives: full.</summary>
@@ -131,7 +117,7 @@ public static class MomentumTuning
     /// <summary>Seconds between crowd swells while a boost lasts.</summary>
     public const float SwellGap = 2.5f;
 
-    /// <summary>The crowd's volume at a full boost, before the player's volume; W12 plays a goal's crowd at 0.35.</summary>
+    /// <summary>The crowd's volume at a full boost, before the player's volume; a goal's crowd plays at 0.35.</summary>
     public const float CrowdVolume = 0.9f;
 
     /// <summary>The boost below which the crowd stops swelling.</summary>

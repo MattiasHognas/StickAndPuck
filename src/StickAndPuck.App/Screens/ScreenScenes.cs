@@ -4,17 +4,15 @@ using StickAndPuck.App.Season.Dev;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// SAP_SCENE=start, the game's default: the start screen over the rink, and from there seasons,
+/// <summary>SAP_SCENE=start, the game's default: the start screen over the rink, and from there seasons,
 /// other modes, settings, pause, results and standings. For screenshots SAP_SCREEN opens one
 /// screen straight away: settings, modes, teams, pause (a match, paused), results (a made-up
-/// 4-3 overtime win) standings (the saved season), bracket (W16b's playoff test save, its regular
-/// season settled on paper) or, from W33's test saves (<see cref="PolishScenes"/>), stats (the
+/// 4-3 overtime win) standings (the saved season), bracket (the playoff test save, its regular
+/// season settled on paper) or, from the test saves (<see cref="PolishScenes"/>), stats (the
 /// season stats page; leaders too, SAP_STATS_VIEW picks the list), sim (a game simmed from the
 /// table), trophy (the SHL champion), arcadetrophy (an arcade run won) or bestruns (the board). SAP_SCREEN_KEYS scripts the presses
 /// (<see cref="MenuInput"/>), SAP_PERIOD=seconds shortens periods and SAP_HUMAN=0 lets the AI
-/// play, so a headless run can go start, match, results and back.
-/// </summary>
+/// play, so a headless run can go start, match, results and back.</summary>
 public sealed class StartScene : IScene
 {
     /// <inheritdoc/>
@@ -80,7 +78,7 @@ public sealed class StartScene : IScene
             return $"#{p.Number} {p.LastName}";
         }
 
-        // W33: the longest name on the home roster and an overtime goal, so the capture shows both fit
+        // The longest name on the home roster and an overtime goal, so the capture shows both fit
         var longest = setup.Home.Roster.Where(r => r.Position != PlayingPosition.G).MaxBy(r => r.LastName.Length)!;
         return
         [

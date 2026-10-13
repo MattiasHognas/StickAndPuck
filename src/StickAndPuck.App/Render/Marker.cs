@@ -5,13 +5,11 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Render;
 
-/// <summary>
-/// W30: the ring on the ice under each skater a person controls, with a notch pointing where they
+/// <summary>The ring on the ice under each skater a person controls, with a notch pointing where they
 /// face. Player one's is gold and player two's is blue, so in player vs player each person finds
 /// their own. A dark rim keeps it readable on bright ice. Shown while
 /// <see cref="Settings.ControlMarker"/> is on. Drawn into the lit scene just above the ice, so
-/// skates and sticks cover it and the post pass snaps it to the palette like the puck's shadow.
-/// </summary>
+/// skates and sticks cover it and the post pass snaps it to the palette like the puck's shadow.</summary>
 public static class Marker
 {
     /// <summary>The ring's inner and outer radius, in metres.</summary>
@@ -32,7 +30,6 @@ public static class Marker
     static readonly Color[] SlotColours = [new(0xf2, 0xc1, 0x4e, 255), new(0x7f, 0x9c, 0xae, 255)];
 
     /// <summary>Draws a marker under every skater a person controls. Call inside the 3D camera.</summary>
-    /// <param name="world">The match state.</param>
     public static void Draw(World world)
     {
         if (!world.Settings.ControlMarker) return;
@@ -45,8 +42,6 @@ public static class Marker
     }
 
     /// <summary>Gets a slot's marker colour.</summary>
-    /// <param name="slot">The input slot, 0 or 1.</param>
-    /// <returns>The colour.</returns>
     public static Color Colour(int slot)
     {
         return SlotColours[Math.Clamp(slot, 0, SlotColours.Length - 1)];

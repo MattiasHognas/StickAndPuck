@@ -2,21 +2,17 @@ using Raylib_cs;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// The one place match state lives: the setup, the players, the puck, the match, the camera
-/// and this step's events. Systems read all of it and change only their own part.
-/// </summary>
+/// <summary>The one place match state lives: the setup, the players, the puck, the match, the camera
+/// and this step's events. Systems read all of it and change only their own part.</summary>
 public sealed class World
 {
     readonly List<int>[] onIce = [[], []];
     int onIceVersion = -1;
 
     /// <summary>Initializes a new world for a match.</summary>
-    /// <param name="setup">The clubs, inputs and rules.</param>
-    /// <param name="settings">Player options.</param>
     public World(MatchSetup setup, Settings settings)
     {
-        Setup = AI.DifficultyScale.Apply(setup, settings.Difficulty);   // W29: easy and hard scale the AI club's traits
+        Setup = AI.DifficultyScale.Apply(setup, settings.Difficulty);   // easy and hard scale the AI club's traits
         Settings = settings;
         Match.Clock = setup.PeriodSeconds;
     }
@@ -48,26 +44,24 @@ public sealed class World
     /// <summary>Gets the number of fixed steps run so far.</summary>
     public long Tick { get; internal set; }
 
-    /// <summary>
-    /// Gets or sets the match seed (W67): every system's dice are a stream of it, so the same seed
+    /// <summary>Gets or sets the match seed: every system's dice are a stream of it, so the same seed
     /// and the same inputs play the same match. 0 is no seed: the dice start from fixed test seeds.
-    /// Starts as SAP_SEED (0 when unset); set it before the systems start.
-    /// </summary>
+    /// Starts as SAP_SEED (0 when unset); set it before the systems start.</summary>
     public int Seed { get; set; } = Seeds.Environment;
 
     /// <summary>Gets the arena tones the lighting sets and the arena draws with.</summary>
     public Arena.ArenaLook Look { get; } = new();
 
-    /// <summary>Gets or sets a value indicating whether a goal replay is playing right now (W9). Rules wait on it before the next faceoff.</summary>
+    /// <summary>Gets or sets a value indicating whether a goal replay is playing right now. Rules wait on it before the next faceoff.</summary>
     public bool ReplayPlaying { get; internal set; }
 
-    /// <summary>Gets or sets the switches dev scenes and tests turn (W56; these were statics).</summary>
+    /// <summary>Gets or sets the switches dev scenes and tests turn (these were statics).</summary>
     public WorldSwitches Switches { get; set; } = new();
 
-    /// <summary>Gets the dev scenes' loops (W56; these were statics).</summary>
+    /// <summary>Gets the dev scenes' loops (these were statics).</summary>
     public DevScenes Dev { get; } = new();
 
-    // W56: each system's own state, made the first time the system asks for it (these were side tables keyed on the world)
+    // Each system's own state, made the first time the system asks for it (these were side tables keyed on the world)
 
     /// <summary>Gets the AI layer that last set each player's command, by player id (<see cref="AI.AiCommand"/>).</summary>
     internal Slot<Dictionary<int, AI.AiIntent>> AiIntents { get; } = new();
@@ -102,7 +96,6 @@ public sealed class World
     /// <summary>Gets or sets the last pass a human made, for the AI receiver to skate onto.</summary>
     internal Maybe<Players.HumanPass> LastHumanPass { get; set; }
 
-    /// <summary>Gets the on-ice referee.</summary>
     internal Slot<Referee.Referee> Referee { get; } = new();
 
     /// <summary>Gets the pregame warm-up.</summary>
@@ -120,14 +113,9 @@ public sealed class World
     /// <summary>Gets the overtime and shootout state.</summary>
     internal Slot<Rules.OvertimeState> Overtime { get; } = new();
 
-    /// <summary>Gets the penalty book.</summary>
     internal Slot<Rules.PenaltyBook> Penalties { get; } = new();
 
     /// <summary>Adds a player from a club's roster.</summary>
-    /// <param name="side">Which club.</param>
-    /// <param name="data">The roster entry.</param>
-    /// <param name="position">Where on the ice.</param>
-    /// <returns>The new player.</returns>
     public Player AddPlayer(Side side, PlayerData data, System.Numerics.Vector3 position)
     {
         var p = new Player { Id = Players.Count, Side = side, Data = data, Position = position };
@@ -136,11 +124,9 @@ public sealed class World
     }
 
     /// <summary>Gets the players of one club that are on the ice.</summary>
-    /// <param name="side">Which club.</param>
-    /// <returns>Those players.</returns>
     public IEnumerable<Player> OnIce(Side side)
     {
-        // W56: walks the cached list, which matches filtering the players in order; if the players
+        // Walks the cached list, which matches filtering the players in order; if the players
         // change part way, the rest is filtered as it would have been, from the next player on
         var list = OnIceIndices(side);
         int version = Players.Version, next = 0;
@@ -175,8 +161,6 @@ public sealed class World
     }
 
     /// <summary>Gets the player a human slot controls, if any.</summary>
-    /// <param name="slot">The slot index, 0 or 1.</param>
-    /// <returns>The player, or None.</returns>
     public Maybe<Player> Controlled(int slot)
     {
         return Players.Find(p => p.Slot == slot) is { } player ? player : Maybe<Player>.None;

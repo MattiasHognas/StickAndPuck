@@ -2,22 +2,15 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// Lines for a game settled on paper (<see cref="QuickSim"/>), from its score alone: scorers and
+/// <summary>Lines for a game settled on paper (<see cref="QuickSim"/>), from its score alone: scorers and
 /// assists are drawn from the rosters by their shooting and passing traits, shots and saves around
 /// SHL numbers, so the leaders page fills up from the games the human did not play. The same seed
-/// always gives the same sheet, as the simulated score does.
-/// </summary>
+/// always gives the same sheet, as the simulated score does.</summary>
 public static class SyntheticStats
 {
     const double ShotsPerSide = 28;
 
     /// <summary>Builds the sheet of a simulated game.</summary>
-    /// <param name="home">The home club.</param>
-    /// <param name="away">The away club.</param>
-    /// <param name="result">The score, shootout goal included.</param>
-    /// <param name="seed">The game's seed.</param>
-    /// <returns>The sheet, player of the game picked.</returns>
     public static MatchStatSheet Sheet(ClubData home, ClubData away, FixtureResult result, int seed)
     {
 #pragma warning disable S2245 // seeded so a game always gives the same lines, not security

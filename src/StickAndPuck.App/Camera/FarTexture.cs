@@ -3,13 +3,11 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Camera;
 
-/// <summary>
-/// W58: loads a kit atlas so it holds still at broadcast range. A 64x64 atlas drawn point-sampled on
+/// <summary>Loads a kit atlas so it holds still at broadcast range. A 64x64 atlas drawn point-sampled on
 /// a skater only a few dozen pixels tall skips texels: as he skates, a one-texel stripe lands on a
 /// pixel in one frame and between pixels in the next, so stripes flicker and crawl. This gives the
 /// texture its own mipmap chain (32x32, 16x16, ...) and has the GPU pick the level that fits the
-/// skater's size on screen, still point-sampled inside it, so far players read one texel per pixel.
-/// </summary>
+/// skater's size on screen, still point-sampled inside it, so far players read one texel per pixel.</summary>
 /// <remarks>
 /// The smaller levels are built here rather than by the GPU: averaging would blend kit colours into
 /// shades that are not on the palette. Each texel of a level takes the most common of the four
@@ -19,8 +17,6 @@ namespace StickAndPuck.App.Camera;
 public static unsafe class FarTexture
 {
     /// <summary>Loads an atlas with its palette-safe mipmap chain and nearest-texel sampling at every level.</summary>
-    /// <param name="path">The image file.</param>
-    /// <returns>The texture.</returns>
     public static Texture2D Load(string path)
     {
         var source = LoadImage(path);

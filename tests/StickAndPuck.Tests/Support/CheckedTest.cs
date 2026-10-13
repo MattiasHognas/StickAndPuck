@@ -1,7 +1,7 @@
 namespace StickAndPuck.Tests.Support;
 
 /// <summary>
-/// Base for the tests moved from the SAP_SCENE self-tests (W52). A test makes many small checks in a
+/// Base for the tests moved from the SAP_SCENE self-tests. A test makes many small checks in a
 /// row, like the scenes did: each one prints PASS or FAIL with what it checked, a failing check does
 /// not stop the test, and the test fails at the end listing every failed check.
 /// </summary>

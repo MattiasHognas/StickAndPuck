@@ -3,8 +3,7 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W4c: body checks from the checking trait (see <see cref="CheckingModel"/> for the numbers).
+/// <summary>Body checks from the checking trait (see <see cref="CheckingModel"/> for the numbers).
 /// <list type="bullet">
 /// <item>Check (Q, or gamepad B) from a skater without the puck lunges at the opponent in reach
 /// (<see cref="CheckingModel.Target"/>), or forward when there is none; the first opponent in reach
@@ -18,13 +17,12 @@ namespace StickAndPuck.App.Players;
 /// checker's, Position is the target's, Strength the hit's strength (about 1 for an average solid
 /// check, <see cref="CheckingModel.HardHit"/> and up is hard).</item>
 /// </list>
-/// Runs after skating, so a fallen player's skating for this step is replaced by a slide.
-/// </summary>
+/// Runs after skating, so a fallen player's skating for this step is replaced by a slide.</summary>
 internal sealed class CheckingSystem : ISystem
 {
     const float SlideDrag = 5f;   // m/s² a fallen body loses on the ice
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 6;
 
     readonly Random rng;
@@ -40,7 +38,6 @@ internal sealed class CheckingSystem : ISystem
     }
 
     /// <summary>Initializes the system with its own randomness, so tests repeat.</summary>
-    /// <param name="rng">Randomness for knockdowns.</param>
     public CheckingSystem(Random rng)
     {
         this.rng = rng;

@@ -8,7 +8,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W35 checks with skating, handling and puck physics: a held shot goes high and a tap stays low,
+/// Checks with skating, handling and puck physics: a held shot goes high and a tap stays low,
 /// the height grows with the hold, shot accuracy sets how far the height strays, a held shot away
 /// from the net is lofted, and an airborne puck reads as airborne (it grows and casts a shadow).
 /// Formerly SAP_SCENE=shottest.

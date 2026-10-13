@@ -6,7 +6,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// The puck physics (W3): corner shots rebound plausibly, and a goal counts only when the whole puck
+/// The puck physics: corner shots rebound plausibly, and a goal counts only when the whole puck
 /// is over the line. Formerly SAP_SCENE=pucktest.
 /// </summary>
 public sealed class PuckTests : CheckedTest

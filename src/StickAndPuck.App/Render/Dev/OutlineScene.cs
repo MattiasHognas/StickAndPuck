@@ -3,10 +3,8 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Render.Dev;
 
-/// <summary>
-/// SAP_SCENE=outlines: twelve skaters, six per club, packed into two overlapping rows at centre
-/// ice, so every outline between touching players shows. The render check for W1.
-/// </summary>
+/// <summary>SAP_SCENE=outlines: twelve skaters, six per club, packed into two overlapping rows at centre
+/// ice, so every outline between touching players shows.</summary>
 public sealed class OutlineScene : IScene
 {
     /// <inheritdoc/>

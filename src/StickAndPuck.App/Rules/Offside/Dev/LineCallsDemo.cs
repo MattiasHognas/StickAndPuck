@@ -4,11 +4,9 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules.Dev;
 
-/// <summary>
-/// SAP_SCENE=offsidedemo: the match flow with a scripted play a second after each faceoff, in turn
+/// <summary>SAP_SCENE=offsidedemo: the match flow with a scripted play a second after each faceoff, in turn
 /// a pass to a winger standing offside, a clean carry-in, and an icing dump from the home end.
-/// W10's HUD shows the calls; the hybrid race and tag-ups are covered by SAP_SCENE=offsidetest.
-/// </summary>
+/// The HUD shows the calls; the hybrid race and tag-ups are covered by SAP_SCENE=offsidetest.</summary>
 public sealed class LineCallsDemoScene : IScene
 {
     /// <inheritdoc/>
@@ -32,7 +30,6 @@ internal sealed class LineCallsDemo
     float cameraX;
 
     /// <summary>A second after the puck drops, places the players and sends the puck; pans the camera to the puck.</summary>
-    /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         if (world.Dev.LineCalls.TryGet(out var demo)) demo.Run(world);
@@ -66,11 +63,6 @@ internal sealed class LineCallsDemo
     }
 
     /// <summary>Prints a call to the console while the demo runs.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="call">The call, "Offside" or "Icing".</param>
-    /// <param name="side">The club it went against.</param>
-    /// <param name="at">Where the puck was.</param>
-    /// <param name="dot">The faceoff dot it leads to.</param>
     public static void Log(World world, string call, Side side, Vector3 at, Vector3 dot)
     {
         if (world.Dev.LineCalls.TryGet(out var demo)) Console.WriteLine($"SAP: {call} by {side} at ({at.X:0.0}, {at.Z:0.0}), faceoff at ({dot.X}, {dot.Z}), play {demo.play}");

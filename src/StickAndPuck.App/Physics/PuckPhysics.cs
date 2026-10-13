@@ -7,24 +7,22 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Physics;
 
-/// <summary>
-/// W3: the puck in flight. Moves a loose puck with <see cref="PuckMotion"/> (friction, boards,
+/// <summary>The puck in flight. Moves a loose puck with <see cref="PuckMotion"/> (friction, boards,
 /// rounded corners, glass, posts, nets, body contact) and runs the goal-line test.
 /// Publishes <see cref="PuckHitBoards"/> (boards and glass) and
 /// <see cref="PuckHitPost"/> (posts and crossbar) with the impact speed,
 /// and <see cref="GoalScored"/> once when the whole puck is over the goal line of a net
 /// while the puck is live: Side is the scoring club, the scorer the last touch, or the nearest
 /// on-ice skater of the scoring club when nobody has touched the puck. A club with no players at all
-/// gets no event (the puck is still held as scored), so every event names a real player. Rules (W7a) keep the
+/// gets no event (the puck is still held as scored), so every event names a real player. Rules keep the
 /// score and restart play; they move the puck out of the net for the faceoff.
 /// A goal needs the puck to have come in through the mouth: the cage is solid from behind, from the
 /// sides and from above, and a puck carried through the mesh on a stick and let go inside is pushed
 /// back out instead of counting.
 /// A body the puck bounces off becomes its last touch, so a deflection counts for the deflector.
-/// Goalies are left to W5, which runs before this system.
-/// W62: before the puck moves, <see cref="NetBody"/> pushes every player out of both cages, after all
-/// skating, checking, stickhandling and goalie movement of the step.
-/// </summary>
+/// Goalies are left to the goalie system, which runs before this system.
+/// Before the puck moves, <see cref="NetBody"/> pushes every player out of both cages, after all
+/// skating, checking, stickhandling and goalie movement of the step.</summary>
 internal sealed class PuckPhysics : ISystem, IDisposable
 {
     static readonly Color Rubber = new(0x18, 0x13, 0x1f, 255);
@@ -82,13 +80,11 @@ internal sealed class PuckPhysics : ISystem, IDisposable
         GoalLine(world);
     }
 
-    /// <summary>
-    /// Follows a puck that something other than physics moved since the last step: a carrier's stick, a
+    /// <summary>Follows a puck that something other than physics moved since the last step: a carrier's stick, a
     /// goalie, a faceoff. Only a move from in front of the goal line into the net counts as going in; a
     /// puck pushed through the mesh from behind or the side is not in the net and is ejected once it is
     /// loose. A puck placed with no history, or moved further than anything on the ice can move it in one
-    /// step, is taken at its word.
-    /// </summary>
+    /// step, is taken at its word.</summary>
     void Track(Puck pk)
     {
         var p = pk.Position;
@@ -169,7 +165,7 @@ internal sealed class PuckPhysics : ISystem, IDisposable
     public void DrawScene(World world, RenderContext render)
     {
         var pos = world.Puck.Position;
-        // W35: an airborne puck drops a crisp dark shadow on the ice and grows a little, so its height reads from the broadcast camera
+        // An airborne puck drops a crisp dark shadow on the ice and grows a little, so its height reads from the broadcast camera
         if (PuckLook.Airborne(pos.Y))
         {
             float r = PuckLook.Shadow(pos.Y);

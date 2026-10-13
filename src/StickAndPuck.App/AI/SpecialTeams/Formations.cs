@@ -22,39 +22,28 @@ public enum Formation
     Diamond,
 }
 
-/// <summary>
-/// W22c: where each skater of a power play and a penalty kill stands, as pure maths with no state
+/// <summary>Where each skater of a power play and a penalty kill stands, as pure maths with no state
 /// and no Raylib, so tests can ask for the spots. Spots are on the ice as (x, z). Inside the maths,
 /// "a" runs toward the net the power play attacks (a = end * x), so one set of numbers serves both
-/// ends; both clubs' spots are worked out from the power play's end.
-/// </summary>
+/// ends; both clubs' spots are worked out from the power play's end.</summary>
 public static class Formations
 {
     const float G = RinkSpec.GoalLineX;
     const float Blue = RinkSpec.BlueLineX;
 
     /// <summary>Gets whether a formation is a power play shape.</summary>
-    /// <param name="f">The formation.</param>
-    /// <returns>True for the umbrella and the 1-3-1.</returns>
     public static bool IsPowerPlay(Formation f)
     {
         return f is Formation.Umbrella or Formation.OneThreeOne;
     }
 
     /// <summary>Gets the kill shape that answers a power play shape: the diamond takes the 1-3-1's bumper away, the box the umbrella's net front.</summary>
-    /// <param name="pp">The power play shape.</param>
-    /// <returns>The kill shape.</returns>
     public static Formation Answer(Formation pp)
     {
         return pp == Formation.OneThreeOne ? Formation.Diamond : Formation.Box;
     }
 
     /// <summary>Gets the spots of a formation for a number of skaters, most important first.</summary>
-    /// <param name="f">The formation.</param>
-    /// <param name="skaters">Skaters on the ice for that club, 1 to 5; more get no spot.</param>
-    /// <param name="end">The end the power play attacks: +1 or -1.</param>
-    /// <param name="puck">The puck on the ice (x, z).</param>
-    /// <returns>The spots on the ice (x, z), inside the boards.</returns>
     public static IReadOnlyList<Vector2> Spots(Formation f, int skaters, int end, Vector2 puck)
     {
         float pa = end * puck.X, pz = puck.Y;
@@ -86,22 +75,13 @@ public static class Formations
     }
 
     /// <summary>Gets whether a spot (x, z) is in the zone the power play attacks.</summary>
-    /// <param name="end">The end the power play attacks.</param>
-    /// <param name="at">The spot.</param>
-    /// <param name="margin">How far past the blue line it has to be.</param>
-    /// <returns>True inside the zone.</returns>
     public static bool InZone(int end, Vector2 at, float margin = 0f)
     {
         return end * at.X > Blue + margin;
     }
 
-    /// <summary>
-    /// Hands the spots to skaters: the cheapest pairing over every order (five skaters is 120
-    /// orders), each skater's cost his distance to the spot, with a defenceman cheaper at the point.
-    /// </summary>
-    /// <param name="skaters">Where each skater is, and whether he is a defenceman.</param>
-    /// <param name="spots">The spots, as many or more than the skaters.</param>
-    /// <returns>For each skater, the index of his spot, and the total cost.</returns>
+    /// <summary>Hands the spots to skaters: the cheapest pairing over every order (five skaters is 120
+    /// orders), each skater's cost his distance to the spot, with a defenceman cheaper at the point.</summary>
     public static (int[] Spot, float Cost) Assign(IReadOnlyList<(Vector2 At, bool Defence)> skaters, IReadOnlyList<Vector2> spots)
     {
         int n = Math.Min(skaters.Count, spots.Count);
@@ -134,10 +114,6 @@ public static class Formations
     }
 
     /// <summary>Gets what one pairing costs, as <see cref="Assign"/> counts it.</summary>
-    /// <param name="skater">Where the skater is, and whether he is a defenceman.</param>
-    /// <param name="spot">The spot.</param>
-    /// <param name="index">The spot's place in its formation; 0 is the point on a power play.</param>
-    /// <returns>The cost.</returns>
     public static float Cost((Vector2 At, bool Defence) skater, Vector2 spot, int index)
     {
         return Vector2.Distance(skater.At, spot) - (skater.Defence && index == 0 ? 4f : 0f);

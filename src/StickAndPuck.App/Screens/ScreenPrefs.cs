@@ -4,19 +4,16 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// What the settings screen changes: the <see cref="Core.Settings"/> every match runs with, plus
-/// the period length and the humans' input devices, which go into each <see cref="MatchSetup"/>.
-/// </summary>
+/// <summary>What the settings screen changes: the <see cref="Core.Settings"/> every match runs with, plus
+/// the period length and the humans' input devices, which go into each <see cref="MatchSetup"/>.</summary>
 internal sealed record ScreenPrefs
 {
     /// <summary>Period lengths the settings screen offers, in minutes.</summary>
     public static readonly int[] PeriodChoices = [2, 3, 5, 10, 20];
 
-    /// <summary>Gets the player options.</summary>
     public Settings Settings { get; init; } = new();
 
-    /// <summary>Gets the rule preset and the rules changed from it (W44); <see cref="RuleChoice.Resolve"/> gives the rules a match plays.</summary>
+    /// <summary>Gets the rule preset and the rules changed from it; <see cref="RuleChoice.Resolve"/> gives the rules a match plays.</summary>
     public RuleChoice Rules { get; init; } = new();
 
     /// <summary>Gets the period length in minutes of game clock.</summary>
@@ -25,19 +22,15 @@ internal sealed record ScreenPrefs
     /// <summary>Gets the device the human plays with.</summary>
     public InputDevice Controls { get; init; } = InputDevice.KeyboardMouse;
 
-    /// <summary>
-    /// Gets player two's device in versus: <see cref="InputDevice.None"/> turns player two off
+    /// <summary>Gets player two's device in versus: <see cref="InputDevice.None"/> turns player two off
     /// (the AI plays the visitors). When it is the same as <see cref="Controls"/>, versus falls
-    /// back to the other device as before. SAP_VERSUS_P2 overrides it.
-    /// </summary>
+    /// back to the other device as before. SAP_VERSUS_P2 overrides it.</summary>
     public InputDevice Player2 { get; init; } = InputDevice.Gamepad1;
 }
 
-/// <summary>
-/// Reads and writes <see cref="ScreenPrefs"/> as settings.json next to the season save:
+/// <summary>Reads and writes <see cref="ScreenPrefs"/> as settings.json next to the season save:
 /// ~/.config/StickAndPuck/settings.json on Linux, %APPDATA%\StickAndPuck\settings.json on Windows.
-/// SAP_SETTINGS=path overrides it.
-/// </summary>
+/// SAP_SETTINGS=path overrides it.</summary>
 internal static class ScreenPrefsFile
 {
     static readonly JsonSerializerOptions Json = new()
@@ -55,12 +48,9 @@ internal static class ScreenPrefsFile
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "settings.json");
 
     /// <summary>Reads the saved settings from <see cref="DefaultPath"/>, or the defaults when there is no readable file.</summary>
-    /// <returns>The settings.</returns>
     public static ScreenPrefs Read() => Read(DefaultPath);
 
     /// <summary>Reads the saved settings, or the defaults when there is no readable file.</summary>
-    /// <param name="path">The file.</param>
-    /// <returns>The settings.</returns>
     public static ScreenPrefs Read(string path)
     {
         try
@@ -75,30 +65,23 @@ internal static class ScreenPrefsFile
         return new ScreenPrefs();
     }
 
-    /// <summary>Gets the settings as the file stores them (W67: a replay keeps them).</summary>
-    /// <param name="prefs">The settings.</param>
-    /// <returns>JSON.</returns>
+    /// <summary>Gets the settings as the file stores them (a replay keeps them).</summary>
     public static string ToJson(ScreenPrefs prefs) => JsonSerializer.Serialize(prefs, Json);
 
     /// <summary>Reads settings <see cref="ToJson"/> wrote.</summary>
-    /// <param name="json">JSON.</param>
-    /// <returns>The settings.</returns>
     public static ScreenPrefs FromJson(string json) => JsonSerializer.Deserialize<ScreenPrefs>(json, Json) ?? new ScreenPrefs();
 
     /// <summary>Writes the settings to <see cref="DefaultPath"/>; a failure is logged, never fatal.</summary>
-    /// <param name="prefs">The settings.</param>
     public static void Write(ScreenPrefs prefs)
     {
-        if (DeviceInput.Playing) return;    // W67: a replay's menus never touch the saved settings (nor create the default folder)
+        if (DeviceInput.Playing) return;    // a replay's menus never touch the saved settings (nor create the default folder)
         Write(prefs, DefaultPath);
     }
 
     /// <summary>Writes the settings; a failure is logged, never fatal.</summary>
-    /// <param name="prefs">The settings.</param>
-    /// <param name="path">The file.</param>
     public static void Write(ScreenPrefs prefs, string path)
     {
-        if (DeviceInput.Playing) return;    // W67: a replay's menus never touch the saved settings
+        if (DeviceInput.Playing) return;    // a replay's menus never touch the saved settings
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

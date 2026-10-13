@@ -1,12 +1,10 @@
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// W67: sine, cosine, arctangent, exp and log that give the same bits on every machine. MathF and
+/// <summary>Sine, cosine, arctangent, exp and log that give the same bits on every machine. MathF and
 /// Math hand these to the C library, and glibc, musl and Windows round them differently, so a
 /// match drifts apart between two computers. Everything here is plain double adds, multiplies,
 /// divides and square roots, which IEEE 754 rounds the same everywhere. The game's systems use
-/// these in place of MathF; drawing code may keep MathF.
-/// </summary>
+/// these in place of MathF; drawing code may keep MathF.</summary>
 public static class SimMath
 {
     const double HalfPi = 1.5707963267948966;
@@ -19,45 +17,27 @@ public static class SimMath
     const double HalfPi3 = 2.0222662487111665e-21;
 
     /// <summary>Gets the sine.</summary>
-    /// <param name="x">The angle in radians.</param>
-    /// <returns>The sine.</returns>
     public static float Sin(float x) => (float)Sin((double)x);
 
     /// <summary>Gets the cosine.</summary>
-    /// <param name="x">The angle in radians.</param>
-    /// <returns>The cosine.</returns>
     public static float Cos(float x) => (float)Cos((double)x);
 
     /// <summary>Gets the tangent.</summary>
-    /// <param name="x">The angle in radians.</param>
-    /// <returns>The tangent.</returns>
     public static float Tan(float x) => (float)(Sin((double)x) / Cos((double)x));
 
     /// <summary>Gets the angle of the point (x, y) from the x axis, -pi to pi, as Math.Atan2.</summary>
-    /// <param name="y">The y coordinate.</param>
-    /// <param name="x">The x coordinate.</param>
-    /// <returns>The angle in radians.</returns>
     public static float Atan2(float y, float x) => (float)Atan2((double)y, (double)x);
 
     /// <summary>Gets e raised to a power.</summary>
-    /// <param name="x">The power.</param>
-    /// <returns>e to the x.</returns>
     public static float Exp(float x) => (float)Exp((double)x);
 
     /// <summary>Gets the natural logarithm.</summary>
-    /// <param name="x">A positive number.</param>
-    /// <returns>The logarithm; NaN below zero and negative infinity at zero.</returns>
     public static float Log(float x) => (float)Log((double)x);
 
     /// <summary>Gets x raised to the power y for x of zero or more.</summary>
-    /// <param name="x">The base.</param>
-    /// <param name="y">The power.</param>
-    /// <returns>x to the y.</returns>
     public static float Pow(float x, float y) => (float)Pow((double)x, (double)y);
 
     /// <summary>Gets the sine.</summary>
-    /// <param name="x">The angle in radians.</param>
-    /// <returns>The sine.</returns>
     public static double Sin(double x)
     {
         if (!double.IsFinite(x)) return double.NaN;
@@ -72,8 +52,6 @@ public static class SimMath
     }
 
     /// <summary>Gets the cosine.</summary>
-    /// <param name="x">The angle in radians.</param>
-    /// <returns>The cosine.</returns>
     public static double Cos(double x)
     {
         if (!double.IsFinite(x)) return double.NaN;
@@ -88,8 +66,6 @@ public static class SimMath
     }
 
     /// <summary>Gets the arctangent, -pi/2 to pi/2.</summary>
-    /// <param name="x">The tangent.</param>
-    /// <returns>The angle in radians.</returns>
     public static double Atan(double x)
     {
         if (double.IsNaN(x)) return double.NaN;
@@ -110,9 +86,6 @@ public static class SimMath
     }
 
     /// <summary>Gets the angle of the point (x, y) from the x axis, -pi to pi, as Math.Atan2.</summary>
-    /// <param name="y">The y coordinate.</param>
-    /// <param name="x">The x coordinate.</param>
-    /// <returns>The angle in radians.</returns>
     public static double Atan2(double y, double x)
     {
         if (double.IsNaN(x) || double.IsNaN(y)) return double.NaN;
@@ -124,8 +97,6 @@ public static class SimMath
     }
 
     /// <summary>Gets e raised to a power.</summary>
-    /// <param name="x">The power.</param>
-    /// <returns>e to the x.</returns>
     public static double Exp(double x)
     {
         if (double.IsNaN(x)) return double.NaN;
@@ -143,8 +114,6 @@ public static class SimMath
     }
 
     /// <summary>Gets the natural logarithm.</summary>
-    /// <param name="x">A positive number.</param>
-    /// <returns>The logarithm; NaN below zero and negative infinity at zero.</returns>
     public static double Log(double x)
     {
         if (double.IsNaN(x) || x < 0) return double.NaN;
@@ -167,9 +136,6 @@ public static class SimMath
     }
 
     /// <summary>Gets x raised to the power y for x of zero or more.</summary>
-    /// <param name="x">The base.</param>
-    /// <param name="y">The power.</param>
-    /// <returns>x to the y.</returns>
     public static double Pow(double x, double y)
     {
         if (y == 0) return 1;

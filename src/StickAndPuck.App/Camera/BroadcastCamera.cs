@@ -3,10 +3,8 @@ using Raylib_cs;
 
 namespace StickAndPuck.App.Camera;
 
-/// <summary>
-/// The cameras, copied from the Blender scene. Blender is Z-up with the far boards at +Y;
-/// glTF and Raylib are Y-up, so a Blender point (x, y, z) is (x, z, -y) here.
-/// </summary>
+/// <summary>The cameras, copied from the Blender scene. Blender is Z-up with the far boards at +Y;
+/// glTF and Raylib are Y-up, so a Blender point (x, y, z) is (x, z, -y) here.</summary>
 public static class BroadcastCamera
 {
     /// <summary>The gameplay camera's height above the ice: the Blender broadcast camera's z 17.5.</summary>
@@ -31,24 +29,15 @@ public static class BroadcastCamera
         }
     }
 
-    /// <summary>
-    /// Gameplay camera: faces the far boards square so board text and markings sit on the pixel
-    /// grid, at the Blender broadcast camera's height and tilt.
-    /// </summary>
-    /// <returns>The camera centred on the rink.</returns>
+    /// <summary>Gameplay camera: faces the far boards square so board text and markings sit on the pixel
+    /// grid, at the Blender broadcast camera's height and tilt.</summary>
     public static Camera3D Straight()
     {
         return Straight(0, Back, FovY);
     }
 
-    /// <summary>
-    /// The same straight camera moved along the rink (x) or toward the viewer (z). Height and tilt
-    /// never change, so the boards stay square to the frame wherever it pans.
-    /// </summary>
-    /// <param name="x">The camera's position along the rink.</param>
-    /// <param name="z">The camera's distance toward the viewer.</param>
-    /// <param name="fovY">The vertical field of view in degrees.</param>
-    /// <returns>The camera.</returns>
+    /// <summary>The same straight camera moved along the rink (x) or toward the viewer (z). Height and tilt
+    /// never change, so the boards stay square to the frame wherever it pans.</summary>
     public static Camera3D Straight(float x, float z, float fovY)
     {
         var pos = new Vector3(x, Height, z);
@@ -62,13 +51,8 @@ public static class BroadcastCamera
         };
     }
 
-    /// <summary>
-    /// Replay camera: the low "ice level" chase view, angled across the rink. Used only for short
-    /// cuts such as goal replays, where board text need not land on pixel rows.
-    /// </summary>
-    /// <param name="position">Where the camera stands.</param>
-    /// <param name="target">What it looks at.</param>
-    /// <returns>The camera.</returns>
+    /// <summary>Replay camera: the low "ice level" chase view, angled across the rink. Used only for short
+    /// cuts such as goal replays, where board text need not land on pixel rows.</summary>
     public static Camera3D IceLevel(Vector3 position, Vector3 target)
     {
         return new Camera3D

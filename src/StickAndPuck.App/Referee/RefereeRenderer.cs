@@ -6,11 +6,9 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Referee;
 
-/// <summary>
-/// Draws the referee with referee.glb and its striped kit: the skate clip while moving, idle while
+/// <summary>Draws the referee with referee.glb and its striped kit: the skate clip while moving, idle while
 /// standing, held poses at 24 frames per second like the players. The mask pass uses
-/// <see cref="MaskIds.For"/> with <see cref="Referee.MaskId"/>, so the referee gets its own outline.
-/// </summary>
+/// <see cref="MaskIds.For"/> with <see cref="Referee.MaskId"/>, so the referee gets its own outline.</summary>
 internal sealed unsafe class RefereeRenderer : IDisposable
 {
     /// <summary>The Blender scene draws players at 1.15.</summary>
@@ -34,7 +32,7 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         idle = Find("idle");
         skate = Find("skate");
         armUp = Find("armup");
-        kit = Camera.FarTexture.Load(Assets.RefereeKit);   // W58: mipmapped so stripes hold still at broadcast range
+        kit = Camera.FarTexture.Load(Assets.RefereeKit);   // mipmapped so stripes hold still at broadcast range
         loaded = true;
     }
 
@@ -47,7 +45,7 @@ internal sealed unsafe class RefereeRenderer : IDisposable
     {
         if (!loaded) return;
         int want = r.Speed > 0.6f && skate >= 0 ? skate : idle;
-        // W14: the call's signal for a moment after the whistle, the raised arm while a call is delayed
+        // The call's signal for a moment after the whistle, the raised arm while a call is delayed
         if (r.Announced.TryGet(out var called) && time - called.Time < SignalSeconds && Find(called.Infraction) is >= 0 and var signal) want = signal;
         else if (r.Call.HasValue && armUp >= 0) want = armUp;
         if (want != clip) { clip = want; frame = 0; }

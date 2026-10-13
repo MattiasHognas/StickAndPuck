@@ -18,7 +18,7 @@ public static class RefereeTuning
     /// <summary>Close enough to the drop spot to count as there.</summary>
     public const float Arrived = 0.15f;
 
-    /// <summary>W27: standing still at the dot at least this long before the drop; the referee holds a random moment between this and <see cref="MaxSetSeconds"/>, rolled per faceoff, so the drop cannot be timed by habit.</summary>
+    /// <summary>Standing still at the dot at least this long before the drop; the referee holds a random moment between this and <see cref="MaxSetSeconds"/>, rolled per faceoff, so the drop cannot be timed by habit.</summary>
     public const float SetSeconds = 0.5f;
 
     /// <summary>The longest the referee holds the puck once set at the dot.</summary>

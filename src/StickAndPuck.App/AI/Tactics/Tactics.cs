@@ -3,10 +3,8 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// What one club's play came to in a match, measured the same way whatever its tactics, so
-/// clubs can be compared (W22d).
-/// </summary>
+/// <summary>What one club's play came to in a match, measured the same way whatever its tactics, so
+/// clubs can be compared.</summary>
 public sealed class TacticsTally
 {
     /// <summary>Gets or sets the times the club got the puck over the other side's blue line.</summary>
@@ -49,32 +47,23 @@ public sealed class TacticsTally
     public float Trappers => BreakoutSeconds <= 0 ? 0f : NeutralSkaterSeconds / BreakoutSeconds;
 }
 
-/// <summary>W22d: club tactics' state for a match, and the tallies other code may read.</summary>
+/// <summary>Club tactics' state for a match, and the tallies other code may read.</summary>
 public static class Tactics
 {
 
     /// <summary>Gets a side's tactics, from its club file.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>The tactics.</returns>
     public static ClubTactics Of(World world, Side side)
     {
         return world.Setup.Club(side).Tactics;
     }
 
     /// <summary>Gets a club's tally for this match.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>The tally.</returns>
     public static TacticsTally Tally(World world, Side side)
     {
         return Board(world).Tally[(int)side];
     }
 
     /// <summary>Gets what tactics has a skater doing this step, for tests and the debug line.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="p">The skater.</param>
-    /// <returns>The task, or <see cref="TacticTask.None"/> when tactics leaves him to the other AI.</returns>
     public static TacticTask TaskOf(World world, Player p)
     {
         return Board(world).Tasks.GetValueOrDefault(p.Id);

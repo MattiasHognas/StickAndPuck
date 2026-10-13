@@ -5,11 +5,9 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// W25's stand-in leaders page, reached from the standings: the season's top ten by points,
+/// <summary>The stand-in leaders page, reached from the standings: the season's top ten by points,
 /// goals, saves or player-of-the-game awards (left and right switch), for the regular season or
-/// the playoffs once they run, and the latest player of the game underneath. W33 draws the final page.
-/// </summary>
+/// the playoffs once they run, and the latest player of the game underneath.</summary>
 internal sealed class LeadersScreen : MenuScreen
 {
     const int PanelW = 420, Line = 11, Rows = 10;

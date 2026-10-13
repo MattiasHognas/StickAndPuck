@@ -4,26 +4,24 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Rules;
 
-/// <summary>
-/// W14: tripping, hooking and slashing calls, the penalty box, power play and penalty kill. Runs
+/// <summary>Tripping, hooking and slashing calls, the penalty box, power play and penalty kill. Runs
 /// after physics, the match rules, offside and icing, so it sees this step's checks, goals and
-/// whistles. See <see cref="Penalties"/> for the rules it keeps. Line changes stay W13's: a skater
+/// whistles. See <see cref="Penalties"/> for the rules it keeps. Line changes stay the lines system's: a skater
 /// in the box is never sent on, so a club changes lines a skater short until he comes back.
 /// Draws the penalty box under the scorebug: each penalty's number and time left, a delayed call,
-/// and a club's extra attacker while its goalie is pulled (W23).
-/// W23: at every faceoff the skaters on the ice are balanced to <see cref="Penalties.TargetSkaters"/>,
+/// and a club's extra attacker while its goalie is pulled.
+/// At every faceoff the skaters on the ice are balanced to <see cref="Penalties.TargetSkaters"/>,
 /// which gives 4 on 3 after a penalty in 3 on 3 overtime and sends an extra attacker off once the
 /// goalie is back; a skater let out of the box in overtime plays on until that next whistle.
-/// W46: with <see cref="RuleSet.PenaltiesCarryIntoOvertime"/> the box keeps its penalties through
+/// With <see cref="RuleSet.PenaltiesCarryIntoOvertime"/> the box keeps its penalties through
 /// the overtime break (calls still pending there are made), and only the shootout and the final
 /// empty it; the first overtime faceoff then takes the format's skaters as the full strength.
 /// Waiting third penalties show in the box with their clock standing; skaters kept in the box after
 /// their time go to the bench at the next stoppage.
-/// W47: each call is graded (<see cref="PenaltyModel.Grade"/>); a power play goal ends a minor or
+/// Each call is graded (<see cref="PenaltyModel.Grade"/>); a power play goal ends a minor or
 /// the running half of a double minor, never a major; misconducts run on their own clock; hits in
 /// the moments after the whistle can be called as roughing. The box shows majors with a game
-/// misconduct as "5:00 GM" and misconducts as "10:00 MISC".
-/// </summary>
+/// misconduct as "5:00 GM" and misconducts as "10:00 MISC".</summary>
 internal sealed class PenaltyRules : ISystem, IDisposable
 {
     static readonly Side[] BothSides = [Side.Home, Side.Away];
@@ -86,12 +84,10 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         }
     }
 
-    /// <summary>
-    /// The faceoff is set up: the first one of a period with an empty box reads the full strength
+    /// <summary>The faceoff is set up: the first one of a period with an empty box reads the full strength
     /// off the ice (5 in regulation, 3 or 5 in overtime); with penalties carried into overtime it is
-    /// the overtime format's skaters (W46); then each club's skaters are brought to
-    /// <see cref="Penalties.TargetSkaters"/>, one on from the bench or one off to it, and placed again.
-    /// </summary>
+    /// the overtime format's skaters; then each club's skaters are brought to
+    /// <see cref="Penalties.TargetSkaters"/>, one on from the bench or one off to it, and placed again.</summary>
     static void AtFaceoff(World world, PenaltyBook book)
     {
         var m = world.Match;
@@ -151,11 +147,9 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         }
     }
 
-    /// <summary>
-    /// A goal against the offending club waves its delayed calls off; a power play goal ends the
-    /// shortest minor of the club scored on, or the running half of a double minor (W47); a major
-    /// is served in full.
-    /// </summary>
+    /// <summary>A goal against the offending club waves its delayed calls off; a power play goal ends the
+    /// shortest minor of the club scored on, or the running half of a double minor; a major
+    /// is served in full.</summary>
     static void Goals(World world, PenaltyBook book)
     {
         // MatchRules counts one goal per step
@@ -179,7 +173,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         }
     }
 
-    /// <summary>Gets whether a power play goal can end a penalty: minors and double minors, not majors (W47).</summary>
+    /// <summary>Gets whether a power play goal can end a penalty: minors and double minors, not majors.</summary>
     static bool Ends(World world, PenaltyState p)
     {
         return Penalties.SeverityOf(world, p.PlayerId) is Severity.Minor or Severity.DoubleMinor or Severity.MinorAndMisconduct;
@@ -196,7 +190,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         foreach (var foul in PenaltyModel.Holds(world, dt).ToList()) Roll(world, book, foul, 0);
     }
 
-    /// <summary>W47: hits in the moments after the whistle can only be roughing.</summary>
+    /// <summary>Hits in the moments after the whistle can only be roughing.</summary>
     static void LateHits(World world, PenaltyBook book)
     {
         foreach (var check in world.Events.Of<CheckLanded>().ToList())
@@ -205,7 +199,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         }
     }
 
-    /// <summary>Notes the hit and gets whether the checker hit the same skater a moment ago (W47, roughing).</summary>
+    /// <summary>Notes the hit and gets whether the checker hit the same skater a moment ago (roughing).</summary>
     static bool Again(World world, PenaltyBook book, CheckLanded check)
     {
         var target = world.Players
@@ -234,7 +228,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         return book.Delayed.Exists(d => d.Side == side) ? side.OrNone() : SideOrNone.None;
     }
 
-    /// <summary>The penalty scene's scripted call: a few seconds after the opening drop, once away has the puck, the home skater nearest it trips someone (or boards him, W47).</summary>
+    /// <summary>The penalty scene's scripted call: a few seconds after the opening drop, once away has the puck, the home skater nearest it trips someone (or boards him).</summary>
     static void Script(World world, PenaltyBook book)
     {
         if (float.IsNaN(book.ScriptAfterDrop) || float.IsNaN(book.FirstDrop) || world.Time - book.FirstDrop < book.ScriptAfterDrop) return;

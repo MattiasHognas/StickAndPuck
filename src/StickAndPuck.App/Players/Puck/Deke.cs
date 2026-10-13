@@ -3,16 +3,14 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W32: the numbers of a deke, with no Raylib and no state, so AI and tests can ask what a deke
+/// <summary>The numbers of a deke, with no Raylib and no state, so AI and tests can ask what a deke
 /// would do. A deke is a quick sidestep with the puck pulled across the body. Pressed while a
 /// defender closes in front (the sweet spot is <see cref="SweetNear"/> to <see cref="SweetFar"/>
 /// metres), it usually sells the fake: the defender bites, lunging where the puck was, and the
 /// carrier slips past. Pressed too early or too late it usually fails and the puck comes loose.
 /// Puck control raises the odds either way. Auto-deke (<see cref="Settings.AutoDeke"/>) dekes for
 /// the human when a defender reaches the sweet spot, at worse odds than a well-timed press, so
-/// deking by hand stays the better way.
-/// </summary>
+/// deking by hand stays the better way.</summary>
 public static class DekeModel
 {
     /// <summary>A defender further away than this, in metres, is nobody to beat.</summary>
@@ -37,21 +35,14 @@ public static class DekeModel
     public const float FrontCone = 75f * MathF.PI / 180f;
 
     /// <summary>Gets the way a player is going: their motion when skating, else the way they face.</summary>
-    /// <param name="p">The player.</param>
-    /// <returns>A unit vector on the ice (x, z).</returns>
     public static Vector2 Travel(Player p)
     {
         var v = new Vector2(p.Velocity.X, p.Velocity.Z);
         return v.Length() > 1f ? Vector2.Normalize(v) : PuckHandling.Facing(p);
     }
 
-    /// <summary>
-    /// Finds the defender a deke would beat: the nearest opponent skater on the ice, on their feet,
-    /// within <see cref="Range"/> and in front of the way the carrier is going.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="carrier">The puck carrier.</param>
-    /// <returns>The defender and the distance between the bodies, or None.</returns>
+    /// <summary>Finds the defender a deke would beat: the nearest opponent skater on the ice, on their feet,
+    /// within <see cref="Range"/> and in front of the way the carrier is going.</summary>
     public static Maybe<(Player Defender, float Distance)> Threat(World world, Player carrier)
     {
         var travel = Travel(carrier);
@@ -71,8 +62,6 @@ public static class DekeModel
     }
 
     /// <summary>Gets how well timed a deke is against a defender at a distance: 1 in the sweet spot, falling to 0 at <see cref="TooClose"/> and <see cref="Range"/>.</summary>
-    /// <param name="distance">Metres between the bodies.</param>
-    /// <returns>0 to 1.</returns>
     public static float Timing(float distance)
     {
         if (distance <= TooClose || distance >= Range) return 0f;
@@ -82,9 +71,6 @@ public static class DekeModel
     }
 
     /// <summary>Gets the chance a pressed deke beats the defender: mostly timing, then puck control.</summary>
-    /// <param name="timing">How well timed, 0 to 1 (see <see cref="Timing"/>).</param>
-    /// <param name="puckControl">The carrier's puck control.</param>
-    /// <returns>0 to 1.</returns>
     public static float Chance(float timing, int puckControl)
     {
         float pc = Traits.Unit(puckControl);
@@ -93,17 +79,12 @@ public static class DekeModel
     }
 
     /// <summary>Gets the chance an auto-deke beats the defender: well below a well-timed press, so deking by hand stays the better way.</summary>
-    /// <param name="puckControl">The carrier's puck control.</param>
-    /// <returns>0 to 1.</returns>
     public static float AutoChance(int puckControl)
     {
         return 0.3f + 0.3f * Traits.Unit(puckControl);
     }
 
     /// <summary>Gets how fast the carrier steps sideways during a deke, in metres per second: wider with better puck control, half as wide when it fails.</summary>
-    /// <param name="puckControl">The carrier's puck control.</param>
-    /// <param name="beaten">Whether the deke beat the defender.</param>
-    /// <returns>Metres per second across the carrier's path.</returns>
     public static float StepSpeed(int puckControl, bool beaten)
     {
         float s = 3f + 1.5f * Traits.Unit(puckControl);
@@ -111,9 +92,6 @@ public static class DekeModel
     }
 
     /// <summary>Gets the side a carrier steps to: away from the defender, or toward the backhand when the defender is dead ahead.</summary>
-    /// <param name="carrier">The carrier.</param>
-    /// <param name="defender">The defender, or None.</param>
-    /// <returns>A unit vector across the carrier's path.</returns>
     public static Vector2 StepSide(Player carrier, Maybe<Player> defender)
     {
         var travel = Travel(carrier);

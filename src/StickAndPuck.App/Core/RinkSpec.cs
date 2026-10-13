@@ -2,10 +2,8 @@ using System.Numerics;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// One set of numbers for the rink, in metres, Y-up, x along the rink and +z toward the camera.
-/// They match the Blender arena (a Blender point (x, y, z) is (x, z, -y) here).
-/// </summary>
+/// <summary>One set of numbers for the rink, in metres, Y-up, x along the rink and +z toward the camera.
+/// They match the Blender arena (a Blender point (x, y, z) is (x, z, -y) here).</summary>
 public static class RinkSpec
 {
     /// <summary>Half the rink length, board to board along x (the ice in arena.glb ends at ±30).</summary>
@@ -56,8 +54,6 @@ public static class RinkSpec
     });
 
     /// <summary>The centre of a net mouth on the goal line, for the net at the given end (-1 left, +1 right).</summary>
-    /// <param name="end">-1 for the net at -x, +1 for the net at +x.</param>
-    /// <returns>The point on the ice midway between the posts.</returns>
     public static Vector3 NetMouth(int end)
     {
         return new Vector3(Math.Sign(end) * GoalLineX, 0, 0);

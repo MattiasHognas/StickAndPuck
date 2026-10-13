@@ -11,7 +11,7 @@ using PassTally = StickAndPuck.App.AI.Decisions;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W29's difficulty: the trait scaling (easy lowers, hard raises, normal and versus untouched, only
+/// The difficulty: the trait scaling (easy lowers, hard raises, normal and versus untouched, only
 /// the club no human plays), then ten full all-AI matches of the same two clubs, one scaled hard and
 /// one easy, swapping ends every game so home ice evens out: the "done when" is that hard clearly
 /// beats easy. Formerly SAP_SCENE=difficultytest.

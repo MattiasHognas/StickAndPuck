@@ -6,11 +6,9 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W4a: draws every skater on the ice with skater.glb, its named clips and each club's kit atlas.
+/// <summary>Draws every skater on the ice with skater.glb, its named clips and each club's kit atlas.
 /// Clips are baked with held poses, so playing them at 24 frames per second gives the stepped
-/// motion. One model is posed and drawn per player in turn. Tab swaps home and away kits (a dev key).
-/// </summary>
+/// motion. One model is posed and drawn per player in turn. Tab swaps home and away kits (a dev key).</summary>
 internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
 {
     /// <summary>The Blender scene draws players at 1.15.</summary>
@@ -42,13 +40,13 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
     public void Update(World world, float dt)
     {
         if (KeyInput.Pressed(world.Settings, GameAction.Kit)) world.Settings = world.Settings with { SwapKits = !world.Settings.SwapKits };
-        swapKits = world.Settings.SwapKits;    // W20: the setting, which Tab flips in play
+        swapKits = world.Settings.SwapKits;    // the setting, which Tab flips in play
         foreach (var p in Skaters(world))
         {
             var (clip, frame) = poses.GetValueOrDefault(p.Id, (-1, 0f));
             if (p.Action == PlayerAction.Fight && Fights.Fighting.Pose(world, p).TryGet(out var fight) && Find(fight.Clip) is >= 0 and var fc)
             {
-                // W15: fight clips come from the fight; loops wrap here, one-shots hold their last frame in Pose
+                // Fight clips come from the fight; loops wrap here, one-shots hold their last frame in Pose
                 frame = fight.Seconds * ClipFps;
                 if (fight.Loop) frame %= clips[fc].KeyFrameCount;
                 poses[p.Id] = (fc, frame);
@@ -56,7 +54,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
             }
             if (Rules.Celebration.Pose(world, p).TryGet(out var pose) && Find(pose.Clip) is >= 0 and var pc)
             {
-                // W40: the end-of-game celebration poses the winners and the losers the same way
+                // The end-of-game celebration poses the winners and the losers the same way
                 frame = pose.Seconds * ClipFps;
                 if (pose.Loop) frame %= clips[pc].KeyFrameCount;
                 poses[p.Id] = (pc, frame);
@@ -64,7 +62,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
             }
             if (p.Action == PlayerAction.Fallen && Find("fall") is >= 0 and var down)
             {
-                // W64: a knocked-down skater plays the fall clip, which lies flat on the ice, and holds its last frame
+                // A knocked-down skater plays the fall clip, which lies flat on the ice, and holds its last frame
                 poses[p.Id] = (down, p.ActionTime * ClipFps);
                 continue;
             }
@@ -95,7 +93,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
         string path = Assets.KitAtlas(world.Setup.Club(p.Side).Id, side, "skater", p.Data.Number);
         if (!kits.TryGetValue(path, out var tex))
         {
-            tex = Camera.FarTexture.Load(path);   // W58: mipmapped so stripes hold still at broadcast range
+            tex = Camera.FarTexture.Load(path);   // mipmapped so stripes hold still at broadcast range
             kits[path] = tex;
         }
         return tex;

@@ -4,8 +4,7 @@ using StickAndPuck.App.Players.Dev;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W4b: possession and the stick (see <see cref="PuckHandling"/> for the numbers).
+/// <summary>Possession and the stick (see <see cref="PuckHandling"/> for the numbers).
 /// <list type="bullet">
 /// <item>Taking the puck: a skater whose blade a loose, live puck passes close to takes it, if the
 /// puck is low and slow enough for their puck control; the nearest blade wins, so an opponent in
@@ -14,25 +13,24 @@ namespace StickAndPuck.App.Players;
 /// with better puck control, and never leaves the rink.</item>
 /// <item>Passing: pass sends the puck along the ice to the teammate nearest the way the stick
 /// points, leading a moving receiver by smart passes. A human's control follows the pass to the
-/// receiver straight away, unless <see cref="Settings.Switching"/> is Manual. W96: a human's pass
+/// receiver straight away, unless <see cref="Settings.Switching"/> is Manual. A human's pass
 /// with nobody in the cone goes to the nearest open teammate (<see cref="PuckHandling.PickOpen"/>),
 /// and is recorded (<see cref="LastHumanPass"/>) so the AI skates the receiver to meet it.</item>
 /// <item>Shooting: a tap of shoot is a wrist shot, a hold past <see cref="PuckHandling.SlapAfter"/> a
 /// slap shot that grows with the wind-up (it fires by itself at full wind-up plus a moment).
 /// The hold also sets the height: a tap stays low, a full wind-up goes high (<see cref="ShotHeight"/>).
 /// The puck leaves the blade <see cref="PuckHandling.StrikeDelay"/> into the shoot clip.</item>
-/// <item>Deking (W32): deke while a defender closes in front sidesteps with the puck; well timed
+/// <item>Deking: deke while a defender closes in front sidesteps with the puck; well timed
 /// it usually beats them (they bite and lunge at nothing), mistimed it usually loses the puck
 /// (see <see cref="DekeModel"/>). With <see cref="Settings.AutoDeke"/> on, a human carrier dekes
 /// by themselves when a defender reaches the sweet spot, at worse odds.</item>
-/// <item>One-timers (W32): shoot pressed while a teammate's pass is on its way arms a one-timer;
+/// <item>One-timers: shoot pressed while a teammate's pass is on its way arms a one-timer;
 /// when the puck reaches the blade it is struck at once, without being stopped and carried.
 /// <see cref="Settings.OneTimers"/> off turns this off: the pass is taken, then shot.</item>
 /// </list>
 /// Publishes <see cref="PassMade"/> and <see cref="ShotTaken"/> (every shot,
-/// on goal or not) with the passer or shooter, the puck and its speed as Strength.
-/// </summary>
-internal sealed class PuckHandlingSystem : ISystem
+/// on goal or not) with the passer or shooter, the puck and its speed as Strength.</summary>
+internal sealed partial class PuckHandlingSystem : ISystem
 {
     /// <summary>The shoot clip's length: 46 frames at 24 per second.</summary>
     const float ShootSeconds = 46 / 24f;
@@ -42,7 +40,7 @@ internal sealed class PuckHandlingSystem : ISystem
     /// <summary>Seconds after a pass that a teammate can still arm a one-timer on it.</summary>
     public const float OneTimerWindow = 1.6f;
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 7;
 
 
@@ -66,7 +64,6 @@ internal sealed class PuckHandlingSystem : ISystem
     }
 
     /// <summary>Initializes the system with its own randomness, so tests repeat.</summary>
-    /// <param name="rng">Randomness for pass and shot error.</param>
     public PuckHandlingSystem(Random rng)
     {
         this.rng = rng;
@@ -84,7 +81,7 @@ internal sealed class PuckHandlingSystem : ISystem
         var pk = world.Puck;
         if (pk.Carrier >= 0 && (pk.Carrier >= world.Players.Count || world.Players[pk.Carrier].IsGoalie))
         {
-            Buttons(world, dt, Maybe<Player>.None);   // a goalie's puck is W5's
+            Buttons(world, dt, Maybe<Player>.None);   // a goalie's puck is the goalie system's
             lastPuck = pk.Position;
             return;
         }
@@ -133,7 +130,7 @@ internal sealed class PuckHandlingSystem : ISystem
                 charge.Remove(p.Id);
                 var kind = PuckHandling.KindOf(held);
                 float speed = kind == ShotKind.Slap ? PuckHandling.SlapSpeed(p.Data.Traits, held) : PuckHandling.WristSpeed(p.Data.Traits);
-                speed *= Lines.LinesTuning.ShotFactor(p.Energy);   // W13: tired skaters shoot softer
+                speed *= Lines.LinesTuning.ShotFactor(p.Energy);   // tired skaters shoot softer
                 pendingShot = Maybe.Some((p.Id, kind, speed, held));
                 p.Begin(PlayerAction.Shoot);
             }
@@ -182,9 +179,7 @@ internal sealed class PuckHandlingSystem : ISystem
         }
     }
 
-    /// <summary>Gets a human's last pass to a teammate in this match (W96), or None before the first.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The pass.</returns>
+    /// <summary>Gets a human's last pass to a teammate in this match, or None before the first.</summary>
     internal static Maybe<HumanPass> LastHumanPass(World world)
     {
         return world.LastHumanPass;
@@ -241,74 +236,6 @@ internal sealed class PuckHandlingSystem : ISystem
 
     /// <summary>The wind-up a one-timer is struck with at least, in seconds of hold.</summary>
     const float OneTimerPower = 0.65f;
-
-    /// <summary>Starts a deke when the carrier presses deke, or by itself for a human carrier when auto-deke is on and a defender reaches the sweet spot.</summary>
-    void Deke(World world, Player carrier)
-    {
-        bool down = carrier.Command.Deke, pressed = down && !dekeHeld.Contains(carrier.Id);
-        if (down) dekeHeld.Add(carrier.Id); else dekeHeld.Remove(carrier.Id);
-        if (carrier.Action != PlayerAction.None || pendingShot.HasValue || deking.ContainsKey(carrier.Id)) return;
-        if (world.Time - dekedAt.GetValueOrDefault(carrier.Id, float.NegativeInfinity) < DekeModel.Cooldown) return;
-
-        var threat = DekeModel.Threat(world, carrier);
-        if (!threat.HasValue) autoTried.Remove(carrier.Id);   // the next defender to come gets a fresh auto-deke
-        int pc = carrier.Data.Traits.PuckControl;
-        float chance;
-        if (pressed) chance = threat.TryGet(out var t) ? DekeModel.Chance(DekeModel.Timing(t.Distance), pc) : 1f;
-        else if (world.Settings.AutoDeke && carrier.Slot >= 0 && threat.TryGet(out var a) && a.Distance <= DekeModel.SweetFar && autoTried.Add(carrier.Id))
-            chance = DekeModel.AutoChance(pc);
-        else return;
-
-        var defender = threat.Select(static x => x.Defender);
-        bool beaten = rng.NextSingle() < chance;
-        dekedAt[carrier.Id] = world.Time;
-        deking[carrier.Id] = (world.Time, DekeModel.StepSide(carrier, defender), DekeModel.StepSpeed(pc, beaten || !defender.HasValue));
-        if (!defender.TryGet(out var beat)) return;   // a shimmy in open ice: nothing to beat, nothing to lose
-        if (beaten) Bite(carrier, beat);
-        else Fumble(world, carrier);
-    }
-
-    /// <summary>The defender buys the fake: they lunge where the puck was, past the carrier, and are a moment recovering.</summary>
-    static void Bite(Player carrier, Player defender)
-    {
-        if (defender.Action is PlayerAction.None or PlayerAction.Check)
-        {
-            // a check already past its contact window: the checking system lets them recover without hitting anyone
-            defender.Begin(PlayerAction.Check);
-            defender.ActionTime = CheckingModel.Window + 0.01f;
-        }
-        var fake = -DekeModel.StepSide(carrier, defender);
-        defender.Velocity = defender.Velocity * 0.5f + new Vector3(fake.X, 0, fake.Y) * 2f;
-    }
-
-    /// <summary>A failed deke: the puck squirts off the blade ahead, free for whoever gets there first (the defender, usually).</summary>
-    void Fumble(World world, Player carrier)
-    {
-        var travel = DekeModel.Travel(carrier);
-        var side = new Vector2(-travel.Y, travel.X) * (rng.NextSingle() * 2f - 1f) * 1.5f;
-        var push = travel * 2f + side;
-        Release(world, carrier, carrier.Velocity * 0.6f + new Vector3(push.X, 0, push.Y));
-    }
-
-    /// <summary>Moves dekers sideways for the deke's length, inside the boards.</summary>
-    void Sidestep(World world, float dt)
-    {
-        foreach (var (id, d) in deking.ToList())
-        {
-            var p = world.Players[id];
-            if (world.Time - d.At >= DekeModel.Duration || p.Action is PlayerAction.Fallen or PlayerAction.Fight) { deking.Remove(id); continue; }
-            var step = d.Side * d.Speed * dt;
-            p.Position = PuckHandling.InsideBoards(p.Position + new Vector3(step.X, 0, step.Y));
-        }
-    }
-
-    /// <summary>Where the puck is pulled during a deke: across the body and back again.</summary>
-    Vector3 DekePull(World world, int carrier)
-    {
-        if (!deking.TryGetValue(carrier, out var d)) return Vector3.Zero;
-        float k = SimMath.Sin(MathF.PI * Math.Clamp((world.Time - d.At) / DekeModel.Duration, 0f, 1f)) * 0.6f;
-        return new Vector3(d.Side.X, 0, d.Side.Y) * k;
-    }
 
     void Release(World world, Player p, Vector3 velocity)
     {

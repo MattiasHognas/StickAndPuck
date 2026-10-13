@@ -4,17 +4,15 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// Settings: every switch in one place (W20). The rules page first (W44: the preset and every
+/// <summary>Settings: every switch in one place. The rules page first (the preset and every
 /// rule, penalties and fights among them). Game: control switching, line changes, difficulty,
 /// period length, sim game, auto deke, one-timers. Controls: player one's and
-/// player two's devices, the key mapping page (W39), the control marker. Display and sound: camera zoom, lighting mood, swap
-/// kits, volume, language (W53). Debug: the fps line, the match line, the lines panel. Left and right change a
+/// player two's devices, the key mapping page, the control marker. Display and sound: camera zoom, lighting mood, swap
+/// kits, volume, language. Debug: the fps line, the match line, the lines panel. Left and right change a
 /// value; it applies to the world on show at once (so a paused match plays on with it) and every
 /// later match, and is saved on leaving. The list scrolls when it is taller than the frame. A
 /// running match stays paused while this screen is up (<see cref="ScreenSystem"/> holds every
-/// match under a screen).
-/// </summary>
+/// match under a screen).</summary>
 internal sealed class SettingsScreen : MenuScreen
 {
     const int PanelW = 300, PanelTop = 8;
@@ -70,7 +68,7 @@ internal sealed class SettingsScreen : MenuScreen
     public override void Update(World world, IReadOnlySet<MenuButton> press)
     {
         this.world = world;
-        world.Match.Paused = true;    // W20: a running match waits while the settings are open
+        world.Match.Paused = true;    // a running match waits while the settings are open
         base.Update(world, press);
     }
 
@@ -102,7 +100,7 @@ internal sealed class SettingsScreen : MenuScreen
 
     static string OnOff(bool on) => Text.Get(on ? K.On : K.Off);
 
-    static string Device(InputDevice device) => Players.Gamepads.Label(device);    // W38: the pad by name
+    static string Device(InputDevice device) => Players.Gamepads.Label(device);    // the pad by name
 
     static T Cycle<T>(T value, int dir)
         where T : struct, Enum

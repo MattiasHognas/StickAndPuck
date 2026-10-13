@@ -5,12 +5,8 @@ namespace StickAndPuck.App.Season;
 /// <summary>Shared setup for the stats screenshots and checks.</summary>
 internal static class StatsScenes
 {
-    /// <summary>
-    /// When the season in <see cref="SeasonSession"/> has nothing played, settles the human's next
-    /// games on paper too (the rest of each round follows), so a leaders page has lines to show.
-    /// </summary>
-    /// <param name="rounds">How many rounds to settle.</param>
-    /// <returns>The rounds settled.</returns>
+    /// <summary>When the season in <see cref="SeasonSession"/> has nothing played, settles the human's next
+    /// games on paper too (the rest of each round follows), so a leaders page has lines to show.</summary>
     public static int SettleSomeRounds(int rounds)
     {
         if (!SeasonSession.Current.TryGet(out var season) || season.Games.Any(g => g.Played)) return 0;

@@ -2,14 +2,12 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// W25: the season's player stats and records, saved inside season.json with the rest of the
+/// <summary>The season's player stats and records, saved inside season.json with the rest of the
 /// season. The regular season and the playoffs each have a <see cref="StatTable"/>; every game
 /// is credited once, by key, whether the human played it (from the event log, by
 /// <see cref="StatsSystem"/>) or it was settled on paper (from the score, by <see cref="CatchUp"/>),
 /// so a save from before this existed fills in when it is next opened. The leaders page reads
-/// <see cref="Regular"/>, <see cref="Playoffs"/> and <see cref="Awards"/>.
-/// </summary>
+/// <see cref="Regular"/>, <see cref="Playoffs"/> and <see cref="Awards"/>.</summary>
 public sealed class SeasonStats
 {
     /// <summary>Gets or sets the regular season's table.</summary>
@@ -25,32 +23,21 @@ public sealed class SeasonStats
     public HashSet<string> Credited { get; set; } = new(StringComparer.Ordinal);
 
     /// <summary>The key of a regular-season game.</summary>
-    /// <param name="number">The fixture number.</param>
-    /// <returns>The key.</returns>
     public static string GameKey(int number) => $"g{number}";
 
     /// <summary>The key of a playoff game.</summary>
-    /// <param name="round">The round, from 0.</param>
-    /// <param name="series">The series in the round, from 0.</param>
-    /// <param name="game">The game in the series, from 0.</param>
-    /// <returns>The key.</returns>
     public static string PlayoffKey(int round, int series, int game) => $"p{round}.{series}.{game}";
 
     /// <summary>Gets the latest award, or None before any game.</summary>
     public Maybe<PlayerOfGameAward> LastAward => Awards.Count == 0 ? Maybe<PlayerOfGameAward>.None : Awards[^1];
 
     /// <summary>Gets the awards a club's players won.</summary>
-    /// <param name="club">The club id.</param>
-    /// <returns>Those awards, oldest first.</returns>
     public IEnumerable<PlayerOfGameAward> AwardsOf(string club)
     {
         return Awards.Where(a => string.Equals(a.Club, club, StringComparison.Ordinal));
     }
 
     /// <summary>Credits one game's sheet, unless that key was credited before.</summary>
-    /// <param name="key">The game key.</param>
-    /// <param name="sheet">The sheet.</param>
-    /// <returns>True when it was credited now.</returns>
     public bool Credit(string key, MatchStatSheet sheet)
     {
         if (!Credited.Add(key)) return false;
@@ -59,13 +46,8 @@ public sealed class SeasonStats
         return true;
     }
 
-    /// <summary>
-    /// Credits every played game that has no lines yet from its score, the way the games the
-    /// human did not play are settled. Call after a round is simulated, and after a save is read.
-    /// </summary>
-    /// <param name="season">The season this belongs to.</param>
-    /// <param name="clubs">Every club, for rosters.</param>
-    /// <returns>The games credited now.</returns>
+    /// <summary>Credits every played game that has no lines yet from its score, the way the games the
+    /// human did not play are settled. Call after a round is simulated, and after a save is read.</summary>
     public int CatchUp(SeasonState season, IReadOnlyList<ClubData> clubs)
     {
         var byId = clubs.ToDictionary(c => c.Id, StringComparer.Ordinal);

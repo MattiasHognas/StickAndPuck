@@ -2,12 +2,10 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W4a: reads each human input slot's device and writes a <see cref="PlayerCommand"/> to the
+/// <summary>Reads each human input slot's device and writes a <see cref="PlayerCommand"/> to the
 /// player that slot controls. There are always <see cref="MatchSetup.Slots"/> slots, so a second
 /// human (player vs player) needs no rework. A lone human on keyboard and mouse can also pick up
-/// the first gamepad, as long as no other slot has claimed it.
-/// </summary>
+/// the first gamepad, as long as no other slot has claimed it.</summary>
 internal sealed class InputSystem : ISystem
 {
     readonly DeviceReader[] readers = [.. Enumerable.Range(0, MatchSetup.Slots).Select(_ => new DeviceReader())];

@@ -30,10 +30,8 @@ public enum Job
     /// <summary>Holding the role's spot in the team shape.</summary>
     Shape,
 
-    /// <summary>
-    /// Off the puck with a teammate carrying it in attack: getting open for a pass around the
-    /// shape spot or the cycle station (W22a), so on purpose away from the shape's ideal spot.
-    /// </summary>
+    /// <summary>Off the puck with a teammate carrying it in attack: getting open for a pass around the
+    /// shape spot or the cycle station, so on purpose away from the shape's ideal spot.</summary>
     Support,
 
     /// <summary>Lining up for a faceoff around the puck.</summary>
@@ -59,8 +57,6 @@ public enum Job
 public static class Roles
 {
     /// <summary>The roles used for a number of skaters: all five at even strength, a box with four, a triangle with three.</summary>
-    /// <param name="skaters">Skaters on the ice for one side.</param>
-    /// <returns>The roles to hand out.</returns>
     public static IReadOnlyList<Role> For(int skaters)
     {
         return skaters switch
@@ -73,13 +69,9 @@ public static class Roles
         };
     }
 
-    /// <summary>
-    /// Hands out roles to one side's skaters: each takes the role of their roster position when it
+    /// <summary>Hands out roles to one side's skaters: each takes the role of their roster position when it
     /// is free (a defenceman takes the side he shoots from), then the nearest kind of role (forward
-    /// or defence), then whatever is left. Skaters past the role count share the centre role.
-    /// </summary>
-    /// <param name="skaters">One side's skaters on the ice, goalies left out.</param>
-    /// <returns>The role per player id.</returns>
+    /// or defence), then whatever is left. Skaters past the role count share the centre role.</summary>
     public static Dictionary<int, Role> Assign(IReadOnlyList<Player> skaters)
     {
         var free = For(skaters.Count).ToList();
@@ -103,8 +95,6 @@ public static class Roles
     }
 
     /// <summary>Gets whether a role is a defence role.</summary>
-    /// <param name="role">The role.</param>
-    /// <returns>True for left and right defence.</returns>
     public static bool IsDefence(Role role)
     {
         return role is Role.LeftDefence or Role.RightDefence;

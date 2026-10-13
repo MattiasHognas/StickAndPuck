@@ -8,7 +8,7 @@ using StickAndPuck.App.AI.Dev;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W68: checks who writes an AI skater's command and which write wins (<see cref="AiCommand"/>),
+/// Checks who writes an AI skater's command and which write wins (<see cref="AiCommand"/>),
 /// run by <see cref="DecisionsTests"/>. Each fixture plays real AI systems and looks at every AI write between
 /// decisions and skating:
 /// <list type="bullet">

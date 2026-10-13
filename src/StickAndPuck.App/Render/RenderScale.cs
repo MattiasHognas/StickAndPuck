@@ -1,14 +1,12 @@
 namespace StickAndPuck.App.Render;
 
-/// <summary>
-/// W59: how coarse the scene is drawn. Far from the players (the gameplay camera) a kit texel is
+/// <summary>How coarse the scene is drawn. Far from the players (the gameplay camera) a kit texel is
 /// smaller than a pixel of the 480x270 frame, so the full frame is right. Up close (the goal replay,
 /// the fight close-up) one texel covers two or three pixels and the kits turn into soft blocks of
 /// uneven size; drawing the scene at 240x135 or 160x90 instead keeps a texel about one pixel, and
 /// the outline, drawn on that smaller frame, stays one of its pixels wide. The camera asks for a
 /// scale each step; the pixel frame picks it up when the next frame starts, and the HUD always stays
-/// at the full 480x270.
-/// </summary>
+/// at the full 480x270.</summary>
 public static class RenderScale
 {
     /// <summary>The coarsest scale: 160x90.</summary>
@@ -24,7 +22,6 @@ public static class RenderScale
     public static int Divisor { get; private set; } = 1;
 
     /// <summary>Asks for a scale from the next frame on.</summary>
-    /// <param name="divisor">1, 2 or 3; anything else is clamped.</param>
     public static void Request(int divisor)
     {
         Divisor = Math.Clamp(divisor, 1, MaxDivisor);
@@ -33,7 +30,6 @@ public static class RenderScale
     /// <summary>The scale that keeps a kit texel about one pixel, for a camera whose full-frame pixel is this big at the players.</summary>
     /// <param name="pixelMetres">One pixel of the 480x270 frame at the players' distance, in metres.</param>
     /// <param name="current">The scale used now; it is kept until the ratio is clearly nearer another one.</param>
-    /// <returns>1, 2 or 3.</returns>
     public static int ForPixel(float pixelMetres, int current)
     {
         if (pixelMetres <= 0) return MaxDivisor;

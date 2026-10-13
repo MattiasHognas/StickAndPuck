@@ -3,20 +3,16 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Physics;
 
-/// <summary>
-/// W62: the goal cage is solid for players too. Each net stands on the ice as a box from the posts on
+/// <summary>The goal cage is solid for players too. Each net stands on the ice as a box from the posts on
 /// the goal line to the back of the cage, the same footprint <see cref="PuckMotion"/> uses for the puck;
 /// a player is a standing circle that slides along it and can never skate over or through it, from
 /// behind, from the sides or in through the mouth. The nets never move.
 /// A player pushing into the cage is steered along it, so AI skaters and goalies heading for a spot on
 /// the far side go around it instead of stopping dead against the frame. A goalie has a slimmer circle
-/// and may stand with its centre right on the goal line between the posts, as it does in its crease.
-/// </summary>
+/// and may stand with its centre right on the goal line between the posts, as it does in its crease.</summary>
 public static class NetBody
 {
     /// <summary>Keeps every player on the ice out of both cages. A carried puck moves with its carrier.</summary>
-    /// <param name="world">The world.</param>
-    /// <param name="dt">The step in seconds.</param>
     public static void Resolve(World world, float dt)
     {
         var pk = world.Puck;
@@ -37,11 +33,6 @@ public static class NetBody
     }
 
     /// <summary>Whether a player standing at a point overlaps the cage at one end.</summary>
-    /// <param name="p">The player's position.</param>
-    /// <param name="end">-1 for the net at -x, +1 for the net at +x.</param>
-    /// <param name="goalie">True for a goalie, which may stand on the goal line between the posts.</param>
-    /// <param name="slack">How far it may overlap, for tests.</param>
-    /// <returns>True when it reaches into the frame.</returns>
     public static bool Overlaps(Vector3 p, int end, bool goalie = false, float slack = 0.02f)
     {
         var (u, z) = Local(p, end);
@@ -130,16 +121,8 @@ public static class NetBody
         return true;
     }
 
-    /// <summary>
-    /// A player pushing into the frame slides off it to get around, the way its stick points along the
-    /// frame, else toward the nearer edge, like a skater turning off the net instead of stopping dead.
-    /// </summary>
-    /// <param name="u">Depth from the middle of the frame.</param>
-    /// <param name="z">Sideways offset.</param>
-    /// <param name="normal">The frame's outward normal at the contact, in depth and sideways.</param>
-    /// <param name="stick">The way the player wants to go, in depth and sideways, up to length 1.</param>
-    /// <param name="goalie">True for a goalie.</param>
-    /// <returns>The unit direction to slide in, in depth and sideways, or zero.</returns>
+    /// <summary>A player pushing into the frame slides off it to get around, the way its stick points along the
+    /// frame, else toward the nearer edge, like a skater turning off the net instead of stopping dead.</summary>
     static Vector2 Around(float u, float z, Vector2 normal, Vector2 stick, bool goalie)
     {
         if (-Vector2.Dot(stick, normal) <= PuckTuning.PushingIntent) return Vector2.Zero;

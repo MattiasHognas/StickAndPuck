@@ -1,9 +1,7 @@
 namespace StickAndPuck.App.Goalie;
 
-/// <summary>
-/// The numbers that decide how a goalie plays. Metres, seconds, metres per second. Where a pair
-/// is given, the first is a goalie with reflexes 0 and the second one with reflexes 100.
-/// </summary>
+/// <summary>The numbers that decide how a goalie plays. Metres, seconds, metres per second. Where a pair
+/// is given, the first is a goalie with reflexes 0 and the second one with reflexes 100.</summary>
 public static class GoalieTuning
 {
     /// <summary>How far out from the goal line a goalie stands when the puck is close.</summary>

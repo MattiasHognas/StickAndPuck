@@ -4,12 +4,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// The arcade entries on the "new game" list, over W16c's <see cref="ArcadeSession"/>: a new run
+/// <summary>The arcade entries on the "new game" list, over <see cref="ArcadeSession"/>: a new run
 /// with three lives or sudden death (pick a club), or continue the saved run. Each game's result is
-/// recorded and saved by W16c's ArcadeSystem; the results screen offers the next game while the
-/// run lasts.
-/// </summary>
+/// recorded and saved by the ArcadeSystem; the results screen offers the next game while the
+/// run lasts.</summary>
 internal abstract class ArcadeMode : IGameMode
 {
     bool begun;

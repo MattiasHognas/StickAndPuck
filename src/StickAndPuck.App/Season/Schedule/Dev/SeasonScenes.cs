@@ -4,15 +4,13 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Season.Dev;
 
-/// <summary>
-/// SAP_SCENE=season: continues the saved season (or starts one) and plays the human's next game.
+/// <summary>SAP_SCENE=season: continues the saved season (or starts one) and plays the human's next game.
 /// When the match ends the result is recorded, the round's other games are settled, the season is
-/// saved and the table shows; start the game again for the next round. Until W11's start screen:
+/// saved and the table shows; start the game again for the next round. Without the start screen:
 /// SAP_SEASON=new starts a new season over the save, SAP_CLUB=id picks the human's club for a new
 /// season (default SAP_HOME, else the first club), SAP_SEED fixes the schedule, SAP_SAVE moves the
 /// save file, SAP_PERIOD and SAP_OT shorten periods and overtime, SAP_HUMAN=0 lets the AI play both sides.
-/// Once the regular season is over it plays the human's next playoff game instead (W16b).
-/// </summary>
+/// Once the regular season is over it plays the human's next playoff game instead.</summary>
 public sealed class SeasonScene : IScene
 {
     /// <inheritdoc/>

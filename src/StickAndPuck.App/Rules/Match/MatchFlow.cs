@@ -3,18 +3,16 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules;
 
-/// <summary>
-/// The match flow other systems call into: start a match, blow the whistle for a faceoff at a dot
-/// (W7b offside and icing), start an overtime period (W7c), and let the referee drop the puck (W8).
+/// <summary>The match flow other systems call into: start a match, blow the whistle for a faceoff at a dot
+/// (offside and icing), start an overtime period, and let the referee drop the puck.
 /// <see cref="MatchRules"/> runs the flow each step. A world that never calls <see cref="Begin"/>
-/// (practice and test scenes) has no match flow: no clock, no faceoffs.
-/// </summary>
+/// (practice and test scenes) has no match flow: no clock, no faceoffs.</summary>
 /// <remarks>
 /// What the flow promises the readers of <see cref="World.Match"/>:
 /// the clock runs only in <see cref="MatchPhase.Play"/>; during <see cref="MatchPhase.Faceoff"/>
 /// the puck lies dead on <see cref="FaceoffDot"/> and the players hold their spots;
 /// a goal (published by physics) is counted once and followed by a centre faceoff;
-/// each period end publishes PeriodEnd; after regulation a tie hands over to W7c by setting
+/// each period end publishes PeriodEnd; after regulation a tie hands over to the overtime rules by setting
 /// <see cref="MatchPhase.Overtime"/> or <see cref="MatchPhase.Shootout"/>; otherwise MatchEnd is
 /// published once (MatchWon with the winner, or MatchTied) and the phase becomes Final.
 /// A goal in a period after regulation is sudden death.
@@ -23,8 +21,6 @@ public static class MatchFlow
 {
 
     /// <summary>Starts the match: score to zero, period 1, the intro, then the opening faceoff at centre.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="log">Whether to print goals and period ends to the console.</param>
     public static void Begin(World world, bool log = true)
     {
         var s = State(world);
@@ -42,28 +38,19 @@ public static class MatchFlow
     }
 
     /// <summary>Gets a value indicating whether the world runs the match flow.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>True after <see cref="Begin"/>.</returns>
     public static bool IsRunning(World world)
     {
         return world.Flow.TryGet(out var s) && s.Active;
     }
 
     /// <summary>Gets the dot of the coming (or last) faceoff; the referee skates here during a stoppage.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>The dot.</returns>
     public static Vector3 FaceoffDot(World world)
     {
         return State(world).Dot;
     }
 
-    /// <summary>
-    /// Stops play for a faceoff at a dot: puck dead, clock stopped, a Whistle event, then the faceoff
-    /// after <see cref="MatchTuning.StoppageSeconds"/>. Publish your own Offside or Icing event too.
-    /// </summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="dot">Where the faceoff will be; see <see cref="NearestDot"/>.</param>
-    /// <returns>False if play was not running, so nothing changed.</returns>
+    /// <summary>Stops play for a faceoff at a dot: puck dead, clock stopped, a Whistle event, then the faceoff
+    /// after <see cref="MatchTuning.StoppageSeconds"/>. Publish your own Offside or Icing event too.</summary>
     public static bool Whistle(World world, Vector3 dot)
     {
         if (!IsRunning(world) || world.Match.Phase != MatchPhase.Play) return false;
@@ -76,10 +63,7 @@ public static class MatchFlow
         return true;
     }
 
-    /// <summary>Starts a period after regulation (W7c's 3 on 3 overtime): clock set, faceoff at centre. A goal in it ends the match.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="period">The period number, 4 for overtime.</param>
-    /// <param name="seconds">Its length, usually <see cref="MatchTuning.OvertimeSeconds"/>.</param>
+    /// <summary>Starts a period after regulation (a 3 on 3 overtime): clock set, faceoff at centre. A goal in it ends the match.</summary>
     public static void StartPeriod(World world, int period, float seconds)
     {
         world.Match.Period = period;
@@ -87,17 +71,13 @@ public static class MatchFlow
         SetUpFaceoff(world, RinkSpec.CentreDot);
     }
 
-    /// <summary>Hands puck drops to the referee (W8): faceoffs wait for <see cref="Drop"/> instead of a timer.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="referee">True when the referee drops the puck.</param>
+    /// <summary>Hands puck drops to the referee: faceoffs wait for <see cref="Drop"/> instead of a timer.</summary>
     public static void SetRefereeDrops(World world, bool referee)
     {
         State(world).RefereeDrops = referee;
     }
 
     /// <summary>Drops the puck if a faceoff is waiting; the referee calls this.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>True if the puck was dropped.</returns>
     public static bool Drop(World world)
     {
         if (!IsRunning(world) || world.Match.Phase != MatchPhase.Faceoff) return false;
@@ -111,11 +91,9 @@ public static class MatchFlow
         return true;
     }
 
-    /// <summary>
-    /// The draw: the two skaters nearest the dot, one per club, contest it on puck control and hockey
+    /// <summary>The draw: the two skaters nearest the dot, one per club, contest it on puck control and hockey
     /// IQ with some luck, and the puck is pulled back towards the winner's blade. Without it the puck
-    /// lay still on the dot and the quicker centre to skate onto it won every draw.
-    /// </summary>
+    /// lay still on the dot and the quicker centre to skate onto it won every draw.</summary>
     static void Draw(World world, FlowState s)
     {
         Maybe<Player> Centre(Side side) => Maybe.From<Player>(world.OnIce(side).Where(p => !p.IsGoalie).MinBy(p => Vector3.DistanceSquared(p.Position, s.Dot)));
@@ -129,16 +107,12 @@ public static class MatchFlow
     }
 
     /// <summary>Gets the faceoff dot nearest a point on the ice.</summary>
-    /// <param name="position">A point, for example where the puck was when play stopped.</param>
-    /// <returns>The nearest of the nine dots.</returns>
     public static Vector3 NearestDot(Vector3 position)
     {
         return RinkSpec.FaceoffDots.MinBy(d => Vector2.DistanceSquared(new(d.X, d.Z), new(position.X, position.Z)));
     }
 
     /// <summary>Formats game seconds as m:ss, rounding up so the clock shows 0:00 only when time is out.</summary>
-    /// <param name="seconds">Seconds left.</param>
-    /// <returns>The clock text.</returns>
     public static string ClockText(float seconds)
     {
         int s = (int)MathF.Ceiling(Math.Max(0, seconds) - 0.0001f);
@@ -185,12 +159,12 @@ internal sealed class FlowState
 
     public bool RefereeDrops { get; set; }
 
-    /// <summary>Gets the luck in the draws; the match seed's stream (W67), so runs repeat.</summary>
+    /// <summary>Gets the luck in the draws; the match seed's stream, so runs repeat.</summary>
     public required Random Dice { get; init; }
 
     /// <summary>Gets or sets how long a goalie has held the puck in play.</summary>
     public float Held { get; set; }
 
-    /// <summary>Gets or sets the end-of-game celebration (W40), from the horn of a decided game.</summary>
+    /// <summary>Gets or sets the end-of-game celebration, from the horn of a decided game.</summary>
     public Maybe<Celebration.CelebrationState> Celebration { get; set; }
 }

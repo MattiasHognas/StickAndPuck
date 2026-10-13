@@ -4,15 +4,13 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Season.Dev;
 
-/// <summary>
-/// SAP_SCENE=arcade: continues the saved arcade run (or starts one) and plays the human's next game.
+/// <summary>SAP_SCENE=arcade: continues the saved arcade run (or starts one) and plays the human's next game.
 /// When the match ends the result is recorded and saved, and the run's panel shows; start the game
-/// again for the next game. A finished run shows its summary. Until W11's start screen:
+/// again for the next game. A finished run shows its summary. Without the start screen:
 /// SAP_ARCADE=new starts a new run over the save, SAP_ARCADE_RULE=suddendeath or lives (default lives),
 /// SAP_CLUB=id picks the human's club (default SAP_HOME, else the first club), SAP_SEED fixes the
 /// opponent order, SAP_ARCADE_SAVE moves the save file, SAP_PERIOD and SAP_OT shorten periods and
-/// overtime, SAP_HUMAN=0 lets the AI play both sides.
-/// </summary>
+/// overtime, SAP_HUMAN=0 lets the AI play both sides.</summary>
 public sealed class ArcadeScene : IScene
 {
     /// <inheritdoc/>

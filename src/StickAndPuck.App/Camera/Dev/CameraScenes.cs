@@ -3,11 +3,9 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Camera.Dev;
 
-/// <summary>
-/// SAP_SCENE=camera: both lineups, with the puck shot from the neutral zone into the right-hand
+/// <summary>SAP_SCENE=camera: both lineups, with the puck shot from the neutral zone into the right-hand
 /// net, so the camera has something fast to follow. With SAP_REPLAY_AT=2 the puck's arrival counts
-/// as a goal and the replay plays.
-/// </summary>
+/// as a goal and the replay plays.</summary>
 public sealed class CameraScene : IScene
 {
     /// <inheritdoc/>

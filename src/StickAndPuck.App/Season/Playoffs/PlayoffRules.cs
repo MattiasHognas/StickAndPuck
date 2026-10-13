@@ -2,11 +2,9 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// The rules of one playoff mode (W19): what a played or simulated playoff game follows that a
+/// <summary>The rules of one playoff mode: what a played or simulated playoff game follows that a
 /// regular season game does not. <see cref="Shl"/> is the SHL's; another league makes its own
-/// with a record expression and puts it on <see cref="PlayoffSession.Rules"/>.
-/// </summary>
+/// with a record expression and puts it on <see cref="PlayoffSession.Rules"/>.</summary>
 public sealed record PlayoffRules
 {
     /// <summary>SHL playoffs: 5 on 5 sudden death until a goal, no shootout.</summary>

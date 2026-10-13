@@ -3,15 +3,13 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules.Dev;
 
-/// <summary>
-/// SAP_SCENE=overtime: a match that ends tied, to watch what follows. Regulation is short
+/// <summary>SAP_SCENE=overtime: a match that ends tied, to watch what follows. Regulation is short
 /// (SAP_PERIOD, default 5 seconds a period) and nobody shoots, so it ends 0-0; then the 3 on 3
 /// overtime (SAP_OT seconds, default 15) and the shootout with AI shooters. SAP_HUMAN=1 puts
 /// keyboard and mouse on the home club, so you take the home shots yourself. SAP_START=overtime or
 /// shootout skips regulation (and overtime) to start right there. SAP_PLAYOFF=1 plays the SHL
 /// playoff format instead: 5 on 5 overtime periods until a goal and no shootout. SAP_RULES=shl|arcade|nhl
-/// plays that preset's shootout (W45: SHL away first, NHL home chooses). The score line is on.
-/// </summary>
+/// plays that preset's shootout (SHL away first, NHL home chooses). The score line is on.</summary>
 public sealed class OvertimeScene : IScene
 {
     /// <inheritdoc/>

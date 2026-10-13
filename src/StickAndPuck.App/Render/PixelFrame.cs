@@ -5,33 +5,25 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Render;
 
-/// <summary>
-/// The 480x270 frame and the pixel post pass. The scene is drawn into one render texture and
+/// <summary>The 480x270 frame and the pixel post pass. The scene is drawn into one render texture and
 /// the players' flat ids into another; the post shader then snaps every pixel to the palette
 /// from the .gpl file and draws a one-pixel outline around each player. The HUD has its own 480x270 target
 /// that is laid on top untouched, and the result is scaled up by the largest whole number that
-/// fits the window. W59: close shots draw the scene and mask at 240x135 or 160x90 instead
+/// fits the window. Close shots draw the scene and mask at 240x135 or 160x90 instead
 /// (<see cref="RenderScale"/>), so the post pass and its outline run on the coarser grid, and the
 /// mask carries each pixel's depth so the post pass can also draw lines inside a player where an
-/// arm or stick passes in front of the body. W60: toon band edges and palette snaps are dithered
+/// arm or stick passes in front of the body. Toon band edges and palette snaps are dithered
 /// with a 4x4 Bayer pattern on the scene's pixel grid, on players and on what stands inside the
-/// boards only (see <see cref="Dither"/>).
-/// </summary>
+/// boards only (see <see cref="Dither"/>).</summary>
 public sealed class PixelFrame : IDisposable
 {
-    /// <summary>
-    /// Shader used to render the scene with per-pixel toon shading.
-    /// </summary>
+    /// <summary>Shader used to render the scene with per-pixel toon shading.</summary>
     public readonly Shader Toon;
 
-    /// <summary>
-    /// Shader used to generate the player mask texture.
-    /// </summary>
+    /// <summary>Shader used to generate the player mask texture.</summary>
     public readonly Shader Mask;
 
-    /// <summary>
-    /// Shader used in the final post-processing pass.
-    /// </summary>
+    /// <summary>Shader used in the final post-processing pass.</summary>
     public readonly Shader Post;
 
     /// <summary>Lines inside a player are drawn where the depth jumps by more than this many metres; only on the close scales.</summary>
@@ -55,11 +47,7 @@ public sealed class PixelFrame : IDisposable
     readonly int texelLoc, innerLoc, originLoc;
     int divisor = 1;
 
-    /// <summary>
-    /// Creates a pixel frame with the specified internal resolution.
-    /// </summary>
-    /// <param name="width">The width of the frame in pixels.</param>
-    /// <param name="height">The height of the frame in pixels.</param>
+    /// <summary>Creates a pixel frame with the specified internal resolution.</summary>
     public PixelFrame(int width, int height)
     {
         this.width = width; this.height = height;

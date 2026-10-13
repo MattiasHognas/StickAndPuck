@@ -53,38 +53,27 @@ public sealed class Squad
     public IReadOnlyList<Player> Goalies { get; }
 
     /// <summary>Gets the units of one group.</summary>
-    /// <param name="group">Forwards or defence.</param>
-    /// <returns>The lines or the pairs.</returns>
     public IReadOnlyList<Unit> Units(Group group)
     {
         return group == Group.Forwards ? Lines : Pairs;
     }
 
     /// <summary>Gets the group a skater plays in.</summary>
-    /// <param name="p">The skater.</param>
-    /// <returns>Defence for a D, forwards otherwise.</returns>
     public static Group GroupOf(Player p)
     {
         return p.Data.Position == PlayingPosition.D ? Group.Defence : Group.Forwards;
     }
 
     /// <summary>Gets the bench door of a club: on the far boards, home left of centre and away right of it.</summary>
-    /// <param name="side">The club.</param>
-    /// <returns>The spot on the ice (x, z) where skaters leave and come on.</returns>
     public static Vector2 Door(Side side)
     {
         return new Vector2(side == Side.Home ? -6f : 6f, -(RinkSpec.HalfWidth - 0.9f));
     }
 
-    /// <summary>
-    /// Builds a club's squad from its roster, adding everyone not yet in the world to the bench.
+    /// <summary>Builds a club's squad from its roster, adding everyone not yet in the world to the bench.
     /// Players already on the ice (the starters) keep their place. Lines take centres, left and
     /// right wings in roster order, pairs take defencemen two by two; gaps are filled from the
-    /// forwards or defencemen left over.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>The squad.</returns>
+    /// forwards or defencemen left over.</summary>
     public static Squad Build(World world, Side side)
     {
         var door = Door(side);
@@ -127,21 +116,15 @@ public sealed class Squad
     }
 
     /// <summary>Gets the unit a player belongs to, if any.</summary>
-    /// <param name="p">The player.</param>
-    /// <returns>The unit, or None for a goalie or an extra.</returns>
     public Maybe<Unit> UnitOf(Player p)
     {
         return Lines.Concat(Pairs).FirstOrNone(u => u.Members.Contains(p));
     }
 
-    /// <summary>
-    /// Takes a player out of the squad for good, as an ejection does (W47), and refills his unit:
+    /// <summary>Takes a player out of the squad for good, as an ejection does, and refills his unit:
     /// the last unit of his group gives up a skater, of the same position if it has one, so the top
     /// lines and pairs stay whole and the last one plays short (a change fills it from the bench).
-    /// A unit left with nobody is dropped.
-    /// </summary>
-    /// <param name="p">The player.</param>
-    /// <returns>The skater who moved up into the gap, or None when nobody did.</returns>
+    /// A unit left with nobody is dropped.</summary>
     public Maybe<Player> Remove(Player p)
     {
         if (!UnitOf(p).TryGet(out var unit)) return Maybe<Player>.None;

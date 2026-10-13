@@ -3,12 +3,10 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players.Dev;
 
-/// <summary>
-/// W4c test setup, SAP_SCENE=checks: an away carrier skates loops around centre ice with the puck
+/// <summary>Test setup, SAP_SCENE=checks: an away carrier skates loops around centre ice with the puck
 /// while you, on a home skater, hunt them down. Arrows skate, shift sprints, Q (or gamepad B)
 /// checks, C (or gamepad Y) switches to the teammate nearest the puck. Knock the carrier off the
-/// puck and pick it up; control follows pickups and goes to the nearest skater on defence.
-/// </summary>
+/// puck and pick it up; control follows pickups and goes to the nearest skater on defence.</summary>
 public sealed class ChecksScene : IScene
 {
     /// <inheritdoc/>
@@ -95,7 +93,6 @@ internal sealed class ChecksDemo(ChecksCast cast, bool scripted)
     }
 
     /// <summary>Writes this step's commands for the scripted players.</summary>
-    /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         if (world.Dev.Checks.TryGet(out var demo)) demo.Run(world);
@@ -145,8 +142,4 @@ internal sealed class ChecksDemo(ChecksCast cast, bool scripted)
 }
 
 /// <summary>The four skaters a checks scene adds.</summary>
-/// <param name="Carrier">The away carrier.</param>
-/// <param name="Hunter">The home checker.</param>
-/// <param name="Mate1">A home teammate.</param>
-/// <param name="Mate2">Another home teammate.</param>
 internal sealed record ChecksCast(Player Carrier, Player Hunter, Player Mate1, Player Mate2);

@@ -32,10 +32,6 @@ public enum MatchPhase
 }
 
 /// <summary>A penalty being served.</summary>
-/// <param name="PlayerId">The penalised player.</param>
-/// <param name="Side">The penalised club.</param>
-/// <param name="Infraction">What was called, for the HUD.</param>
-/// <param name="SecondsLeft">Time left to serve.</param>
 public sealed record PenaltyState(int PlayerId, Side Side, string Infraction, float SecondsLeft);
 
 /// <summary>The score, clock and flow of the match. Rules own it; everything else reads it.</summary>

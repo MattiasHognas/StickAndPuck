@@ -52,13 +52,10 @@ internal sealed class PauseScreen : MenuScreen
     }
 }
 
-/// <summary>
-/// Results: the final score with crests, how it was decided, shots and the goals, each club's in its
+/// <summary>Results: the final score with crests, how it was decided, shots and the goals, each club's in its
 /// own column (period, clock, scorer cut to fit), and the player of the game. Season games go on to
 /// the standings, the season stats or the trophy once the champion is crowned; an arcade run that is
-/// over goes on to its trophy or the best runs board.
-/// </summary>
-/// <param name="result">The result.</param>
+/// over goes on to its trophy or the best runs board.</summary>
 internal sealed class ResultsScreen(MatchResult result) : MenuScreen
 {
     const int PanelW = 400, Line = 11, ClockX = 20, ScorerX = 50;
@@ -169,10 +166,8 @@ internal sealed class ResultsScreen(MatchResult result) : MenuScreen
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
 }
 
-/// <summary>
-/// Standings: the SHL table of the season being played (W16a's <see cref="SeasonState.Table"/>),
-/// the human's club in gold, and the next game. Enter plays it.
-/// </summary>
+/// <summary>Standings: the SHL table of the season being played (<see cref="SeasonState.Table"/>),
+/// the human's club in gold, and the next game. Enter plays it.</summary>
 internal sealed class StandingsScreen : MenuScreen
 {
     const int PanelW = 380, Line = 11;
@@ -227,12 +222,8 @@ internal sealed class StandingsScreen : MenuScreen
         art.Menu(items, Selected, x + 100, PanelW - 200, top);
     }
 
-    /// <summary>
-    /// The round in the header: the one the human's next game is in, as the NEXT line under the
-    /// table says, from 1. Once the human's club has played all its games, the round being finished.
-    /// </summary>
-    /// <param name="season">The season.</param>
-    /// <returns>The round, 1 to <see cref="SeasonState.Rounds"/>.</returns>
+    /// <summary>The round in the header: the one the human's next game is in, as the NEXT line under the
+    /// table says, from 1. Once the human's club has played all its games, the round being finished.</summary>
     public static int Round(SeasonState season)
     {
         int round = season.NextGame.TryGet(out var next) ? next.Round : season.CurrentRound;

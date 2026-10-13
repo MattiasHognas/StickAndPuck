@@ -9,7 +9,7 @@ using AiSpecialTeams = StickAndPuck.App.AI.SpecialTeams;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W22c's special teams: the formation maths, then all-AI power plays (a skater of the short club
+/// The special teams: the formation maths, then all-AI power plays (a skater of the short club
 /// sits in the box for the whole run, and a new power play starts every 100 s so both shapes come
 /// up) with special teams on and off, both clubs on the power play in turn. On, the power play holds
 /// its umbrella or 1-3-1 and the kill its box or diamond clearly closer than the even-strength AI

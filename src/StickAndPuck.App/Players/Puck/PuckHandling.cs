@@ -13,20 +13,18 @@ public enum ShotKind
     Slap,
 }
 
-/// <summary>W96: a human's pass to a teammate: who threw it, who it is for, the stick held as it went, and when.</summary>
+/// <summary>A human's pass to a teammate: who threw it, who it is for, the stick held as it went, and when.</summary>
 /// <param name="Passer">The passer.</param>
 /// <param name="Receiver">The teammate it is meant for.</param>
 /// <param name="Stick">The passer's stick as the pass left; control follows the pass with it still held.</param>
 /// <param name="At">When it left the stick.</param>
 public readonly record struct HumanPass(int Passer, int Receiver, Vector2 Stick, float At);
 
-/// <summary>
-/// W4b: the numbers and aiming maths of puck handling, with no Raylib and no state, so AI (W6)
+/// <summary>The numbers and aiming maths of puck handling, with no Raylib and no state, so AI
 /// and tests can ask what a pass or shot would do. Traits read here: puck control (reach, how
 /// hard a puck can be taken, how tight the puck sits on the blade), smart passes (picking and
-/// leading the receiver, pass accuracy), shot power and shot accuracy.
-/// </summary>
-public static class PuckHandling
+/// leading the receiver, pass accuracy), shot power and shot accuracy.</summary>
+public static partial class PuckHandling
 {
     /// <summary>Shoot held this long or longer makes a slap shot; a shorter tap is a wrist shot.</summary>
     public const float SlapAfter = 0.3f;
@@ -49,10 +47,10 @@ public static class PuckHandling
     /// <summary>Passes look for teammates within this angle of the stick, in radians.</summary>
     public const float PassCone = 70f * MathF.PI / 180f;
 
-    /// <summary>An open teammate has no opponent this close to his blade or body, in metres (W96).</summary>
+    /// <summary>An open teammate has no opponent this close to his blade or body, in metres.</summary>
     public const float OpenRoom = 2f;
 
-    /// <summary>Nor an opponent this close to the pass lane, past the first metre off the passer's blade, in metres (W96).</summary>
+    /// <summary>Nor an opponent this close to the pass lane, past the first metre off the passer's blade, in metres.</summary>
     public const float LaneRoom = 1.5f;
 
     const float LongestPass = 40f;
@@ -62,84 +60,42 @@ public static class PuckHandling
     const float MaxLift = 7f;
 
     /// <summary>Gets how far from the blade a player can take a loose puck, in metres.</summary>
-    /// <param name="t">The player's traits.</param>
-    /// <returns>The reach.</returns>
     public static float Reach(Traits t)
     {
         return 0.45f + 0.35f * Traits.Unit(t.PuckControl);
     }
 
     /// <summary>Gets the fastest puck, relative to the player, that the player can take cleanly.</summary>
-    /// <param name="t">The player's traits.</param>
-    /// <returns>The speed in metres per second.</returns>
     public static float CatchSpeed(Traits t)
     {
         return 14f + 12f * Traits.Unit(t.PuckControl);
     }
 
     /// <summary>Gets how quickly a carried puck settles back onto the blade, per second; higher is tighter.</summary>
-    /// <param name="t">The player's traits.</param>
-    /// <returns>The rate.</returns>
     public static float Follow(Traits t)
     {
         return 25f + 35f * Traits.Unit(t.PuckControl);
     }
 
-    /// <summary>Gets the speed of a wrist shot.</summary>
-    /// <param name="t">The shooter's traits.</param>
-    /// <returns>Metres per second.</returns>
-    public static float WristSpeed(Traits t)
-    {
-        return 20f + 9f * Traits.Unit(t.ShotPower);
-    }
-
-    /// <summary>Gets the speed of a slap shot after a wind-up.</summary>
-    /// <param name="t">The shooter's traits.</param>
-    /// <param name="charge">Seconds shoot was held.</param>
-    /// <returns>Metres per second.</returns>
-    public static float SlapSpeed(Traits t, float charge)
-    {
-        float wound = Math.Clamp((charge - SlapAfter) / (FullCharge - SlapAfter), 0f, 1f);
-        return (27f + 15f * Traits.Unit(t.ShotPower)) * (0.75f + 0.25f * wound);
-    }
-
-    /// <summary>Gets the kind of shot a hold of shoot makes.</summary>
-    /// <param name="charge">Seconds shoot was held.</param>
-    /// <returns>The kind.</returns>
-    public static ShotKind KindOf(float charge)
-    {
-        return charge >= SlapAfter ? ShotKind.Slap : ShotKind.Wrist;
-    }
-
     /// <summary>Gets the speed of a pass over a distance: firm enough to arrive, soft enough to take.</summary>
-    /// <param name="distance">Metres to the receiver's blade.</param>
-    /// <returns>Metres per second.</returns>
     public static float PassSpeed(float distance)
     {
         return Math.Clamp(8f + 0.35f * distance, 8f, 17f);
     }
 
     /// <summary>Gets the end of the rink a club attacks: +1 for the +x net, -1 for the -x net.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>+1 or -1.</returns>
     public static int AttackEnd(World world, Side side)
     {
         return world.Match.DefendsLeft == side ? 1 : -1;
     }
 
     /// <summary>Where a player's blade is: just ahead of the body, on the stick side.</summary>
-    /// <param name="p">The player.</param>
-    /// <returns>The blade on the ice.</returns>
     public static Vector3 Blade(Player p)
     {
         return Blade(p.Position, p.Heading);
     }
 
     /// <summary>Where a blade is for a body at a position and heading.</summary>
-    /// <param name="position">The body.</param>
-    /// <param name="heading">Radians; 0 faces +z.</param>
-    /// <returns>The blade on the ice.</returns>
     public static Vector3 Blade(Vector3 position, float heading)
     {
         var tip = position + Vector3.Transform(new Vector3(0.55f, 0, 1.05f) * SkaterRenderer.Scale, Matrix4x4.CreateRotationY(heading));
@@ -147,51 +103,33 @@ public static class PuckHandling
     }
 
     /// <summary>Gets the way a player faces, on the ice (x, z).</summary>
-    /// <param name="p">The player.</param>
-    /// <returns>A unit vector.</returns>
     public static Vector2 Facing(Player p)
     {
         return new Vector2(SimMath.Sin(p.Heading), SimMath.Cos(p.Heading));
     }
 
     /// <summary>Gets the way a player means: the stick when pushed, else the way the body faces.</summary>
-    /// <param name="p">The player.</param>
-    /// <returns>A unit vector on the ice (x, z).</returns>
     public static Vector2 Intent(Player p)
     {
         return Intent(p, p.Command.Move);
     }
 
     /// <summary>Gets the way a player would mean with the stick held this way: the stick when pushed, else the way the body faces.</summary>
-    /// <param name="p">The player.</param>
-    /// <param name="stick">A stick direction, read like <see cref="PlayerCommand.Move"/>.</param>
-    /// <returns>A unit vector on the ice (x, z).</returns>
     public static Vector2 Intent(Player p, Vector2 stick)
     {
         return stick.Length() > 0.3f ? Vector2.Normalize(stick) : Facing(p);
     }
 
-    /// <summary>
-    /// Picks who a pass goes to: the teammate on the ice nearest the way the passer means, within
-    /// <see cref="PassCone"/>, closer ones preferred. Goalies are not picked.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="passer">The passer.</param>
-    /// <returns>The receiver, or None to pass into space.</returns>
+    /// <summary>Picks who a pass goes to: the teammate on the ice nearest the way the passer means, within
+    /// <see cref="PassCone"/>, closer ones preferred. Goalies are not picked.</summary>
     public static Maybe<Player> PickReceiver(World world, Player passer)
     {
         return PickReceiver(world, passer, passer.Command.Move);
     }
 
-    /// <summary>
-    /// Picks who a pass would go to with the stick held this way, the same way as
+    /// <summary>Picks who a pass would go to with the stick held this way, the same way as
     /// <see cref="PickReceiver(World, Player)"/> (same scoring, same ties) but without reading or
-    /// touching the passer's command, so the AI can weigh a pass it has not made.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="passer">The passer.</param>
-    /// <param name="stick">The stick direction to judge, read like <see cref="PlayerCommand.Move"/>.</param>
-    /// <returns>The receiver, or None to pass into space.</returns>
+    /// touching the passer's command, so the AI can weigh a pass it has not made.</summary>
     public static Maybe<Player> PickReceiver(World world, Player passer, Vector2 stick)
     {
         var dir = Intent(passer, stick);
@@ -212,17 +150,12 @@ public static class PuckHandling
         return best;
     }
 
-    /// <summary>
-    /// W96: who a human's pass goes to when nobody is in <see cref="PassCone"/>: the nearest open
+    /// <summary>Who a human's pass goes to when nobody is in <see cref="PassCone"/>: the nearest open
     /// teammate 2 to 40 metres off, by blade. Open means no opponent (standing) has his blade or
     /// body within <see cref="OpenRoom"/> of the teammate's blade, nor within <see cref="LaneRoom"/>
     /// of the lane between the blades past its first metre (a forechecker on the passer's own stick
     /// does not close every lane). Goalies and fallen teammates are not picked; nearest wins, the
-    /// first in player order on a tie. No randomness.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="passer">The passer.</param>
-    /// <returns>The receiver, or None to pass into space.</returns>
+    /// first in player order on a tie. No randomness.</summary>
     public static Maybe<Player> PickOpen(World world, Player passer)
     {
         var from = Flat(Blade(passer));
@@ -262,14 +195,8 @@ public static class PuckHandling
         return Vector2.Distance(p, a + ab * t);
     }
 
-    /// <summary>
-    /// Where to send a pass so it meets a moving receiver's blade. A smarter passer leads the
-    /// receiver closer to where they will be; a poor one aims nearer where they are now.
-    /// </summary>
-    /// <param name="from">The puck.</param>
-    /// <param name="receiver">The receiver.</param>
-    /// <param name="hockeyIq">The passer's hockey IQ.</param>
-    /// <returns>The aim point on the ice and the pass speed.</returns>
+    /// <summary>Where to send a pass so it meets a moving receiver's blade. A smarter passer leads the
+    /// receiver closer to where they will be; a poor one aims nearer where they are now.</summary>
     public static (Vector3 Target, float Speed) Lead(Vector3 from, Player receiver, int hockeyIq)
     {
         float lead = 0.4f + 0.6f * Traits.Unit(hockeyIq);
@@ -285,10 +212,7 @@ public static class PuckHandling
         return (target with { Y = 0 }, speed);
     }
 
-    /// <summary>Gets how long a puck sliding on the ice takes to cover a distance, slowing as W3's physics slows it.</summary>
-    /// <param name="distance">Metres.</param>
-    /// <param name="speed">Starting speed in metres per second.</param>
-    /// <returns>Seconds, or a long time when it stops short.</returns>
+    /// <summary>Gets how long a puck sliding on the ice takes to cover a distance, slowing as the puck physics slows it.</summary>
     public static float SlideTime(float distance, float speed)
     {
         const float step = 1 / 60f;
@@ -302,16 +226,8 @@ public static class PuckHandling
         return t;
     }
 
-    /// <summary>
-    /// The velocity of a pass toward a point, with the passer's error: a smart passer is accurate,
-    /// a poor one sprays the angle and the weight.
-    /// </summary>
-    /// <param name="from">The puck.</param>
-    /// <param name="target">The aim point.</param>
-    /// <param name="speed">The planned speed.</param>
-    /// <param name="hockeyIq">The passer's hockey IQ.</param>
-    /// <param name="rng">Randomness.</param>
-    /// <returns>The puck's velocity, flat on the ice.</returns>
+    /// <summary>The velocity of a pass toward a point, with the passer's error: a smart passer is accurate,
+    /// a poor one sprays the angle and the weight.</summary>
     public static Vector3 PassVelocity(Vector3 from, Vector3 target, float speed, int hockeyIq, Random rng)
     {
         float miss = 1f - Traits.Unit(hockeyIq);
@@ -322,63 +238,7 @@ public static class PuckHandling
         return new Vector3(dir.X, 0, dir.Y) * speed;
     }
 
-    /// <summary>
-    /// The velocity of a shot. Facing the attacked net and within range, the shot goes at the net:
-    /// to the side the stick points (up or down the screen), else to the far side, at a height
-    /// that varies; shot accuracy sets how far it strays, and slap shots stray more. Otherwise the
-    /// shot goes the way the player means, low.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="shooter">The shooter.</param>
-    /// <param name="from">The puck.</param>
-    /// <param name="kind">Wrist or slap.</param>
-    /// <param name="speed">Speed over the ice.</param>
-    /// <param name="rng">Randomness.</param>
-    /// <param name="held">Seconds shoot was held, which sets the height (see <see cref="ShotHeight"/>); below 0 for a shot not fired with the button.</param>
-    /// <returns>The puck's velocity.</returns>
-    public static Vector3 ShotVelocity(World world, Player shooter, Vector3 from, ShotKind kind, float speed, Random rng, float held = -1f)
-    {
-        int end = AttackEnd(world, shooter.Side);
-        var net = new Vector2(end * RinkSpec.GoalLineX, 0);
-        var toNet = net - Flat(from);
-        var intent = Intent(shooter);
-        bool atNet = end * from.X < RinkSpec.GoalLineX && toNet.Length() < LongestShot && MathF.Abs(Angle(intent, toNet)) < NetAimCone;
-        int accuracy = shooter.Data.Traits.ShotAccuracy;
-        if (!atNet)
-        {
-            float up = held >= 0 ? ShotHeight.Upward(held, accuracy, rng) : kind == ShotKind.Wrist ? 1f : 0f;
-            return new Vector3(intent.X * speed, up, intent.Y * speed);
-        }
-
-        float stray = (1f - Traits.Unit(accuracy)) * (kind == ShotKind.Slap ? 1.4f : 1f);
-        float side = RinkSpec.NetWidth / 2 - 0.2f;
-        float stickZ = shooter.Command.Move.Y;
-        float z = MathF.Abs(stickZ) > 0.35f ? MathF.Sign(stickZ) * side
-            : MathF.Abs(from.Z) > 0.3f ? -MathF.Sign(from.Z) * side * 0.8f
-            : (rng.NextSingle() * 2 - 1) * side;
-        float h;
-        if (held >= 0)
-        {
-            h = ShotHeight.AtNet(held, accuracy, rng);
-        }
-        else
-        {
-            h = kind == ShotKind.Slap ? 0.1f + rng.NextSingle() * 0.4f : 0.15f + rng.NextSingle() * 0.6f;
-            h = Math.Max(0.02f, h + Gauss(rng) * 0.3f * stray);
-        }
-
-        var dir = Vector2.Normalize(new Vector2(end * RinkSpec.GoalLineX, z) - Flat(from));
-        dir = Rotate(dir, Gauss(rng) * Deg(0.3f + 3.5f * stray));
-        float distance = MathF.Abs((end * RinkSpec.GoalLineX - from.X) / dir.X);
-        // a shot from right at the goal line gets a floor on its flight time and a cap on its lift, so it cannot rocket straight up
-        float t = Math.Max(distance / speed, MinFlight);
-        float vy = Math.Min((h - from.Y) / t + 0.5f * Physics.PuckTuning.Gravity * t, MaxLift);
-        return new Vector3(dir.X * speed, vy, dir.Y * speed);
-    }
-
     /// <summary>Gets a value indicating whether a point is inside a net, past the goal line.</summary>
-    /// <param name="p">The point.</param>
-    /// <returns>True inside either net.</returns>
     public static bool InNet(Vector3 p)
     {
         float ax = MathF.Abs(p.X);
@@ -386,8 +246,6 @@ public static class PuckHandling
     }
 
     /// <summary>Keeps a carried puck inside the boards and their rounded corners.</summary>
-    /// <param name="p">The point on the ice.</param>
-    /// <returns>The point, moved inside if it was beyond the boards.</returns>
     public static Vector3 InsideBoards(Vector3 p)
     {
         const float margin = 0.08f;
@@ -404,8 +262,6 @@ public static class PuckHandling
     }
 
     /// <summary>A normally distributed number with mean 0 and spread 1.</summary>
-    /// <param name="rng">Randomness.</param>
-    /// <returns>The number.</returns>
     public static float Gauss(Random rng)
     {
         float u = 1f - rng.NextSingle(), v = rng.NextSingle();

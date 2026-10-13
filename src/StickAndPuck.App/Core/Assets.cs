@@ -39,16 +39,9 @@ public static class Assets
     /// <summary>The shader folder.</summary>
     public const string Shaders = "shaders";
 
-    /// <summary>
-    /// The 64x64 kit atlas for a club, side and role, from art/kits/ (made by the kit script).
+    /// <summary>The 64x64 kit atlas for a club, side and role, from art/kits/ (made by the kit script).
     /// A numbered atlas from art/kits/numbers/ carries the player's number on the back (A4); without one
-    /// it falls back to the club kit, then to the generic home or away kit in art/player/.
-    /// </summary>
-    /// <param name="clubId">The club id, as in its data file.</param>
-    /// <param name="side">Home or away kit.</param>
-    /// <param name="role">"skater" or "goalie".</param>
-    /// <param name="number">The player's jersey number; 0 for the club kit without one.</param>
-    /// <returns>A path to an existing texture.</returns>
+    /// it falls back to the club kit, then to the generic home or away kit in art/player/.</summary>
     public static string KitAtlas(string clubId, Side side, string role, int number = 0)
     {
         string kit = side == Side.Home ? "home" : "away";

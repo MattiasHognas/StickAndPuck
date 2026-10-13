@@ -2,17 +2,15 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules.Dev;
 
-/// <summary>
-/// SAP_SCENE=penalty: a full AI exhibition that skips the intro. Two seconds after the opening drop,
+/// <summary>SAP_SCENE=penalty: a full AI exhibition that skips the intro. Two seconds after the opening drop,
 /// once away has the puck, the home skater nearest it trips someone: the referee's arm goes up, the whistle goes when
 /// home touches the puck, he goes to the box and away has a power play. SAP_PERIOD=seconds shortens
 /// the periods (the minor shortens with them); SAP_PENALTY_STRICT scales how often the referee calls
 /// penalties after that (1 is normal); SAP_AI_HUMAN=1 puts the keyboard on the home centre.
-/// W23: SAP_PENALTY_OT=1 starts in 3 on 3 overtime instead, so the call gives 4 on 3;
+/// SAP_PENALTY_OT=1 starts in 3 on 3 overtime instead, so the call gives 4 on 3;
 /// SAP_PENALTY_SKIP=seconds plays that long off screen first (for a headless screenshot).
-/// W47: SAP_PENALTY_MAJOR=1 makes the scripted call boarding, a major with a game misconduct: the
-/// skater is ejected, his line refills from the last one (SAP_LINES_DEBUG=1 shows the units).
-/// </summary>
+/// SAP_PENALTY_MAJOR=1 makes the scripted call boarding, a major with a game misconduct: the
+/// skater is ejected, his line refills from the last one (SAP_LINES_DEBUG=1 shows the units).</summary>
 public sealed class PenaltyScene : IScene
 {
     /// <inheritdoc/>
@@ -54,8 +52,6 @@ public sealed class PenaltyScene : IScene
 internal static class PenaltyScenes
 {
     /// <summary>Plays the match off screen for a while with every gameplay system, so a headless screenshot shows a later moment.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="seconds">Game seconds to play.</param>
     public static void FastForward(World world, float seconds)
     {
         ISystem[] systems =

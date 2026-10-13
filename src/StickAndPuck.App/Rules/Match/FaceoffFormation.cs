@@ -14,17 +14,12 @@ public static class FaceoffFormation
     static readonly int[] FillOrder = [0, 3, 4, 1, 2];
 
     /// <summary>Gets the end a club defends this period: -1 for -x, +1 for +x.</summary>
-    /// <param name="match">The match state.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>-1 or +1.</returns>
     public static int DefendedEnd(MatchState match, Side side)
     {
         return side == match.DefendsLeft ? -1 : 1;
     }
 
     /// <summary>Puts every on-ice player on their faceoff spot around a dot, standing still and facing up ice.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="dot">The faceoff dot.</param>
     public static void Place(World world, Vector3 dot)
     {
         foreach (var side in new[] { Side.Home, Side.Away })

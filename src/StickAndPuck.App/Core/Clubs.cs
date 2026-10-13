@@ -14,8 +14,6 @@ public static class Clubs
     };
 
     /// <summary>Reads one club file.</summary>
-    /// <param name="path">Path to a club JSON file.</param>
-    /// <returns>The club.</returns>
     public static ClubData Load(string path)
     {
         var club = JsonSerializer.Deserialize<ClubData>(File.ReadAllText(path), Json)
@@ -26,8 +24,6 @@ public static class Clubs
     }
 
     /// <summary>Reads every club file in the folder, sorted by id.</summary>
-    /// <param name="folder">The folder to read, by default <see cref="Assets.ClubFolder"/>.</param>
-    /// <returns>The clubs, sorted by id.</returns>
     public static IReadOnlyList<ClubData> LoadAll(string folder = Assets.ClubFolder)
     {
         if (!Directory.Exists(folder)) return [];
@@ -38,8 +34,6 @@ public static class Clubs
     }
 
     /// <summary>Writes a club back to JSON, in the same shape <see cref="Load"/> reads.</summary>
-    /// <param name="club">The club to write.</param>
-    /// <returns>Indented JSON.</returns>
     public static string ToJson(ClubData club)
     {
         return JsonSerializer.Serialize(club, new JsonSerializerOptions(Json) { WriteIndented = true });

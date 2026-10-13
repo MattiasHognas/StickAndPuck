@@ -3,10 +3,8 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// One finished (or abandoned) arcade run on the best-runs board, kept in arcade.json across runs.
-/// Ranked champions first, then most clubs beaten, fewest losses, best goal difference, earliest.
-/// </summary>
+/// <summary>One finished (or abandoned) arcade run on the best-runs board, kept in arcade.json across runs.
+/// Ranked champions first, then most clubs beaten, fewest losses, best goal difference, earliest.</summary>
 /// <param name="Club">The human's club id.</param>
 /// <param name="Rule">Sudden death or three lives.</param>
 /// <param name="Beaten">Clubs beaten.</param>
@@ -27,8 +25,6 @@ public sealed record ArcadeRecord(string Club, ArcadeRule Rule, int Beaten, bool
     public int GoalDifference => GoalsFor - GoalsAgainst;
 
     /// <summary>Gets a value indicating whether this run ranks above another.</summary>
-    /// <param name="other">The other run.</param>
-    /// <returns>True when it does.</returns>
     public bool Beats(ArcadeRecord other)
     {
         if (Champion != other.Champion) return Champion;
@@ -39,8 +35,6 @@ public sealed record ArcadeRecord(string Club, ArcadeRule Rule, int Beaten, bool
     }
 
     /// <summary>The record of a run as it stands.</summary>
-    /// <param name="run">The run.</param>
-    /// <returns>The record.</returns>
     public static ArcadeRecord Of(ArcadeRun run)
     {
         var top = run.Stats.Leaders(1, run.UserClub).FirstOrNone();
@@ -49,9 +43,6 @@ public sealed record ArcadeRecord(string Club, ArcadeRule Rule, int Beaten, bool
     }
 
     /// <summary>Adds a run to a board and keeps the best <see cref="Kept"/>, best first.</summary>
-    /// <param name="board">The board.</param>
-    /// <param name="record">The run.</param>
-    /// <returns>The new board.</returns>
     public static List<ArcadeRecord> Add(IEnumerable<ArcadeRecord> board, ArcadeRecord record)
     {
         var all = board.Append(record).ToList();
@@ -60,9 +51,6 @@ public sealed record ArcadeRecord(string Club, ArcadeRule Rule, int Beaten, bool
     }
 
     /// <summary>Gets a run's place on a board, from 1, or 0 when it is not on it.</summary>
-    /// <param name="board">The board, best first.</param>
-    /// <param name="record">The run.</param>
-    /// <returns>The place.</returns>
     public static int Place(IReadOnlyList<ArcadeRecord> board, ArcadeRecord record)
     {
         for (int i = 0; i < board.Count; i++) if (board[i] == record) return i + 1;

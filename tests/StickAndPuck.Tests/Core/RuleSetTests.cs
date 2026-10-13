@@ -10,7 +10,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// The rule presets and the player's changes (W44). Checks the presets, CUSTOM and back, that a
+/// The rule presets and the player's changes. Checks the presets, CUSTOM and back, that a
 /// change survives a restart (settings.json written and read again), the overtime switch on a match
 /// setup, scripted plays under each preset (icing hybrid, touch and off, offside on and off, goalie
 /// pull, penalties and fights), the arcade entries fixed to Arcade and a season keeping the rules in

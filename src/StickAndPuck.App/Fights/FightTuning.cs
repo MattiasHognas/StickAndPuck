@@ -39,10 +39,10 @@ public static class FightTuning
     /// <summary>The winner celebrates and the loser lies (or stands) this long before the loser goes to the box.</summary>
     public const float EndSeconds = 1.8f;
 
-    /// <summary>W30: everyone else keeps this far from the fight spot, in metres.</summary>
+    /// <summary>Everyone else keeps this far from the fight spot, in metres.</summary>
     public const float Room = 4.5f;
 
-    /// <summary>W30: how fast a skater inside that ring glides out of it, in metres per second.</summary>
+    /// <summary>How fast a skater inside that ring glides out of it, in metres per second.</summary>
     public const float BackOffSpeed = 3f;
 
     /// <summary>The infraction the box shows for the loser.</summary>

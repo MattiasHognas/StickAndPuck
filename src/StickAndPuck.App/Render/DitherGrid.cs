@@ -5,12 +5,10 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Render;
 
-/// <summary>
-/// W60: where the dither pattern starts on the scene's pixel grid. A pattern fixed to the screen
+/// <summary>Where the dither pattern starts on the scene's pixel grid. A pattern fixed to the screen
 /// would slide over the ice each time the camera steps a pixel (the dots "crawl"); instead the
 /// pattern starts at the pixel a fixed spot on the ice lands on, so when the camera steps by whole
-/// pixels (W58) the pattern steps with the rink and the dithered bands stay put on it.
-/// </summary>
+/// pixels the pattern steps with the rink and the dithered bands stay put on it.</summary>
 public static class DitherGrid
 {
     /// <summary>Spots on the ice the pattern hangs from: centre ice first, then the two ends for a camera looking away from it.</summary>
@@ -22,8 +20,6 @@ public static class DitherGrid
     public static Vector2 Origin { get; private set; }
 
     /// <summary>Finds the start for this frame's camera and hands it to the toon shader; call inside the scene pass.</summary>
-    /// <param name="camera">The camera the scene is drawn with.</param>
-    /// <param name="toon">The toon shader.</param>
     public static void Apply(Camera3D camera, Shader toon)
     {
         int w = Game.Width / RenderScale.Divisor, h = Game.Height / RenderScale.Divisor;

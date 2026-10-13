@@ -18,16 +18,14 @@ public enum ReplayStep
     End,
 }
 
-/// <summary>
-/// W67: plays a replay file back. SAP_REPLAY=file builds the match again from the file's header
+/// <summary>Plays a replay file back. SAP_REPLAY=file builds the match again from the file's header
 /// (seed, clubs, rules, settings and the SAP_* variables it ran with) and feeds the game the
 /// recorded device frames step by step, checking the world's checksum against the file as it goes.
 /// SAP_AT=period:mm:ss (the clock as the scorebug shows it, or period:seconds, or tN for a step)
 /// runs to that moment without drawing, prints the state and saves replay_at.png; SAP_TAKEOVER=1
 /// then hands the match to the devices from there and records a new replay. Headless
 /// (SAP_SCREENSHOT=1) without SAP_AT it runs the whole replay as fast as it can and exits 0 when
-/// the score, events and checksums match the recording, 1 when they do not.
-/// </summary>
+/// the score, events and checksums match the recording, 1 when they do not.</summary>
 public sealed class ReplayPlayer
 {
     readonly ReplayFile file;
@@ -72,8 +70,6 @@ public sealed class ReplayPlayer
     public InputFrame Start => file.Start;
 
     /// <summary>Reads SAP_REPLAY and builds its match, or returns None when it is not set.</summary>
-    /// <param name="clubs">Every club.</param>
-    /// <returns>The player, or None.</returns>
     public static Maybe<ReplayPlayer> FromEnvironment(IReadOnlyList<ClubData> clubs)
     {
         if (Env.Get("SAP_REPLAY") is not { Length: > 0 } name) return Maybe<ReplayPlayer>.None;
@@ -108,14 +104,10 @@ public sealed class ReplayPlayer
     }
 
     /// <summary>Gets a value indicating whether to run steps as fast as possible without drawing them.</summary>
-    /// <param name="headless">Whether the game runs headless.</param>
     /// <returns>True while running to the SAP_AT moment, or to the end of a headless check.</returns>
     public bool FastForward(bool headless) => !Live && !Ended && ((target.HasValue && !Reached) || (headless && !target.HasValue));
 
     /// <summary>Checks the step that just ran against the recording.</summary>
-    /// <param name="world">The world after the step.</param>
-    /// <param name="sum">Its checksum.</param>
-    /// <returns>What the step led to.</returns>
     public ReplayStep AfterStep(World world, ulong sum)
     {
         long tick = world.Tick - 1;
@@ -155,7 +147,6 @@ public sealed class ReplayPlayer
     }
 
     /// <summary>Starts recording the take-over: the replay's own steps so far, then the devices'.</summary>
-    /// <returns>The recorder.</returns>
     public ReplayRecorder TakeOverRecorder()
     {
         string name = Path.GetFileNameWithoutExtension(path) + "_takeover.sapreplay";
@@ -166,8 +157,6 @@ public sealed class ReplayPlayer
     }
 
     /// <summary>Prints how the replay compares with the recording.</summary>
-    /// <param name="world">The world at the end.</param>
-    /// <returns>0 when the score, events and checksums all match, 1 otherwise.</returns>
     public int Report(World world)
     {
         string end = playedEnd.Length > 0 ? playedEnd : ReplayFile.EndLine(world);
@@ -211,8 +200,6 @@ public sealed class ReplayPlayer
 public sealed record ScrubTarget(int Period, double Clock)
 {
     /// <summary>Reads SAP_AT: "2:12:30" (period 2 at 12:30 on the clock), "2:750" (seconds) or "t3600" (step 3600).</summary>
-    /// <param name="text">The text, "" when not set.</param>
-    /// <returns>The target, or None when there is no text.</returns>
     public static Maybe<ScrubTarget> Parse(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return Maybe<ScrubTarget>.None;
@@ -226,8 +213,6 @@ public sealed record ScrubTarget(int Period, double Clock)
     }
 
     /// <summary>Whether the world has reached the moment.</summary>
-    /// <param name="world">The world after a step.</param>
-    /// <returns>True once it is there or past it.</returns>
     public bool Hit(World world)
     {
         if (Period == 0) return world.Tick - 1 >= (long)Clock;

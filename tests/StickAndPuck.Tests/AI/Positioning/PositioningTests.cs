@@ -14,7 +14,7 @@ namespace StickAndPuck.Tests;
 
 /// <summary>
 /// A full 5 on 5 period headless with positioning, skating, puck handling, the goalies, puck physics
-/// and W7a's match rules. Covers the W6a "done when": 5 on 5 holds shape through a period with no
+/// and the match rules. Covers 5 on 5 holds shape through a period with no
 /// stuck players; plus that roles are one of each, that forwards stay onside, and that high
 /// positioning makes a difference. Formerly SAP_SCENE=positioningtest.
 /// </summary>

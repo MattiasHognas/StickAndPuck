@@ -7,14 +7,12 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Pregame;
 
-/// <summary>
-/// W28: the pre-game warm-up. While a match that someone will play is in its intro, this holds the
+/// <summary>The pre-game warm-up. While a match that someone will play is in its intro, this holds the
 /// intro open and skates both squads round their own ends on <see cref="WarmupRoute"/>s, using
-/// W4a's skating and W6a's steering so everyone moves at their own pace with the skate clip. A
+/// the skating and the AI's steering so everyone moves at their own pace with the skate clip. A
 /// human's skater joins the loops until the human moves the stick. Space, enter, or A or start on a
 /// pad ends the warm-up (<see cref="Pregame.Start"/>): the skaters gather inside their blue line
-/// and the opening faceoff follows. Runs after the AI and before skating, so its commands win.
-/// </summary>
+/// and the opening faceoff follows. Runs after the AI and before skating, so its commands win.</summary>
 internal sealed class PregameSystem : ISystem
 {
     const float GatherSeconds = 2.5f;     // from start pressed to the faceoff, enough to skate to the blue line

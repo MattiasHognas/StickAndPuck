@@ -2,15 +2,13 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// W25: follows every match with a <see cref="MatchStatTracker"/> and, at MatchEnd, hands the
+/// <summary>Follows every match with a <see cref="MatchStatTracker"/> and, at MatchEnd, hands the
 /// sheet to whatever the match belongs to: the season (regular or playoff game), the arcade run,
 /// or just <see cref="MatchStats.Last"/> for exhibition and versus. Runs before
 /// <see cref="ScheduleSystem"/>, <see cref="PlayoffSystem"/> and <see cref="ArcadeSystem"/>, so
 /// the game being played is still known and the autosave that follows carries the lines; the
 /// games settled on paper by those systems are credited on the next step with
-/// <see cref="SeasonStats.CatchUp"/>.
-/// </summary>
+/// <see cref="SeasonStats.CatchUp"/>.</summary>
 internal sealed class StatsSystem : ISystem
 {
     readonly MatchStatTracker tracker = new();

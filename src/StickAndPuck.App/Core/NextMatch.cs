@@ -11,7 +11,6 @@ public abstract record NextMatch
     public static NextMatch Over { get; } = new RunOver();
 
     /// <summary>Another match to play.</summary>
-    /// <param name="Setup">The match.</param>
     public sealed record Play(MatchSetup Setup) : NextMatch;
 
     /// <summary>The run has no match left.</summary>

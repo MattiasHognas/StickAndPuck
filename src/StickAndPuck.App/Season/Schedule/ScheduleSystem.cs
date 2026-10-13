@@ -3,12 +3,10 @@ using StickAndPuck.App.Hud;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// W16a: when a season game ends (MatchEnd), records its result in <see cref="SeasonSession"/>
-/// and settles the rest of the round; <see cref="AutosaveSystem"/> saves it next. Until W11's
-/// results and standings screens exist, the table shows a few seconds after a season game's final,
-/// and always in SAP_SCENE=seasontable.
-/// </summary>
+/// <summary>When a season game ends (MatchEnd), records its result in <see cref="SeasonSession"/>
+/// and settles the rest of the round; <see cref="AutosaveSystem"/> saves it next. Without the
+/// results and standings screens, the table shows a few seconds after a season game's final,
+/// and always in SAP_SCENE=seasontable.</summary>
 internal sealed class ScheduleSystem : ISystem, IDisposable
 {
     /// <summary>Seconds after the final before the stand-in table shows.</summary>

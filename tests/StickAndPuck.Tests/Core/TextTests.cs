@@ -6,7 +6,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// The string table (W53): every language file has exactly English's keys, every key constant is in
+/// The string table: every language file has exactly English's keys, every key constant is in
 /// every file, each text's {0} placeholders match English's, Swedish uses only letters the pixel
 /// font has, and no text drawing call in the app's source is handed a literal.
 /// </summary>

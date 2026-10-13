@@ -13,9 +13,8 @@ public enum TeamPhase
     Defend,
 }
 
-/// <summary>
-/// W6a: the ideal spot for each role, from where the puck is. Pure maths with no state and no
-/// Raylib, so decisions (W6b) and tests can ask where a skater ought to be. All spots are on the
+/// <summary>The ideal spot for each role, from where the puck is. Pure maths with no state and no
+/// Raylib, so decisions and tests can ask where a skater ought to be. All spots are on the
 /// ice as (x, z). Inside the maths, "a" runs toward the net a side attacks (a = end * x), so one
 /// set of numbers serves both ends.
 /// <list type="bullet">
@@ -24,8 +23,7 @@ public enum TeamPhase
 /// the centre to the high slot and the defence to the points.</item>
 /// <item>Defence: everyone goal side of the puck; in the zone the strong side defenceman takes the
 /// puck side of the net, the other the net front, the centre the low slot and the wings the points.</item>
-/// </list>
-/// </summary>
+/// </list></summary>
 public static class TeamShape
 {
     /// <summary>How far spots stay from the boards.</summary>
@@ -35,9 +33,6 @@ public static class TeamShape
     const float Blue = RinkSpec.BlueLineX;
 
     /// <summary>Gets the side of the ice (z sign) a role plays on, for a side attacking an end: left is -z when attacking +x.</summary>
-    /// <param name="role">The role.</param>
-    /// <param name="end">The end attacked: +1 for the +x net, -1 for the -x net.</param>
-    /// <returns>-1, 0 (centre) or +1.</returns>
     public static float Lateral(Role role, int end)
     {
         return role switch
@@ -49,11 +44,6 @@ public static class TeamShape
     }
 
     /// <summary>Gets the ideal spot for a role.</summary>
-    /// <param name="role">The role.</param>
-    /// <param name="phase">Attacking or defending.</param>
-    /// <param name="end">The end this side attacks: +1 or -1.</param>
-    /// <param name="puck">The puck on the ice (x, z).</param>
-    /// <returns>The spot on the ice (x, z), inside the boards.</returns>
     public static Vector2 Spot(Role role, TeamPhase phase, int end, Vector2 puck)
     {
         float pa = end * puck.X, pz = puck.Y;
@@ -64,10 +54,6 @@ public static class TeamShape
     }
 
     /// <summary>Gets where a role lines up for a faceoff on a dot, for the side attacking an end.</summary>
-    /// <param name="role">The role.</param>
-    /// <param name="end">The end this side attacks.</param>
-    /// <param name="dot">The faceoff dot (x, z).</param>
-    /// <returns>The spot on the ice (x, z).</returns>
     public static Vector2 Faceoff(Role role, int end, Vector2 dot)
     {
         float da = end * dot.X, dz = dot.Y;
@@ -82,9 +68,6 @@ public static class TeamShape
     }
 
     /// <summary>Keeps a spot on the ice: in front of both goal lines and clear of the boards and their rounded corners.</summary>
-    /// <param name="p">A point (x, z).</param>
-    /// <param name="margin">How far to stay from the boards.</param>
-    /// <returns>The point, moved inside.</returns>
     public static Vector2 Inside(Vector2 p, float margin = BoardMargin)
     {
         float hx = RinkSpec.HalfLength - margin, hz = RinkSpec.HalfWidth - margin, r = RinkSpec.CornerRadius - margin;

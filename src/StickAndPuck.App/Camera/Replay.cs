@@ -7,12 +7,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Camera;
 
-/// <summary>
-/// Goal replays. Play is recorded every step; a goal lets the celebration run for a moment on the
+/// <summary>Goal replays. Play is recorded every step; a goal lets the celebration run for a moment on the
 /// gameplay camera, then cuts to the low angled ice-level camera and plays the build-up again,
 /// slowing down around the goal. When it ends (or a skip button is pressed) the players and puck go
-/// back to where they were and the gameplay camera cuts back.
-/// </summary>
+/// back to where they were and the gameplay camera cuts back.</summary>
 /// <remarks>
 /// While a replay plays, it writes the recorded players and puck into the world each step, after
 /// every gameplay system has run, so the scene draws the replay. MatchRules holds the match in
@@ -55,19 +53,15 @@ public sealed class Replay
     float lastTime;
     Vector3 camTarget;
 
-    /// <summary>
-    /// Gets the replay camera while <see cref="World.ReplayPlaying"/>. It follows the puck at a fixed angle; the
-    /// camera system snaps it to whole pixels at the puck (W58) at the close render scale (W59), so
-    /// the pan steps cleanly instead of swimming.
-    /// </summary>
+    /// <summary>Gets the replay camera while <see cref="World.ReplayPlaying"/>. It follows the puck at a fixed angle; the
+    /// camera system snaps it to whole pixels at the puck at the close render scale, so
+    /// the pan steps cleanly instead of swimming.</summary>
     public Camera3D Camera => BroadcastCamera.IceLevel(ChasePosition(camTarget), camTarget);
 
-    /// <summary>Gets the seconds since a goal while the celebration runs before the replay cuts in, or NaN (W61's push-in runs then).</summary>
+    /// <summary>Gets the seconds since a goal while the celebration runs before the replay cuts in, or NaN (the push-in runs then).</summary>
     public float Waiting => waiting ? lastTime - goalTime : float.NaN;
 
     /// <summary>Records or plays back one step. Runs after every gameplay system.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="dt">The step length.</param>
     /// <returns>True when the replay just ended and the gameplay camera should cut back.</returns>
     public bool Update(World world, float dt)
     {
@@ -162,7 +156,6 @@ public sealed class Replay
     }
 
     /// <summary>Draws a blinking REPLAY tag in the top right while a replay plays.</summary>
-    /// <param name="world">The match.</param>
     public void DrawHud(World world)
     {
         if (!world.ReplayPlaying) return;

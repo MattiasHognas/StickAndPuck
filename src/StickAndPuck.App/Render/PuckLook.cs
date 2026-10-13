@@ -2,12 +2,10 @@ using Raylib_cs;
 
 namespace StickAndPuck.App.Render;
 
-/// <summary>
-/// W35: how the puck reads from the broadcast camera. On the ice it is the plain small puck. In the
+/// <summary>How the puck reads from the broadcast camera. On the ice it is the plain small puck. In the
 /// air it grows a little (up to <see cref="MaxGrow"/> at <see cref="FullHeight"/>) and drops a crisp
 /// shadow onto the ice in the darkest palette colour, a solid disc about the size of the puck that
-/// shrinks a touch as the puck climbs, so the gap between puck and shadow shows the height.
-/// </summary>
+/// shrinks a touch as the puck climbs, so the gap between puck and shadow shows the height.</summary>
 public static class PuckLook
 {
     /// <summary>The drawn radius of the puck on the ice, in metres (bigger than a real puck so it reads at 480x270).</summary>
@@ -35,32 +33,24 @@ public static class PuckLook
     public const float ShadowLift = 0.006f;
 
     /// <summary>Gets a value indicating whether a puck at this height reads as airborne.</summary>
-    /// <param name="height">The puck's height above the ice, in metres.</param>
-    /// <returns>True when it casts a shadow.</returns>
     public static bool Airborne(float height)
     {
         return height > AirborneAt;
     }
 
     /// <summary>Gets how far toward full height the puck is, 0 on the ice to 1 at <see cref="FullHeight"/>.</summary>
-    /// <param name="height">The puck's height above the ice, in metres.</param>
-    /// <returns>A share from 0 to 1.</returns>
     public static float Rise(float height)
     {
         return Math.Clamp(height / FullHeight, 0f, 1f);
     }
 
     /// <summary>Gets the scale the puck is drawn at.</summary>
-    /// <param name="height">The puck's height above the ice, in metres.</param>
-    /// <returns>1 on the ice, up to <see cref="MaxGrow"/> high in the air.</returns>
     public static float Scale(float height)
     {
         return Airborne(height) ? 1f + ((MaxGrow - 1f) * MathF.Sqrt(Rise(height))) : 1f;
     }
 
     /// <summary>Gets the radius of the shadow under an airborne puck.</summary>
-    /// <param name="height">The puck's height above the ice, in metres.</param>
-    /// <returns>Metres.</returns>
     public static float Shadow(float height)
     {
         return ShadowRadius + ((ShadowRadiusHigh - ShadowRadius) * Rise(height));

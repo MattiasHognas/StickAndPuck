@@ -4,8 +4,7 @@ using StickAndPuck.App.Players.Dev;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W4c: moves each human slot between its club's skaters (sets <see cref="Player.Slot"/>) as
+/// <summary>Moves each human slot between its club's skaters (sets <see cref="Player.Slot"/>) as
 /// <see cref="Settings.Switching"/> says. Control following a pass happens inside puck handling at
 /// the moment of the pass; this system covers the rest.
 /// <list type="bullet">
@@ -17,8 +16,7 @@ namespace StickAndPuck.App.Players;
 /// <see cref="Settle"/>. If your player is knocked down, control goes to the nearest one standing.</item>
 /// </list>
 /// A slot that controls nobody (a demo scene) is left alone. The slot's stick carries over to the new player this step and the old player's command is
-/// cleared, so they glide on rather than keep skating on the human's last input.
-/// </summary>
+/// cleared, so they glide on rather than keep skating on the human's last input.</summary>
 internal sealed class SwitchingSystem : ISystem
 {
     /// <summary>Seconds after a switch before defence switching moves control again.</summary>
@@ -84,7 +82,6 @@ internal sealed class SwitchingSystem : ISystem
     /// <param name="side">The slot's club.</param>
     /// <param name="slot">The slot.</param>
     /// <param name="except">A player to leave out, usually the one already controlled; None leaves nobody out.</param>
-    /// <returns>The player, or None when there is none.</returns>
     internal static Maybe<Player> Nearest(World world, Side side, int slot, Maybe<Player> except)
     {
         return world.Players

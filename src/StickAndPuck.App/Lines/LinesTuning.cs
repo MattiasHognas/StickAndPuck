@@ -1,6 +1,6 @@
 namespace StickAndPuck.App.Lines;
 
-/// <summary>W13: how fast skaters tire and rest, and when lines and goalies change. Energy runs from 1 (fresh) to 0 (spent).</summary>
+/// <summary>How fast skaters tire and rest, and when lines and goalies change. Energy runs from 1 (fresh) to 0 (spent).</summary>
 public static class LinesTuning
 {
     /// <summary>Energy lost per second on the ice in play, whatever the skater does.</summary>
@@ -42,10 +42,10 @@ public static class LinesTuning
     /// <summary>The spell, as a share of the period length: 0.3 of a 20 minute period is 6 game minutes.</summary>
     public const float GoalieSpell = 0.3f;
 
-    /// <summary>W23: an AI club trailing pulls its goalie inside the last two minutes of regulation at full 20 minute periods; shorter periods shorten it in proportion.</summary>
+    /// <summary>An AI club trailing pulls its goalie inside the last two minutes of regulation at full 20 minute periods; shorter periods shorten it in proportion.</summary>
     public const float PullSeconds = 2 * 60;
 
-    /// <summary>W23: the biggest deficit a club pulls its goalie for.</summary>
+    /// <summary>The biggest deficit a club pulls its goalie for.</summary>
     public const int PullMaxDeficit = 2;
 
     /// <summary>How much less likely each later unit is picked, so lines 1 to 3 play most and line 4 least.</summary>
@@ -56,8 +56,6 @@ public static class LinesTuning
 
 
     /// <summary>Gets how much a skater's shots keep of their speed: 1 when fresh, 0.85 when spent.</summary>
-    /// <param name="energy">Energy from 1 to 0.</param>
-    /// <returns>The factor for shot speed.</returns>
     public static float ShotFactor(float energy)
     {
         return 0.85f + 0.15f * Math.Clamp(energy, 0f, 1f);

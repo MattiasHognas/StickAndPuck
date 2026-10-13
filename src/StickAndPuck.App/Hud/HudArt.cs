@@ -5,11 +5,9 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Hud;
 
-/// <summary>
-/// The A3 HUD art from art/ui as A3 exported it: pixel font, scorebug frame with its slots,
+/// <summary>The A3 HUD art from art/ui as A3 exported it: pixel font, scorebug frame with its slots,
 /// 9-slice panels, icons and club crests. Layout numbers come from ui.json, so the art and the
-/// game share one source. Every draw lands on whole pixels at the native 480x270.
-/// </summary>
+/// game share one source. Every draw lands on whole pixels at the native 480x270.</summary>
 internal sealed class HudArt
 {
     /// <summary>Text colour from ui.json (cream).</summary>
@@ -36,7 +34,6 @@ internal sealed class HudArt
     Texture2D scorebug, crestSheet, iconSheet;
 
     /// <summary>Loads the layout and textures. Needs an open window.</summary>
-    /// <returns>The loaded art.</returns>
     public static HudArt Load()
     {
         var art = new HudArt();
@@ -69,8 +66,6 @@ internal sealed class HudArt
     }
 
     /// <summary>Gets a scorebug slot in screen pixels.</summary>
-    /// <param name="name">The slot name from ui.json, for example "home_score".</param>
-    /// <returns>The slot rectangle.</returns>
     public Rectangle Slot(string name)
     {
         var r = slots[name];
@@ -84,9 +79,6 @@ internal sealed class HudArt
     }
 
     /// <summary>Draws a club's 16x16 crest, or the generic one for a club without art.</summary>
-    /// <param name="clubId">The club id from its data file.</param>
-    /// <param name="x">Left edge.</param>
-    /// <param name="y">Top edge.</param>
     public void DrawCrest(string clubId, int x, int y)
     {
         if (!crests.TryGetValue(clubId, out var src)) src = crests[crestFallback];
@@ -94,20 +86,12 @@ internal sealed class HudArt
     }
 
     /// <summary>Draws one 8x8 icon.</summary>
-    /// <param name="name">The icon name from ui.json.</param>
-    /// <param name="x">Left edge.</param>
-    /// <param name="y">Top edge.</param>
     public void DrawIcon(string name, int x, int y)
     {
         if (icons.TryGetValue(name, out var src)) DrawTextureRec(iconSheet, src, new(x, y), Color.White);
     }
 
     /// <summary>Draws a 9-slice panel.</summary>
-    /// <param name="name">"panel", "panel_gold" or "panel_red".</param>
-    /// <param name="x">Left edge.</param>
-    /// <param name="y">Top edge.</param>
-    /// <param name="w">Width.</param>
-    /// <param name="h">Height.</param>
     public void DrawPanel(string name, int x, int y, int w, int h)
     {
         var (tex, b) = panels[name];
@@ -121,8 +105,6 @@ internal sealed class HudArt
     }
 
     /// <summary>Measures text in the pixel font, without the trailing one-pixel gap.</summary>
-    /// <param name="text">Text in capitals.</param>
-    /// <returns>The width in pixels.</returns>
     public int Measure(string text)
     {
         if (text.Length == 0) return 0;
@@ -130,19 +112,12 @@ internal sealed class HudArt
     }
 
     /// <summary>Draws text with its top-left corner on a whole pixel. The font has no lowercase, so text is upper-cased.</summary>
-    /// <param name="text">The text.</param>
-    /// <param name="x">Left edge.</param>
-    /// <param name="y">Top of the accent rows; capitals start 2 px lower.</param>
-    /// <param name="colour">Ink colour.</param>
     public void DrawText(string text, int x, int y, Color colour)
     {
         DrawTextEx(font, text.ToUpperInvariant(), new(x, y), font.BaseSize, 0, colour);
     }
 
     /// <summary>Draws text centred in a 7 px capital slot from the scorebug layout.</summary>
-    /// <param name="text">The text.</param>
-    /// <param name="slot">The slot in screen pixels.</param>
-    /// <param name="colour">Ink colour.</param>
     public void DrawInSlot(string text, Rectangle slot, Color colour)
     {
         text = text.ToUpperInvariant();
@@ -161,8 +136,6 @@ internal sealed class HudArt
     }
 
     /// <summary>Parses "#rrggbb".</summary>
-    /// <param name="hex">The colour.</param>
-    /// <returns>The colour, opaque.</returns>
     public static Color Hex(string hex)
     {
         int v = Convert.ToInt32(hex.TrimStart('#'), 16);

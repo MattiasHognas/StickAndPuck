@@ -18,9 +18,6 @@ public enum FightStage
 }
 
 /// <summary>A fight offered after a hard check, waiting for both sides to accept.</summary>
-/// <param name="CheckerId">Who threw the check.</param>
-/// <param name="VictimId">Who took it.</param>
-/// <param name="Time">When the gloves came off, in <see cref="World.Time"/>.</param>
 public sealed record FightOffer(int CheckerId, int VictimId, float Time)
 {
     /// <summary>Gets the human slot deciding for each fighter (checker, victim), or -1 for the AI.</summary>
@@ -34,8 +31,6 @@ public sealed record FightOffer(int CheckerId, int VictimId, float Time)
 public sealed class Fighter
 {
     /// <summary>Initializes a new instance of the <see cref="Fighter"/> class.</summary>
-    /// <param name="playerId">The skater.</param>
-    /// <param name="slot">The human slot playing the fight for him, or -1 for the AI.</param>
     public Fighter(int playerId, int slot)
     {
         PlayerId = playerId;
@@ -92,9 +87,6 @@ public sealed class Fighter
 public sealed class Fight
 {
     /// <summary>Initializes a new instance of the <see cref="Fight"/> class.</summary>
-    /// <param name="checker">The skater who threw the hit.</param>
-    /// <param name="victim">The skater who took it.</param>
-    /// <param name="spot">The point between them.</param>
     public Fight(Fighter checker, Fighter victim, Vector3 spot)
     {
         Checker = checker;
@@ -120,7 +112,7 @@ public sealed class Fight
     /// <summary>Gets or sets the seconds since the stage (or exchange) started.</summary>
     public float StageTime { get; set; }
 
-    /// <summary>Gets or sets when a punch last landed (<see cref="World.Time"/>), NaN before the first; the close-up camera jolts on it (W61).</summary>
+    /// <summary>Gets or sets when a punch last landed (<see cref="World.Time"/>), NaN before the first; the close-up camera jolts on it.</summary>
     public float LandedAt { get; set; } = float.NaN;
 
     /// <summary>Gets or sets the exchanges finished.</summary>
@@ -136,24 +128,19 @@ public sealed class Fight
     public bool Knockdown { get; set; }
 
     /// <summary>Gets the other fighter.</summary>
-    /// <param name="f">One fighter.</param>
-    /// <returns>The other.</returns>
     public Fighter Other(Fighter f)
     {
         return f == Checker ? Victim : Checker;
     }
 
     /// <summary>Gets a skater's side of the fight, or None if he is not in it.</summary>
-    /// <param name="playerId">The skater.</param>
-    /// <returns>The fighter.</returns>
     public Maybe<Fighter> Of(int playerId)
     {
         return Checker.PlayerId == playerId ? Checker : Victim.PlayerId == playerId ? Victim : Maybe<Fighter>.None;
     }
 }
 
-/// <summary>
-/// W15: fights. A hard check (<see cref="Players.CheckingModel.HardHit"/> and up) may drop the gloves:
+/// <summary>Fights. A hard check (<see cref="Players.CheckingModel.HardHit"/> and up) may drop the gloves:
 /// the checker and the skater he hit are offered a fight. An AI skater accepts or declines from his
 /// checking trait and the score (<see cref="FightModel.AcceptChance"/>); a human accepts for his club's
 /// skater with the accept button (F, or Y on a pad) inside <see cref="FightTuning.OfferSeconds"/>, or
@@ -162,53 +149,38 @@ public sealed class Fight
 /// the middle lands (harder the closer to the middle) unless the other fighter gets his guard up just
 /// in time (inside <see cref="FightTuning.BlockFresh"/> of the punch landing). A fighter whose balance
 /// runs out goes down; after <see cref="FightTuning.MaxExchanges"/> the linesmen step in and the one
-/// with less balance loses. The penalty follows the rule set (W48): the loser's two minutes (Arcade), or
+/// with less balance loses. The penalty follows the rule set: the loser's two minutes (Arcade), or
 /// coincidental 5 minute majors for both, with a game misconduct under SHL. Fights happen in regulation
-/// only, never involve goalies, and never put a club three short.
-/// </summary>
+/// only, never involve goalies, and never put a club three short.</summary>
 public static class Fighting
 {
 
     /// <summary>Gets the fight on the ice, or None.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The fight.</returns>
     public static Maybe<Fight> Current(World world)
     {
         return world.Fight.TryGet(out var s) ? s.Fight : Maybe<Fight>.None;
     }
 
     /// <summary>Gets the fight waiting to be accepted, or None.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The offer.</returns>
     public static Maybe<FightOffer> Pending(World world)
     {
         return world.Fight.TryGet(out var s) ? s.Offer : Maybe<FightOffer>.None;
     }
 
     /// <summary>Gets the fights started this match.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The count.</returns>
     public static int Started(World world)
     {
         return world.Fight.TryGet(out var s) ? s.Started : 0;
     }
 
     /// <summary>Gets whether a skater is in a fight right now.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="playerId">The skater.</param>
-    /// <returns>True while he fights.</returns>
     public static bool InFight(World world, int playerId)
     {
         return Current(world).Is(f => f.Of(playerId).HasValue);
     }
 
-    /// <summary>
-    /// Gets the clip a fighter shows: "grab", "punch", "block", "fall", "celebrate" or "idle",
-    /// the seconds since it started, and whether it loops. None for a skater not in a fight.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="p">The skater.</param>
-    /// <returns>The pose.</returns>
+    /// <summary>Gets the clip a fighter shows: "grab", "punch", "block", "fall", "celebrate" or "idle",
+    /// the seconds since it started, and whether it loops. None for a skater not in a fight.</summary>
     public static Maybe<(string Clip, float Seconds, bool Loop)> Pose(World world, Player p)
     {
         if (!Current(world).TryGet(out var fight) || !fight.Of(p.Id).TryGet(out var f)) return Maybe<(string Clip, float Seconds, bool Loop)>.None;
@@ -216,15 +188,9 @@ public static class Fighting
         return (f.Clip, Math.Max(0, world.Time - f.ClipSince), loop);
     }
 
-    /// <summary>
-    /// Offers a fight between a checker and the skater he hit. Nothing happens if fights are off, play is
+    /// <summary>Offers a fight between a checker and the skater he hit. Nothing happens if fights are off, play is
     /// not running in regulation, either is a goalie, off the ice, in the box or about to be, the loser's
-    /// minor would put a club three short, or another fight or offer is on.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="checkerId">The checker.</param>
-    /// <param name="victimId">The skater he hit.</param>
-    /// <returns>True if the offer stands (it may still be declined).</returns>
+    /// minor would put a club three short, or another fight or offer is on.</summary>
     public static bool Offer(World world, int checkerId, int victimId)
     {
         var s = State(world);
@@ -261,10 +227,8 @@ public static class Fighting
         return true;
     }
 
-    /// <summary>
-    /// Gets whether the fight penalty can put a club three short (W48): only the loser's minor, and only
-    /// when a third penalty does not wait its turn. Coincidental majors are substituted and never do.
-    /// </summary>
+    /// <summary>Gets whether the fight penalty can put a club three short: only the loser's minor, and only
+    /// when a third penalty does not wait its turn. Coincidental majors are substituted and never do.</summary>
     static bool ShortsClub(World world)
     {
         var rules = world.Setup.Rules;

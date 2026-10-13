@@ -5,13 +5,11 @@ using StickAndPuck.App.Screens;
 
 namespace StickAndPuck.App.Replays;
 
-/// <summary>
-/// W67: writes the replay of the match being played. Every match started from the screens is
+/// <summary>Writes the replay of the match being played. Every match started from the screens is
 /// recorded to the replays folder beside the settings (the newest <see cref="Keep"/> stay);
 /// SAP_REPLAY_OUT=file records to that file instead, and also records a SAP_SCENE match;
 /// SAP_REPLAY_OUT=0 records nothing. SAP_CHECKSUMS=file writes "tick checksum" for every step,
-/// played or replayed, to compare two runs line by line.
-/// </summary>
+/// played or replayed, to compare two runs line by line.</summary>
 public sealed class ReplayRecorder
 {
     /// <summary>The replays kept in the replays folder.</summary>
@@ -47,8 +45,6 @@ public sealed class ReplayRecorder
     }
 
     /// <summary>Writes one step's checksum to the SAP_CHECKSUMS log, when it is open.</summary>
-    /// <param name="tick">The step.</param>
-    /// <param name="sum">Its checksum.</param>
     public static void LogChecksum(long tick, ulong sum)
     {
         if (Sums.TryGet(out var sums)) sums.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{tick} {WorldChecksum.Text(sum)}"));
@@ -61,13 +57,8 @@ public sealed class ReplayRecorder
         Sums = Maybe<StreamWriter>.None;
     }
 
-    /// <summary>
-    /// Starts recording a world that is about to start, if it is a match worth recording: a match
-    /// the screens started, or any SAP_SCENE world when SAP_REPLAY_OUT names a file.
-    /// </summary>
-    /// <param name="world">The new world; its systems have not started yet.</param>
-    /// <param name="scene">The SAP_SCENE it came from, or "" for a world the screens built.</param>
-    /// <returns>The recorder, or None.</returns>
+    /// <summary>Starts recording a world that is about to start, if it is a match worth recording: a match
+    /// the screens started, or any SAP_SCENE world when SAP_REPLAY_OUT names a file.</summary>
     public static Maybe<ReplayRecorder> Begin(World world, string scene)
     {
         string target = Env.Get("SAP_REPLAY_OUT");
@@ -94,10 +85,6 @@ public sealed class ReplayRecorder
     }
 
     /// <summary>Starts recording with a given header and start frame (a take-over keeps the replay's own).</summary>
-    /// <param name="header">The header.</param>
-    /// <param name="start">The devices before the first step.</param>
-    /// <param name="path">Where to write.</param>
-    /// <returns>The recorder.</returns>
     public static ReplayRecorder Begin(ReplayHeader header, InputFrame start, string path)
     {
         Console.WriteLine($"SAP: replay: recording seed {header.Seed} to {path}");
@@ -105,8 +92,6 @@ public sealed class ReplayRecorder
     }
 
     /// <summary>Records the step that just ran: its device frame when it changed, its events, and every <see cref="ReplayFile.CheckEvery"/> steps its checksum.</summary>
-    /// <param name="world">The world after the step.</param>
-    /// <param name="sum">The world's checksum after the step.</param>
     public void AfterStep(World world, ulong sum)
     {
         long tick = world.Tick - 1;
@@ -123,7 +108,6 @@ public sealed class ReplayRecorder
     }
 
     /// <summary>Writes the replay: the match so far, ending at the last recorded step.</summary>
-    /// <param name="world">The world.</param>
     public void Finish(World world)
     {
         if (file.LastTick < 0) return;
@@ -147,9 +131,6 @@ public sealed class ReplayRecorder
     static string ModeName(MatchPlan plan) => plan.Mode.Select(m => m.GetType().Name).Or("");
 
     /// <summary>Gets a short hash of two clubs' data.</summary>
-    /// <param name="home">The home club.</param>
-    /// <param name="away">The visiting club.</param>
-    /// <returns>16 hex digits.</returns>
     internal static string ClubsHash(ClubData home, ClubData away)
     {
         ulong h = 14695981039346656037UL;

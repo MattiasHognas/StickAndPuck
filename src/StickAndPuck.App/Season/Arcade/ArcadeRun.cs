@@ -29,12 +29,10 @@ public sealed record ArcadeGame(int Stage, string Opponent, bool Home, FixtureRe
     public bool Won => GoalsFor > GoalsAgainst;
 }
 
-/// <summary>
-/// An arcade run: the human's club meets every other club once, weakest first. A win moves on to
+/// <summary>An arcade run: the human's club meets every other club once, weakest first. A win moves on to
 /// the next club; a loss (in overtime or the shootout too) costs a life and the same club is played
 /// again. The run ends when the lives are gone, or as champions when every club is beaten. This is
-/// exactly what the arcade save holds.
-/// </summary>
+/// exactly what the arcade save holds.</summary>
 public sealed class ArcadeRun
 {
     /// <summary>The save format version; bump it when the shape changes.</summary>
@@ -64,13 +62,13 @@ public sealed class ArcadeRun
     /// <summary>Gets or sets when the run was last saved (UTC).</summary>
     public DateTime Saved { get; set; }
 
-    /// <summary>Gets or sets every player's totals over this run (W25).</summary>
+    /// <summary>Gets or sets every player's totals over this run.</summary>
     public StatTable Stats { get; set; } = new();
 
-    /// <summary>Gets or sets the player of each game of this run, oldest first (W25).</summary>
+    /// <summary>Gets or sets the player of each game of this run, oldest first.</summary>
     public List<PlayerOfGameAward> Awards { get; set; } = [];
 
-    /// <summary>Gets or sets the best runs so far, best first, carried from save to save (W25).</summary>
+    /// <summary>Gets or sets the best runs so far, best first, carried from save to save.</summary>
     public List<ArcadeRecord> Records { get; set; } = [];
 
     /// <summary>Gets this run's place on <see cref="Records"/>, from 1, or 0 while it is not on the board.</summary>
@@ -105,11 +103,6 @@ public sealed class ArcadeRun
     public bool NextAtHome => Stage % 2 == 0;
 
     /// <summary>Starts a run against every other club, weakest first.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="userClub">The id of the human's club.</param>
-    /// <param name="rule">Sudden death or three lives.</param>
-    /// <param name="seed">Breaks ties between clubs of about the same strength.</param>
-    /// <returns>The new run, nothing played.</returns>
     public static ArcadeRun New(IReadOnlyList<ClubData> clubs, string userClub, ArcadeRule rule, int seed)
     {
         if (!clubs.Any(c => string.Equals(c.Id, userClub, StringComparison.Ordinal))) throw new ArgumentException($"{userClub} is not a club", nameof(userClub));
@@ -125,8 +118,6 @@ public sealed class ArcadeRun
     }
 
     /// <summary>Gets a club's strength: the average of every trait across its roster, about 0 to 100.</summary>
-    /// <param name="club">The club.</param>
-    /// <returns>The strength.</returns>
     public static double Strength(ClubData club)
     {
         var skaters = club.Roster.Where(p => p.Position != PlayingPosition.G).Select(p => p.Traits).ToList();
@@ -136,7 +127,6 @@ public sealed class ArcadeRun
     }
 
     /// <summary>Credits a played game's lines and its player of the game to this run's stats.</summary>
-    /// <param name="sheet">The match sheet.</param>
     public void Credit(MatchStatSheet sheet)
     {
         Stats.Add(sheet);
@@ -144,8 +134,6 @@ public sealed class ArcadeRun
     }
 
     /// <summary>Records the next game's result.</summary>
-    /// <param name="result">The final score, home goals first.</param>
-    /// <returns>The game as recorded.</returns>
     public ArcadeGame Record(FixtureResult result)
     {
         if (IsOver) throw new InvalidOperationException("the arcade run is over");
@@ -156,9 +144,6 @@ public sealed class ArcadeRun
     }
 
     /// <summary>The setup for the next game: the human on their club, the AI on the other, SHL overtime so there is always a winner.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="device">The human's input device.</param>
-    /// <returns>The match to play, or <see cref="NextMatch.Over"/> when the run is over.</returns>
     public NextMatch NextSetup(IReadOnlyList<ClubData> clubs, InputDevice device = InputDevice.KeyboardMouse)
     {
         if (IsOver) return NextMatch.Over;

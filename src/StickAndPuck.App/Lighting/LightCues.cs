@@ -9,11 +9,9 @@ namespace StickAndPuck.App.Lighting;
 /// <param name="Flash">Whether a goal flash is lit this step, which turns bands and glass gold.</param>
 public readonly record struct CueLight(Vector3 Tone, bool Bands, bool Flash);
 
-/// <summary>
-/// The light cues. The intro plays with the arena lights down; at the opening faceoff they come
+/// <summary>The light cues. The intro plays with the arena lights down; at the opening faceoff they come
 /// back bank by bank in a few hard steps. A goal strobes the lights: bright, gold flashes
-/// against near-dark, then settles. Steps are hard so the pixel frame never smears a fade.
-/// </summary>
+/// against near-dark, then settles. Steps are hard so the pixel frame never smears a fade.</summary>
 public sealed class LightCues
 {
     /// <summary>How dark the intro is: lit surfaces times this.</summary>
@@ -31,7 +29,7 @@ public sealed class LightCues
     /// <summary>The number of hard steps the lights come back in.</summary>
     public const int LightsUpSteps = 4;
 
-    /// <summary>The length of the goal strobe, in seconds; inside W7a's goal celebration.</summary>
+    /// <summary>The length of the goal strobe, in seconds; inside the goal celebration.</summary>
     public const float FlashSeconds = 2.4f;
 
     /// <summary>The length of one flash or one gap, in seconds.</summary>
@@ -48,8 +46,6 @@ public sealed class LightCues
     public bool Flashing => flash < FlashSeconds;
 
     /// <summary>Advances the cues from the match phase and this step's events.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="dt">The step length.</param>
     public void Update(World world, float dt)
     {
         Intro = world.Match.Phase == MatchPhase.Intro;
@@ -62,7 +58,6 @@ public sealed class LightCues
     }
 
     /// <summary>Gets what the cues do this step.</summary>
-    /// <returns>The tone multiplier and band state.</returns>
     public CueLight Current()
     {
         if (Flashing)

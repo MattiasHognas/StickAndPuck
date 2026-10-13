@@ -4,12 +4,10 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.AI.Dev;
 
-/// <summary>
-/// SAP_SCENE=tactics: an all-AI exhibition with each club's tactics and its dumps and entries on
+/// <summary>SAP_SCENE=tactics: an all-AI exhibition with each club's tactics and its dumps and entries on
 /// a line at the bottom. SAP_HOME and SAP_AWAY pick the clubs (default Frölunda's 2-1-2 against
 /// Luleå's trap); SAP_TACTICS_HOME and SAP_TACTICS_AWAY override a club's forecheck
-/// (balanced, aggressive, trap). SAP_PERIOD=seconds shortens the periods.
-/// </summary>
+/// (balanced, aggressive, trap). SAP_PERIOD=seconds shortens the periods.</summary>
 public sealed class TacticsScene : IScene
 {
     /// <inheritdoc/>

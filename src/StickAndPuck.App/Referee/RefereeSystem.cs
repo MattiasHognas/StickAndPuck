@@ -4,21 +4,19 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Referee;
 
-/// <summary>
-/// W8: the referee skates to the faceoff dot at every stoppage, stands set beside it and drops the
+/// <summary>The referee skates to the faceoff dot at every stoppage, stands set beside it and drops the
 /// puck (the match flow waits for it: <see cref="MatchFlow.SetRefereeDrops"/>), then follows play
 /// along the far boards, trailing the puck on the centre-ice side and keeping clear of players.
 /// Puck physics and checks never see the referee, so it cannot touch the play. Runs only in a world
-/// that runs the match flow. Penalty calls are W14's: see <see cref="Referee.Signal"/>.
-/// W27: once set at the dot the referee holds the puck a random moment, rolled per faceoff from
-/// its dice, so a faceoff cannot be timed by habit.
-/// </summary>
+/// that runs the match flow. Penalty calls are the penalty rules': see <see cref="Referee.Signal"/>.
+/// Once set at the dot the referee holds the puck a random moment, rolled per faceoff from
+/// its dice, so a faceoff cannot be timed by habit.</summary>
 internal sealed class RefereeSystem : ISystem, IDisposable
 {
     readonly RefereeRenderer renderer = new();
     readonly Random dice;
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 8;
 
     /// <summary>Initializes the system with its own dice: SAP_SEED's referee stream, or the fixed one, so every run repeats.</summary>
@@ -28,7 +26,6 @@ internal sealed class RefereeSystem : ISystem, IDisposable
     }
 
     /// <summary>Initializes the system with the given dice (the self test seeds them).</summary>
-    /// <param name="dice">Rolls the hold before each drop.</param>
     public RefereeSystem(Random dice)
     {
         this.dice = dice;

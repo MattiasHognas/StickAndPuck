@@ -8,11 +8,9 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Momentum;
 
-/// <summary>
-/// W29: reads this step's goals, checks and fights, gives the club a boost, drains it during live play
+/// <summary>Reads this step's goals, checks and fights, gives the club a boost, drains it during live play
 /// and tops up the energy of its skaters on the ice meanwhile. Swells the crowd (its own copies of
-/// W12's crowd sound, louder the bigger the boost) and draws a momentum bar under the scorebug.
-/// </summary>
+/// the crowd sound, louder the bigger the boost) and draws a momentum bar under the scorebug.</summary>
 internal sealed class MomentumSystem : ISystem, IDisposable
 {
     const int Voices = 3;
@@ -75,7 +73,7 @@ internal sealed class MomentumSystem : ISystem, IDisposable
         art = Maybe<HudArt>.None;
         if (!sound) return;
         sound = false;
-        if (!IsAudioDeviceReady()) return;     // W12 closes the device first; then raylib has freed the sounds
+        if (!IsAudioDeviceReady()) return;     // closes the device first; then raylib has freed the sounds
         for (int i = 1; i < Voices; i++) UnloadSoundAlias(crowd[i]);
         UnloadSound(crowd[0]);
     }
@@ -102,10 +100,7 @@ internal sealed class MomentumSystem : ISystem, IDisposable
         swell = 0f;     // the crowd answers at once
     }
 
-    /// <summary>Gets the crowd's volume for a boost: louder the bigger the boost, and at a full one well over W12's crowd after a goal.</summary>
-    /// <param name="level">The boost, 0 to 1.</param>
-    /// <param name="volume">The player's sound volume, 0 to 1.</param>
-    /// <returns>The volume, 0 to 1.</returns>
+    /// <summary>Gets the crowd's volume for a boost: louder the bigger the boost, and at a full one well over the crowd after a goal.</summary>
     public static float CrowdVolume(float level, float volume)
     {
         return Math.Clamp(volume * MomentumTuning.CrowdVolume * level, 0f, 1f);
@@ -131,14 +126,10 @@ internal sealed class MomentumSystem : ISystem, IDisposable
     }
 }
 
-/// <summary>W29: the momentum bar under the scorebug and any penalty rows (W48): the boosted club's crest and a bar in its colour that drains with the boost.</summary>
+/// <summary>The momentum bar under the scorebug and any penalty rows: the boosted club's crest and a bar in its colour that drains with the boost.</summary>
 internal static class MomentumBar
 {
     /// <summary>Draws the bar.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="art">The HUD art.</param>
-    /// <param name="side">The boosted club.</param>
-    /// <param name="level">Its boost, 0 to 1.</param>
     public static void Draw(World world, HudArt art, Side side, float level)
     {
         const int pad = 3, crest = 16, gap = 4, barH = 4;

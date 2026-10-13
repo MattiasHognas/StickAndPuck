@@ -220,7 +220,7 @@ public sealed class NetTests : CheckedTest
         Check(g.Count == 1 && g[0].ScorerId == 0, $"{End(end)}: a puck walked in through the mouth on the stick is a goal ({g.Count})");
     }
 
-    /// <summary>W62: skaters driving at the cage, pushed every step the way skating would move them.</summary>
+    /// <summary>Skaters driving at the cage, pushed every step the way skating would move them.</summary>
     [Test]
     [Arguments(-1)]
     [Arguments(1)]
@@ -277,7 +277,7 @@ public sealed class NetTests : CheckedTest
 
     }
 
-    /// <summary>W62: a goalie keeps its crease and gets round the cage when it leaves it.</summary>
+    /// <summary>A goalie keeps its crease and gets round the cage when it leaves it.</summary>
     [Test]
     [Arguments(-1)]
     [Arguments(1)]
