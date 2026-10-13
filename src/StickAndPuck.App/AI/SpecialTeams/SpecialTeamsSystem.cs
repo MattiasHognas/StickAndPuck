@@ -7,8 +7,7 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// W22c: the AI's special teams. Runs after the defence (W22b) and before decisions (W6b), and
+/// <summary>The AI's special teams. Runs after the defence and before decisions, and
 /// only while one club has a man advantage from penalties (<see cref="Penalties.PowerPlay"/>).
 /// <list type="bullet">
 /// <item>Power play: once the puck is in the zone with the power play on it, its AI skaters take
@@ -20,13 +19,12 @@ namespace StickAndPuck.App.AI;
 /// presser) while the carrier is near his spot; one further out is left to the shape.</item>
 /// <item>Clear: a killer who gets the puck in his own half fires it down the ice, along the boards
 /// or through the middle, whichever is less crowded, and flips it over sticks when every lane is.
-/// Icing is waved off for the short club (W7b).</item>
+/// Icing is waved off for the short club.</item>
 /// <item>Hockey IQ sets the odds: the kill reads the power play's shape at each zone entry, a smart
 /// one picking the right answer, a fumbling one the wrong one; a smart skater finds his spot
 /// exactly and clears at once, a poor one stands a little off and hesitates with the puck.</item>
 /// </list>
-/// SAP_ST_SPOTS=1 or the match debug setting draws the spots on the ice.
-/// </summary>
+/// SAP_ST_SPOTS=1 or the match debug setting draws the spots on the ice.</summary>
 internal sealed class SpecialTeamsSystem : ISystem
 {
     const float PressFrom = 6.5f;       // a killer presses a carrier this close to his spot; further out he holds the shape
@@ -38,7 +36,7 @@ internal sealed class SpecialTeamsSystem : ISystem
     const float SlotShot = 0.4f;        // a power play carrier with a lane shoots from a spot this good
     const float PerimeterShot = 0.12f;  // and from the point or the half wall on this share of his looks
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 3;
 
     readonly Random rng;
@@ -120,10 +118,8 @@ internal sealed class SpecialTeamsSystem : ISystem
         if (!carrier.HasValue) NoChase(world, killTeam, ppTeam);
     }
 
-    /// <summary>
-    /// A man short, the kill does not join a rush: out of its own zone with the puck, one killer
-    /// (the nearest) supports the carrier and the rest skate back to their defensive spots.
-    /// </summary>
+    /// <summary>A man short, the kill does not join a rush: out of its own zone with the puck, one killer
+    /// (the nearest) supports the carrier and the rest skate back to their defensive spots.</summary>
     static void StayBack(World world, List<Player> team, Player carrier)
     {
         int end = PuckHandling.AttackEnd(world, carrier.Side);
@@ -137,10 +133,8 @@ internal sealed class SpecialTeamsSystem : ISystem
         }
     }
 
-    /// <summary>
-    /// A man short, the kill does not chase a cleared puck into the other end: its chaser goes only
-    /// when he is clearly first to it, and otherwise skates back to his defensive spot.
-    /// </summary>
+    /// <summary>A man short, the kill does not chase a cleared puck into the other end: its chaser goes only
+    /// when he is clearly first to it, and otherwise skates back to his defensive spot.</summary>
     static void NoChase(World world, List<Player> killers, List<Player> powerPlay)
     {
         var puck = world.Puck.Position;
@@ -161,7 +155,7 @@ internal sealed class SpecialTeamsSystem : ISystem
         return end * spot.X > -BackFrom ? spot with { X = -end * BackFrom } : spot;
     }
 
-    /// <summary>A new power play: it picks its shape (W22d's club tactics may pick it later).</summary>
+    /// <summary>A new power play: it picks its shape (club tactics may pick it later).</summary>
     void Begin(SpecialTeamsBoard board, Side pp)
     {
         board.PowerPlay = pp.OrNone();
@@ -298,11 +292,9 @@ internal sealed class SpecialTeamsSystem : ISystem
         return TeamShape.Inside(spot + plan.Error);
     }
 
-    /// <summary>
-    /// A power play shoots more than at even strength: the carrier looks every moment, and with a
+    /// <summary>A power play shoots more than at even strength: the carrier looks every moment, and with a
     /// clear lane he lets a shot go from the slot, and now and then from the point or the half wall,
-    /// a slap shot when he has time, for a tip or a rebound. Decisions hold the shot (W6b).
-    /// </summary>
+    /// a slap shot when he has time, for a tip or a rebound. Decisions hold the shot.</summary>
     void Shoot(World world, SpecialTeamsBoard board, Player p, int end)
     {
         var plan = board.For(p.Id);
@@ -328,10 +320,8 @@ internal sealed class SpecialTeamsSystem : ISystem
         board.Tally[(int)p.Side].Shots++;
     }
 
-    /// <summary>
-    /// With a teammate on the puck, an off-puck skater looks for the open ice around his spot, where
-    /// a pass gets through (W22a's <see cref="GetOpen"/>), read again every moment, quicker for a smart one.
-    /// </summary>
+    /// <summary>With a teammate on the puck, an off-puck skater looks for the open ice around his spot, where
+    /// a pass gets through (<see cref="GetOpen"/>), read again every moment, quicker for a smart one.</summary>
     Vector2 Open(World world, SpecialTeamsBoard board, Player p, Player carrier, Vector2 spot)
     {
         var plan = board.For(p.Id);
@@ -352,11 +342,9 @@ internal sealed class SpecialTeamsSystem : ISystem
         AiCommand.Take(world, p, AiLayer.SpecialTeams, target, Steering.Toward(p, target, 1.6f, sprint: far > 6f), reason);
     }
 
-    /// <summary>
-    /// A killer with the puck in his own half clears it: after a beat (shorter for a smart one,
+    /// <summary>A killer with the puck in his own half clears it: after a beat (shorter for a smart one,
     /// longer on a fumbled read) he fires it down the ice through the least crowded lane, and flips
-    /// it high when every lane has a stick in it. Decisions hold the shot (W6b's slap shot hold).
-    /// </summary>
+    /// it high when every lane has a stick in it. Decisions hold the shot (the slap shot hold).</summary>
     void Clear(World world, SpecialTeamsBoard board, Player p)
     {
         if (p.Slot >= 0) return;
@@ -381,15 +369,13 @@ internal sealed class SpecialTeamsSystem : ISystem
         var opponents = world.OnIce(p.Side == Side.Home ? Side.Away : Side.Home).Where(o => !o.IsGoalie).Select(o => Flat(o.Position)).ToList();
         var best = lanes.Select(Vector2.Normalize).MinBy(d => Crowd(at, d, opponents) + MathF.Abs(MathF.Abs(d.Y) - 0.41f));
         bool flip = Crowd(at, best, opponents) > 0;
-        AiCommand.Shoot(world, p, AiLayer.SpecialTeams, best, flip ? 20 : 4, "kill clear");   // a flip is a short slap wind-up, lifted (W35's held shot), a clear along the ice a tap
+        AiCommand.Shoot(world, p, AiLayer.SpecialTeams, best, flip ? 20 : 4, "kill clear");   // a flip is a short slap wind-up, lifted (a held shot), a clear along the ice a tap
         board.Clearing = new ClearWatch(p.Side, p.Id, flip, world.Time);
         board.ClearCarrier = -1;
     }
 
-    /// <summary>
-    /// Counts a clear once the puck leaves the killer's stick (a wind-up broken by a check is no
-    /// clear), and as out once it crosses the killers' blue line, going away, within three seconds.
-    /// </summary>
+    /// <summary>Counts a clear once the puck leaves the killer's stick (a wind-up broken by a check is no
+    /// clear), and as out once it crosses the killers' blue line, going away, within three seconds.</summary>
     static void TrackClear(World world, SpecialTeamsBoard board)
     {
         if (!board.Clearing.TryGet(out var c)) return;

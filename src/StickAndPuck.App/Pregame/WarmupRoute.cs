@@ -3,11 +3,9 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Pregame;
 
-/// <summary>
-/// One skater's warm-up loop: a point that travels round an oval in the squad's own end, which the
+/// <summary>One skater's warm-up loop: a point that travels round an oval in the squad's own end, which the
 /// skater chases. Each squad gets laps of the zone, circles round its faceoff dots and crossovers
-/// along the blue line, so the ice looks busy without anyone crossing centre.
-/// </summary>
+/// along the blue line, so the ice looks busy without anyone crossing centre.</summary>
 /// <param name="Centre">The oval's centre on the ice (x, z).</param>
 /// <param name="Radius">Its half sizes along x and z.</param>
 /// <param name="Speed">How fast the chased point travels, in metres per second.</param>
@@ -27,9 +25,6 @@ public sealed record WarmupRoute(Vector2 Centre, Vector2 Radius, float Speed, fl
     ];
 
     /// <summary>Gets a route for a skater in the end a squad defends.</summary>
-    /// <param name="index">The skater's number in the squad, 0 up; routes repeat after the fifth.</param>
-    /// <param name="end">The end the squad defends: -1 for -x, +1 for +x.</param>
-    /// <returns>The route, mirrored for the +x end.</returns>
     public static WarmupRoute For(int index, int end)
     {
         var shape = Shapes[index % Shapes.Length];
@@ -37,8 +32,6 @@ public sealed record WarmupRoute(Vector2 Centre, Vector2 Radius, float Speed, fl
     }
 
     /// <summary>Gets where the chased point is after some seconds.</summary>
-    /// <param name="seconds">Seconds into the warm-up.</param>
-    /// <returns>The point on the ice (x, z).</returns>
     public Vector2 At(float seconds)
     {
         // angular speed from the oval's mean radius, so every loop is skated at about its Speed
@@ -48,9 +41,6 @@ public sealed record WarmupRoute(Vector2 Centre, Vector2 Radius, float Speed, fl
     }
 
     /// <summary>Gets a spot just inside the blue line of the squad's end, where its skaters gather once start is pressed.</summary>
-    /// <param name="index">The skater's number in the squad.</param>
-    /// <param name="end">The end the squad defends.</param>
-    /// <returns>The spot (x, z).</returns>
     public static Vector2 Gather(int index, int end)
     {
         return new Vector2(end * (RinkSpec.BlueLineX + 3f), -6f + (3f * (index % 5)));

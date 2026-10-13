@@ -4,11 +4,9 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Rules;
 
-/// <summary>
-/// W7a: faceoffs, the clock, three periods, goals and restarts. Owns <see cref="World.Match"/> and
+/// <summary>Faceoffs, the clock, three periods, goals and restarts. Owns <see cref="World.Match"/> and
 /// publishes Faceoff, PeriodEnd and MatchEnd; counts the Goal events physics publishes. Runs only
-/// in a world started with <see cref="MatchFlow.Begin"/>. See <see cref="MatchFlow"/> for the rules it keeps.
-/// </summary>
+/// in a world started with <see cref="MatchFlow.Begin"/>. See <see cref="MatchFlow"/> for the rules it keeps.</summary>
 internal sealed class MatchRules : ISystem
 {
 
@@ -18,7 +16,7 @@ internal sealed class MatchRules : ISystem
         MatchDemo.Update(world);
         var s = MatchFlow.State(world);
         var m = world.Match;
-        // W40: from the horn the celebration poses every player, then hands over to the final
+        // From the horn the celebration poses every player, then hands over to the final
         if (Celebration.Update(world, s, dt)) return;
         switch (m.Phase)
         {
@@ -37,7 +35,7 @@ internal sealed class MatchRules : ISystem
                 if (Wait(s, dt)) MatchFlow.SetUpFaceoff(world, s.Dot);
                 break;
             case MatchPhase.Goal:
-                // W9's goal replay holds the restart; the faceoff follows a second after it ends
+                // The goal replay holds the restart; the faceoff follows a second after it ends
                 if (world.ReplayPlaying) s.Timer = 1f;
                 else if (Wait(s, dt)) MatchFlow.SetUpFaceoff(world, RinkSpec.CentreDot);
                 break;
@@ -45,14 +43,14 @@ internal sealed class MatchRules : ISystem
                 if (Wait(s, dt)) MatchFlow.StartPeriod(world, m.Period + 1, world.Setup.PeriodSeconds);
                 break;
             default:
-                // Overtime and Shootout belong to W7c until it calls StartPeriod; Final is the end
+                // Overtime and Shootout belong to the overtime rules until they call StartPeriod; Final is the end
                 break;
         }
     }
 
     public void DrawHud(World world, RenderContext render)
     {
-        // a plain readout for checking the flow before W10's scorebug; SAP_MATCH_DEBUG=1 turns it on
+        // a plain readout for checking the flow; SAP_MATCH_DEBUG=1 turns it on
         if (!world.Switches.MatchLine || !MatchFlow.IsRunning(world)) return;
         var m = world.Match;
         string text = $"{world.Setup.Home.ShortName} {m.Score[0]} - {m.Score[1]} {world.Setup.Away.ShortName}   P{m.Period} {MatchFlow.ClockText(m.Clock)}   {m.Phase}";
@@ -118,7 +116,7 @@ internal sealed class MatchRules : ISystem
         }
         else if (tied && OvertimeFormat.Of(world.Setup).AfterTie(m.Period - world.Setup.Periods).TryGet(out var next))
         {
-            // a tie: W7c sets up the overtime skaters and calls StartPeriod, or runs the shootout, as the mode's format says
+            // a tie: the overtime rules set up the overtime skaters and calls StartPeriod, or runs the shootout, as the mode's format says
             m.Phase = next;
         }
         else
@@ -127,7 +125,7 @@ internal sealed class MatchRules : ISystem
         }
     }
 
-    /// <summary>The horn: MatchWon or MatchTied, then the celebration (W40) holds the final for a while, or the final at once after a tie.</summary>
+    /// <summary>The horn: MatchWon or MatchTied, then the celebration holds the final for a while, or the final at once after a tie.</summary>
     internal static void EndMatch(World world, FlowState s)
     {
         var m = world.Match;

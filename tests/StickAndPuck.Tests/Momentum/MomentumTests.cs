@@ -14,10 +14,10 @@ using Boost = StickAndPuck.App.Momentum.Momentum;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W29's momentum: a goal fills the scoring club's boost and ends the other's, a big hit adds to it
+/// The momentum: a goal fills the scoring club's boost and ends the other's, a big hit adds to it
 /// and a soft one does not, a fight won boosts the winner, the boost drains over about twenty seconds
 /// of live play (not while the puck is dead), gives the club's skaters a second wind, and swells the
-/// crowd louder than W12's crowd after a goal. Then a full all-AI match with lines and momentum
+/// crowd louder than the crowd after a goal. Then a full all-AI match with lines and momentum
 /// running. Formerly SAP_SCENE=momentumtest.
 /// </summary>
 public sealed class MomentumTests : CheckedTest

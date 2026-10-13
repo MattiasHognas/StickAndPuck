@@ -3,45 +3,30 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Lines;
 
-/// <summary>
-/// W13: what the bench knows, for HUD, AI and screens to read. <see cref="LinesSystem"/> keeps it
-/// up to date in every world that runs the match flow.
-/// </summary>
+/// <summary>What the bench knows, for HUD, AI and screens to read. <see cref="LinesSystem"/> keeps it
+/// up to date in every world that runs the match flow.</summary>
 public static class Bench
 {
 
     /// <summary>Gets a club's squad, or None in a world without the match flow.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>The squad.</returns>
     public static Maybe<Squad> SquadOf(World world, Side side)
     {
         return world.Lines.TryGet(out var b) ? b.Squads[(int)side] : Maybe<Squad>.None;
     }
 
     /// <summary>Gets whether a club has a change on the fly under way: skaters heading for the bench.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>True while skaters are leaving.</returns>
     public static bool IsChanging(World world, Side side)
     {
         return world.Lines.TryGet(out var b) && b.Changing[(int)side].HasValue;
     }
 
     /// <summary>Gets whether a skater is on the way to the bench.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="p">The skater.</param>
-    /// <returns>True while they leave.</returns>
     public static bool IsLeaving(World world, Player p)
     {
         return world.Lines.TryGet(out var b) && b.Changing[(int)p.Side].TryGet(out var c) && c.Swaps.Exists(s => !s.Done && s.Out == p);
     }
 
     /// <summary>Gets the mean energy of a club's forwards or defencemen on the ice.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <param name="group">Forwards or defence.</param>
-    /// <returns>Energy from 1 to 0; 1 when nobody of that group is on the ice.</returns>
     public static float OnIceEnergy(World world, Side side, Group group)
     {
         var on = OnIce(world, side, group).ToList();
@@ -49,37 +34,22 @@ public static class Bench
     }
 
     /// <summary>Gets the unit most of a group on the ice belongs to.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <param name="group">Forwards or defence.</param>
-    /// <returns>The unit, or None.</returns>
     public static Maybe<Unit> OnIceUnit(World world, Side side, Group group)
     {
         return SquadOf(world, side).TryGet(out var squad) ? Maybe.From<Unit>(squad.Units(group).MaxBy(u => u.Members.Count(m => m.OnIce))) : Maybe<Unit>.None;
     }
 
-    /// <summary>
-    /// Asks for an early change, as the change line button does: the more tired of forwards and
-    /// defence goes off, on the fly in play, or at the next faceoff while play is stopped.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
+    /// <summary>Asks for an early change, as the change line button does: the more tired of forwards and
+    /// defence goes off, on the fly in play, or at the next faceoff while play is stopped.</summary>
     public static void RequestChange(World world, Side side)
     {
         if (world.Lines.TryGet(out var b)) b.Requested[(int)side] = true;
     }
 
-    /// <summary>
-    /// Sends a skater on from the bench, W23's extra attacker or the skater a club adds for a 4 on 3
+    /// <summary>Sends a skater on from the bench, the extra attacker or the skater a club adds for a 4 on 3
     /// power play in overtime: the freshest of the group who is not in the penalty box, from the
     /// other group when that one is empty. On the fly he steps out of the bench door; at a stoppage
-    /// he waits at the door for the faceoff to place him.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <param name="group">The group wanted first.</param>
-    /// <param name="onTheFly">True in play, false while play is stopped.</param>
-    /// <returns>The skater, or None with nobody left on the bench.</returns>
+    /// he waits at the door for the faceoff to place him.</summary>
     public static Maybe<Player> SendOn(World world, Side side, Group group, bool onTheFly)
     {
         if (world.Players
@@ -101,8 +71,6 @@ public static class Bench
     }
 
     /// <summary>Sends a player on the ice to the bench, handing a human's control to the teammate nearest the puck.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="p">The player.</param>
     public static void SendOff(World world, Player p)
     {
         if (!p.OnIce) return;
@@ -123,15 +91,9 @@ public static class Bench
             foreach (var s in change.Swaps.Where(s => s.Out == p || s.In == p)) s.Done = true;
     }
 
-    /// <summary>
-    /// Gets the skater a club can spare when it has more on the ice than it should: the extra
-    /// attacker (W23) if he is out there, else the most tired of the group with more than its
-    /// share (one forward at three a side, two defence at four or more), a human's skater last.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <param name="target">The skaters the club should have.</param>
-    /// <returns>The skater, or None with nobody on the ice.</returns>
+    /// <summary>Gets the skater a club can spare when it has more on the ice than it should: the extra
+    /// attacker if he is out there, else the most tired of the group with more than its
+    /// share (one forward at three a side, two defence at four or more), a human's skater last.</summary>
     public static Maybe<Player> Surplus(World world, Side side, int target)
     {
         if (GoaliePull.ExtraAttacker(world, side).TryGet(out var extra)) return extra;
@@ -143,13 +105,9 @@ public static class Bench
             ?? skaters.OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault());
     }
 
-    /// <summary>
-    /// Takes an ejected player (W47) out of his club's squad for the rest of the match: off the ice
+    /// <summary>Takes an ejected player out of his club's squad for the rest of the match: off the ice
     /// if he is on it, out of his line or pair, and a skater from the last unit moves up into the gap
-    /// (<see cref="Squad.Remove"/>). The penalty box keeps him off the bench (<see cref="Rules.Penalties.InBox"/>).
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="p">The ejected player.</param>
+    /// (<see cref="Squad.Remove"/>). The penalty box keeps him off the bench (<see cref="Rules.Penalties.InBox"/>).</summary>
     public static void Eject(World world, Player p)
     {
         SendOff(world, p);
@@ -188,7 +146,7 @@ internal sealed class LinesBoard
     /// <summary>Gets the clubs whose backup goalie comes in at the next faceoff.</summary>
     public bool[] GoalieSwap { get; } = new bool[2];
 
-    /// <summary>Gets each club's pulled goalie (W23), or None while he is in the net.</summary>
+    /// <summary>Gets each club's pulled goalie, or None while he is in the net.</summary>
     public Maybe<Player>[] PulledGoalie { get; } = new Maybe<Player>[2];
 
     /// <summary>Gets the id of the extra attacker who came on for each club's goalie, or -1.</summary>
@@ -215,11 +173,6 @@ internal sealed class LinesBoard
 }
 
 /// <summary>A change under way: who goes off, who comes on.</summary>
-/// <param name="Side">The club.</param>
-/// <param name="Group">Forwards or defence.</param>
-/// <param name="Incoming">The unit coming on.</param>
-/// <param name="Swaps">One skater off for one on.</param>
-/// <param name="Started">World time the call was made.</param>
 internal sealed record ShiftChange(Side Side, Group Group, Unit Incoming, List<Swap> Swaps, float Started)
 {
     /// <summary>Gets or sets a value indicating whether the line change event went out.</summary>
@@ -227,8 +180,6 @@ internal sealed record ShiftChange(Side Side, Group Group, Unit Incoming, List<S
 }
 
 /// <summary>One skater off for one on.</summary>
-/// <param name="Out">Going to the bench.</param>
-/// <param name="In">Coming on.</param>
 internal sealed record Swap(Player Out, Player In)
 {
     public bool Done { get; set; }

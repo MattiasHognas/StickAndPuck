@@ -6,15 +6,13 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Camera;
 
-/// <summary>
-/// W61: the close-up cameras. Four moments leave the broadcast view and move in close at a lower
+/// <summary>The close-up cameras. Four moments leave the broadcast view and move in close at a lower
 /// angle: a fight (the two fighters side by side, a jolt on every punch that lands), a goal (a
 /// push-in on the scorer before the replay cuts in), the warm-up (the skater a person controls, or
 /// the home squad) and the final horn (the winners' pile). The camera eases in from the gameplay
 /// camera and back out to it, with its target at the players' depth, so the camera system can pick
-/// the render scale W59 added: the fight and the goal land on 160x90, the warm-up and the pile on
-/// 240x135, and in every one a kit texel stays about one pixel.
-/// </summary>
+/// the render scale: the fight and the goal land on 160x90, the warm-up and the pile on
+/// 240x135, and in every one a kit texel stays about one pixel.</summary>
 internal sealed class CloseUp
 {
     /// <summary>How far each shot sits from what it frames, in metres along its view (the gameplay camera is about 37).</summary>
@@ -63,9 +61,6 @@ internal sealed class CloseUp
     public float Weight => weight;
 
     /// <summary>Moves the close-up one step: picks the shot, follows its subject and eases in or out.</summary>
-    /// <param name="world">The match state, after every gameplay system has run this step.</param>
-    /// <param name="dt">The step length.</param>
-    /// <param name="replayWaiting">Seconds since a goal while the replay waits to cut in, or NaN.</param>
     public void Update(World world, float dt, float replayWaiting)
     {
         if (world.ReplayPlaying)
@@ -94,8 +89,6 @@ internal sealed class CloseUp
     }
 
     /// <summary>Blends the gameplay camera toward the close-up.</summary>
-    /// <param name="camera">The gameplay camera.</param>
-    /// <returns>The camera to draw with; its target sits at the subject's depth.</returns>
     public Camera3D Apply(Camera3D camera)
     {
         if (weight <= 0) return camera;
@@ -186,7 +179,7 @@ internal sealed class CloseUp
         return sum / home.Count;
     }
 
-    /// <summary>A punch that lands (W61's hook in the fight) jolts the camera in, and it eases back.</summary>
+    /// <summary>A punch that lands (a hook in the fight) jolts the camera in, and it eases back.</summary>
     void Punches(World world, float dt)
     {
         jolt = Math.Max(0, jolt - (dt / JoltSeconds));

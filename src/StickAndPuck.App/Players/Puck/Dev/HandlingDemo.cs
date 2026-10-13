@@ -4,10 +4,8 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players.Dev;
 
-/// <summary>
-/// SAP_SCENE=handlingdemo: plays a carry, pass and shot on goal by itself, over and over, with the
-/// camera following the puck along the rink. For recording what puck handling does.
-/// </summary>
+/// <summary>SAP_SCENE=handlingdemo: plays a carry, pass and shot on goal by itself, over and over, with the
+/// camera following the puck along the rink. For recording what puck handling does.</summary>
 public sealed class HandlingDemoScene : IScene
 {
     /// <inheritdoc/>
@@ -30,7 +28,6 @@ internal sealed class HandlingDemo
     int got = -1, shotAt = -1, round;
 
     /// <summary>Adds the players for the demo.</summary>
-    /// <param name="world">The world to fill.</param>
     public static void Setup(World world)
     {
         var demo = new HandlingDemo();
@@ -79,7 +76,6 @@ internal sealed class HandlingDemo
     }
 
     /// <summary>Writes this step's commands and moves the camera with the puck.</summary>
-    /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         if (world.Dev.Handling.TryGet(out var demo)) demo.Run(world);

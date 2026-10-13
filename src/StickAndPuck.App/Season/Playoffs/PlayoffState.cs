@@ -4,14 +4,12 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// SHL playoffs, seeded from the final table: places 1 to 6 go straight to the quarter-finals,
+/// <summary>SHL playoffs, seeded from the final table: places 1 to 6 go straight to the quarter-finals,
 /// places 7 to 10 play a best of three play-in (7 against 10, 8 against 9), then best of seven
 /// quarter-finals, semi-finals and a final. Every round is reseeded, so the best seed left meets
 /// the worst one left. The human's club plays its games; every other game is settled by
 /// <see cref="QuickSim"/>, kept level with the human's series so the bracket moves together.
-/// Saved inside the <see cref="SeasonState"/> it follows.
-/// </summary>
+/// Saved inside the <see cref="SeasonState"/> it follows.</summary>
 public sealed class PlayoffState
 {
     /// <summary>Places that go straight to the quarter-finals.</summary>
@@ -36,8 +34,6 @@ public sealed class PlayoffState
     public List<PlayoffRound> Rounds { get; set; } = [];
 
     /// <summary>Gets a round's name in the language shown: play-in, quarter-finals, semi-finals, final.</summary>
-    /// <param name="round">The round, from 0.</param>
-    /// <returns>The name.</returns>
     public static string RoundTitle(int round) => Text.Get(round switch
     {
         <= 0 => K.RoundPlayIn,
@@ -50,7 +46,7 @@ public sealed class PlayoffState
     [JsonIgnore]
     public static int RoundCount => Format.Length;
 
-    /// <summary>Gets the name of the round being played, in the language shown (W53; <see cref="PlayoffRound.Name"/> is the save's).</summary>
+    /// <summary>Gets the name of the round being played, in the language shown (<see cref="PlayoffRound.Name"/> is the save's).</summary>
     [JsonIgnore]
     public string CurrentTitle => RoundTitle(Rounds.Count - 1);
 
@@ -79,8 +75,6 @@ public sealed class PlayoffState
     public bool UserAlive => UserQualified && (IsOver ? Same(Champion.Or(""), UserClub) : Alive());
 
     /// <summary>Seeds the playoffs from a finished season and starts the play-in.</summary>
-    /// <param name="season">The season; its table gives the seeds.</param>
-    /// <returns>The playoffs, nothing played.</returns>
     public static PlayoffState New(SeasonState season)
     {
         var state = new PlayoffState
@@ -94,17 +88,12 @@ public sealed class PlayoffState
     }
 
     /// <summary>Gets a club's seed: its place in the final table, from 1, or 0 when it is not in the season.</summary>
-    /// <param name="clubId">The club id.</param>
-    /// <returns>The seed.</returns>
     public int SeedOf(string clubId)
     {
         return Seeds.FindIndex(s => Same(s, clubId)) + 1;
     }
 
     /// <summary>Adds a game to a series of the round being played.</summary>
-    /// <param name="series">The series; the game is its next one, at <see cref="PlayoffSeries.NextHome"/>.</param>
-    /// <param name="result">The result; a tie is refused, as playoff games always have a winner.</param>
-    /// <returns>True when the game was added.</returns>
     public bool Record(PlayoffSeries series, FixtureResult result)
     {
         if (series.IsOver || result.HomeGoals == result.AwayGoals || !Current.Series.Contains(series)) return false;
@@ -112,13 +101,9 @@ public sealed class PlayoffState
         return true;
     }
 
-    /// <summary>
-    /// Settles every game up to the human's next one: the other series of the round are played to
+    /// <summary>Settles every game up to the human's next one: the other series of the round are played to
     /// as many games as the human's series has, and when the human has no open series the round is
-    /// finished and the next one drawn, until the human plays again or there is a champion.
-    /// </summary>
-    /// <param name="clubs">Every club, for their traits.</param>
-    /// <returns>The games settled.</returns>
+    /// finished and the next one drawn, until the human plays again or there is a champion.</summary>
     public int SimulateUntilUser(IReadOnlyList<ClubData> clubs)
     {
         var byId = clubs.ToDictionary(c => c.Id, StringComparer.Ordinal);
@@ -142,7 +127,6 @@ public sealed class PlayoffState
     }
 
     /// <summary>Draws the next round once the current one is over.</summary>
-    /// <returns>True when a round was added.</returns>
     public bool NextRound()
     {
         if (!Current.IsOver || Rounds.Count >= Format.Length) return false;
@@ -153,10 +137,6 @@ public sealed class PlayoffState
     }
 
     /// <summary>Gets the seed for one simulated game: fixed per playoffs, round, series and game.</summary>
-    /// <param name="round">The round, from 0.</param>
-    /// <param name="series">The series in the round, from 0.</param>
-    /// <param name="game">The game in the series, from 0.</param>
-    /// <returns>The seed.</returns>
     public int GameSeed(int round, int series, int game)
     {
         return unchecked((Seed * 1_000_003) + (((round * 64) + (series * 8) + game) * 7_919));

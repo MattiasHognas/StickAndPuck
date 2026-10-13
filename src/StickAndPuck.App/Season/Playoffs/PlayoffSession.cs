@@ -2,12 +2,10 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// The playoffs of the season in <see cref="SeasonSession"/>. Once the regular season is over,
+/// <summary>The playoffs of the season in <see cref="SeasonSession"/>. Once the regular season is over,
 /// <see cref="Open"/> seeds them from the final table (or picks up the saved ones), a scene (or
-/// W11's start screen) builds the world from <see cref="NextSetup"/>, and <see cref="PlayoffSystem"/>
-/// records the result when that match ends; <see cref="AutosaveSystem"/> then writes the save.
-/// </summary>
+/// the start screen) builds the world from <see cref="NextSetup"/>, and <see cref="PlayoffSystem"/>
+/// records the result when that match ends; <see cref="AutosaveSystem"/> then writes the save.</summary>
 public static class PlayoffSession
 {
     /// <summary>Gets the playoffs of the season being played, or None before they start.</summary>
@@ -16,14 +14,11 @@ public static class PlayoffSession
     /// <summary>Gets the series whose next game the current match is, or None when the match is not a playoff game.</summary>
     public static Maybe<PlayoffSeries> Playing { get; private set; }
 
-    /// <summary>Gets or sets the rules playoff games follow (W19): the SHL's unless a mode sets its own.</summary>
+    /// <summary>Gets or sets the rules playoff games follow: the SHL's unless a mode sets its own.</summary>
     public static PlayoffRules Rules { get; set; } = PlayoffRules.Shl;
 
-    /// <summary>
-    /// Starts the playoffs once the regular season is over and settles every game up to the human's
-    /// next one; continues saved playoffs as they are. None while the season is still running.
-    /// </summary>
-    /// <returns>The playoffs, or None.</returns>
+    /// <summary>Starts the playoffs once the regular season is over and settles every game up to the human's
+    /// next one; continues saved playoffs as they are. None while the season is still running.</summary>
     public static Maybe<PlayoffState> Open()
     {
         Playing = Maybe<PlayoffSeries>.None;
@@ -36,13 +31,9 @@ public static class PlayoffSession
         return playoffs;
     }
 
-    /// <summary>
-    /// The setup for the human's next playoff game, with the overtime rules of <see cref="Rules"/>, and
+    /// <summary>The setup for the human's next playoff game, with the overtime rules of <see cref="Rules"/>, and
     /// marks it as the game being played, so its result is recorded when the match ends. Over when the
-    /// human's club is out or there is a champion.
-    /// </summary>
-    /// <param name="device">The human's input device.</param>
-    /// <returns>The match to play, or <see cref="NextMatch.Over"/>.</returns>
+    /// human's club is out or there is a champion.</summary>
     public static NextMatch NextSetup(InputDevice device = InputDevice.KeyboardMouse)
     {
         var playoffs = Open();
@@ -52,12 +43,8 @@ public static class PlayoffSession
         return new NextMatch.Play(season.SetupFor(game, SeasonSession.Clubs, device) with { OvertimeFormat = Rules.Overtime });
     }
 
-    /// <summary>
-    /// Records the result of the game being played, settles the other games up to the human's next
-    /// one (the rest of the playoffs when the human's club is out), and marks the season for saving.
-    /// </summary>
-    /// <param name="result">The result; a tie is refused.</param>
-    /// <returns>True when a result was recorded.</returns>
+    /// <summary>Records the result of the game being played, settles the other games up to the human's next
+    /// one (the rest of the playoffs when the human's club is out), and marks the season for saving.</summary>
     public static bool Finish(FixtureResult result)
     {
         if (!Current.TryGet(out var playoffs) || !Playing.TryGet(out var series) || !playoffs.Record(series, result)) return false;

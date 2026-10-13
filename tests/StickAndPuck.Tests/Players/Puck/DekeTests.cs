@@ -7,7 +7,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W32's dekes and one-timers, with skating, checking, puck handling and puck physics. A carrier
+/// The dekes and one-timers, with skating, checking, puck handling and puck physics. A carrier
 /// rushes a defender who checks once in reach: with no deke the carrier loses the puck, a deke
 /// pressed in the sweet spot beats the defender most times, a press too early mostly fails, and
 /// auto-deke beats them less often than a timed press. A shot pressed while a pass is on its way is

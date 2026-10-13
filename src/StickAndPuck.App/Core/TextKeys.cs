@@ -1,6 +1,6 @@
 namespace StickAndPuck.App.Core;
 
-/// <content>The string table keys (W53).</content>
+/// <content>The string table keys.</content>
 public static partial class Text
 {
     /// <summary>Every key in the language files; each is documented with its English text.</summary>

@@ -7,7 +7,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// Whole matches with puck physics and the match rules (W7a): a full regulation match plays out
+/// Whole matches with puck physics and the match rules: a full regulation match plays out
 /// with the right score. Formerly SAP_SCENE=matchtest.
 /// </summary>
 public sealed class MatchTests : CheckedTest
@@ -172,7 +172,7 @@ public sealed class MatchTests : CheckedTest
         Celebrates(w, Side.Away);
     }
 
-    /// <summary>W40: after the horn of a decided game the winners gather and celebrate, the losers slump or leave, then the final.</summary>
+    /// <summary>After the horn of a decided game the winners gather and celebrate, the losers slump or leave, then the final.</summary>
     void Celebrates(World w, Side winner)
     {
         Check(w.Match.Phase == MatchPhase.Stopped && Celebration.Winner(w) == winner.OrNone(), "the horn starts the winners' celebration before the final");
@@ -191,7 +191,7 @@ public sealed class MatchTests : CheckedTest
         Check(w.Match.Phase == MatchPhase.Final && ev.All(e => e is not MatchEnded), "then the match is final, with no second MatchEnd");
     }
 
-    /// <summary>W7b's entry point: a whistle stops the clock and leads to a faceoff at the given dot.</summary>
+    /// <summary>Entry point: a whistle stops the clock and leads to a faceoff at the given dot.</summary>
     [Test]
     public void WhistleAndDot()
     {

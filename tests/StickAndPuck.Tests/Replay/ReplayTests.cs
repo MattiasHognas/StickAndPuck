@@ -12,7 +12,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// Deterministic sim and replay (W67): the maths gives the same bits it gave when the test was
+/// Deterministic sim and replay: the maths gives the same bits it gave when the test was
 /// written, so this machine computes like the others; the seed streams; the replay file's round
 /// trip; and that two AI matches with the same seed play step for step the same, to a checksum
 /// written down from the cloud, while another seed plays a different match. SAP_REPLAYTEST_PRINT=1

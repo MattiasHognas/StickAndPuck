@@ -1,9 +1,7 @@
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// W56: the switches dev scenes and tests turn on a world, which were statics. A new world starts
-/// with the defaults; the next world the screens start keeps the last one's, as the statics did.
-/// </summary>
+/// <summary>The switches dev scenes and tests turn on a world, which were statics. A new world starts
+/// with the defaults; the next world the screens start keeps the last one's, as the statics did.</summary>
 public sealed class WorldSwitches
 {
     /// <summary>Gets or sets the factor on every penalty call chance; tests and SAP_PENALTY_STRICT raise or lower it.</summary>
@@ -27,7 +25,7 @@ public sealed class WorldSwitches
     /// <summary>Gets or sets a value indicating whether AI owner changes are printed (SAP_AI_TRACE=1).</summary>
     public bool AiTrace { get; set; } = Env.Is("SAP_AI_TRACE", "1");
 
-    /// <summary>Gets or sets a hook that sees every AI write as it happens, for the W68 fixtures (a no-op by default).</summary>
+    /// <summary>Gets or sets a hook that sees every AI write as it happens, for the command fixtures (a no-op by default).</summary>
     internal Action<Player, AI.AiIntent> AiWatch { get; set; } = static (_, _) => { };    // nobody is watching: a fixture sets its own hook
 
     /// <summary>Gets or sets a value indicating whether the tactics debug line shows (SAP_TACTICS_LINE=1).</summary>
@@ -61,6 +59,5 @@ public sealed class WorldSwitches
     public bool ArcadeSummary { get; set; }
 
     /// <summary>Gets a copy, for the next world.</summary>
-    /// <returns>The copy.</returns>
     public WorldSwitches Copy() => (WorldSwitches)MemberwiseClone();
 }

@@ -8,8 +8,8 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// The match flow with the light cues (W18): the presets differ, the intro is dim, the lights come
-/// back at the faceoff and a goal flashes. W21: the ice is a cold grey in every preset and the
+/// The match flow with the light cues: the presets differ, the intro is dim, the lights come
+/// back at the faceoff and a goal flashes. The ice is a cold grey in every preset and the
 /// scratches are faint and a shade off it. Formerly SAP_SCENE=lightingtest.
 /// </summary>
 public sealed class LightingTests : CheckedTest
@@ -58,7 +58,7 @@ public sealed class LightingTests : CheckedTest
         Check(!cues.Flashing && cues.Current().Tone == Vector3.One, "the flash ends and the lights settle");
     }
 
-    /// <summary>W21: the preset's ice is a cold, light grey and its scratches are faint and a shade off it.</summary>
+    /// <summary>The preset's ice is a cold, light grey and its scratches are faint and a shade off it.</summary>
     void CheckIce(LightPreset preset)
     {
         var ice = preset.Ice; var scratch = preset.Scratch;

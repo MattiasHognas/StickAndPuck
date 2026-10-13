@@ -3,11 +3,9 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players.Dev;
 
-/// <summary>
-/// W4a test setup, SAP_SCENE=skating: three skaters race from the left blue line area with the stick
+/// <summary>Test setup, SAP_SCENE=skating: three skaters race from the left blue line area with the stick
 /// held flat out, slow (traits 20), average (50) and fast (80), so trait differences show at a
-/// glance. A fourth skater, behind them, is the human's to try every input device with.
-/// </summary>
+/// glance. A fourth skater, behind them, is the human's to try every input device with.</summary>
 public sealed class SkatingScene : IScene
 {
     /// <inheritdoc/>

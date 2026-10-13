@@ -18,13 +18,11 @@ public static class Game
     /// <summary>The fixed update step: 60 Hz.</summary>
     public const float Step = 1f / 60f;
 
-    /// <summary>
-    /// Runs the game. SAP_SCENE picks the scene; SAP_SCREENSHOT=1 saves screenshot.png after one
+    /// <summary>Runs the game. SAP_SCENE picks the scene; SAP_SCREENSHOT=1 saves screenshot.png after one
     /// second of game time and quits, for headless checks. SAP_RECORD saves every frame for a movie.
-    /// W67: SAP_REPLAY plays a replay file (see <see cref="ReplayPlayer"/>); every match the
+    /// SAP_REPLAY plays a replay file (see <see cref="ReplayPlayer"/>); every match the
     /// screens start is recorded (see <see cref="ReplayRecorder"/>). SAP_STEPS=n runs n steps as
-    /// fast as it can without waiting for the screen, then quits.
-    /// </summary>
+    /// fast as it can without waiting for the screen, then quits.</summary>
     public static void Run()
     {
         var clubs = Clubs.LoadAll();
@@ -55,13 +53,13 @@ public static class Game
         {
             loop.Frame(world, systems);
 
-            // W11: a screen started a match or went back to the menus; the new world gets fresh systems
+            // A screen started a match or went back to the menus; the new world gets fresh systems
             if (ScreenFlow.TakeNextWorld().TryGet(out var next))
             {
                 if (replay.Is(p => !p.Live)) break;    // the replayed match is over
                 if (loop.Recorder.TryGet(out var recorder)) recorder.Finish(world);
                 loop.Recorder = ReplayRecorder.Begin(next, "");
-                next.Switches = world.Switches.Copy();    // W56: the scene's switches stay on, as the statics they were did
+                next.Switches = world.Switches.Copy();    // the scene's switches stay on, as the statics they were did
                 (world, systems) = (next, Restart(next, systems));
             }
 
@@ -87,8 +85,6 @@ public static class Game
     }
 
     /// <summary>Runs one fixed step of every system on the world.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="systems">The systems, in order.</param>
     internal static void StepWorld(World world, IReadOnlyList<ISystem> systems)
     {
         DeviceInput.Step(world.Tick);
@@ -144,8 +140,6 @@ public static class Game
         }
 
         /// <summary>Prints the replay's report the first time it is asked for.</summary>
-        /// <param name="world">The world the replay ended on.</param>
-        /// <returns>True when it printed now.</returns>
         public bool ReportOnce(World world)
         {
             if (!Replay.TryGet(out var replay) || reported) return false;

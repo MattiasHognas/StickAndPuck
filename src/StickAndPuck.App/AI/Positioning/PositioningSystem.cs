@@ -5,10 +5,9 @@ using StickAndPuck.App.AI.Dev;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// W6a: where each AI skater skates, by role, in attack and defence, from hockey IQ.
+/// <summary>Where each AI skater skates, by role, in attack and defence, from hockey IQ.
 /// Writes Move and Sprint into the <see cref="Player.Command"/> of every skater with no human
-/// slot (the other buttons are cleared for decisions to fill; <see cref="AiCommand.Base"/>); goalies are W5's.
+/// slot (the other buttons are cleared for decisions to fill; <see cref="AiCommand.Base"/>); goalies are the goalie system's.
 /// <list type="bullet">
 /// <item>Each side's skaters get a role (<see cref="Roles"/>) and the side a phase: attacking when
 /// it has the puck or touched it last, else defending.</item>
@@ -18,18 +17,17 @@ namespace StickAndPuck.App.AI;
 /// <item>Smart positioning: a smart skater reads where the puck is going, follows the play quickly
 /// and finds the exact spot; a poor one trails the play and settles a few metres off it.</item>
 /// <item>Teammates keep a couple of metres apart, so a shape never collapses into a pile.</item>
-/// <item>W22a: with a teammate on the puck, off-puck skaters get open (<see cref="GetOpen"/>), and
+/// <item>With a teammate on the puck, off-puck skaters get open (<see cref="GetOpen"/>), and
 /// in the attacking zone the forwards cycle corner, behind the net and slot while the defence
 /// hold the points (<see cref="Cycle"/>); a cycling carrier skates the puck round the net.</item>
 /// </list>
-/// Decisions (W6b) run next and add passes, shots and checks; see <see cref="Positioning"/>.
-/// </summary>
+/// Decisions run next and add passes, shots and checks; see <see cref="Positioning"/>.</summary>
 internal sealed class PositioningSystem : ISystem
 {
     const float Spacing = 2.4f;       // teammates closer than this push their spots apart
     const float PressureGap = 1.3f;   // how far goal side of the carrier the pressure skater stands
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 1;
 
     readonly Random rng;
@@ -40,7 +38,6 @@ internal sealed class PositioningSystem : ISystem
     }
 
     /// <summary>Initializes the system with its own randomness, so tests repeat.</summary>
-    /// <param name="rng">Randomness for each skater's misjudgement.</param>
     public PositioningSystem(Random rng)
     {
         this.rng = rng;
@@ -48,7 +45,7 @@ internal sealed class PositioningSystem : ISystem
 
     public void Update(World world, float dt)
     {
-        // the shootout (W7c, src/Rules/Overtime) skates its own shooter
+        // the shootout (src/Rules/Overtime) skates its own shooter
         if (world.Match.Phase == MatchPhase.Shootout) return;
         StandInPlay.Before(world, dt);
         if (!Positioning.Drives(world)) return;
@@ -129,13 +126,11 @@ internal sealed class PositioningSystem : ISystem
         if (plan.Job is not (Job.Shape or Job.Support)) { plan.Read = Maybe<Vector2>.None; plan.Open = Maybe<Vector2>.None; }
     }
 
-    /// <summary>
-    /// W22a: the spot an off-puck skater holds. Defending, or with nobody of his own on the puck,
+    /// <summary>The spot an off-puck skater holds. Defending, or with nobody of his own on the puck,
     /// it is his role's spot in the shape. With a teammate on the puck he gets open: around his
     /// cycle station in the attacking zone, or his shape spot elsewhere, he goes where a pass would
     /// get through to a spot worth having (<see cref="GetOpen"/>). Each read is rolled against his
-    /// hockey IQ and lasts a moment before the next, shorter for a smart skater.
-    /// </summary>
+    /// hockey IQ and lasts a moment before the next, shorter for a smart skater.</summary>
     Vector2 OpenSpot(World world, SkaterPlan plan, Player p, Maybe<Player> onPuck, TeamPhase phase, int end, CycleState cycle, Vector2 puckRead)
     {
         var shape = TeamShape.Spot(plan.Role, phase, end, puckRead);
@@ -181,7 +176,7 @@ internal sealed class PositioningSystem : ISystem
     static void Steer(World world, SkaterPlan plan, Player p)
     {
         var at = new Vector2(p.Position.X, p.Position.Z);
-        // W65: since W62 the cages are solid, so a skater whose way runs through a net heads for a
+        // The cages are solid, so a skater whose way runs through a net heads for a
         // post first instead of pushing into the cage, and does not ease off at that post
         var target = Steering.AroundNets(at, plan.Target);
         bool round = target != plan.Target;
@@ -320,10 +315,8 @@ internal sealed class PositioningSystem : ISystem
         return TeamShape.Inside(c, SkatingModel.BodyRadius + 0.2f);
     }
 
-    /// <summary>
-    /// Until decisions (W6b) take over, an AI carrier skates the puck into the slot, slipping
-    /// sideways away from a defender in his path.
-    /// </summary>
+    /// <summary>Until decisions take over, an AI carrier skates the puck into the slot, slipping
+    /// sideways away from a defender in his path.</summary>
     static Vector2 CarryTarget(World world, Player p, int end)
     {
         float pa = end * p.Position.X, pz = p.Position.Z;

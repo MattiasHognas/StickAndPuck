@@ -3,12 +3,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// A game mode on the start screen's "new game" list. Any class implementing this with a
+/// <summary>A game mode on the start screen's "new game" list. Any class implementing this with a
 /// parameterless constructor is found automatically, so playoffs, arcade and versus add their
 /// entry from their own folder. The screens pick the clubs, build the world from the returned
-/// setup with the player's settings and period length, and show the results after the final.
-/// </summary>
+/// setup with the player's settings and period length, and show the results after the final.</summary>
 public interface IGameMode
 {
     /// <summary>Gets the name on the list, in capitals.</summary>
@@ -29,13 +27,10 @@ public interface IGameMode
     /// <summary>Gets a line for the results screen about where the mode stands (lives left, the next opponent), or None.</summary>
     Maybe<string> Status => Maybe<string>.None;
 
-    /// <summary>Gets the team select heading for the given pick (W17 names the player picking).</summary>
-    /// <param name="index">0 for the first pick, 1 for the second.</param>
-    /// <returns>The heading, in capitals.</returns>
+    /// <summary>Gets the team select heading for the given pick (it names the player picking).</summary>
     string PickHeading(int index) => Text.Get(index == 0 ? K.PickYourClub : K.PickOpponent);
 
     /// <summary>Builds the next match. Called when the mode starts, and again for each next game.</summary>
-    /// <param name="start">The clubs, the player's picks and input device.</param>
     /// <returns>The setup, or None when the mode has nothing more to play (the screens go back to the start screen).</returns>
     Maybe<MatchSetup> Setup(GameModeStart start);
 }
@@ -87,8 +82,6 @@ internal static class GameModes
     }
 
     /// <summary>Gets a fresh mode by its type name, as a replay names it.</summary>
-    /// <param name="typeName">The type name; "" (or an unknown name) is a season game.</param>
-    /// <returns>The mode, or None for a season game.</returns>
     public static Maybe<IGameMode> Named(string typeName)
     {
         var type = typeof(GameModes).Assembly.GetTypes().FirstOrDefault(t => string.Equals(t.Name, typeName, StringComparison.Ordinal)

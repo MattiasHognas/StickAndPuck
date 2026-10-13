@@ -5,14 +5,12 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// W67: the keyboard, mouse buttons and gamepads as one fixed step sees them. Every system and
+/// <summary>The keyboard, mouse buttons and gamepads as one fixed step sees them. Every system and
 /// screen reads devices here, never from Raylib, so a match depends only on these frames: the
 /// replay writer saves them with their step and the replay reader plays them back. Game.cs calls
 /// <see cref="Poll"/> once per drawn frame and <see cref="Step"/> before every fixed step. A press
 /// counts on the first step after it, however many frames or steps that takes, so a press is never
-/// lost on a fast screen or doubled on a slow one. Stick axes are rounded to 1/4096.
-/// </summary>
+/// lost on a fast screen or doubled on a slow one. Stick axes are rounded to 1/4096.</summary>
 public static class DeviceInput
 {
     /// <summary>Raylib's gamepad slots.</summary>
@@ -37,7 +35,6 @@ public static class DeviceInput
     public static bool Playing { get; private set; }
 
     /// <summary>Lets a replay supply the frames from now on.</summary>
-    /// <param name="frames">The frame for a step, or None to keep the last one.</param>
     public static void Play(Func<long, Maybe<InputFrame>> frames)
     {
         playback = frames;
@@ -66,7 +63,6 @@ public static class DeviceInput
     }
 
     /// <summary>Takes the frame for one fixed step: the replay's, or the devices' now with the presses noted since the last step.</summary>
-    /// <param name="tick">The step about to run.</param>
     public static void Step(long tick)
     {
         if (Playing)
@@ -107,55 +103,36 @@ public static class DeviceInput
     }
 
     /// <summary>Starts from a given frame, for a replay's first step and for the frame a replay was recorded from.</summary>
-    /// <param name="frame">The frame.</param>
     public static void Set(InputFrame frame)
     {
         Current = frame;
     }
 
     /// <summary>Notes a scripted menu press (SAP_SCREEN_KEYS) on this step's frame, so the replay presses it too.</summary>
-    /// <param name="button">The menu button's name.</param>
     public static void Scripted(string button)
     {
         Current = Current with { MenuPress = button };
     }
 
     /// <summary>Whether a key is held.</summary>
-    /// <param name="key">The key.</param>
-    /// <returns>Whether it is held.</returns>
     public static bool KeyDown(KeyboardKey key) => Array.BinarySearch(Current.Keys, (int)key) >= 0;
 
     /// <summary>Whether a key went down since the last step.</summary>
-    /// <param name="key">The key.</param>
-    /// <returns>Whether it was pressed.</returns>
     public static bool KeyPressed(KeyboardKey key) => Array.BinarySearch(Current.Pressed, (int)key) >= 0;
 
     /// <summary>Whether a mouse button is held.</summary>
-    /// <param name="button">Left, right or middle.</param>
-    /// <returns>Whether it is held.</returns>
     public static bool MouseDown(MouseButton button) => (int)button < 3 && (Current.Mouse & (1 << (int)button)) != 0;
 
     /// <summary>Whether a Raylib gamepad slot holds a pad.</summary>
-    /// <param name="pad">The slot.</param>
-    /// <returns>Whether a pad is there.</returns>
     public static bool PadAvailable(int pad) => Pad(pad).Available;
 
     /// <summary>Whether a pad button is held.</summary>
-    /// <param name="pad">The slot.</param>
-    /// <param name="button">The button.</param>
-    /// <returns>Whether it is held.</returns>
     public static bool PadDown(int pad, GamepadButton button) => Bit(Pad(pad).Down, button);
 
     /// <summary>Whether a pad button went down since the last step.</summary>
-    /// <param name="pad">The slot.</param>
-    /// <param name="button">The button.</param>
-    /// <returns>Whether it was pressed.</returns>
     public static bool PadPressed(int pad, GamepadButton button) => Bit(Pad(pad).Pressed, button);
 
     /// <summary>Gets a pad axis, -1 to 1.</summary>
-    /// <param name="pad">The slot.</param>
-    /// <param name="axis">The axis.</param>
-    /// <returns>The axis.</returns>
     public static float PadAxis(int pad, GamepadAxis axis)
     {
         var p = Pad(pad);
@@ -178,10 +155,8 @@ public sealed record PadFrame(bool Available, uint Down, uint Pressed, float[] A
     public static PadFrame None { get; } = new(false, 0, 0, new float[DeviceInput.Axes]);
 }
 
-/// <summary>
-/// Every device on one step, as <see cref="DeviceInput"/> hands it to the game and the replay file
-/// stores it, one line per change.
-/// </summary>
+/// <summary>Every device on one step, as <see cref="DeviceInput"/> hands it to the game and the replay file
+/// stores it, one line per change.</summary>
 /// <param name="Keys">Held keys, sorted.</param>
 /// <param name="Pressed">Keys that went down since the last step, sorted.</param>
 /// <param name="Mouse">Held mouse buttons: bit 0 left, 1 right, 2 middle.</param>
@@ -193,7 +168,6 @@ public sealed record InputFrame(int[] Keys, int[] Pressed, byte Mouse, PadFrame[
     public static InputFrame Empty { get; } = new([], [], 0, [PadFrame.None, PadFrame.None, PadFrame.None, PadFrame.None], "");
 
     /// <summary>Gets this frame one step later with nothing new pressed: the same keys, buttons and sticks held.</summary>
-    /// <returns>The frame.</returns>
     public InputFrame Held()
     {
         if (Pressed.Length == 0 && MenuPress.Length == 0 && Pads.All(p => p.Pressed == 0)) return this;
@@ -201,7 +175,6 @@ public sealed record InputFrame(int[] Keys, int[] Pressed, byte Mouse, PadFrame[
     }
 
     /// <summary>Writes the frame as one line of text: "k:32,265 p:32 m:1 g0:down/pressed/x,y,... s:pause", empty parts left out.</summary>
-    /// <returns>The text.</returns>
     public string Write()
     {
         var b = new StringBuilder();
@@ -221,8 +194,6 @@ public sealed record InputFrame(int[] Keys, int[] Pressed, byte Mouse, PadFrame[
     }
 
     /// <summary>Reads a frame <see cref="Write"/> wrote.</summary>
-    /// <param name="text">The text.</param>
-    /// <returns>The frame.</returns>
     public static InputFrame Read(string text)
     {
         int[] keys = [], pressed = [];

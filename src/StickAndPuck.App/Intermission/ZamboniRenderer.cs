@@ -6,11 +6,9 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Intermission;
 
-/// <summary>
-/// Draws A7's Zamboni (art/zamboni/zamboni.glb: one mesh, its 64x64 texture embedded, no clips)
+/// <summary>Draws A7's Zamboni (art/zamboni/zamboni.glb: one mesh, its 64x64 texture embedded, no clips)
 /// with the toon shader like the players, and in the mask pass with its own id so it gets its own
-/// outline. Forward is +z, so heading 0 faces the camera; the origin is the wheelbase centre on the ice.
-/// </summary>
+/// outline. Forward is +z, so heading 0 faces the camera; the origin is the wheelbase centre on the ice.</summary>
 internal sealed class ZamboniRenderer : IDisposable
 {
     /// <summary>The model, next to the other art.</summary>

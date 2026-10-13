@@ -42,14 +42,10 @@ public enum OvertimeRule
 }
 
 /// <summary>One human input slot: which device, and which club it plays for.</summary>
-/// <param name="Device">The device read for this slot.</param>
-/// <param name="Side">The club this slot controls.</param>
 public sealed record InputSlot(InputDevice Device, Side Side);
 
-/// <summary>
-/// Everything needed to start a match, so season, arcade and player vs player modes all start one
-/// the same way: the two clubs, who is human, period length, the overtime rule and the rules (W44).
-/// </summary>
+/// <summary>Everything needed to start a match, so season, arcade and player vs player modes all start one
+/// the same way: the two clubs, who is human, period length, the overtime rule and the rules.</summary>
 public sealed record MatchSetup
 {
     /// <summary>The number of human input slots. Two from the start, so player vs player needs no rework.</summary>
@@ -74,21 +70,17 @@ public sealed record MatchSetup
     /// <summary>Gets how a tie after regulation is settled.</summary>
     public OvertimeRule Overtime { get; init; } = OvertimeRule.Shl;
 
-    /// <summary>Gets the mode's own overtime rules (W19), or None to play the format <see cref="Overtime"/> names.</summary>
+    /// <summary>Gets the mode's own overtime rules, or None to play the format <see cref="Overtime"/> names.</summary>
     public Maybe<OvertimeFormat> OvertimeFormat { get; init; }
 
-    /// <summary>Gets the rules the match is played by (W44), resolved when it starts; systems read their switches here.</summary>
+    /// <summary>Gets the rules the match is played by, resolved when it starts; systems read their switches here.</summary>
     public RuleSet Rules { get; init; } = RuleSet.Shl;
 
-    /// <summary>
-    /// This setup played by a rule set (W44): the set goes on <see cref="Rules"/>, and its overtime
+    /// <summary>This setup played by a rule set: the set goes on <see cref="Rules"/>, and its overtime
     /// switch picks the format. A setup whose mode pinned its own <see cref="OvertimeFormat"/> is a
-    /// playoff game (W19) and takes <see cref="RuleSet.PlayoffOvertime"/>, keeping the mode's own
+    /// playoff game and takes <see cref="RuleSet.PlayoffOvertime"/>, keeping the mode's own
     /// format for sudden death; every other game takes <see cref="RuleSet.Overtime"/>. A setup
-    /// whose tie stands (<see cref="OvertimeRule.None"/>, the test scenes) keeps it.
-    /// </summary>
-    /// <param name="rules">The resolved rules.</param>
-    /// <returns>The setup to start.</returns>
+    /// whose tie stands (<see cref="OvertimeRule.None"/>, the test scenes) keeps it.</summary>
     public MatchSetup WithRules(RuleSet rules)
     {
         var setup = this with { Rules = rules };
@@ -110,8 +102,6 @@ public sealed record MatchSetup
     }
 
     /// <summary>Gets the club playing on the given side.</summary>
-    /// <param name="side">Home or away.</param>
-    /// <returns>The club.</returns>
     public ClubData Club(Side side)
     {
         return side == Side.Home ? Home : Away;

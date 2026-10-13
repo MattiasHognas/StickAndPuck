@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- W52: the former SAP_SCENE self-tests, run with dotnet test (TUnit on Microsoft.Testing.Platform) -->
+  <!-- The former SAP_SCENE self-tests, run with dotnet test (TUnit on Microsoft.Testing.Platform) -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net11.0</TargetFramework>

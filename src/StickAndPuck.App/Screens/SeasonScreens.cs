@@ -7,12 +7,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// W33: the season stats page, opened between games from the results, the table or the bracket.
+/// <summary>The season stats page, opened between games from the results, the table or the bracket.
 /// Left and right on SHOW pick points, goals, assists, hits, goalies, player-of-the-game stars or
 /// the human's own club; GAMES switches between the regular season and the playoffs once they run.
-/// The latest player of the game sits underneath. Reads W25's <see cref="SeasonStats"/>.
-/// </summary>
+/// The latest player of the game sits underneath. Reads <see cref="SeasonStats"/>.</summary>
 internal sealed class SeasonStatsScreen : MenuScreen
 {
     const int PanelW = 440, Line = 11, Rows = 10;
@@ -33,8 +31,6 @@ internal sealed class SeasonStatsScreen : MenuScreen
     }
 
     /// <summary>Shows one view, for the headless captures.</summary>
-    /// <param name="name">The view's name, as on the SHOW row.</param>
-    /// <returns>This screen.</returns>
     public SeasonStatsScreen Showing(string name)
     {
         int i = Array.FindIndex(Views, v => string.Equals(v, name, StringComparison.OrdinalIgnoreCase) || string.Equals(Text.Get(v), name, StringComparison.OrdinalIgnoreCase));
@@ -140,13 +136,9 @@ internal sealed class SeasonStatsScreen : MenuScreen
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
 }
 
-/// <summary>
-/// W33: a game settled with "sim this game" (W26's <see cref="SeasonSession.SimCurrentGame"/>):
+/// <summary>A game settled with "sim this game" (<see cref="SeasonSession.SimCurrentGame"/>):
 /// the stage, both crests and the score with how it was decided, then the next step. When the sim
-/// decided the final, CHAMPIONS opens the trophy screen.
-/// </summary>
-/// <param name="game">The game simmed.</param>
-/// <param name="crowned">True when this game crowned the champion.</param>
+/// decided the final, CHAMPIONS opens the trophy screen.</summary>
 internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScreen
 {
     const int PanelW = 300;
@@ -189,11 +181,9 @@ internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScree
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
 }
 
-/// <summary>
-/// W33: the trophy screen. For the SHL champion (after the final, played or simmed, and from the
+/// <summary>The trophy screen. For the SHL champion (after the final, played or simmed, and from the
 /// bracket) the cup with the champion's crest, the final's score and the season's award winners;
-/// for an arcade champion the cup, the run and its place on the best runs board.
-/// </summary>
+/// for an arcade champion the cup, the run and its place on the best runs board.</summary>
 internal sealed class TrophyScreen : MenuScreen
 {
     const int PanelW = 400, Line = 12;
@@ -214,7 +204,6 @@ internal sealed class TrophyScreen : MenuScreen
     }
 
     /// <summary>The SHL champion of the season being played.</summary>
-    /// <returns>The screen.</returns>
     public static TrophyScreen Season()
     {
         var clubs = ScreenFlow.Clubs;
@@ -248,8 +237,6 @@ internal sealed class TrophyScreen : MenuScreen
     }
 
     /// <summary>An arcade run won by beating every club.</summary>
-    /// <param name="run">The run.</param>
-    /// <returns>The screen.</returns>
     public static TrophyScreen Arcade(ArcadeRun run)
     {
         var clubs = ScreenFlow.Clubs;
@@ -332,11 +319,9 @@ internal sealed class TrophyScreen : MenuScreen
     static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
 }
 
-/// <summary>
-/// W33: the arcade best runs board (W25's <see cref="ArcadeRun.Records"/>, kept across runs in
+/// <summary>The arcade best runs board (<see cref="ArcadeRun.Records"/>, kept across runs in
 /// arcade.json): place, club, rule, how far the run got, losses, goals and its top scorer, the run
-/// just finished in gold. Opened after a run ends and from the new game list.
-/// </summary>
+/// just finished in gold. Opened after a run ends and from the new game list.</summary>
 internal sealed class ArcadeBoardScreen : MenuScreen
 {
     const int PanelW = 460, Line = 12;
@@ -347,7 +332,6 @@ internal sealed class ArcadeBoardScreen : MenuScreen
     public override IReadOnlyList<MenuItem> Items() => [new MenuItem(Text.Get(K.Back), Back)];
 
     /// <summary>Gets a value indicating whether there is a board to show (any run ever finished). Reads the save.</summary>
-    /// <returns>True when a run is on the board.</returns>
     public static bool Any() => Board().Records.Count > 0;
 
     /// <inheritdoc/>

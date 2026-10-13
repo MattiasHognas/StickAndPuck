@@ -5,11 +5,9 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// The playoff bracket of the season being played (W16b's <see cref="PlayoffState"/>): one column
+/// <summary>The playoff bracket of the season being played (<see cref="PlayoffState"/>): one column
 /// per round, each series as two seeds with their wins, the human's club in gold and series losers
-/// greyed, and the champion or the human's next game underneath. Enter plays it.
-/// </summary>
+/// greyed, and the champion or the human's next game underneath. Enter plays it.</summary>
 internal sealed class BracketScreen : MenuScreen
 {
     const int PanelW = 468, Line = 11, Column = 114;

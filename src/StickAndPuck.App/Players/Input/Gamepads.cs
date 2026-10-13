@@ -5,23 +5,19 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W38: which Raylib gamepad slots hold a pad. "Gamepad 1" is the first connected pad and
+/// <summary>Which Raylib gamepad slots hold a pad. "Gamepad 1" is the first connected pad and
 /// "gamepad 2" the second, whatever slot Raylib put them in, so a pad that lands on slot 2 (after
 /// a replug, or behind a joystick-like device that took slot 0) still plays. Pads plugged in after
 /// start are picked up on the next step. Extra SDL mappings for pads Raylib does not know are read
 /// once from SDL_GAMECONTROLLERCONFIG and from gamecontrollerdb.txt next to the game or in the
-/// settings folder.
-/// </summary>
+/// settings folder.</summary>
 public static class Gamepads
 {
     /// <summary>Raylib's number of gamepad slots.</summary>
     public const int MaxSlots = 4;
 
-    /// <summary>
-    /// Mappings shipped with the game for pads missing from Raylib's built-in list, in SDL format.
-    /// Razer Raiju Ultimate Wired (1532:1004) runs on hid-generic on Linux with the PS4 HID layout.
-    /// </summary>
+    /// <summary>Mappings shipped with the game for pads missing from Raylib's built-in list, in SDL format.
+    /// Razer Raiju Ultimate Wired (1532:1004) runs on hid-generic on Linux with the PS4 HID layout.</summary>
     const string BuiltInMappings =
         "03000000321500000410000000010000,Razer Raiju Ultimate Wired,a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:a3,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,righttrigger:a4,rightx:a2,righty:a5,start:b9,x:b0,y:b3,platform:Linux,\n";
 
@@ -33,20 +29,17 @@ public static class Gamepads
     public static bool Logging { get; set; }
 
     /// <summary>Gets the Raylib slots that hold a pad now, lowest first.</summary>
-    /// <returns>The slots; empty when no pad is connected or the window is not open.</returns>
     public static IReadOnlyList<int> Connected()
     {
         if (!IsWindowReady()) return [];
         Refresh();
         var slots = new List<int>(MaxSlots);
         for (int slot = 0; slot < MaxSlots; slot++)
-            if (DeviceInput.PadAvailable(slot)) slots.Add(slot);    // W67: as this step's frame has it, so a replay finds the same pads
+            if (DeviceInput.PadAvailable(slot)) slots.Add(slot);    // as this step's frame has it, so a replay finds the same pads
         return slots;
     }
 
     /// <summary>Gets the Raylib slot of the n-th connected pad.</summary>
-    /// <param name="index">0 for the first pad, 1 for the second.</param>
-    /// <returns>The slot, or -1 when fewer pads are connected.</returns>
     public static int Slot(int index)
     {
         var slots = Connected();
@@ -54,20 +47,14 @@ public static class Gamepads
     }
 
     /// <summary>Gets the name of the n-th connected pad, as the settings and versus screens show it.</summary>
-    /// <param name="index">0 for the first pad, 1 for the second.</param>
-    /// <returns>The pad's name, or None when it is not connected.</returns>
     public static Maybe<string> Name(int index)
     {
         int slot = Slot(index);
         return slot < 0 ? Maybe<string>.None : SlotName(slot);
     }
 
-    /// <summary>
-    /// Gets how a device reads on a screen: KEYBOARD, OFF, the pad's name cut to fit, or
-    /// "NO GAMEPAD 1" while that pad is not connected.
-    /// </summary>
-    /// <param name="device">The device.</param>
-    /// <returns>The label, in capitals.</returns>
+    /// <summary>Gets how a device reads on a screen: KEYBOARD, OFF, the pad's name cut to fit, or
+    /// "NO GAMEPAD 1" while that pad is not connected.</summary>
     public static string Label(InputDevice device)
     {
         const int MaxName = 16;
@@ -80,8 +67,6 @@ public static class Gamepads
     }
 
     /// <summary>Gets the name Raylib reports for a slot.</summary>
-    /// <param name="slot">The Raylib slot.</param>
-    /// <returns>The name, or "GAMEPAD" when Raylib has none.</returns>
     public static string SlotName(int slot)
     {
         string name = IsGamepadAvailable(slot) ? GetGamepadName_(slot) : string.Empty;

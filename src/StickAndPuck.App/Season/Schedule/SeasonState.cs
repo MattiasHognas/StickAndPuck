@@ -2,13 +2,11 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// A whole regular season: the clubs, the human's club, the 52-round schedule and every result so
+/// <summary>A whole regular season: the clubs, the human's club, the 52-round schedule and every result so
 /// far. This is exactly what the save file holds; the table is worked out from the results. The
 /// human's club plays its game of each round; the other games of that round are settled by
-/// <see cref="QuickSim"/> when the human's game ends. W16b reads <see cref="IsOver"/> and
-/// <see cref="Table"/> to seed the playoffs; W11 shows <see cref="Table"/> and <see cref="NextGame"/>.
-/// </summary>
+/// <see cref="QuickSim"/> when the human's game ends. The playoffs read <see cref="IsOver"/> and
+/// <see cref="Table"/> to seed them; the screens show <see cref="Table"/> and <see cref="NextGame"/>.</summary>
 public sealed class SeasonState
 {
     /// <summary>The save format version; bump it when the shape changes.</summary>
@@ -35,13 +33,13 @@ public sealed class SeasonState
     /// <summary>Gets or sets when the season was last saved (UTC).</summary>
     public DateTime Saved { get; set; }
 
-    /// <summary>Gets or sets the playoffs (W16b), None until the regular season is over and they start.</summary>
+    /// <summary>Gets or sets the playoffs, None until the regular season is over and they start.</summary>
     public Maybe<PlayoffState> Playoffs { get; set; }
 
-    /// <summary>Gets or sets the rules every game of this season plays (W44), stored when its first game starts so a later settings change never alters a running season; None in a save from before W44 until then.</summary>
+    /// <summary>Gets or sets the rules every game of this season plays, stored when its first game starts so a later settings change never alters a running season; None in an older save until then.</summary>
     public Maybe<RuleSet> Rules { get; set; }
 
-    /// <summary>Gets or sets the player stats and records (W25), filled as games are played or settled.</summary>
+    /// <summary>Gets or sets the player stats and records, filled as games are played or settled.</summary>
     public SeasonStats Stats { get; set; } = new();
 
     /// <summary>Gets the number of rounds.</summary>
@@ -60,10 +58,6 @@ public sealed class SeasonState
     public IReadOnlyList<StandingRow> Table => Standings.Compute(Clubs, Games);
 
     /// <summary>Starts a new season for every club, with the human on one of them.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="userClub">The id of the human's club.</param>
-    /// <param name="seed">Shuffles the schedule and the simulated games.</param>
-    /// <returns>The new season, nothing played.</returns>
     public static SeasonState New(IReadOnlyList<ClubData> clubs, string userClub, int seed)
     {
         var ids = clubs.Select(c => c.Id).ToList();
@@ -79,36 +73,25 @@ public sealed class SeasonState
     }
 
     /// <summary>Gets the games of one round.</summary>
-    /// <param name="round">The round, from 0.</param>
-    /// <returns>Those games.</returns>
     public IEnumerable<Fixture> Round(int round)
     {
         return Games.Where(g => g.Round == round);
     }
 
     /// <summary>Gets the games one club has played, oldest first.</summary>
-    /// <param name="clubId">The club id.</param>
-    /// <returns>Those games.</returns>
     public IEnumerable<Fixture> PlayedBy(string clubId)
     {
         return Games.Where(g => g.Played && g.Involves(clubId));
     }
 
     /// <summary>Records a game's result.</summary>
-    /// <param name="number">The game's <see cref="Fixture.Number"/>.</param>
-    /// <param name="result">The result.</param>
     public void Record(int number, FixtureResult result)
     {
         Games[number] = Games[number] with { Result = result };
     }
 
-    /// <summary>
-    /// Settles every unplayed game before and in the given round that the human does not play.
-    /// Called when the human's game of that round ends.
-    /// </summary>
-    /// <param name="round">The round just played.</param>
-    /// <param name="clubs">Every club, for their traits.</param>
-    /// <returns>The games settled.</returns>
+    /// <summary>Settles every unplayed game before and in the given round that the human does not play.
+    /// Called when the human's game of that round ends.</summary>
     public int SimulateUpTo(int round, IReadOnlyList<ClubData> clubs)
     {
         var byId = clubs.ToDictionary(c => c.Id, StringComparer.Ordinal);
@@ -123,21 +106,13 @@ public sealed class SeasonState
     }
 
     /// <summary>Gets the seed for one simulated game: fixed per season and game, the same on every machine and run.</summary>
-    /// <param name="number">The game's number.</param>
-    /// <returns>The seed.</returns>
     public int GameSeed(int number)
     {
         return unchecked((Seed * 1_000_003) + (number * 7_919));
     }
 
-    /// <summary>
-    /// The match setup for a game, so the season starts a match the same way exhibition, arcade and
-    /// versus do: SHL rules, keyboard and mouse on the human's club.
-    /// </summary>
-    /// <param name="game">The game.</param>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="device">The human's input device.</param>
-    /// <returns>The setup.</returns>
+    /// <summary>The match setup for a game, so the season starts a match the same way exhibition, arcade and
+    /// versus do: SHL rules, keyboard and mouse on the human's club.</summary>
     public MatchSetup SetupFor(Fixture game, IReadOnlyList<ClubData> clubs, InputDevice device = InputDevice.KeyboardMouse)
     {
         ClubData Find(string id) => clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).TryGet(out var club) ? club : throw new InvalidOperationException($"club {id} from the save has no data file");

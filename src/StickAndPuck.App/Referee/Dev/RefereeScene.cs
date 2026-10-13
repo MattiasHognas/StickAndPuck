@@ -4,11 +4,9 @@ using StickAndPuck.App.Rules.Dev;
 
 namespace StickAndPuck.App.Referee.Dev;
 
-/// <summary>
-/// SAP_SCENE=referee: the match demo (shots on goal in turn, short periods, the score line) with a
+/// <summary>SAP_SCENE=referee: the match demo (shots on goal in turn, short periods, the score line) with a
 /// short intro and the referee already beside the centre dot, so a screenshot after one second shows
-/// it set for the opening drop with both lineups in place. Afterwards it runs like matchdemo.
-/// </summary>
+/// it set for the opening drop with both lineups in place. Afterwards it runs like matchdemo.</summary>
 public sealed class RefereeScene : IScene
 {
     /// <inheritdoc/>

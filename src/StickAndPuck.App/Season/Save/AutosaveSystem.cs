@@ -2,7 +2,7 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>W16a: writes the season save as soon as a season game's result is in, so quitting after the final keeps it.</summary>
+/// <summary>Writes the season save as soon as a season game's result is in, so quitting after the final keeps it.</summary>
 internal sealed class AutosaveSystem : ISystem
 {
     public bool RunsWhilePaused => true;

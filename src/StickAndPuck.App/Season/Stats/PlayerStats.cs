@@ -4,10 +4,8 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// One player's totals over a season, a playoff run or an arcade run. A player is known by club
-/// id and jersey number, so the line survives a restart and a roster edit that keeps the number.
-/// </summary>
+/// <summary>One player's totals over a season, a playoff run or an arcade run. A player is known by club
+/// id and jersey number, so the line survives a restart and a roster edit that keeps the number.</summary>
 public sealed class PlayerStats
 {
     /// <summary>Gets or sets the club id.</summary>
@@ -56,16 +54,12 @@ public sealed class PlayerStats
     public string Label => $"#{Number} {Name}";
 
     /// <summary>Gets a value indicating whether this line is for the given player.</summary>
-    /// <param name="club">The club id.</param>
-    /// <param name="number">The jersey number.</param>
-    /// <returns>True when it is.</returns>
     public bool Is(string club, int number)
     {
         return Number == number && string.Equals(Club, club, StringComparison.Ordinal);
     }
 
     /// <summary>Adds a match's line to this one.</summary>
-    /// <param name="line">The match line.</param>
     public void Add(MatchStatLine line)
     {
         if (line.Played) Games++;
@@ -123,10 +117,6 @@ public sealed class MatchStatLine
     public string Label => $"#{Number} {Name}";
 
     /// <summary>A line for a roster player, nothing done yet.</summary>
-    /// <param name="club">The club id.</param>
-    /// <param name="side">The club side in the match.</param>
-    /// <param name="player">The roster entry.</param>
-    /// <returns>The line.</returns>
     public static MatchStatLine For(string club, Side side, PlayerData player)
     {
         return new MatchStatLine { Club = club, Side = side, Number = player.Number, Name = player.LastName, Position = player.Position };
@@ -156,11 +146,9 @@ public sealed record PlayerOfGameAward(string Game, string Home, string Away, in
     public string Summary => Saves > 0 && Goals + Assists == 0 ? Text.Format(K.SummarySaves, Saves) : Text.Format(K.SummaryPoints, Goals, Assists);
 }
 
-/// <summary>
-/// Every player's totals over a run of games, and the leaders. W33's leaders page reads
+/// <summary>Every player's totals over a run of games, and the leaders. The leaders page reads
 /// <see cref="Leaders(int)"/> and <see cref="Goalies"/>; the season keeps one of these for the regular
-/// season and one for the playoffs, the arcade run one per run.
-/// </summary>
+/// season and one for the playoffs, the arcade run one per run.</summary>
 public sealed class StatTable
 {
     /// <summary>Gets or sets every player with a line, in no particular order.</summary>
@@ -170,11 +158,6 @@ public sealed class StatTable
     public int GamesCredited { get; set; }
 
     /// <summary>Gets the line for a player, adding an empty one if needed.</summary>
-    /// <param name="club">The club id.</param>
-    /// <param name="number">The jersey number.</param>
-    /// <param name="name">The last name, for a new line.</param>
-    /// <param name="position">The position, for a new line.</param>
-    /// <returns>The line.</returns>
     public PlayerStats Line(string club, int number, string name, PlayingPosition position)
     {
         if (Players.FirstOrNone(p => p.Is(club, number)).TryGet(out var line)) return line;
@@ -184,16 +167,12 @@ public sealed class StatTable
     }
 
     /// <summary>Gets a player's line, or None when they have none yet.</summary>
-    /// <param name="club">The club id.</param>
-    /// <param name="number">The jersey number.</param>
-    /// <returns>The line or None.</returns>
     public Maybe<PlayerStats> Find(string club, int number)
     {
         return Players.FirstOrNone(p => p.Is(club, number));
     }
 
     /// <summary>Adds a match's lines to the totals.</summary>
-    /// <param name="sheet">The match.</param>
     public void Add(MatchStatSheet sheet)
     {
         foreach (var line in sheet.Lines) Line(line.Club, line.Number, line.Name, line.Position).Add(line);
@@ -202,14 +181,9 @@ public sealed class StatTable
     }
 
     /// <summary>Gets the scoring leaders of every club: by points, then goals, then fewer games, then name.</summary>
-    /// <param name="count">How many.</param>
-    /// <returns>The leaders, best first.</returns>
     public IReadOnlyList<PlayerStats> Leaders(int count = 10) => Leaders(count, Maybe<string>.None);
 
     /// <summary>Gets the scoring leaders: by points, then goals, then fewer games, then name.</summary>
-    /// <param name="count">How many.</param>
-    /// <param name="club">Only this club's players, or None for every club.</param>
-    /// <returns>The leaders, best first.</returns>
     public IReadOnlyList<PlayerStats> Leaders(int count, Maybe<string> club)
     {
         return Players.Where(p => !p.IsGoalie && club.Select(only => string.Equals(p.Club, only, StringComparison.Ordinal)).Or(true) && p.Points > 0)
@@ -218,8 +192,6 @@ public sealed class StatTable
     }
 
     /// <summary>Gets the goal scorers, most goals first.</summary>
-    /// <param name="count">How many.</param>
-    /// <returns>The scorers.</returns>
     public IReadOnlyList<PlayerStats> Scorers(int count = 10)
     {
         return Players.Where(p => !p.IsGoalie && p.Goals > 0)
@@ -228,8 +200,6 @@ public sealed class StatTable
     }
 
     /// <summary>Gets the goalies, most saves first.</summary>
-    /// <param name="count">How many.</param>
-    /// <returns>The goalies.</returns>
     public IReadOnlyList<PlayerStats> Goalies(int count = 10)
     {
         return Players.Where(p => p.IsGoalie && p.Games > 0)
@@ -238,8 +208,6 @@ public sealed class StatTable
     }
 
     /// <summary>Gets the players most often player of the game.</summary>
-    /// <param name="count">How many.</param>
-    /// <returns>The players, most awards first.</returns>
     public IReadOnlyList<PlayerStats> Stars(int count = 10)
     {
         return Players.Where(p => p.Stars > 0)

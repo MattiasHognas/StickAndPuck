@@ -11,8 +11,8 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// Fatigue, line changes and the goalie swap (W13): tired lines slow down and change, and the backup
-/// goalie comes in after the trigger; and W23's pulled goalie: the extra attacker comes on and the
+/// Fatigue, line changes and the goalie swap: tired lines slow down and change, and the backup
+/// goalie comes in after the trigger; and the pulled goalie: the extra attacker comes on and the
 /// goalie is back at the next stoppage. Formerly SAP_SCENE=linestest.
 /// </summary>
 public sealed class LinesTests : CheckedTest
@@ -367,7 +367,7 @@ public sealed class LinesTests : CheckedTest
     }
 
     /// <summary>
-    /// W49: home dumps the puck from its own half over the away goal line and icing is called. Both
+    /// Home dumps the puck from its own half over the away goal line and icing is called. Both
     /// clubs' units are tired and home asks for a change while play is stopped: under SHL and NHL
     /// home faces off with the same five skaters and away changes; under Arcade both change. After
     /// the drop the hold is over and home's next stoppage changes again.
@@ -414,7 +414,7 @@ public sealed class LinesTests : CheckedTest
         Check(home.TrueForAll(p => !p.OnIce), $"{preset}: at the next stoppage the tired icing club changes");
     }
 
-    /// <summary>W49: home is mid-change on the fly when it ices the puck; the change stops where it is and nobody else comes on.</summary>
+    /// <summary>Home is mid-change on the fly when it ices the puck; the change stops where it is and nobody else comes on.</summary>
     [Test]
     public void HeldChangeOnTheFly()
     {

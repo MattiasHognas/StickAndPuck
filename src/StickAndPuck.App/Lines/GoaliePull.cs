@@ -6,33 +6,25 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Lines;
 
-/// <summary>
-/// W23: pulling the goalie for an extra attacker. A club pulls its goalie when a penalty call is
+/// <summary>Pulling the goalie for an extra attacker. A club pulls its goalie when a penalty call is
 /// delayed against the other club (the whistle goes as soon as they touch the puck, so the net is
 /// safe), and, trailing by a goal or two late in the last period of regulation, to press for the
 /// equaliser. AI clubs do both by themselves; a club with a human on it pulls for a delayed call
 /// by itself and otherwise on the button (G on the keyboard, back on a gamepad), which also
 /// brings the goalie back. The goalie comes back at the next whistle, which covers a goal at
 /// either end. <see cref="LinesSystem"/> runs <see cref="Update"/> each step; the penalties
-/// (W14) count an extra attacker when they balance the skaters at a faceoff.
-/// </summary>
+/// count an extra attacker when they balance the skaters at a faceoff.</summary>
 public static class GoaliePull
 {
     static readonly Side[] BothSides = [Side.Home, Side.Away];
 
     /// <summary>Gets whether a club has pulled its goalie.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>True while the net is empty.</returns>
     public static bool IsPulled(World world, Side side)
     {
         return Bench.Board(world).PulledGoalie[(int)side].HasValue;
     }
 
     /// <summary>Gets the extra attacker who came on for the goalie, if he is still on the ice.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>The skater, or None.</returns>
     public static Maybe<Player> ExtraAttacker(World world, Side side)
     {
         var b = Bench.Board(world);
@@ -41,21 +33,14 @@ public static class GoaliePull
     }
 
     /// <summary>Gets how long before the end of the last period the AI pulls its goalie when trailing: two minutes, shortened with the period.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>Game seconds.</returns>
     public static float PullSeconds(World world)
     {
         return LinesTuning.PullSeconds * world.Setup.PeriodSeconds / PenaltyTuning.FullPeriodSeconds;
     }
 
-    /// <summary>
-    /// Pulls a club's goalie: he leaves for the bench and the freshest forward on the bench comes
+    /// <summary>Pulls a club's goalie: he leaves for the bench and the freshest forward on the bench comes
     /// on through the bench door as the extra attacker. Nothing happens unless play is running
-    /// with the goalie on the ice.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>True if the goalie was pulled.</returns>
+    /// with the goalie on the ice.</summary>
     public static bool Pull(World world, Side side)
     {
         if (!world.Setup.Rules.GoaliePull || !MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || IsPulled(world, side)) return false;
@@ -71,9 +56,6 @@ public static class GoaliePull
     }
 
     /// <summary>Brings a pulled goalie back into his crease and sends the extra attacker off, if he is still out there.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>True if the goalie came back.</returns>
     public static bool Return(World world, Side side)
     {
         var b = Bench.Board(world);
@@ -95,7 +77,6 @@ public static class GoaliePull
     }
 
     /// <summary>One step: the goalie comes back at any stoppage; in play the AI, a delayed call or the button pulls him.</summary>
-    /// <param name="world">The match.</param>
     internal static void Update(World world)
     {
         var m = world.Match;

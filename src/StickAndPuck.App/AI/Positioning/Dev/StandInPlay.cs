@@ -9,14 +9,11 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.AI.Dev;
 
-/// <summary>
-/// Only for the positioning scenes (SAP_SCENE=positioning and positioningtest): a crude stand-in
+/// <summary>Only for the positioning scenes (SAP_SCENE=positioning and positioningtest): a crude stand-in
 /// for the parts of a match that other tasks own and are not in yet, so 5 on 5 can run a whole
-/// period. AI carriers shoot from the slot and pass when pressed or after a while (W6b replaces
-/// this), a dead puck is whistled for a faceoff, and the camera follows the puck (W9). When W7a's
+/// period. AI carriers shoot from the slot and pass when pressed or after a while, a dead puck is whistled for a faceoff, and the camera follows the puck. When the
 /// match flow runs it keeps the clock, goals and faceoffs; without it the stand-in restarts after
-/// goals and runs its own clock. It never runs in a normal match.
-/// </summary>
+/// goals and runs its own clock. It never runs in a normal match.</summary>
 internal sealed class StandInPlay
 {
     readonly Random dice;
@@ -48,14 +45,9 @@ internal sealed class StandInPlay
     public int DeadPucks { get; private set; }
 
     /// <summary>Gets a value indicating whether the stand-in runs on a world.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>Whether it does.</returns>
     public static bool Running(World world) => world.Dev.StandIn.HasValue;
 
     /// <summary>Turns the stand-in on for a world and drops the puck at centre ice.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="seed">Seed for the stand-in's choices, so tests repeat.</param>
-    /// <returns>The stand-in.</returns>
     public static StandInPlay Start(World world, int seed = 3)
     {
         var standIn = new StandInPlay(seed, world.Setup.PeriodSeconds);
@@ -65,8 +57,6 @@ internal sealed class StandInPlay
     }
 
     /// <summary>Runs the clock, restarts after goals and dead pucks, and moves the camera. Called first in positioning's update.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="dt">The step.</param>
     public static void Before(World world, float dt)
     {
         if (world.Dev.StandIn.TryGet(out var standIn)) standIn.Run(world, dt);
@@ -119,8 +109,6 @@ internal sealed class StandInPlay
     }
 
     /// <summary>Puts the skaters in their faceoff spots around a dot and drops the puck after a moment.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="dot">The faceoff dot.</param>
     public static void Faceoff(World world, Vector3 dot)
     {
         foreach (var p in world.Players)
@@ -133,7 +121,7 @@ internal sealed class StandInPlay
             p.Position = new Vector3(spot.X, 0, spot.Y);
             p.Velocity = Vector3.Zero;
             p.Heading = end > 0 ? MathF.PI / 2 : -MathF.PI / 2;
-            if (p.Slot < 0) p.Command = default;   // W68: a human's command is the input system's, never the AI's
+            if (p.Slot < 0) p.Command = default;   // a human's command is the input system's, never the AI's
             p.Begin(PlayerAction.None);
         }
         var pk = world.Puck;
@@ -159,7 +147,6 @@ internal sealed class StandInPlay
     }
 
     /// <summary>Draws a small marker where each AI skater is heading (SAP_AI_TARGETS=1).</summary>
-    /// <param name="world">The match.</param>
     public static void DrawTargets(World world)
     {
         if (!world.Dev.StandIn.TryGet(out var standIn) || !standIn.ShowTargets) return;
@@ -173,7 +160,6 @@ internal sealed class StandInPlay
     }
 
     /// <summary>Draws the stand-in clock and tally.</summary>
-    /// <param name="world">The match.</param>
     public static void DrawHud(World world)
     {
         if (!world.Dev.StandIn.TryGet(out var standIn)) return;

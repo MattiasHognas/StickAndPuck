@@ -10,7 +10,7 @@ using AiTactics = StickAndPuck.App.AI.Tactics;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W22d's club tactics: every club file carries tactics, the league plays more than one way, and a
+/// The club tactics: every club file carries tactics, the league plays more than one way, and a
 /// misspelt tactic fails the load. Then two clubs play each other, one with an aggressive 2-1-2
 /// forecheck that dumps the puck in and one with a 1-3-1 trap that carries it, a period each way
 /// round, three times over with different seeds, and they play visibly differently

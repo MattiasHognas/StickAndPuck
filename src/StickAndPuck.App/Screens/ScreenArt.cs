@@ -5,10 +5,8 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// The A3 art the screens draw with: W10's <see cref="HudArt"/> (font, panels, crests, icons) plus
-/// the title logo, and a few layout helpers. Everything lands on whole pixels at 480x270.
-/// </summary>
+/// <summary>The A3 art the screens draw with: the HUD's <see cref="HudArt"/> (font, panels, crests, icons) plus
+/// the title logo, and a few layout helpers. Everything lands on whole pixels at 480x270.</summary>
 internal sealed class ScreenArt
 {
     /// <summary>The height of one menu row.</summary>
@@ -28,7 +26,6 @@ internal sealed class ScreenArt
         Hud = hud;
     }
 
-    /// <summary>Gets the HUD art.</summary>
     public HudArt Hud { get; }
 
     /// <summary>Gets the cream text colour.</summary>
@@ -38,7 +35,6 @@ internal sealed class ScreenArt
     public Color Gold => Hud.Score;
 
     /// <summary>Loads the art. Needs an open window.</summary>
-    /// <returns>The art.</returns>
     public static ScreenArt Load()
     {
         var art = new ScreenArt(HudArt.Load());
@@ -53,17 +49,12 @@ internal sealed class ScreenArt
     }
 
     /// <summary>Draws the Stick and Puck logo centred at the given top.</summary>
-    /// <param name="y">Top edge.</param>
     public void DrawTitle(int y)
     {
         DrawTexture(title, (Game.Width - title.Width) / 2, y, Color.White);
     }
 
     /// <summary>Draws text centred on a column.</summary>
-    /// <param name="text">The text.</param>
-    /// <param name="cx">The centre column.</param>
-    /// <param name="y">Top of the accent rows.</param>
-    /// <param name="colour">Ink.</param>
     public void Centred(string text, int cx, int y, Color colour)
     {
         text = Fit(text);
@@ -84,9 +75,6 @@ internal sealed class ScreenArt
     }
 
     /// <summary>Shortens text to a width, ending it with a dot when letters had to go.</summary>
-    /// <param name="text">The text.</param>
-    /// <param name="width">The widest it may be, in pixels.</param>
-    /// <returns>The text, fitted to the font and the width.</returns>
     public string Clip(string text, int width)
     {
         text = Fit(text);
@@ -100,11 +88,6 @@ internal sealed class ScreenArt
     }
 
     /// <summary>Draws a 0 to 100 rating as a bar with its number on the right.</summary>
-    /// <param name="value">The rating.</param>
-    /// <param name="x">Left edge.</param>
-    /// <param name="y">Top of the text row the bar sits in.</param>
-    /// <param name="w">Width of the bar.</param>
-    /// <param name="ink">Bar colour.</param>
     public void Bar(int value, int x, int y, int w, Color ink)
     {
         value = Math.Clamp(value, 0, 100);
@@ -113,12 +96,8 @@ internal sealed class ScreenArt
         Left(value.ToString(System.Globalization.CultureInfo.InvariantCulture), x + w + 4, y, Text);
     }
 
-    /// <summary>
-    /// Upper-cases text and swaps letters the pixel font lacks for their plain form (Á becomes A),
-    /// keeping the Swedish Å, Ä, Ö and the É and Ü the font has.
-    /// </summary>
-    /// <param name="text">The text.</param>
-    /// <returns>Text the font can draw.</returns>
+    /// <summary>Upper-cases text and swaps letters the pixel font lacks for their plain form (Á becomes A),
+    /// keeping the Swedish Å, Ä, Ö and the É and Ü the font has.</summary>
     public static string Fit(string text)
     {
         var sb = new System.Text.StringBuilder(text.Length);
@@ -132,12 +111,6 @@ internal sealed class ScreenArt
     }
 
     /// <summary>Draws a panel with a heading in gold, centred on the frame, and returns where its body starts.</summary>
-    /// <param name="heading">The heading, or empty for none.</param>
-    /// <param name="w">Width.</param>
-    /// <param name="h">Height.</param>
-    /// <param name="y">Top edge.</param>
-    /// <param name="panel">The panel art.</param>
-    /// <returns>The panel's left edge and the top of its body.</returns>
     public (int X, int Top) Panel(string heading, int w, int h, int y, string panel = "panel")
     {
         int x = (Game.Width - w) / 2;
@@ -148,11 +121,6 @@ internal sealed class ScreenArt
     }
 
     /// <summary>Draws a menu: one row per item, the selected one in gold with an arrow, values right-aligned with arrows either side.</summary>
-    /// <param name="items">The items.</param>
-    /// <param name="selected">The selected index.</param>
-    /// <param name="x">Left edge of the panel body.</param>
-    /// <param name="w">Width of the panel.</param>
-    /// <param name="top">Top of the first row.</param>
     public void Menu(IReadOnlyList<MenuItem> items, int selected, int x, int w, int top)
     {
         for (int i = 0; i < items.Count; i++)
@@ -173,7 +141,6 @@ internal sealed class ScreenArt
     }
 
     /// <summary>Draws the key hints along the bottom edge.</summary>
-    /// <param name="hint">The hint text.</param>
     public void Hint(string hint)
     {
         DrawRectangle(0, Game.Height - 15, Game.Width, 15, Band);

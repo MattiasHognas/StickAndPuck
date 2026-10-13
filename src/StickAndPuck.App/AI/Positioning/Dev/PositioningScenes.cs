@@ -3,12 +3,10 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.AI.Dev;
 
-/// <summary>
-/// SAP_SCENE=positioning: a 5 on 5 match between the two clubs under W7a's match flow, every
+/// <summary>SAP_SCENE=positioning: a 5 on 5 match between the two clubs under the match flow, every
 /// skater AI, with the camera following the puck. The stand-in play (<see cref="StandInPlay"/>)
-/// shoots and passes until W6b replaces it. SAP_PERIOD=seconds shortens the periods. SAP_AI_TARGETS=1 draws where each
-/// skater is heading; SAP_AI_HUMAN=1 puts the keyboard on the home centre.
-/// </summary>
+/// shoots and passes. SAP_PERIOD=seconds shortens the periods. SAP_AI_TARGETS=1 draws where each
+/// skater is heading; SAP_AI_HUMAN=1 puts the keyboard on the home centre.</summary>
 public sealed class PositioningScene : IScene
 {
     /// <inheritdoc/>

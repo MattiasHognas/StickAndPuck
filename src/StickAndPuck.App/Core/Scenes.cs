@@ -2,20 +2,15 @@ using System.Numerics;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// A starting setup the game can boot straight into with SAP_SCENE=name, for example a faceoff
+/// <summary>A starting setup the game can boot straight into with SAP_SCENE=name, for example a faceoff
 /// or a shot on goal. Any class implementing this with a parameterless constructor is found
-/// automatically, so a task adds a scene in its own folder without touching Core.
-/// </summary>
+/// automatically, so a task adds a scene in its own folder without touching Core.</summary>
 public interface IScene
 {
     /// <summary>Gets the name used in SAP_SCENE.</summary>
     string Name { get; }
 
     /// <summary>Builds the world: the match setup, the players and the puck.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="settings">Player options.</param>
-    /// <returns>The world to run.</returns>
     World Create(IReadOnlyList<ClubData> clubs, Settings settings);
 }
 
@@ -26,7 +21,6 @@ public static class Scenes
     public const string Default = "start";
 
     /// <summary>Gets every scene in the game, by name.</summary>
-    /// <returns>The scenes.</returns>
     public static IReadOnlyDictionary<string, IScene> All()
     {
         return typeof(Scenes).Assembly.GetTypes()
@@ -37,9 +31,6 @@ public static class Scenes
     }
 
     /// <summary>Builds the world for the scene named by SAP_SCENE, or the default scene.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="settings">Player options.</param>
-    /// <returns>The world to run.</returns>
     public static World CreateFromEnvironment(IReadOnlyList<ClubData> clubs, Settings settings)
     {
         string name = Env.Get("SAP_SCENE") is { Length: > 0 } s ? s : Default;
@@ -50,12 +41,8 @@ public static class Scenes
         return scene.Create(clubs, settings);
     }
 
-    /// <summary>
-    /// The default exhibition: SAP_HOME and SAP_AWAY pick clubs by id, otherwise the first two
-    /// clubs (or the one club twice), with keyboard and mouse on the home club.
-    /// </summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <returns>The setup.</returns>
+    /// <summary>The default exhibition: SAP_HOME and SAP_AWAY pick clubs by id, otherwise the first two
+    /// clubs (or the one club twice), with keyboard and mouse on the home club.</summary>
     public static MatchSetup DefaultSetup(IReadOnlyList<ClubData> clubs)
     {
         if (clubs.Count == 0) throw new InvalidOperationException($"no club files in {Assets.ClubFolder}");
@@ -72,12 +59,8 @@ public static class Scenes
             ?? throw new InvalidOperationException($"{variable}={id} is not a club id");
     }
 
-    /// <summary>
-    /// Puts each club's starters on the ice at the opening faceoff: centre, wings, two defence and
-    /// a goalie per side. Home starts at -x. Missing positions are filled from the rest of the roster.
-    /// </summary>
-    /// <param name="world">The world to fill.</param>
-    /// <param name="skatersPerSide">Skaters per club, 5 in regulation and 3 in overtime.</param>
+    /// <summary>Puts each club's starters on the ice at the opening faceoff: centre, wings, two defence and
+    /// a goalie per side. Home starts at -x. Missing positions are filled from the rest of the roster.</summary>
     public static void AddStarters(World world, int skatersPerSide = 5)
     {
         foreach (var side in new[] { Side.Home, Side.Away })

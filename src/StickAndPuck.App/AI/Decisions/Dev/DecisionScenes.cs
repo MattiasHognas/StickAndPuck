@@ -6,13 +6,11 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.AI.Dev;
 
-/// <summary>
-/// SAP_SCENE=aimatch: a full exhibition with every skater on both sides played by the AI, under
-/// W7a's match flow with the gameplay camera. SAP_PERIOD=seconds shortens the periods.
+/// <summary>SAP_SCENE=aimatch: a full exhibition with every skater on both sides played by the AI, under
+/// the match flow with the gameplay camera. SAP_PERIOD=seconds shortens the periods.
 /// SAP_IQ_HOME and SAP_IQ_AWAY (0 to 100) set every skater's smart passes trait for a club,
 /// to see a smarter club pass better; a line at the top shows each club's completed passes, shots
-/// and checks. SAP_AI_HUMAN=1 puts the keyboard on the home centre, like SAP_SCENE=match.
-/// </summary>
+/// and checks. SAP_AI_HUMAN=1 puts the keyboard on the home centre, like SAP_SCENE=match.</summary>
 public sealed class AiMatchScene : IScene
 {
     /// <inheritdoc/>
@@ -48,9 +46,6 @@ internal static class DecisionScenes
 {
 
     /// <summary>Gives every skater of a club the same hockey IQ.</summary>
-    /// <param name="world">The match, before it starts.</param>
-    /// <param name="side">The club.</param>
-    /// <param name="smart">The trait, or None to leave the roster's own.</param>
     public static void SetHockeyIq(World world, Side side, Maybe<int> smart)
     {
         if (!smart.TryGet(out int value)) return;
@@ -63,7 +58,6 @@ internal static class DecisionScenes
     }
 
     /// <summary>Draws each club's passes, shots and checks.</summary>
-    /// <param name="world">The match.</param>
     public static void DrawLine(World world)
     {
         if (!world.Switches.DecisionLine) return;

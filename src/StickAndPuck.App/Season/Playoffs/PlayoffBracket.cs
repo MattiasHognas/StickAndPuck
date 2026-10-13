@@ -6,20 +6,15 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// A plain bracket panel in the A3 pixel font: one column per round, each series as its two seeds
+/// <summary>A plain bracket panel in the A3 pixel font: one column per round, each series as its two seeds
 /// with their wins, the human's club in gold and the series loser dimmed, and the champion (or how
-/// far the human's club got) underneath. A stand-in until W11's screens, which can read the same
-/// <see cref="PlayoffState"/>.
-/// </summary>
+/// far the human's club got) underneath. The bracket screen reads the same
+/// <see cref="PlayoffState"/>.</summary>
 internal static class PlayoffBracket
 {
     const int Line = 11, Pad = 6, Width = 468, Height = 230, Column = 114;
 
     /// <summary>Draws the bracket centred on the 480x270 frame.</summary>
-    /// <param name="art">The HUD art.</param>
-    /// <param name="playoffs">The playoffs.</param>
-    /// <param name="clubs">Every club, for names.</param>
     public static void Draw(HudArt art, PlayoffState playoffs, IReadOnlyList<ClubData> clubs)
     {
         int x = (Game.Width - Width) / 2, y = (Game.Height - Height) / 2;

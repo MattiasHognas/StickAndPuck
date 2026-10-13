@@ -3,17 +3,15 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W4a: how one skater moves over the ice from its command and its traits. Pure maths with no
+/// <summary>How one skater moves over the ice from its command and its traits. Pure maths with no
 /// Raylib, so AI, tests and other systems can ask how fast a player is without running a frame.
 /// <list type="bullet">
 /// <item>Top speed comes from the top speed trait, acceleration from the acceleration trait,
-/// both scaled down a little as energy runs out (W13 drains energy).</item>
+/// both scaled down a little as energy runs out (the lines system drains energy).</item>
 /// <item>Pushing the stick carves the skater's path toward it, tighter when slow and wider at speed.</item>
 /// <item>Pulling the stick against the motion is a hockey stop; letting go glides.</item>
 /// <item>The boards, with their rounded corners, stop the skater.</item>
-/// </list>
-/// </summary>
+/// </list></summary>
 public static class SkatingModel
 {
     /// <summary>The top speed of an average player (trait 50, fresh), in metres per second. Clips scale their rate by it.</summary>
@@ -35,34 +33,24 @@ public static class SkatingModel
     const float Dead = 0.1f;                                // stick lengths below this count as no input
 
     /// <summary>Gets how much energy leaves of a player's skating: 1 when fresh, 0.7 when spent.</summary>
-    /// <param name="energy">Energy from 1 (fresh) to 0 (spent).</param>
-    /// <returns>The factor applied to top speed and acceleration.</returns>
     public static float EnergyFactor(float energy)
     {
         return 0.7f + 0.3f * Math.Clamp(energy, 0f, 1f);
     }
 
     /// <summary>Gets a player's top speed when not sprinting, in metres per second.</summary>
-    /// <param name="traits">The player's traits.</param>
-    /// <param name="energy">Energy from 1 (fresh) to 0 (spent).</param>
-    /// <returns>The speed.</returns>
     public static float TopSpeed(Traits traits, float energy = 1f)
     {
         return (SlowestTop + (FastestTop - SlowestTop) * Traits.Unit(traits.TopSpeed)) * EnergyFactor(energy);
     }
 
     /// <summary>Gets a player's push from a standstill, in metres per second squared.</summary>
-    /// <param name="traits">The player's traits.</param>
-    /// <param name="energy">Energy from 1 (fresh) to 0 (spent).</param>
-    /// <returns>The acceleration.</returns>
     public static float Push(Traits traits, float energy = 1f)
     {
         return (SlowestPush + (FastestPush - SlowestPush) * Traits.Unit(traits.Acceleration)) * EnergyFactor(energy);
     }
 
     /// <summary>Moves one skater by one step: velocity, heading and position.</summary>
-    /// <param name="p">The skater.</param>
-    /// <param name="dt">The step in seconds.</param>
     public static void Step(Player p, float dt)
     {
         var traits = p.Data.Traits;
@@ -129,9 +117,6 @@ public static class SkatingModel
     }
 
     /// <summary>Keeps the body inside the boards and their rounded corners, and drops the speed into them.</summary>
-    /// <param name="pos">The position on the ice (x, z).</param>
-    /// <param name="v">The velocity on the ice (x, z).</param>
-    /// <returns>The position and velocity after the boards.</returns>
     public static (Vector2 Pos, Vector2 V) Boards(Vector2 pos, Vector2 v)
     {
         float hx = RinkSpec.HalfLength - BodyRadius, hz = RinkSpec.HalfWidth - BodyRadius;

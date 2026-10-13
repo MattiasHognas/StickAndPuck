@@ -7,7 +7,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// The puck handling checks with skating, handling and puck physics. Covers the W4b "done when":
+/// The puck handling checks with skating, handling and puck physics. Covers that
 /// one player carries, passes to a teammate, who shoots and scores; and that puck control, smart
 /// passes, shot power and shot accuracy each make a difference. Formerly SAP_SCENE=handlingtest.
 /// </summary>

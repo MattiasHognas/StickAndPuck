@@ -5,11 +5,9 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules.Dev;
 
-/// <summary>
-/// SAP_SCENE=match: a full exhibition between SAP_HOME and SAP_AWAY with both starting lineups,
+/// <summary>SAP_SCENE=match: a full exhibition between SAP_HOME and SAP_AWAY with both starting lineups,
 /// the human on the home centre, the intro, three periods and the clock. SAP_PERIOD=seconds
-/// shortens the periods; SAP_MATCH_DEBUG=1 shows a plain score and clock line until W10's scorebug.
-/// </summary>
+/// shortens the periods; SAP_MATCH_DEBUG=1 shows a plain score and clock line.</summary>
 public sealed class MatchScene : IScene
 {
     /// <inheritdoc/>
@@ -24,12 +22,10 @@ public sealed class MatchScene : IScene
     }
 }
 
-/// <summary>
-/// SAP_SCENE=matchdemo: the match flow on its own with 25-second periods (or SAP_PERIOD) and no
+/// <summary>SAP_SCENE=matchdemo: the match flow on its own with 25-second periods (or SAP_PERIOD) and no
 /// human. Whenever the puck is in play the scene fires a shot at the attacking net of each club in
 /// turn, so goals, saves, frozen pucks, period ends and the final all happen in a minute or two.
-/// The score and clock line is on.
-/// </summary>
+/// The score and clock line is on.</summary>
 public sealed class MatchDemoScene : IScene
 {
     /// <inheritdoc/>
@@ -70,7 +66,6 @@ internal sealed class MatchDemo
     Side next = Side.Home;
 
     /// <summary>Fires the next shot a moment after the puck drops or settles, and pans the camera to the puck.</summary>
-    /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         if (world.Dev.Match.TryGet(out var demo)) demo.Run(world);
@@ -113,12 +108,10 @@ internal sealed class MatchDemo
     }
 }
 
-/// <summary>
-/// SAP_SCENE=celebration: the end of a decided game, to watch W40's celebration. Both clubs are AI,
+/// <summary>SAP_SCENE=celebration: the end of a decided game, to watch the celebration. Both clubs are AI,
 /// the game starts in the last seconds of the third period (SAP_CLOCK, default 4) with the home club
 /// a goal up (SAP_WINNER=away puts the away club ahead), so the horn sounds at once, the winners
-/// celebrate, the losers slump, then the final and, with the screens, the summary.
-/// </summary>
+/// celebrate, the losers slump, then the final and, with the screens, the summary.</summary>
 public sealed class CelebrationScene : IScene
 {
     /// <inheritdoc/>

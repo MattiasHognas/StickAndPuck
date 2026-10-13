@@ -4,10 +4,8 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// The start screen: continue the saved season, start a new season, a new game in another mode,
-/// the standings, settings and quit. Continue and standings show only when there is a save.
-/// </summary>
+/// <summary>The start screen: continue the saved season, start a new season, a new game in another mode,
+/// the standings, settings and quit. Continue and standings show only when there is a save.</summary>
 internal sealed class StartScreen : MenuScreen
 {
     const int PanelW = 200;
@@ -25,7 +23,7 @@ internal sealed class StartScreen : MenuScreen
         }
         bool saved = save.HasValue;
         List<MenuItem> items = [new MenuItem(Text.Get(K.ContinueSeason), ScreenFlow.PlaySeasonGame, enabled: saved)];
-        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame, enabled: Season.Is(HasNextGame)));    // W33, off with the SimGame setting
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame, enabled: Season.Is(HasNextGame)));    // off with the SimGame setting
         items.Add(new MenuItem(Text.Get(K.NewSeason), NewSeason));
         items.Add(new MenuItem(Text.Get(K.NewGame), () => ScreenFlow.Push(new ModeScreen())));
         items.Add(new MenuItem(Text.Get(K.Standings), Standings, enabled: saved));

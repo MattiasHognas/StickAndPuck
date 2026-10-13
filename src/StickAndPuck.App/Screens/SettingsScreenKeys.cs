@@ -4,12 +4,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// Key mapping (W39), opened from the settings screen: one row per <see cref="GameAction"/> with
+/// <summary>Key mapping, opened from the settings screen: one row per <see cref="GameAction"/> with
 /// its keyboard keys and gamepad button. Enter on a row waits for the next key or pad button; a key
 /// replaces the row's keys, a button its pad button, and escape cancels. Reset to defaults clears
-/// every rebinding. Changes apply at once and are saved with the settings on leaving.
-/// </summary>
+/// every rebinding. Changes apply at once and are saved with the settings on leaving.</summary>
 internal sealed class KeyMappingScreen : MenuScreen
 {
     const int PanelW = 330, PanelTop = 8, Visible = 13;

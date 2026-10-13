@@ -73,7 +73,7 @@ public sealed class WorldBuilder
         return this;
     }
 
-    /// <summary>Pins the match seed (W67); 0, the default, starts each random stream from its fixed fallback.</summary>
+    /// <summary>Pins the match seed; 0, the default, starts each random stream from its fixed fallback.</summary>
     /// <param name="value">The seed.</param>
     /// <returns>This builder.</returns>
     public WorldBuilder Seed(int value)

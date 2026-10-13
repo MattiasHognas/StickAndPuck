@@ -184,7 +184,7 @@ public sealed class SeasonTests : CheckedTest
 
     void SimGame(IReadOnlyList<ClubData> clubs, string path)
     {
-        // W26: "Sim this game" settles the human's game on paper, records it like a played game and saves
+        // "Sim this game" settles the human's game on paper, records it like a played game and saves
         SeasonSession.End();
         var season = SeasonSession.StartNew(clubs, clubs[3].Id, seed: 11, path: path);
         string before = File.ReadAllText(path);

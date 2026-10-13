@@ -12,7 +12,7 @@ using StickAndPuck.App.Versus;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// Player vs player (W17). Two devices cannot be pressed without hands, so the two human slots are
+/// Player vs player. Two devices cannot be pressed without hands, so the two human slots are
 /// driven with scripted commands: a short match with player one skating the home centre and player
 /// two the away centre, the rest AI, checked for both humans moving their own skater, control never
 /// crossing clubs, and the match reaching its final. Formerly SAP_SCENE=versustest.

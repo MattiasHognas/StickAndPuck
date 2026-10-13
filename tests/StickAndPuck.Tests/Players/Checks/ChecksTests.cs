@@ -7,7 +7,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// Checking and switching with switching, skating, checking, puck handling and puck physics (W4c):
+/// Checking and switching with switching, skating, checking, puck handling and puck physics:
 /// checks knock players off the puck, the checking trait decides how often, and control switching
 /// follows each Settings mode. Formerly SAP_SCENE=checkstest.
 /// </summary>
@@ -295,7 +295,7 @@ public sealed class ChecksTests : CheckedTest
         _ = mate;
     }
     /// <summary>
-    /// W99: a human (Slot 0) skating with an AI carrier at 5 m/s and pressing check every 8 steps
+    /// A human (Slot 0) skating with an AI carrier at 5 m/s and pressing check every 8 steps
     /// for 3 s, from <paramref name="at"/> at <paramref name="velocity"/> with the stick held <paramref name="stick"/>.
     /// </summary>
     (int Hits, int Downs, float First) Pester(Vector3 at, Vector3 velocity, Vector2 stick, Difficulty difficulty = Difficulty.Normal)

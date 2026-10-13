@@ -5,11 +5,9 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// A plain standings panel in the A3 pixel font: rank, club, games, regulation and overtime wins
-/// and losses, goals and points, with the human's club in gold. A stand-in until W11's standings
-/// screen, which can use the same <see cref="SeasonState.Table"/>.
-/// </summary>
+/// <summary>A plain standings panel in the A3 pixel font: rank, club, games, regulation and overtime wins
+/// and losses, goals and points, with the human's club in gold. The standings
+/// screen uses the same <see cref="SeasonState.Table"/>.</summary>
 internal static class SeasonTable
 {
     const int Line = 12, Pad = 6;
@@ -18,9 +16,6 @@ internal static class SeasonTable
         [(K.ColGp, 150), (K.ColW, 174), (K.ColOtw, 194), (K.ColOtl, 222), (K.ColL, 250), (K.ColGoals, 268), (K.ColPts, 314)];
 
     /// <summary>Draws the table centred on the 480x270 frame.</summary>
-    /// <param name="art">The HUD art.</param>
-    /// <param name="season">The season.</param>
-    /// <param name="clubs">Every club, for names.</param>
     public static void Draw(HudArt art, SeasonState season, IReadOnlyList<ClubData> clubs)
     {
         var table = season.Table;

@@ -16,9 +16,6 @@ public enum ResultKind
 }
 
 /// <summary>A played match's final score, shootout goal included, and how it was decided.</summary>
-/// <param name="HomeGoals">Home goals on the final score.</param>
-/// <param name="AwayGoals">Away goals on the final score.</param>
-/// <param name="Kind">Regulation, overtime or shootout.</param>
 public sealed record FixtureResult(int HomeGoals, int AwayGoals, ResultKind Kind)
 {
     /// <summary>Gets the SHL points for the home club.</summary>
@@ -47,8 +44,6 @@ public sealed record Fixture(int Number, int Round, string Home, string Away, Ma
     public bool Played => Result.HasValue;
 
     /// <summary>Gets a value indicating whether a club plays in this game.</summary>
-    /// <param name="clubId">The club id.</param>
-    /// <returns>True for the home or away club.</returns>
     public bool Involves(string clubId)
     {
         return string.Equals(Home, clubId, StringComparison.Ordinal) || string.Equals(Away, clubId, StringComparison.Ordinal);

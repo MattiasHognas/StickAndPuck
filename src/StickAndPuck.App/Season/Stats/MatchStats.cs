@@ -24,34 +24,26 @@ public sealed class MatchStatSheet
     public Maybe<MatchStatLine> PlayerOfGame { get; set; }
 
     /// <summary>Gets a value indicating whether a side won the match.</summary>
-    /// <param name="side">The side.</param>
-    /// <returns>True for the winner.</returns>
     public bool Won(Side side)
     {
         return side == Side.Home ? HomeGoals > AwayGoals : AwayGoals > HomeGoals;
     }
 
     /// <summary>Gets the lines of one side, best first.</summary>
-    /// <param name="side">The side.</param>
-    /// <returns>The lines.</returns>
     public IEnumerable<MatchStatLine> Of(Side side)
     {
         return Lines.Where(l => l.Side == side).OrderByDescending(l => Merit(l, this));
     }
 
     /// <summary>Gets the award for the player of the game, for the season's or the run's list.</summary>
-    /// <param name="game">The game key.</param>
-    /// <returns>The award, or None when nobody played.</returns>
     public Maybe<PlayerOfGameAward> Award(string game)
     {
         return PlayerOfGame.TryGet(out var s) ? new PlayerOfGameAward(game, Home, Away, HomeGoals, AwayGoals, s.Club, s.Number, s.Name, s.Goals, s.Assists, s.Saves) : Maybe<PlayerOfGameAward>.None;
     }
 
-    /// <summary>
-    /// Picks the player of the game: the line with the most merit, where a goal is worth 3, an
+    /// <summary>Picks the player of the game: the line with the most merit, where a goal is worth 3, an
     /// assist 2, a shot or a hit a little, a goalie's saves add up and a shutout counts a lot;
-    /// the winners get an edge, so the star is nearly always on the winning side.
-    /// </summary>
+    /// the winners get an edge, so the star is nearly always on the winning side.</summary>
     public void PickPlayerOfGame()
     {
         PlayerOfGame = Lines.Where(l => l.Played)
@@ -78,13 +70,11 @@ public sealed class MatchStatSheet
     }
 }
 
-/// <summary>
-/// Follows one match step by step: who was on the ice, the shots, hits and saves from the event
+/// <summary>Follows one match step by step: who was on the ice, the shots, hits and saves from the event
 /// log, the goals, and the assists worked out from the puck's touches, since the event log carries
 /// no assist of its own: the last one or two teammates to touch the puck before the scorer, with
 /// no opponent touch in between and within <see cref="AssistWindow"/> seconds, get the assists.
-/// Shootout goals go to the score but to nobody's line, as in the SHL.
-/// </summary>
+/// Shootout goals go to the score but to nobody's line, as in the SHL.</summary>
 public sealed class MatchStatTracker
 {
     /// <summary>Seconds of game time within which a teammate's touch before a goal counts as an assist.</summary>
@@ -108,7 +98,6 @@ public sealed class MatchStatTracker
     public Maybe<World> World => world;
 
     /// <summary>Follows one step: call after the systems that publish the step's events have run.</summary>
-    /// <param name="w">The world.</param>
     public void Observe(World w)
     {
         if (!world.TryGet(out var followed) || !ReferenceEquals(w, followed)) Begin(w);
@@ -151,7 +140,6 @@ public sealed class MatchStatTracker
     }
 
     /// <summary>Closes the sheet with the final score and picks the player of the game.</summary>
-    /// <returns>The sheet.</returns>
     public MatchStatSheet Finish()
     {
         if (world.TryGet(out var w))

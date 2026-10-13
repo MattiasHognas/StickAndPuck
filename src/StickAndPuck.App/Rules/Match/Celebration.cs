@@ -4,16 +4,14 @@ using StickAndPuck.App.Lines;
 
 namespace StickAndPuck.App.Rules;
 
-/// <summary>
-/// W40: the end-of-game celebration. At the final horn of a decided game (regulation, overtime or
+/// <summary>The end-of-game celebration. At the final horn of a decided game (regulation, overtime or
 /// the shootout) the winners swarm their goalie and celebrate, the losers drop to the ice where
 /// they stand or trudge off to their bench and bury their heads, both goalies included, and the
 /// camera holds on the pile. The match stays in <see cref="MatchPhase.Stopped"/> for
 /// <see cref="MatchTuning.CelebrationSeconds"/> and only then becomes <see cref="MatchPhase.Final"/>,
 /// so the result summary follows the celebration as it followed the horn before. The players are
 /// posed from here after the movement systems ran, so input and the AI cannot move them. A tie has
-/// no celebration. The skater renderer asks <see cref="Pose"/> for the clip to show.
-/// </summary>
+/// no celebration. The skater renderer asks <see cref="Pose"/> for the clip to show.</summary>
 public static class Celebration
 {
     const float PileRadius = 1.3f;
@@ -25,30 +23,21 @@ public static class Celebration
 
 
     /// <summary>Gets a value indicating whether a celebration is on or has played in this match, so the final poses hold until the summary.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>True from the horn of a decided game.</returns>
     public static bool Playing(World world)
     {
         return MatchFlow.State(world).Celebration.HasValue;
     }
 
     /// <summary>Gets the winners of the celebration under way.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>The winning club, or None with no celebration.</returns>
     public static SideOrNone Winner(World world)
     {
         return MatchFlow.State(world).Celebration.TryGet(out var c) ? c.Won.OrNone() : SideOrNone.None;
     }
 
-    /// <summary>
-    /// Gets the clip a skater shows in the celebration: "celebrate" for a winner at the pile, "fall"
+    /// <summary>Gets the clip a skater shows in the celebration: "celebrate" for a winner at the pile, "fall"
     /// for a loser who dropped to the ice, "block" (head in the hands) for one who reached the bench,
     /// with the seconds since it started and whether it loops. None while the skater is still skating
-    /// or standing as usual, and for a skater outside any celebration.
-    /// </summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="p">The skater.</param>
-    /// <returns>The pose.</returns>
+    /// or standing as usual, and for a skater outside any celebration.</summary>
     public static Maybe<(string Clip, float Seconds, bool Loop)> Pose(World world, Player p)
     {
         if (!MatchFlow.State(world).Celebration.TryGet(out var c) || !c.Parts.TryGetValue(p.Id, out var part) || float.IsNaN(part.ClipSince)) return Maybe<(string Clip, float Seconds, bool Loop)>.None;
@@ -63,16 +52,12 @@ public static class Celebration
     }
 
     /// <summary>Gets a value indicating whether a goalie has slumped in the celebration: the losing goalie drops into the butterfly and stays down.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="goalie">The goalie.</param>
-    /// <returns>True for the losing goalie once the celebration is on.</returns>
     public static bool Slumps(World world, Player goalie)
     {
         return MatchFlow.State(world).Celebration.TryGet(out var c) && goalie.IsGoalie && goalie.Side != c.Won && c.Elapsed >= BrakeSeconds;
     }
 
     /// <summary>Starts the celebration at the horn if the game was decided and both clubs have players on the ice.</summary>
-    /// <returns>True when the celebration runs, so the caller holds the final.</returns>
     internal static bool Begin(World world, FlowState s, SideOrNone winner)
     {
         if (!world.Switches.Celebrations || !winner.TryGetSide(out var win) || s.Celebration.HasValue) return false;
@@ -153,7 +138,7 @@ public static class Celebration
     {
         if (!s.Celebration.TryGet(out var c)) return false;
         var m = world.Match;
-        // W9's goal replay (a sudden-death winner) plays out first; the live state comes back when it ends
+        // The goal replay (a sudden-death winner) plays out first; the live state comes back when it ends
         if (world.ReplayPlaying) return true;
 
         var pk = world.Puck;
@@ -227,7 +212,6 @@ public static class Celebration
     const float GoalieSpeed = 5f;
 
     /// <summary>Skates a player one step toward a spot, slowing on arrival.</summary>
-    /// <returns>True once on the spot.</returns>
     static bool Move(Player p, Vector3 target, float speed, float dt)
     {
         var to = target - p.Position;

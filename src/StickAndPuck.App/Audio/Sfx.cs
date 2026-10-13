@@ -45,7 +45,6 @@ internal enum Sfx
     /// <summary>A fight starting.</summary>
     Fight,
 
-    /// <summary>A line change.</summary>
     LineChange,
 
     /// <summary>The end-of-match cadence.</summary>
@@ -66,8 +65,6 @@ internal static class SfxTable
     public const string Folder = "art/audio";
 
     /// <summary>Gets how an effect is played.</summary>
-    /// <param name="sfx">The effect.</param>
-    /// <returns>Its settings.</returns>
     public static SfxInfo Info(Sfx sfx)
     {
         return sfx switch

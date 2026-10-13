@@ -8,7 +8,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// W96 aimed human passes: after a human's pass, control follows the puck to the receiver, who
+/// Aimed human passes: after a human's pass, control follows the puck to the receiver, who
 /// skates to meet it by himself, the stick still held from the pass ignored, until the player
 /// steers him with fresh input; and a human's pass with nobody in the 70° cone goes to the nearest
 /// open teammate within 40 metres.

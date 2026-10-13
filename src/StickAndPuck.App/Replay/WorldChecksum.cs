@@ -4,19 +4,15 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Replays;
 
-/// <summary>
-/// W67: one 64-bit number for the match state after a step: every player, the puck, the score,
+/// <summary>One 64-bit number for the match state after a step: every player, the puck, the score,
 /// clock and flow, the penalties and the step's events, float by float to the bit. Two runs that
 /// agree on it step after step played the same match; the first step where they differ is where
-/// they split.
-/// </summary>
+/// they split.</summary>
 public static class WorldChecksum
 {
     const ulong Offset = 14695981039346656037UL, Prime = 1099511628211UL;
 
     /// <summary>Gets the checksum of the world as it is now.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The checksum.</returns>
     public static ulong Of(World world)
     {
         ulong h = Offset;
@@ -62,8 +58,6 @@ public static class WorldChecksum
     }
 
     /// <summary>Writes a checksum the way replay files and checksum logs show it.</summary>
-    /// <param name="sum">The checksum.</param>
-    /// <returns>16 hex digits.</returns>
     public static string Text(ulong sum) => sum.ToString("x16", CultureInfo.InvariantCulture);
 
     static void Add(ref ulong h, long v)

@@ -12,25 +12,25 @@ using StickAndPuck.App.AI.Dev;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// Headless checks for W6b, formerly SAP_SCENE=aimatchtest.
+/// Headless checks for the AI decisions, formerly SAP_SCENE=aimatchtest.
 /// Plays a full three-period match with every skater AI (positioning, decisions, skating, checks,
 /// puck handling, goalies, puck physics, match rules) and checks it reaches the final with
 /// passes, shots, checks and goals on both sides. Then plays the same clubs with every skater's
 /// hockey IQ set to 90 on one side and 20 on the other, both ways round, and checks the smart
-/// side completes clearly more of its passes: the "done when" of W6b.
-/// W22a adds: the jitter's odds, the cycle stations and their path round the net, that AI passes go to
+/// side completes clearly more of its passes.
+/// Adds: the jitter's odds, the cycle stations and their path round the net, that AI passes go to
 /// moving teammates in open ice, that both clubs cycle and take the puck behind the net, and that a
-/// hockey IQ 100 club still fumbles and misses now and then while a 20 club gets lucky. The defence (W22b) runs too,
+/// hockey IQ 100 club still fumbles and misses now and then while a 20 club gets lucky. The defence runs too,
 /// so each side throws 15 to 30 checks; defencetest checks its reads in detail.
-/// W22c adds a power play, a man in the box throughout: the power play holds its umbrella or 1-3-1, the kill its box or
-/// diamond, and the kill clears the puck (specialteamstest runs the same with other seeds). W22d plays each club's tactics from
+/// Adds a power play, a man in the box throughout: the power play holds its umbrella or 1-3-1, the kill its box or
+/// diamond, and the kill clears the puck (specialteamstest runs the same with other seeds). Plays each club's tactics from
 /// its file, and adds a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in: they must play visibly differently
 /// (tacticstest also checks the club files). The full match plays seed 1.
-/// W63 plays full matches with the offside and icing rules on: under SHL over several seeds the AI ices the puck and
+/// Plays full matches with the offside and icing rules on: under SHL over several seeds the AI ices the puck and
 /// goes offside at a hockey-like rate, a hockey IQ 30 club clears blind more and holds up at the blue line less than an 85 one
-/// (W66: per time it comes up to the line with a teammate offside, over two matches each way round),
+/// (per time it comes up to the line with a teammate offside, over two matches each way round),
 /// and under Arcade, rules off, never.
-/// W68 ends with <see cref="CommandFixtures"/>: who writes an AI skater's command and which write wins.
+/// Ends with <see cref="CommandFixtures"/>: who writes an AI skater's command and which write wins.
 /// </summary>
 public sealed class DecisionsTests : CheckedTest
 {
@@ -51,7 +51,7 @@ public sealed class DecisionsTests : CheckedTest
         Check(poorSees > smartSees + 0.2f, $"a poor passer thinks a lane a defender can close is open ({poorSees:F2} vs {smartSees:F2})");
     }
 
-    /// <summary>W22a: the jitter's odds come out as the trait says over many rolls.</summary>
+    /// <summary>The jitter's odds come out as the trait says over many rolls.</summary>
     [Test]
     public void JitterMaths()
     {
@@ -76,7 +76,7 @@ public sealed class DecisionsTests : CheckedTest
         Check(Jitter.Fumbled(100) < 70 && Jitter.Fumbled(100) > 40, $"a star's fumble plays like an average player (hockey IQ {Jitter.Fumbled(100)})");
     }
 
-    /// <summary>W22a: the cycle's stations sit where they should and its path goes round the cage.</summary>
+    /// <summary>The cycle's stations sit where they should and its path goes round the cage.</summary>
     [Test]
     public void CycleMaths()
     {
@@ -130,13 +130,13 @@ public sealed class DecisionsTests : CheckedTest
         Check(world.Match.Phase == MatchPhase.Final, "three periods play out to the final");
         Check(h.Passes > 80 && a.Passes > 80, "both clubs pass the puck around");
         Check(h.Completion > 0.5f && a.Completion > 0.5f, "most passes reach a teammate");
-        // W66: the default home club plays dump and chase, which trades shots for dumps: over 50 matches it got 8 to 38 on goal, about 20 on average
+        // The default home club plays dump and chase, which trades shots for dumps: over 50 matches it got 8 to 38 on goal, about 20 on average
         Check(world.Match.Shots[0] >= 8 && world.Match.Shots[1] >= 8 && world.Match.Shots[0] <= 70 && world.Match.Shots[1] <= 70, "both clubs get a hockey-like number of shots on goal");
         Check(world.Match.Score[0] + world.Match.Score[1] is >= 1 and <= 10, "goals are scored, about as many as in a real match");
         Check(h.Checks is >= 15 and <= 30 && a.Checks is >= 15 and <= 30, "the AI throws 15 to 30 checks a side, like a real match (W22b)");
         Check(still < 15f, "the AI never leaves a loose puck lying");
 
-        // W22a: passes to moving, open teammates, and a cycle in the attacking zone
+        // Passes to moving, open teammates, and a cycle in the attacking zone
         float moving = (float)(h.ToMoving + a.ToMoving) / Math.Max(1, h.Aimed + a.Aimed);
         float open = (float)(h.ToOpen + a.ToOpen) / Math.Max(1, h.Aimed + a.Aimed);
         var hc = Positioning.CycleOf(world, Side.Home);
@@ -180,7 +180,7 @@ public sealed class DecisionsTests : CheckedTest
         Check(smartLostShare < poorLostShare * 0.75f, "the smarter club's passes are picked off less often");
     }
 
-    /// <summary>W22a: hockey IQ 100 against 20 for two periods; the stars still fumble and miss now and then, the weak side gets lucky.</summary>
+    /// <summary>Hockey IQ 100 against 20 for two periods; the stars still fumble and miss now and then, the weak side gets lucky.</summary>
     [Test]
     public void Stars() => Stars(WorldBuilder.Clubs, new Settings());
 
@@ -198,15 +198,15 @@ public sealed class DecisionsTests : CheckedTest
         Check(star.Completion > poor.Completion, "hockey IQ 100 still passes better than 20");
     }
 
-    /// <summary>W22c: a power play with a man in the box throughout, seed 1 (specialteamstest runs other seeds).</summary>
+    /// <summary>A power play with a man in the box throughout, seed 1 (specialteamstest runs other seeds).</summary>
     [Test]
     public void PowerPlay() => SpecialTeamsTests.PowerPlay(WorldBuilder.Clubs, new Settings(), 1, Check);
 
-    /// <summary>W22d: a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in, seed 1.</summary>
+    /// <summary>A 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in, seed 1.</summary>
     [Test]
     public void TacticsCompare() => TacticsTests.Compare(WorldBuilder.Clubs, new Settings(), 1, Check);
 
-    /// <summary>W63: icings and offsides over full matches, per preset and per hockey IQ.</summary>
+    /// <summary>Icings and offsides over full matches, per preset and per hockey IQ.</summary>
     [Test]
     public void LineCalls() => LineCalls(WorldBuilder.Clubs, new Settings());
 
@@ -242,7 +242,7 @@ public sealed class DecisionsTests : CheckedTest
         Console.WriteLine($"      Arcade: {aIce[0] + aIce[1]} icings, {aOff[0] + aOff[1]} offsides, {arcadeClears} clears");
         Check(aIce[0] + aIce[1] == 0 && aOff[0] + aOff[1] == 0 && arcade.Match.Phase == MatchPhase.Final, "under Arcade, rules off, a full match has no icing and no offside");
 
-        // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round, twice (W66: a 30 club
+        // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round, twice (a 30 club
         // comes up to the line with a teammate offside only a handful of times a match)
         int[] smartTotals = new int[5], poorTotals = new int[5];
         for (int s = 0; s < iqSeeds.Length; s++)

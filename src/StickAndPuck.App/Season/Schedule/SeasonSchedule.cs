@@ -1,19 +1,14 @@
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// Builds the SHL double round robin twice over: every club meets every other club four times,
+/// <summary>Builds the SHL double round robin twice over: every club meets every other club four times,
 /// twice at home and twice away, one game per club per round. 14 clubs give 52 rounds of 7 games
-/// and 52 games a club. An odd number of clubs gives each club a bye per cycle.
-/// </summary>
+/// and 52 games a club. An odd number of clubs gives each club a bye per cycle.</summary>
 public static class SeasonSchedule
 {
     /// <summary>How many times each pair of clubs meets; half at each rink.</summary>
     public const int Meetings = 4;
 
     /// <summary>Builds the schedule.</summary>
-    /// <param name="clubIds">The clubs' ids, at least two.</param>
-    /// <param name="seed">Shuffles who meets whom when, so each new season has its own order.</param>
-    /// <returns>Every game in round order, numbered from 0.</returns>
     public static IReadOnlyList<Fixture> Build(IReadOnlyList<string> clubIds, int seed)
     {
         if (clubIds.Count < 2) throw new ArgumentException("a season needs at least two clubs", nameof(clubIds));

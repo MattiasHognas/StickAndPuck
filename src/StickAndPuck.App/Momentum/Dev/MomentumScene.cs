@@ -3,11 +3,9 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Momentum.Dev;
 
-/// <summary>
-/// SAP_SCENE=momentum: an all-AI match that starts with the home club just after a goal, so the
+/// <summary>SAP_SCENE=momentum: an all-AI match that starts with the home club just after a goal, so the
 /// momentum bar under the scorebug and the crowd swell show at once (SAP_SCREENSHOT=1 for a still).
-/// SAP_MOMENTUM_SIDE=away boosts the away club instead.
-/// </summary>
+/// SAP_MOMENTUM_SIDE=away boosts the away club instead.</summary>
 public sealed class MomentumScene : IScene
 {
     /// <inheritdoc/>

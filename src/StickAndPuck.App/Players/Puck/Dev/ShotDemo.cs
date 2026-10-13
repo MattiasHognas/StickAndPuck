@@ -3,11 +3,9 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players.Dev;
 
-/// <summary>
-/// SAP_SCENE=shotdemo: a skater in the slot shoots at the away net over and over, a tap, then a
+/// <summary>SAP_SCENE=shotdemo: a skater in the slot shoots at the away net over and over, a tap, then a
 /// half hold, then a full wind-up, so the shot height and the airborne puck's shadow can be seen
-/// and recorded. The puck is dead, so goals do not count and no replay cuts in.
-/// </summary>
+/// and recorded. The puck is dead, so goals do not count and no replay cuts in.</summary>
 public sealed class ShotDemoScene : IScene
 {
     /// <inheritdoc/>
@@ -36,7 +34,6 @@ internal sealed class ShotDemo
     int Hold => Holds[round % Holds.Length];
 
     /// <summary>Adds the shooter.</summary>
-    /// <param name="world">The world to fill.</param>
     public static void Setup(World world)
     {
         var data = world.Setup.Home.Roster.FirstOrDefault(p => p.Position != PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.C };
@@ -46,7 +43,6 @@ internal sealed class ShotDemo
     }
 
     /// <summary>Writes this step's commands.</summary>
-    /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         if (!world.Dev.Shot.TryGet(out var d) || !d.shooter.TryGet(out var p)) return;

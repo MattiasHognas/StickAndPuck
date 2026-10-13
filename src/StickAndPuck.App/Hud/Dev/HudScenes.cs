@@ -2,12 +2,10 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Hud.Dev;
 
-/// <summary>
-/// SAP_SCENE=hud: both starting lineups with the scorebug at 2-1 in the second period and one
+/// <summary>SAP_SCENE=hud: both starting lineups with the scorebug at 2-1 in the second period and one
 /// banner up. SAP_HUD_MESSAGE picks it: goal (default), period, final, tie, offside, icing, intro,
 /// hattrick, firstgoal, shutout, gwg (final with the game-winning goal), pp (a power play, no banner)
-/// or none. For screenshots of the HUD without waiting for a match to get there.
-/// </summary>
+/// or none. For screenshots of the HUD without waiting for a match to get there.</summary>
 public sealed class HudScene : IScene
 {
     /// <inheritdoc/>
@@ -43,7 +41,6 @@ internal static class HudDemo
 {
 
     /// <summary>Publishes the chosen event on the first step.</summary>
-    /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         string message = world.Switches.HudMessage;

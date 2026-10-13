@@ -6,9 +6,8 @@ using StickAndPuck.App.AI.Dev;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// W6b: what each AI skater does with the puck and around it, added to the move positioning
-/// (W6a) chose. It writes PlayerCommand like a human's input, so puck handling, checking and
+/// <summary>What each AI skater does with the puck and around it, added to the move positioning
+/// chose. It writes PlayerCommand like a human's input, so puck handling, checking and
 /// skating never know who is in control.
 /// <list type="bullet">
 /// <item>Carrier: every look (quicker for a smart passer) weighs carrying on, shooting and each
@@ -22,31 +21,30 @@ namespace StickAndPuck.App.AI;
 /// positioning's chaser.</item>
 /// <item>Checks: the defender pressing the carrier decides once per approach whether to finish the
 /// check, likelier with a better checking trait, then skates through the carrier and checks.</item>
-/// <item>W22a: every look, pass and shot is rolled with <see cref="Jitter"/>: a fumbled look is
+/// <item>Every look, pass and shot is rolled with <see cref="Jitter"/>: a fumbled look is
 /// read like a much weaker player, a fumbled pass goes a beat late, a fumbled shot picks the
 /// goalie's side; a lucky roll plays it like a star. In the attacking-zone cycle the carrier
 /// values keeping the puck and fears a turnover more, so the club passes it round until a lane
 /// to a good shot opens; passes never go through a net's cage.</item>
-/// <item>W63: a carrier pinned in his own zone with no safe pass sometimes fires the puck out, hard
+/// <item>A carrier pinned in his own zone with no safe pass sometimes fires the puck out, hard
 /// up the boards: untouched from his own half, that is icing. A poor or rushed skater does it far
 /// more often than a smart one. A carrier coming up to the
 /// attacking blue line with a teammate already over it may hold up short of the line so he can
 /// tag up; a smart, unhurried one usually does, a poor or pressed one carries on in, offside.
 /// Neither care applies with the rule switched off (Arcade).</item>
-/// <item>W68: every write goes through <see cref="AiCommand"/>, which says who owns each field. Per
+/// <item>Every write goes through <see cref="AiCommand"/>, which says who owns each field. Per
 /// skater, one branch of <see cref="Update"/> runs, in this order: a committed shot is held; a
 /// delayed pass goes; a carrier holds up at the line (unless special teams or tactics claimed him
 /// this step) and looks at the play; a receiver meets the pass; the chaser pounces; the crasher
 /// goes to the net; a presser hits. Candidate passes are weighed without touching anyone.</item>
-/// <item>W96: after a human's pass, control follows the puck to a receiver who would otherwise
+/// <item>After a human's pass, control follows the puck to a receiver who would otherwise
 /// skate off on the stick still held for the pass. Until he or anyone touches the puck, or the
 /// pass dies, his Move and Sprint are replaced with a skate to where his blade meets the puck's
 /// slide (see Receive; once the puck has slowed, a skate onto it), until the player gives fresh stick input: the stick let go
 /// to rest and pushed again, or turned more than <see cref="FreshTurn"/> from where it was held.
 /// His buttons stay his, so a held shoot still arms a one-timer. This is the one write the AI
 /// makes to a human's command, done here rather than through <see cref="AiCommand"/>.</item>
-/// </list>
-/// </summary>
+/// </list></summary>
 internal sealed class DecisionSystem : ISystem
 {
     const float CheckFrom = 3.2f;   // distance at which a presser decides whether to hit
@@ -56,10 +54,10 @@ internal sealed class DecisionSystem : ISystem
     const float HoldFor = 1.6f;     // longest a carrier holds up at the line before carrying on in
     const float Pushed = 0.3f;      // a stick pushed less than this is at rest, as puck handling reads it
 
-    /// <summary>The stick turned this far from where it was held for a human's pass, in radians, steers the receiver (W96).</summary>
+    /// <summary>The stick turned this far from where it was held for a human's pass, in radians, steers the receiver.</summary>
     const float FreshTurn = 45f * MathF.PI / 180f;
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 5;
 
     readonly Random rng;
@@ -70,7 +68,6 @@ internal sealed class DecisionSystem : ISystem
     }
 
     /// <summary>Initializes the system with its own randomness, so tests repeat.</summary>
-    /// <param name="rng">Randomness for misreads, shot choice and checks.</param>
     public DecisionSystem(Random rng)
     {
         this.rng = rng;
@@ -98,7 +95,7 @@ internal sealed class DecisionSystem : ISystem
             if (pk.Carrier == p.Id && brain.LatePass.HasValue) { LatePass(world, p, brain); continue; }
             if (pk.Carrier == p.Id)
             {
-                if (!AiCommand.Held(world, p)) HoldLine(world, p, brain);   // W68: a dump taken wide stays wide
+                if (!AiCommand.Held(world, p)) HoldLine(world, p, brain);   // a dump taken wide stays wide
                 Carry(world, p, brain);
                 continue;
             }
@@ -139,7 +136,7 @@ internal sealed class DecisionSystem : ISystem
                 board.Meet = Maybe<HumanMeet>.None;
                 if (to < 0 && PuckHandlingSystem.LastHumanPass(world).TryGet(out var human) && human.Passer == p.Id && world.Time - human.At < 0.1f)
                 {
-                    // W96: a human's pass has its receiver from puck handling
+                    // A human's pass has its receiver from puck handling
                     to = human.Receiver;
                     board.Meet = new HumanMeet(to, human.Stick) { Released = human.Stick.Length() < Pushed };
                 }
@@ -195,7 +192,7 @@ internal sealed class DecisionSystem : ISystem
         if (p.Action != PlayerAction.None || world.Time < brain.NextThink) return;
         brain.NextThink = world.Time + Choices.ThinkEvery(p.Data.Traits.HockeyIq) * (0.8f + 0.4f * rng.NextSingle());
 
-        // W22a: this look is rolled against hockey IQ; a fumble reads it like a much weaker player, luck like a star
+        // This look is rolled against hockey IQ; a fumble reads it like a much weaker player, luck like a star
         int smart = Jitter.Roll(world, p, rng).Iq;
 
         int end = PuckHandling.AttackEnd(world, p.Side);
@@ -210,7 +207,7 @@ internal sealed class DecisionSystem : ISystem
 
         float carry = Choices.SpotValue(end, at) * (1f - Math.Min(0.35f, held / 12f)) * (camping ? 0.5f : 1f);
 
-        // W22a: in the cycle the puck kept is worth more than its spot: the next turn may open a lane
+        // In the cycle the puck kept is worth more than its spot: the next turn may open a lane
         if (cycling && !camping) carry += Choices.CycleKeep;
         float accuracy = Traits.Unit(p.Data.Traits.ShotAccuracy);
         var blockers = world.Players.Where(o => o.OnIce && o.Side != p.Side && !o.IsGoalie).Select(o => Flat(o.Position));
@@ -230,15 +227,12 @@ internal sealed class DecisionSystem : ISystem
         else if (camping && held > 6f && Choices.ShotQuality(end, at) > (cycling ? 0.2f : 0f)) Shoot(world, p, end, at, pressed);   // pinned too long: get rid of it (in the cycle only from a real chance; else skate on)
     }
 
-    /// <summary>
-    /// W63: a carrier in his own zone with a forechecker on him and no pass he trusts weighs, once
+    /// <summary>A carrier in his own zone with a forechecker on him and no pass he trusts weighs, once
     /// while pinned, firing the puck out. Hockey IQ sets the odds (a poor skater panics far more often
     /// than a smart one, who would rather skate it out or wait for a lane), a fumbled read doubles
     /// them, and a tighter check makes it likelier. The clear goes hard up the boards on his side:
     /// untouched from behind the red line it goes the length, icing. With icing off (Arcade) there is
-    /// nothing to fear, so the odds are higher still. The penalty kill clears its own way (W22c).
-    /// </summary>
-    /// <returns>True when the carrier clears.</returns>
+    /// nothing to fear, so the odds are higher still. The penalty kill clears its own way.</summary>
     bool Clear(World world, Player p, Brain brain, int end, Vector2 at, float nearest, Maybe<PassOption> pass)
     {
         bool pinned = end * at.X < -RinkSpec.BlueLineX && nearest < 2.6f && (!pass.TryGet(out var option) || option.Success < SafePass);
@@ -259,13 +253,11 @@ internal sealed class DecisionSystem : ISystem
         return true;
     }
 
-    /// <summary>
-    /// W63: a carrier coming up to the attacking blue line with a teammate already wholly over it
+    /// <summary>A carrier coming up to the attacking blue line with a teammate already wholly over it
     /// decides once whether to hold up short of the line, so the teammate can tag up. A smart skater
     /// with time usually does; a poor one, a fumbled read or a defender on him and he carries on in,
     /// offside. Holding, he curls across the ice short of the line until everyone is back onside or
-    /// his patience runs out. With offside off (Arcade) nobody holds up.
-    /// </summary>
+    /// his patience runs out. With offside off (Arcade) nobody holds up.</summary>
     void HoldLine(World world, Player p, Brain brain)
     {
         if (!world.Setup.Rules.Offside || p.Action != PlayerAction.None || brain.ShootSteps > 0) return;
@@ -316,7 +308,7 @@ internal sealed class DecisionSystem : ISystem
             var off = new Vector2(PuckHandling.Gauss(rng), PuckHandling.Gauss(rng)) * misread * 0.6f;
             seen.Add((Flat(o.IsGoalie ? o.Position : PuckHandling.Blade(o)) + off, o.IsGoalie ? 3f : SkatingModel.TopSpeed(o.Data.Traits, o.Energy)));
 
-            // W22a: a pass into a defender's skates is lost as surely as one into his stick
+            // A pass into a defender's skates is lost as surely as one into his stick
             if (!o.IsGoalie) seen.Add((Flat(o.Position) + off, SkatingModel.TopSpeed(o.Data.Traits, o.Energy)));
         }
         return seen;
@@ -335,7 +327,7 @@ internal sealed class DecisionSystem : ISystem
             float d = Vector2.Distance(at, target);
             if (d < Choices.ShortestPass || d > vision) continue;
             if (smart >= 50 && Choices.Offside(end, at, Flat(mate.Position))) continue;
-            if (Cycle.ThroughNet(at, target)) continue;   // W37's cage stops a pass through it
+            if (Cycle.ThroughNet(at, target)) continue;   // the cage stops a pass through it
 
             // the stick has to point so puck handling picks this teammate; asked without touching his command
             if (PuckHandling.PickReceiver(world, p, Vector2.Normalize(target - at)) != mate) continue;
@@ -362,7 +354,7 @@ internal sealed class DecisionSystem : ISystem
         bool picksCorner = !slap && (Traits.Unit(p.Data.Traits.ShotAccuracy) >= 0.75f || roll == ReadOutcome.Lucky);
         if (roll == ReadOutcome.Fumble && !slap)
         {
-            // W22a: misread the goalie and pick the side he covers
+            // Misread the goalie and pick the side he covers
             aim = Vector2.Normalize(new Vector2(end * 0.8f, -side * 0.6f));
             picksCorner = true;
         }
@@ -418,10 +410,8 @@ internal sealed class DecisionSystem : ISystem
         return true;
     }
 
-    /// <summary>
-    /// W96: skates the human receiver of a human's pass to meet it, over the stick still held from
-    /// the pass, until the player steers him with fresh input (see the class remarks).
-    /// </summary>
+    /// <summary>Skates the human receiver of a human's pass to meet it, over the stick still held from
+    /// the pass, until the player steers him with fresh input (see the class remarks).</summary>
     static void MeetForHuman(World world, DecisionBoard board)
     {
         var pk = world.Puck;
@@ -445,14 +435,12 @@ internal sealed class DecisionSystem : ISystem
         p.Command = p.Command with { Move = move.Move, Sprint = move.Sprint };
     }
 
-    /// <summary>
-    /// W96: where the human receiver goes to take the pass: the point on the puck's slide nearest
+    /// <summary>Where the human receiver goes to take the pass: the point on the puck's slide nearest
     /// where his blade drifts on his current skating, among those he can reach in time, and his
     /// body shifted so the blade, at the heading he has, sits on it. A receiver on the line stays
     /// put; one led by the pass skates on into it. Chasing the earliest point instead (as an AI
     /// receiver does) turns him toward the puck and swings his blade off its line. None when the
-    /// puck has all but stopped.
-    /// </summary>
+    /// puck has all but stopped.</summary>
     static Maybe<PlayerCommand> Receive(Player p, Puck pk)
     {
         const float step = 1 / 60f;
@@ -477,12 +465,10 @@ internal sealed class DecisionSystem : ISystem
         return Steering.Toward(p, TeamShape.Inside(Flat(p.Position) + meet - blade, 0.6f), 0.6f);
     }
 
-    /// <summary>
-    /// W66: the earliest point along the puck's slide the receiver's blade can reach before the puck
+    /// <summary>The earliest point along the puck's slide the receiver's blade can reach before the puck
     /// does, in metres from the puck, or None when he cannot get to it in time anywhere. Going to
     /// the point across from where he stands instead braked him sideways while a pass led ahead of
-    /// him ran on, so the more a smart passer led him the more passes he missed.
-    /// </summary>
+    /// him ran on, so the more a smart passer led him the more passes he missed.</summary>
     static Maybe<float> Intercept(Player p, Vector2 blade, Vector2 from, Vector2 dir, float speed)
     {
         const float step = 1 / 60f;
@@ -500,10 +486,8 @@ internal sealed class DecisionSystem : ISystem
         return Maybe<float>.None;
     }
 
-    /// <summary>
-    /// The chaser close to a slow loose puck skates right over it, easing off, so the puck is
-    /// taken at the skates or the blade; going for the blade at speed only circles the puck.
-    /// </summary>
+    /// <summary>The chaser close to a slow loose puck skates right over it, easing off, so the puck is
+    /// taken at the skates or the blade; going for the blade at speed only circles the puck.</summary>
     static void Pounce(World world, Player p)
     {
         var pk = world.Puck;

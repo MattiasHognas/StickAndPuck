@@ -7,10 +7,9 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// W22d: each club plays its own tactics, from the <c>tactics</c> field of its club file
-/// (<see cref="ClubTactics"/>). Runs after positioning (W6a), defence (W22b) and special teams
-/// (W22c) and before decisions (W6b), and takes over AI skaters the same way defence does: job
+/// <summary>Each club plays its own tactics, from the <c>tactics</c> field of its club file
+/// (<see cref="ClubTactics"/>). Runs after positioning, defence and special teams
+/// and before decisions, and takes over AI skaters the same way defence does: job
 /// <see cref="Job.Requested"/>, its own target and the move, so decisions leave them alone.
 /// Only at even strength in regulation; overtime's 3-on-3 and special teams stay as they are.
 /// <list type="bullet">
@@ -23,11 +22,10 @@ namespace StickAndPuck.App.AI;
 /// carries wide and, once over the red line, fires the puck into the corner with fewer defenders;
 /// two forwards go after it.</item>
 /// <item>Power play: a club that always sets up the umbrella or the 1-3-1 gets that shape instead
-/// of W22c's coin toss.</item>
+/// of the special teams coin toss.</item>
 /// <item>Balanced and carry change nothing: the AI as it plays without tactics.</item>
 /// </list>
-/// Hockey IQ still sets how quickly and exactly each skater reads his tactical spot.
-/// </summary>
+/// Hockey IQ still sets how quickly and exactly each skater reads his tactical spot.</summary>
 internal sealed class TacticsSystem : ISystem
 {
     const float NoShotRange = 26.4f;   // a wrist shot from nearer, facing the net, goes at the net (PuckHandling.LongestShot is 26)
@@ -36,7 +34,7 @@ internal sealed class TacticsSystem : ISystem
     const float ChaseFor = 3.5f;       // seconds the second forward goes after a dump
     const float Settled = 1.5f;        // seconds the breakout side has had the puck before it counts in the tally
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 4;
 
     readonly Random rng;
@@ -47,7 +45,6 @@ internal sealed class TacticsSystem : ISystem
     }
 
     /// <summary>Initializes the system with its own randomness, so tests repeat.</summary>
-    /// <param name="rng">Randomness for the dump-or-carry roll.</param>
     public TacticsSystem(Random rng)
     {
         this.rng = rng;
@@ -115,12 +112,10 @@ internal sealed class TacticsSystem : ISystem
         if (st.PowerPlay.Is(pp) && PowerPlayShapes.Formation(Tactics.Of(world, pp).PowerPlay).TryGet(out var shape)) st.PpShape = shape;
     }
 
-    /// <summary>
-    /// Dump and chase: once per run with the puck, a carrier coming up to the red line with
+    /// <summary>Dump and chase: once per run with the puck, a carrier coming up to the red line with
     /// defenders ahead decides to dump it. He takes it wide, and once the puck will leave his
     /// stick over the red line and too far out to count as a shot at the net, he fires it into the
-    /// corner the defence has left emptier.
-    /// </summary>
+    /// corner the defence has left emptier.</summary>
     void Entry(World world, TacticsBoard board, Player p)
     {
         int end = PuckHandling.AttackEnd(world, p.Side);
@@ -195,12 +190,10 @@ internal sealed class TacticsSystem : ISystem
         Take(world, board, second, TacticTask.Chase, TeamShape.Inside(spot), dt, sprint: true);
     }
 
-    /// <summary>
-    /// 2-1-2: with the puck in the other side's half, a second forward takes the carrier's nearest
+    /// <summary>2-1-2: with the puck in the other side's half, a second forward takes the carrier's nearest
     /// outlet, the third sits high, and the defence pinch at the blue line (or stand up at the red
     /// line while the puck is still outside the zone). The man on the puck stays positioning's and
-    /// defence's.
-    /// </summary>
+    /// defence's.</summary>
     void Aggressive(World world, TacticsBoard board, Side side, Player carrier, float dt)
     {
         int end = PuckHandling.AttackEnd(world, side);
@@ -234,11 +227,9 @@ internal sealed class TacticsSystem : ISystem
         }
     }
 
-    /// <summary>
-    /// 1-3-1: with the puck in the other side's zone (or just out of it), the man nearest the
+    /// <summary>1-3-1: with the puck in the other side's zone (or just out of it), the man nearest the
     /// carrier angles him at their blue line without going in deep, three wait in a line across
-    /// the red line and the last defenceman stays back by his own blue line.
-    /// </summary>
+    /// the red line and the last defenceman stays back by his own blue line.</summary>
     void Trap(World world, TacticsBoard board, Side side, Player carrier, float dt)
     {
         int end = PuckHandling.AttackEnd(world, side);

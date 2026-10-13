@@ -18,7 +18,6 @@ public sealed class MaybeJsonConverterFactory : JsonConverterFactory
 }
 
 /// <summary>Reads and writes one <see cref="Maybe{T}"/>.</summary>
-/// <typeparam name="T">The value type.</typeparam>
 public sealed class MaybeJsonConverter<T> : JsonConverter<Maybe<T>>
     where T : notnull
 {

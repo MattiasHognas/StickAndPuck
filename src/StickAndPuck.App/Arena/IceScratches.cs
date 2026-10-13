@@ -4,13 +4,11 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Arena;
 
-/// <summary>
-/// A4: skate scratches on the ice from art/scene/ice_scratches.png (made by
+/// <summary>A4: skate scratches on the ice from art/scene/ice_scratches.png (made by
 /// art/scripts/ice_scratches.py), a white mask over the whole rink tinted with the scratch tone,
 /// so they stay a palette colour and follow the lighting; the tone's alpha fades them towards
-/// the ice (W21). Drawn flat on the ice with the bands, with the depth test but no depth write,
-/// so players drawn earlier stay in front.
-/// </summary>
+/// the ice. Drawn flat on the ice with the bands, with the depth test but no depth write,
+/// so players drawn earlier stay in front.</summary>
 internal static class IceScratches
 {
     const float Y = 0f;          // on the ice plane, after the bands; the sheet writes no depth while they go down
@@ -25,7 +23,6 @@ internal static class IceScratches
     }
 
     /// <summary>Draws the scratches in the given tone whether or not the bands show. The caller has turned depth writes off.</summary>
-    /// <param name="tone">The scratch colour; its alpha is how strong they are.</param>
     public static void Draw(Color tone)
     {
         if (texture.Id == 0) return;

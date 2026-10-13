@@ -11,7 +11,7 @@ using Warmup = StickAndPuck.App.Pregame.Pregame;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// The warm-up (W28), run with positioning, skating, puck physics and the match rules: both squads
+/// The warm-up, run with positioning, skating, puck physics and the match rules: both squads
 /// skate around until start is pressed, then the opening faceoff follows; and a match without a
 /// human keeps the plain intro. Formerly SAP_SCENE=warmuptest.
 /// </summary>

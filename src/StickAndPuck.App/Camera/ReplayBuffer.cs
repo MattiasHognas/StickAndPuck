@@ -3,10 +3,8 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Camera;
 
-/// <summary>
-/// The last few seconds of play, one frame per fixed step: every player's place, heading and
-/// body action, and the puck. Frames are reused in a ring, so recording allocates nothing once full.
-/// </summary>
+/// <summary>The last few seconds of play, one frame per fixed step: every player's place, heading and
+/// body action, and the puck. Frames are reused in a ring, so recording allocates nothing once full.</summary>
 internal sealed class ReplayBuffer
 {
     /// <summary>One player's pose in a frame.</summary>
@@ -35,8 +33,6 @@ internal sealed class ReplayBuffer
     readonly Frame[] ring;
     int next;
 
-    /// <summary>Initializes a buffer that keeps the given number of steps.</summary>
-    /// <param name="capacity">Steps kept, the oldest dropped first.</param>
     public ReplayBuffer(int capacity)
     {
         ring = new Frame[capacity];
@@ -47,12 +43,9 @@ internal sealed class ReplayBuffer
     public int Count { get; private set; }
 
     /// <summary>Gets a frame by age order: 0 is the oldest held, Count - 1 the newest.</summary>
-    /// <param name="index">The frame's index from the oldest.</param>
-    /// <returns>The frame.</returns>
     public Frame this[int index] => ring[(next - Count + index + ring.Length * 2) % ring.Length];
 
     /// <summary>Records the world as it is now, dropping the oldest frame when full.</summary>
-    /// <param name="world">The match state.</param>
     public void Record(World world)
     {
         Capture(world, ring[next]);
@@ -67,8 +60,6 @@ internal sealed class ReplayBuffer
     }
 
     /// <summary>Gets the index of the newest frame at or before a time, or 0 if all are later.</summary>
-    /// <param name="time">World time in seconds.</param>
-    /// <returns>The frame index.</returns>
     public int IndexAt(float time)
     {
         for (int i = Count - 1; i > 0; i--)
@@ -77,8 +68,6 @@ internal sealed class ReplayBuffer
     }
 
     /// <summary>Copies the world's players and puck into a frame.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="frame">The frame to fill.</param>
     public static void Capture(World world, Frame frame)
     {
         frame.Tick = world.Tick;
@@ -99,12 +88,8 @@ internal sealed class ReplayBuffer
         frame.PuckCarrier = world.Puck.Carrier;
     }
 
-    /// <summary>
-    /// Puts a frame back into the world: players and puck where they were. The puck's Live flag
-    /// and everything rules own are left alone.
-    /// </summary>
-    /// <param name="frame">The frame.</param>
-    /// <param name="world">The match state.</param>
+    /// <summary>Puts a frame back into the world: players and puck where they were. The puck's Live flag
+    /// and everything rules own are left alone.</summary>
     public static void Apply(Frame frame, World world)
     {
         int n = Math.Min(frame.PlayerCount, world.Players.Count);

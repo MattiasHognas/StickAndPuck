@@ -3,13 +3,11 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players.Dev;
 
-/// <summary>
-/// W4b test setup, SAP_SCENE=handling: the human carries the puck at centre ice with two
+/// <summary>Test setup, SAP_SCENE=handling: the human carries the puck at centre ice with two
 /// teammates up ice on the wings and one back on defence, against an away defender in front of
 /// the away net. Arrows skate, space (or left mouse, or gamepad A) shoots: tap for a wrist shot,
 /// hold for a slap shot. E (or right mouse, or gamepad X) passes toward the way the stick points,
-/// and control follows the pass.
-/// </summary>
+/// and control follows the pass.</summary>
 public sealed class HandlingScene : IScene
 {
     /// <inheritdoc/>

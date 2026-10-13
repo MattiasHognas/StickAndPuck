@@ -4,8 +4,7 @@ using StickAndPuck.App.Players.Dev;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W4b: possession and the stick (see <see cref="PuckHandling"/> for the numbers).
+/// <summary>Possession and the stick (see <see cref="PuckHandling"/> for the numbers).
 /// <list type="bullet">
 /// <item>Taking the puck: a skater whose blade a loose, live puck passes close to takes it, if the
 /// puck is low and slow enough for their puck control; the nearest blade wins, so an opponent in
@@ -14,24 +13,23 @@ namespace StickAndPuck.App.Players;
 /// with better puck control, and never leaves the rink.</item>
 /// <item>Passing: pass sends the puck along the ice to the teammate nearest the way the stick
 /// points, leading a moving receiver by smart passes. A human's control follows the pass to the
-/// receiver straight away, unless <see cref="Settings.Switching"/> is Manual. W96: a human's pass
+/// receiver straight away, unless <see cref="Settings.Switching"/> is Manual. A human's pass
 /// with nobody in the cone goes to the nearest open teammate (<see cref="PuckHandling.PickOpen"/>),
 /// and is recorded (<see cref="LastHumanPass"/>) so the AI skates the receiver to meet it.</item>
 /// <item>Shooting: a tap of shoot is a wrist shot, a hold past <see cref="PuckHandling.SlapAfter"/> a
 /// slap shot that grows with the wind-up (it fires by itself at full wind-up plus a moment).
 /// The hold also sets the height: a tap stays low, a full wind-up goes high (<see cref="ShotHeight"/>).
 /// The puck leaves the blade <see cref="PuckHandling.StrikeDelay"/> into the shoot clip.</item>
-/// <item>Deking (W32): deke while a defender closes in front sidesteps with the puck; well timed
+/// <item>Deking: deke while a defender closes in front sidesteps with the puck; well timed
 /// it usually beats them (they bite and lunge at nothing), mistimed it usually loses the puck
 /// (see <see cref="DekeModel"/>). With <see cref="Settings.AutoDeke"/> on, a human carrier dekes
 /// by themselves when a defender reaches the sweet spot, at worse odds.</item>
-/// <item>One-timers (W32): shoot pressed while a teammate's pass is on its way arms a one-timer;
+/// <item>One-timers: shoot pressed while a teammate's pass is on its way arms a one-timer;
 /// when the puck reaches the blade it is struck at once, without being stopped and carried.
 /// <see cref="Settings.OneTimers"/> off turns this off: the pass is taken, then shot.</item>
 /// </list>
 /// Publishes <see cref="PassMade"/> and <see cref="ShotTaken"/> (every shot,
-/// on goal or not) with the passer or shooter, the puck and its speed as Strength.
-/// </summary>
+/// on goal or not) with the passer or shooter, the puck and its speed as Strength.</summary>
 internal sealed class PuckHandlingSystem : ISystem
 {
     /// <summary>The shoot clip's length: 46 frames at 24 per second.</summary>
@@ -42,7 +40,7 @@ internal sealed class PuckHandlingSystem : ISystem
     /// <summary>Seconds after a pass that a teammate can still arm a one-timer on it.</summary>
     public const float OneTimerWindow = 1.6f;
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 7;
 
 
@@ -66,7 +64,6 @@ internal sealed class PuckHandlingSystem : ISystem
     }
 
     /// <summary>Initializes the system with its own randomness, so tests repeat.</summary>
-    /// <param name="rng">Randomness for pass and shot error.</param>
     public PuckHandlingSystem(Random rng)
     {
         this.rng = rng;
@@ -84,7 +81,7 @@ internal sealed class PuckHandlingSystem : ISystem
         var pk = world.Puck;
         if (pk.Carrier >= 0 && (pk.Carrier >= world.Players.Count || world.Players[pk.Carrier].IsGoalie))
         {
-            Buttons(world, dt, Maybe<Player>.None);   // a goalie's puck is W5's
+            Buttons(world, dt, Maybe<Player>.None);   // a goalie's puck is the goalie system's
             lastPuck = pk.Position;
             return;
         }
@@ -133,7 +130,7 @@ internal sealed class PuckHandlingSystem : ISystem
                 charge.Remove(p.Id);
                 var kind = PuckHandling.KindOf(held);
                 float speed = kind == ShotKind.Slap ? PuckHandling.SlapSpeed(p.Data.Traits, held) : PuckHandling.WristSpeed(p.Data.Traits);
-                speed *= Lines.LinesTuning.ShotFactor(p.Energy);   // W13: tired skaters shoot softer
+                speed *= Lines.LinesTuning.ShotFactor(p.Energy);   // tired skaters shoot softer
                 pendingShot = Maybe.Some((p.Id, kind, speed, held));
                 p.Begin(PlayerAction.Shoot);
             }
@@ -182,9 +179,7 @@ internal sealed class PuckHandlingSystem : ISystem
         }
     }
 
-    /// <summary>Gets a human's last pass to a teammate in this match (W96), or None before the first.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The pass.</returns>
+    /// <summary>Gets a human's last pass to a teammate in this match, or None before the first.</summary>
     internal static Maybe<HumanPass> LastHumanPass(World world)
     {
         return world.LastHumanPass;

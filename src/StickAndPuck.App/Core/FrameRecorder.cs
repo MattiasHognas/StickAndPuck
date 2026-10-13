@@ -3,11 +3,9 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>
-/// SAP_RECORD=seconds saves every drawn frame as a numbered PNG in SAP_FRAMES (default frames/)
+/// <summary>SAP_RECORD=seconds saves every drawn frame as a numbered PNG in SAP_FRAMES (default frames/)
 /// for that much game time, then the game quits. The loop runs one step per frame while recording,
-/// so a slow renderer still gives smooth 60 Hz movies. tools/record.sh turns the frames into an mp4.
-/// </summary>
+/// so a slow renderer still gives smooth 60 Hz movies. tools/record.sh turns the frames into an mp4.</summary>
 internal sealed class FrameRecorder
 {
     readonly float seconds;
@@ -21,7 +19,6 @@ internal sealed class FrameRecorder
     }
 
     /// <summary>Gets a recorder when SAP_RECORD is set to a positive number of seconds.</summary>
-    /// <returns>The recorder, or None.</returns>
     public static Maybe<FrameRecorder> FromEnvironment()
     {
         if (!float.TryParse(Env.Get("SAP_RECORD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds) || seconds <= 0)
@@ -31,8 +28,6 @@ internal sealed class FrameRecorder
     }
 
     /// <summary>Saves the frame just drawn.</summary>
-    /// <param name="world">The world, for the step number and game time.</param>
-    /// <returns>True once the recording is long enough.</returns>
     public bool Save(World world)
     {
         var image = LoadImageFromScreen();

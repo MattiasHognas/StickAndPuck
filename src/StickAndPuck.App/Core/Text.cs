@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>A language the game's text comes in (W53).</summary>
+/// <summary>A language the game's text comes in.</summary>
 public enum Language
 {
     /// <summary>Default: English, data/lang/en.json.</summary>
@@ -13,12 +13,10 @@ public enum Language
     Swedish,
 }
 
-/// <summary>
-/// The string table (W53): every player-visible text by key, one flat JSON file per language in
+/// <summary>The string table: every player-visible text by key, one flat JSON file per language in
 /// data/lang (en.json, sv.json), placeholders as {0}, {1}. <see cref="Text.Keys"/> holds the keys.
 /// The settings pick the language (<see cref="Use"/>); a key a language lacks falls back to English,
-/// and a key missing there too shows as itself. Numbers are formatted with the invariant culture.
-/// </summary>
+/// and a key missing there too shows as itself. Numbers are formatted with the invariant culture.</summary>
 public static partial class Text
 {
     /// <summary>The folder the language files are read from.</summary>
@@ -31,36 +29,24 @@ public static partial class Text
     public static Language Current { get; private set; } = Language.English;
 
     /// <summary>Shows the game in a language from now on.</summary>
-    /// <param name="language">The language.</param>
     public static void Use(Language language)
     {
         Current = language;
     }
 
     /// <summary>Gets a text in the current language.</summary>
-    /// <param name="key">One of <see cref="Keys"/>.</param>
-    /// <returns>The text.</returns>
     public static string Get(string key) => Lookup(Current, key);
 
     /// <summary>Gets a text in the current language with its {0}, {1} placeholders filled.</summary>
-    /// <param name="key">One of <see cref="Keys"/>.</param>
-    /// <param name="args">The values, numbers formatted with the invariant culture.</param>
-    /// <returns>The text.</returns>
     public static string Format(string key, params object[] args) => string.Format(CultureInfo.InvariantCulture, Get(key), args);
 
     /// <summary>Gets a language's own name for itself, as the settings screen shows it.</summary>
-    /// <param name="language">The language.</param>
-    /// <returns>The name.</returns>
     public static string NameOf(Language language) => Lookup(language, Keys.LanguageName);
 
     /// <summary>Gets the file a language is read from.</summary>
-    /// <param name="language">The language.</param>
-    /// <returns>The path.</returns>
     public static string FileOf(Language language) => Path.Combine(Folder, (language == Language.Swedish ? "sv" : "en") + ".json");
 
     /// <summary>Reads a language file: a flat JSON object of key to text.</summary>
-    /// <param name="path">The file.</param>
-    /// <returns>The table.</returns>
     public static IReadOnlyDictionary<string, string> Read(string path)
     {
         return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path))

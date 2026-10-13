@@ -10,7 +10,7 @@ using StickAndPuck.App.Goalie.Dev;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// The goalie checks (W5): stops most straight shots, leaves some rebounds, and better reflexes
+/// The goalie checks: stops most straight shots, leaves some rebounds, and better reflexes
 /// save more. Formerly SAP_SCENE=goalietest.
 /// </summary>
 public sealed class GoalieTests : CheckedTest
@@ -146,7 +146,7 @@ public sealed class GoalieTests : CheckedTest
     }
 
     /// <summary>
-    /// W34: 100 shots at the glove side and 100 at the blocker side, at hand height, against a goalie
+    /// 100 shots at the glove side and 100 at the blocker side, at hand height, against a goalie
     /// with a weak glove and against an even one. The weak glove lets in more glove-side shots than
     /// its blocker side and than the even goalie's glove side; the AI reads the glove as the weak side.
     /// </summary>
@@ -199,7 +199,7 @@ public sealed class GoalieTests : CheckedTest
         return new Tally(saves, 0, goals, true);
     }
 
-    /// <summary>W34: poor rebound control holds fewer shots and leaves harder rebounds than good control.</summary>
+    /// <summary>Poor rebound control holds fewer shots and leaves harder rebounds than good control.</summary>
     [Test]
     public void Rebounds()
     {
@@ -244,7 +244,7 @@ public sealed class GoalieTests : CheckedTest
     }
 
     /// <summary>
-    /// W34: with a teammate open in front, a good puck handler plays a held puck to them and goes out
+    /// With a teammate open in front, a good puck handler plays a held puck to them and goes out
     /// to move a loose puck from behind the net on; a poor one rims a held puck to the corner and
     /// stays in the crease.
     /// </summary>

@@ -3,12 +3,10 @@ using StickAndPuck.App.Hud;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// W16b: when a playoff game ends (MatchEnd), records its result in <see cref="PlayoffSession"/>
+/// <summary>When a playoff game ends (MatchEnd), records its result in <see cref="PlayoffSession"/>
 /// and settles the other games up to the human's next one; <see cref="AutosaveSystem"/> saves it
-/// next. Until W11's screens exist, the bracket shows a few seconds after a playoff game's final,
-/// and always in SAP_SCENE=playoffbracket.
-/// </summary>
+/// next. Without the screens, the bracket shows a few seconds after a playoff game's final,
+/// and always in SAP_SCENE=playoffbracket.</summary>
 internal sealed class PlayoffSystem : ISystem, IDisposable
 {
     /// <summary>Seconds after the final before the stand-in bracket shows.</summary>
@@ -65,7 +63,6 @@ internal sealed class PlayoffSystem : ISystem, IDisposable
     }
 
     /// <summary>Prints where the playoffs stand: the champion, or the human's next game.</summary>
-    /// <param name="playoffs">The playoffs.</param>
     public static void Log(PlayoffState playoffs)
     {
         if (playoffs.IsOver) Console.WriteLine($"SAP: {playoffs.Champion.Or("")} are SHL champions");

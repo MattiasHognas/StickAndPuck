@@ -4,14 +4,12 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Season.Dev;
 
-/// <summary>
-/// SAP_SCENE=playoffs: a playoff test setup. It uses its own save, playoffs-test.json next to the
+/// <summary>SAP_SCENE=playoffs: a playoff test setup. It uses its own save, playoffs-test.json next to the
 /// season save (SAP_SAVE overrides), so the real season is never touched: it starts a season there
 /// if there is none (SAP_SEASON=new, SAP_CLUB, SAP_SEED as in the season scene), settles the rest
 /// of the regular season on paper, human's games included, and plays the human's next playoff game.
 /// Start it again for the next game; when the human's club is out the bracket plays to a champion.
-/// SAP_PERIOD, SAP_OT and SAP_HUMAN=0 work as in the season scene.
-/// </summary>
+/// SAP_PERIOD, SAP_OT and SAP_HUMAN=0 work as in the season scene.</summary>
 public sealed class PlayoffScene : IScene
 {
     /// <inheritdoc/>
@@ -47,10 +45,8 @@ internal static class PlayoffScenes
     /// <summary>Gets a value indicating whether a human plays (SAP_HUMAN=0 lets the AI play both sides).</summary>
     public static bool Human => !Env.Is("SAP_HUMAN", "0");
 
-    /// <summary>
-    /// Plays the human's next playoff game of the season in <see cref="SeasonSession"/>, starting the
-    /// playoffs if they have not started; shows the bracket when the human's club has no game left.
-    /// </summary>
+    /// <summary>Plays the human's next playoff game of the season in <see cref="SeasonSession"/>, starting the
+    /// playoffs if they have not started; shows the bracket when the human's club has no game left.</summary>
     public static World Play(IReadOnlyList<ClubData> clubs, Settings settings, bool human)
     {
         // SAP_OT shortens the playoff overtime periods too, for watching one; the setup below carries it
@@ -113,7 +109,6 @@ internal static class PlayoffScenes
     }
 
     /// <summary>Settles the human's remaining regular season games on paper, and with them the rest of the season.</summary>
-    /// <returns>The human's games settled.</returns>
     public static int SettleSeason()
     {
         int count = 0;

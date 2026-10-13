@@ -4,18 +4,16 @@ using StickAndPuck.App.Rules.Dev;
 
 namespace StickAndPuck.App.Rules;
 
-/// <summary>
-/// W7b: hybrid icing as the SHL plays it. A club that sends the puck from its own half of the red
+/// <summary>Hybrid icing as the SHL plays it. A club that sends the puck from its own half of the red
 /// line over the opponents' goal line, untouched on the way and not into the net, ices it, unless
 /// it is short-handed. The race decides: when the puck crosses the goal line, the club whose
 /// nearest skater is closer to the end-zone dot on the puck's side wins it; the defending club wins
 /// a tie. An attacking win waves icing off. A call publishes Icing (Side = offending club) and
 /// whistles a faceoff at the offending club's own end-zone dot on the side the puck was sent from.
-/// W44: <see cref="RuleSet.Icing"/> switches it: Hybrid as above, Touch (no race: the icing waits
+/// <see cref="RuleSet.Icing"/> switches it: Hybrid as above, Touch (no race: the icing waits
 /// for the next touch and stands when a defender plays the puck first, an attacker waves it off)
-/// or Off. W49: under <see cref="RuleSet.IcingNoChange"/> the icing club keeps the skaters it had
-/// on the ice until the faceoff after the call (<see cref="HoldsLines"/>; W13's lines read it).
-/// </summary>
+/// or Off. Under <see cref="RuleSet.IcingNoChange"/> the icing club keeps the skaters it had
+/// on the ice until the faceoff after the call (<see cref="HoldsLines"/>; the lines system reads it).</summary>
 internal sealed class IcingRule : ISystem
 {
     /// <summary>The x of the end-zone dots.</summary>
@@ -23,28 +21,19 @@ internal sealed class IcingRule : ISystem
 
 
     /// <summary>Gets the faceoff dot after icing: the offending club's own end-zone dot on the side the puck was sent from.</summary>
-    /// <param name="match">The match state.</param>
-    /// <param name="offender">The club that iced the puck.</param>
-    /// <param name="sentFrom">Where the puck was last played.</param>
-    /// <returns>The dot.</returns>
     public static Vector3 FaceoffDot(MatchState match, Side offender, Vector3 sentFrom)
     {
         int own = FaceoffFormation.DefendedEnd(match, offender);
         return MatchFlow.NearestDot(new Vector3(own * EndDotX, 0, sentFrom.Z >= 0 ? 1 : -1));
     }
 
-    /// <summary>Gets whether a club iced the puck and may not change lines until the puck is dropped (W49).</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The club.</param>
-    /// <returns>True from the icing whistle until play resumes.</returns>
+    /// <summary>Gets whether a club iced the puck and may not change lines until the puck is dropped.</summary>
     public static bool HoldsLines(World world, Side side)
     {
         return world.Icing.TryGet(out var s) && s.Held[(int)side];
     }
 
     /// <summary>Holds a club's lines as an icing call under <see cref="RuleSet.IcingNoChange"/> does; for the test scenes.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="side">The icing club.</param>
     internal static void HoldLines(World world, Side side)
     {
         world.Icing.Get(() => new IcingState()).Held[(int)side] = true;
@@ -94,7 +83,6 @@ internal sealed class IcingRule : ISystem
     }
 
     /// <summary>Touch icing waiting on the next touch: a defender on the puck calls it, an attacker waves it off.</summary>
-    /// <returns>True while it still waits (nothing else to do this step).</returns>
     static bool Touched(World world, IcingState s)
     {
         var pk = world.Puck;

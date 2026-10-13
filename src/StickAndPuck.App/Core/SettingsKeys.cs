@@ -3,7 +3,7 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>An action a key or gamepad button can be bound to on the key-mapping page (W39).</summary>
+/// <summary>An action a key or gamepad button can be bound to on the key-mapping page.</summary>
 public enum GameAction
 {
     /// <summary>Skate up the screen.</summary>
@@ -30,7 +30,7 @@ public enum GameAction
     /// <summary>Body check.</summary>
     Check,
 
-    /// <summary>Deke past a defender with the puck (W32).</summary>
+    /// <summary>Deke past a defender with the puck.</summary>
     Deke,
 
     /// <summary>Switch player.</summary>
@@ -55,22 +55,15 @@ public enum GameAction
     Pause,
 }
 
-/// <summary>
-/// What one action is bound to: a keyboard key, a second key (WASD next to the arrows, say) and a
-/// gamepad button. <see cref="KeyboardKey.Null"/> and <see cref="GamepadButton.Unknown"/> mean unbound.
-/// </summary>
-/// <param name="Key">The keyboard key.</param>
-/// <param name="Alt">A second keyboard key, or <see cref="KeyboardKey.Null"/>.</param>
-/// <param name="Button">The gamepad button, or <see cref="GamepadButton.Unknown"/>.</param>
+/// <summary>What one action is bound to: a keyboard key, a second key (WASD next to the arrows, say) and a
+/// gamepad button. <see cref="KeyboardKey.Null"/> and <see cref="GamepadButton.Unknown"/> mean unbound.</summary>
 public sealed record KeyBinding(KeyboardKey Key, KeyboardKey Alt, GamepadButton Button);
 
-/// <summary>
-/// The key and gamepad bindings (W39), saved in settings.json with the rest of <see cref="Settings"/>.
+/// <summary>The key and gamepad bindings, saved in settings.json with the rest of <see cref="Settings"/>.
 /// Only rebound actions are stored; every other action, and every action of an older settings
 /// file, falls back to <see cref="Defaults"/>. The mouse (left click shoots, right click passes),
 /// the left stick, escape (back and pause in menus), G (pull the goalie) and F12 (screenshot)
-/// stay fixed, so no mapping can lock the menus.
-/// </summary>
+/// stay fixed, so no mapping can lock the menus.</summary>
 public static class KeyBindings
 {
     /// <summary>The actions in the order the key-mapping page lists them.</summary>
@@ -98,37 +91,24 @@ public static class KeyBindings
     };
 
     /// <summary>The binding of one action under these settings.</summary>
-    /// <param name="settings">The settings.</param>
-    /// <param name="action">The action.</param>
-    /// <returns>The rebound binding, or the default.</returns>
     public static KeyBinding Of(Settings settings, GameAction action)
     {
         return settings.Keys.TryGetValue(action, out var b) && b is { } ? b : Defaults[action];
     }
 
     /// <summary>Binds a keyboard key to an action, replacing both of its keys.</summary>
-    /// <param name="settings">The settings.</param>
-    /// <param name="action">The action.</param>
-    /// <param name="key">The key.</param>
-    /// <returns>The new settings.</returns>
     public static Settings WithKey(Settings settings, GameAction action, KeyboardKey key)
     {
         return With(settings, action, Of(settings, action) with { Key = key, Alt = KeyboardKey.Null });
     }
 
     /// <summary>Binds a gamepad button to an action.</summary>
-    /// <param name="settings">The settings.</param>
-    /// <param name="action">The action.</param>
-    /// <param name="button">The button.</param>
-    /// <returns>The new settings.</returns>
     public static Settings WithButton(Settings settings, GameAction action, GamepadButton button)
     {
         return With(settings, action, Of(settings, action) with { Button = button });
     }
 
     /// <summary>A short upper-case name for the page, such as SPACE, LEFT CTRL or F6.</summary>
-    /// <param name="binding">The binding.</param>
-    /// <returns>The keys, "KEY/ALT" when there are two, or "-" when none.</returns>
     public static string KeysName(KeyBinding binding)
     {
         string k = KeyName(binding.Key), a = KeyName(binding.Alt);
@@ -136,8 +116,6 @@ public static class KeyBindings
     }
 
     /// <summary>A short upper-case name of a keyboard key.</summary>
-    /// <param name="key">The key.</param>
-    /// <returns>The name, or "-" for none.</returns>
     public static string KeyName(KeyboardKey key) => key switch
     {
         KeyboardKey.Null => "-",
@@ -159,8 +137,6 @@ public static class KeyBindings
     };
 
     /// <summary>A short name of a gamepad button, Xbox style.</summary>
-    /// <param name="button">The button.</param>
-    /// <returns>The name, or "-" for none.</returns>
     public static string ButtonName(GamepadButton button) => button switch
     {
         GamepadButton.LeftFaceUp => Text.Get(K.PadUp),

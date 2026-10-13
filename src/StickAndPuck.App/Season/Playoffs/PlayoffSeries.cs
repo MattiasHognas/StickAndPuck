@@ -4,9 +4,6 @@ using StickAndPuck.App.Core;
 namespace StickAndPuck.App.Season;
 
 /// <summary>One played playoff game. Playoff games always have a winner.</summary>
-/// <param name="Home">The home club's id.</param>
-/// <param name="Away">The away club's id.</param>
-/// <param name="Result">The final score and how it was decided.</param>
 public sealed record PlayoffGame(string Home, string Away, FixtureResult Result)
 {
     /// <summary>Gets the winning club's id.</summary>
@@ -14,11 +11,9 @@ public sealed record PlayoffGame(string Home, string Away, FixtureResult Result)
     public string Winner => Result.HomeGoals > Result.AwayGoals ? Home : Away;
 }
 
-/// <summary>
-/// One playoff series between a higher and a lower seed. In a best of seven the higher seed is at
+/// <summary>One playoff series between a higher and a lower seed. In a best of seven the higher seed is at
 /// home in games 1, 3, 5 and 7; in the best of three play-in the lower seed hosts game 1 and the
-/// higher seed games 2 and 3, as in the SHL.
-/// </summary>
+/// higher seed games 2 and 3, as in the SHL.</summary>
 public sealed class PlayoffSeries
 {
     /// <summary>Gets or sets the higher seed's place in the final table, from 1.</summary>
@@ -68,24 +63,18 @@ public sealed class PlayoffSeries
     public string NextAway => HighHosts(Games.Count) ? Low : High;
 
     /// <summary>Gets a value indicating whether a club plays in this series.</summary>
-    /// <param name="clubId">The club id.</param>
-    /// <returns>True for either club.</returns>
     public bool Involves(string clubId)
     {
         return Same(High, clubId) || Same(Low, clubId);
     }
 
     /// <summary>Gets the seed a club has in this series.</summary>
-    /// <param name="clubId">The club id.</param>
-    /// <returns>The seed, or 0 when the club is not in the series.</returns>
     public int SeedOf(string clubId)
     {
         return Same(High, clubId) ? HighSeed : Same(Low, clubId) ? LowSeed : 0;
     }
 
     /// <summary>Gets a value indicating whether the higher seed is at home in a game.</summary>
-    /// <param name="game">The game, from 0.</param>
-    /// <returns>True when the higher seed hosts it.</returns>
     public bool HighHosts(int game)
     {
         return BestOf == 3 ? game != 0 : game % 2 == 0;

@@ -2,14 +2,12 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules;
 
-/// <summary>
-/// How one mode or league settles a tie after regulation: the per-mode overtime rules. A mode
+/// <summary>How one mode or league settles a tie after regulation: the per-mode overtime rules. A mode
 /// puts its format on <see cref="MatchSetup.OvertimeFormat"/>; a setup without one plays the
 /// format its <see cref="MatchSetup.Overtime"/> rule names. Presets: <see cref="Shl"/> (regular
 /// season: 3 on 3 for one period, then a shootout), <see cref="ShlPlayoffs"/> (5 on 5 sudden death,
 /// 20-minute periods until a goal, no shootout), <see cref="ShootoutOnly"/> and <see cref="None"/>.
-/// Another league makes its own with a record expression, like <c>Shl with { Skaters = 4 }</c>.
-/// </summary>
+/// Another league makes its own with a record expression, like <c>Shl with { Skaters = 4 }</c>.</summary>
 public sealed record OvertimeFormat
 {
     /// <summary>A tie stands (exhibition and tests).</summary>
@@ -40,16 +38,12 @@ public sealed record OvertimeFormat
     public bool HasShootout { get; init; }
 
     /// <summary>Gets the format a match plays: the setup's own, or the one its <see cref="OvertimeRule"/> names.</summary>
-    /// <param name="setup">The match setup.</param>
-    /// <returns>The format.</returns>
     public static OvertimeFormat Of(MatchSetup setup)
     {
         return setup.OvertimeFormat.TryGet(out var own) ? own : From(setup.Overtime);
     }
 
     /// <summary>Gets the preset an <see cref="OvertimeRule"/> names.</summary>
-    /// <param name="rule">The rule.</param>
-    /// <returns>The format.</returns>
     public static OvertimeFormat From(OvertimeRule rule)
     {
         return rule switch
@@ -61,8 +55,6 @@ public sealed record OvertimeFormat
     }
 
     /// <summary>Gets what follows a tie: another overtime period, the shootout, or None when the tie stands.</summary>
-    /// <param name="overtimePeriodsPlayed">Overtime periods played so far, 0 right after regulation.</param>
-    /// <returns>The next phase, or None for a draw.</returns>
     public Maybe<MatchPhase> AfterTie(int overtimePeriodsPlayed)
     {
         if (Skaters > 0 && (overtimePeriodsPlayed == 0 || UntilGoal)) return MatchPhase.Overtime;

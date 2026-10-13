@@ -7,12 +7,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>
-/// W11: start screen, settings, team select, pause, results and standings. Owns
+/// <summary>Start screen, settings, team select, pause, results and standings. Owns
 /// <see cref="MatchState.Paused"/>. Runs only when the start scene is picked (the default), so
 /// every other SAP_SCENE behaves as before. In a match it pauses on escape, P or start, notes the
-/// goals, and a few seconds after the final whistle hands the result to the results screen.
-/// </summary>
+/// goals, and a few seconds after the final whistle hands the result to the results screen.</summary>
 internal sealed class ScreenSystem : ISystem, IDisposable
 {
     /// <summary>Seconds the FINAL banner shows before the results screen.</summary>
@@ -56,7 +54,7 @@ internal sealed class ScreenSystem : ISystem, IDisposable
         if (!inMatch) return;
 
         Watch(world);
-        // W9's replay flag is shared, so the screens never leave a match or pause while a replay
+        // The replay flag is shared, so the screens never leave a match or pause while a replay
         // plays (a winning goal's replay plays out first); a stale flag would hold the next faceoff
         if (world.ReplayPlaying) return;
         if (world.Match.Phase == MatchPhase.Final)
@@ -93,11 +91,9 @@ internal sealed class ScreenSystem : ISystem, IDisposable
         foreach (var p in world.Players) p.Command = default;
     }
 
-    /// <summary>
-    /// Notes the goals for the results screen. This system runs first in each step, before that
+    /// <summary>Notes the goals for the results screen. This system runs first in each step, before that
     /// step's events exist and after the last step's are cleared, so it watches the score instead:
-    /// a goal is in when the score went up, and the puck's last touch is still the scorer's.
-    /// </summary>
+    /// a goal is in when the score went up, and the puck's last touch is still the scorer's.</summary>
     void Watch(World world)
     {
         var m = world.Match;

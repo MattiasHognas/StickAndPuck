@@ -4,15 +4,13 @@ using StickAndPuck.App.Rules.Dev;
 
 namespace StickAndPuck.App.Rules;
 
-/// <summary>
-/// W7b: delayed offside as the SHL plays it. When the puck wholly crosses a blue line into a zone,
+/// <summary>Delayed offside as the SHL plays it. When the puck wholly crosses a blue line into a zone,
 /// sent there by the attacking club, any attacker already in the zone with both skates past the
 /// line (other than the puck carrier) makes the offside pending: <see cref="Pending"/> tells the
 /// referee to raise an arm. The pending offside is waved off when every attacker tags up at the
 /// line or the puck leaves the zone. It is called when an attacker touches the puck in the zone,
 /// or at once when the puck is shot at the net. A call publishes Offside (Side = offending club)
-/// and whistles a faceoff at the neutral-zone dot outside that zone, on the puck's side.
-/// </summary>
+/// and whistles a faceoff at the neutral-zone dot outside that zone, on the puck's side.</summary>
 internal sealed class OffsideRule : ISystem
 {
     /// <summary>Half the painted width of a blue line (30 cm).</summary>
@@ -26,8 +24,6 @@ internal sealed class OffsideRule : ISystem
 
 
     /// <summary>Gets the club with an offside pending (the linesman's arm is up), if any.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>The offending club, or None.</returns>
     public static SideOrNone Pending(World world)
     {
         var s = world.Offside.Get(() => new OffsideState());
@@ -35,27 +31,18 @@ internal sealed class OffsideRule : ISystem
     }
 
     /// <summary>Gets a value indicating whether a player stands in a zone with both skates past its blue line.</summary>
-    /// <param name="position">The player's position.</param>
-    /// <param name="end">-1 for the zone at -x, +1 for the zone at +x.</param>
-    /// <returns>True when the player is wholly inside.</returns>
     public static bool PlayerInZone(Vector3 position, int end)
     {
         return end * position.X > RinkSpec.BlueLineX + LineHalfWidth + SkateReach;
     }
 
     /// <summary>Gets the club attacking the zone at one end.</summary>
-    /// <param name="match">The match state.</param>
-    /// <param name="end">-1 or +1.</param>
-    /// <returns>The club shooting at that end's net.</returns>
     public static Side Attacker(MatchState match, int end)
     {
         return FaceoffFormation.DefendedEnd(match, Side.Home) == end ? Side.Away : Side.Home;
     }
 
     /// <summary>Gets the faceoff dot after an offside into the zone at one end: the neutral-zone dot outside it on the puck's side.</summary>
-    /// <param name="end">The zone the offside was into.</param>
-    /// <param name="puck">Where the puck was.</param>
-    /// <returns>The dot.</returns>
     public static Vector3 FaceoffDot(int end, Vector3 puck)
     {
         return MatchFlow.NearestDot(new Vector3(end * NeutralDotX, 0, puck.Z >= 0 ? 1 : -1));
@@ -68,7 +55,7 @@ internal sealed class OffsideRule : ISystem
         var pk = world.Puck;
         if (!MatchFlow.IsRunning(world) || world.Match.Phase != MatchPhase.Play || !pk.Live || !world.Setup.Rules.Offside)
         {
-            // dead puck (or offside switched off, W44): forget any pending call, and read the zone afresh when the puck drops
+            // dead puck (or offside switched off): forget any pending call, and read the zone afresh when the puck drops
             s.PendingEnd = 0;
             s.Zone = PuckZone(pk.Position, 0);
             return;
@@ -139,10 +126,8 @@ internal sealed class OffsideRule : ISystem
         return t > 0 && MathF.Abs(z) < RinkSpec.NetWidth / 2 + 0.3f;
     }
 
-    /// <summary>
-    /// Gets the zone the puck is in: +1 or -1 once it has wholly crossed that blue line, 0 once it is
-    /// wholly back in the neutral zone; on a line it stays where it was.
-    /// </summary>
+    /// <summary>Gets the zone the puck is in: +1 or -1 once it has wholly crossed that blue line, 0 once it is
+    /// wholly back in the neutral zone; on a line it stays where it was.</summary>
     static int PuckZone(Vector3 position, int was)
     {
         float edge = RinkSpec.BlueLineX + LineHalfWidth + RinkSpec.PuckRadius;

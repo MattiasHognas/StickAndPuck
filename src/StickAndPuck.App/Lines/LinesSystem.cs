@@ -8,8 +8,7 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Lines;
 
-/// <summary>
-/// W13: energy per player, automatic or manual line changes, and the goalie swap after a burst of
+/// <summary>Energy per player, automatic or manual line changes, and the goalie swap after a burst of
 /// goals. Runs only in a world with the match flow (<see cref="MatchFlow.Begin"/>); practice and
 /// test scenes keep their players fresh.
 /// <list type="bullet">
@@ -17,8 +16,8 @@ namespace StickAndPuck.App.Lines;
 /// starters on the bench (<see cref="Player.OnIce"/> false), as four lines, three pairs and two
 /// goalies (<see cref="Squad"/>).</item>
 /// <item>Skaters tire on the ice in play, more when skating fast or sprinting, and rest on the bench
-/// and during stoppages. Energy scales top speed, acceleration, stops and checks (W4a, W4c) and shot
-/// speed (W4b) down; a spent skater skates at 70 % (see <see cref="SkatingModel.EnergyFactor"/>).</item>
+/// and during stoppages. Energy scales top speed, acceleration, stops and checks and shot
+/// speed down; a spent skater skates at 70 % (see <see cref="SkatingModel.EnergyFactor"/>).</item>
 /// <item>Forwards and defence change separately. In play a tired group changes on the fly: the
 /// skaters head for the bench door and each one coming on steps out as one goes off; at a faceoff
 /// the change is instant. With <see cref="LineChanges.Automatic"/> the bench calls changes by
@@ -26,14 +25,13 @@ namespace StickAndPuck.App.Lines;
 /// button, which works in both modes. AI clubs always change by themselves.</item>
 /// <item>The goalie stays in unless he lets in <see cref="LinesTuning.GoalieGoals"/> in a short
 /// spell; then the backup comes in before the next faceoff.</item>
-/// <item>W23: a club pulls its goalie for an extra attacker on a delayed call against the other
+/// <item>A club pulls its goalie for an extra attacker on a delayed call against the other
 /// club, and when trailing late in regulation (AI by itself, a human on the button); he comes
 /// back at the next whistle. See <see cref="GoaliePull"/>.</item>
 /// <item>Each new period starts with line 1 and pair 1, everyone rested.</item>
 /// </list>
 /// Each change publishes one <see cref="LineChanged"/> (the first player on).
-/// Positioning (W6a) hands out roles again by itself whenever the skaters on the ice change.
-/// </summary>
+/// Positioning hands out roles again by itself whenever the skaters on the ice change.</summary>
 internal sealed class LinesSystem : ISystem
 {
 
@@ -71,7 +69,6 @@ internal sealed class LinesSystem : ISystem
     }
 
     /// <summary>Puts both rosters in the world and builds the squads.</summary>
-    /// <param name="world">The match.</param>
     internal static void SetUp(World world)
     {
         var b = Bench.Board(world);
@@ -139,7 +136,7 @@ internal sealed class LinesSystem : ISystem
             {
                 if (!b.Changing[(int)side].HasValue && Best(b, side, group).TryGet(out var unit)) Begin(world, b, side, group, unit);
             }
-            else if (!IcingRule.HoldsLines(world, side))   // W49: a club that iced the puck keeps its skaters
+            else if (!IcingRule.HoldsLines(world, side))   // a club that iced the puck keeps its skaters
             {
                 b.Pending[(int)side, (int)group] = true;
             }
@@ -206,11 +203,9 @@ internal sealed class LinesSystem : ISystem
         }
     }
 
-    /// <summary>
-    /// W49, no change after icing: the club that iced the puck faces off with the skaters it had on
+    /// <summary>No change after icing: the club that iced the puck faces off with the skaters it had on
     /// the ice at the whistle. A change on the fly stops where it is (who reached the bench stays
-    /// there), asked-for changes are dropped and a goalie swap waits for the next faceoff.
-    /// </summary>
+    /// there), asked-for changes are dropped and a goalie swap waits for the next faceoff.</summary>
     static void Hold(World world, LinesBoard b, Side side)
     {
         int s = (int)side;
@@ -239,7 +234,7 @@ internal sealed class LinesSystem : ISystem
     {
         var leaving = Bench.OnIce(world, side, group).ToList();
         if (leaving.Count == 0) return Maybe<ShiftChange>.None;
-        // a skater in the penalty box (W14) never comes on
+        // a skater in the penalty box never comes on
         var coming = unit.Members.Where(p => !p.OnIce && !Penalties.InBox(world, p.Id)).ToList();
         var spares = world.Players
             .Where(p => p.Side == side && !p.OnIce && !p.IsGoalie && Squad.GroupOf(p) == group && !coming.Contains(p) && !Penalties.InBox(world, p.Id))

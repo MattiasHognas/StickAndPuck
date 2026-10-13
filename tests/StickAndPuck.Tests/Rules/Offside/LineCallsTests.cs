@@ -7,7 +7,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// Scripted plays with puck physics, the match rules, offside and icing (W7b): offside and icing
+/// Scripted plays with puck physics, the match rules, offside and icing: offside and icing
 /// are called correctly and lead to the right faceoff. In period 1 home defends -x, so home attacks
 /// the zone at +x. Formerly SAP_SCENE=offsidetest.
 /// </summary>

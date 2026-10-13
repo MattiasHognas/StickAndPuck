@@ -11,24 +11,12 @@ using static System.FormattableString;
 namespace StickAndPuck.App.Replays;
 
 /// <summary>The setup a match started from, with the clubs by id, as a replay stores it.</summary>
-/// <param name="Home">The home club's id.</param>
-/// <param name="Away">The visiting club's id.</param>
-/// <param name="Inputs">The human input slots.</param>
-/// <param name="PeriodSeconds">The period length.</param>
-/// <param name="Periods">The regulation periods.</param>
-/// <param name="Overtime">The overtime rule.</param>
-/// <param name="OvertimeFormat">The mode's own overtime format, or None.</param>
-/// <param name="Rules">The rules.</param>
 public sealed record ReplaySetup(string Home, string Away, IReadOnlyList<InputSlot> Inputs, float PeriodSeconds, int Periods, OvertimeRule Overtime, Maybe<OvertimeFormat> OvertimeFormat, RuleSet Rules)
 {
     /// <summary>Gets the stored form of a setup.</summary>
-    /// <param name="s">The setup.</param>
-    /// <returns>The stored setup.</returns>
     public static ReplaySetup Of(MatchSetup s) => new(s.Home.Id, s.Away.Id, s.Inputs, s.PeriodSeconds, s.Periods, s.Overtime, s.OvertimeFormat, s.Rules);
 
     /// <summary>Builds the setup again from the clubs on this machine.</summary>
-    /// <param name="clubs">Every club.</param>
-    /// <returns>The setup.</returns>
     public MatchSetup ToSetup(IReadOnlyList<ClubData> clubs)
     {
         ClubData Club(string id) => clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))
@@ -78,12 +66,10 @@ public sealed record ReplayHeader
     public string Recorded { get; init; } = "";
 }
 
-/// <summary>
-/// W67: a replay file. Gzipped text, one record per line: the magic "SAPREPLAY 1", "h" and the
+/// <summary>A replay file. Gzipped text, one record per line: the magic "SAPREPLAY 1", "h" and the
 /// header as JSON, "f" and the device frame when the match started, then per step "i tick frame"
 /// whenever the devices changed, "c tick checksum" every <see cref="CheckEvery"/> steps, "e tick
-/// event" for every match event, and last "x tick score shots period clock" when the match ended.
-/// </summary>
+/// event" for every match event, and last "x tick score shots period clock" when the match ended.</summary>
 public sealed class ReplayFile
 {
     /// <summary>Steps between stored checksums.</summary>
@@ -121,20 +107,13 @@ public sealed class ReplayFile
     public long LastTick { get; set; } = -1;
 
     /// <summary>Writes an event as a replay line.</summary>
-    /// <param name="tick">The step.</param>
-    /// <param name="e">The event.</param>
-    /// <returns>The line, without the "e".</returns>
     public static string EventLine(long tick, MatchEvent e)
     {
         return string.Create(CultureInfo.InvariantCulture, $"{tick} {EventText(e)}");
     }
 
-    /// <summary>
-    /// Writes an event as "Type time fields...", every float round-trip exact. Replay lines, the
-    /// world checksum and the state dump all use it, so a new event type fails here until it has a line.
-    /// </summary>
-    /// <param name="e">The event.</param>
-    /// <returns>The text.</returns>
+    /// <summary>Writes an event as "Type time fields...", every float round-trip exact. Replay lines, the
+    /// world checksum and the state dump all use it, so a new event type fails here until it has a line.</summary>
     public static string EventText(MatchEvent e)
     {
         string fields = e switch
@@ -164,13 +143,9 @@ public sealed class ReplayFile
     static string V(Vector3 v) => Invariant($"{v.X:R},{v.Y:R},{v.Z:R}");
 
     /// <summary>Whether the match ended on the step that just ran: the final horn, or the final phase.</summary>
-    /// <param name="world">The world after the step.</param>
-    /// <returns>True when it ended.</returns>
     public static bool Ends(World world) => world.Match.Phase == MatchPhase.Final || world.Events.Current.Any(e => e is MatchEnded);
 
     /// <summary>Writes the end line for a world.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The line, without the "x".</returns>
     public static string EndLine(World world)
     {
         var m = world.Match;
@@ -178,8 +153,6 @@ public sealed class ReplayFile
     }
 
     /// <summary>Reads a replay file.</summary>
-    /// <param name="path">The file.</param>
-    /// <returns>The replay.</returns>
     public static ReplayFile Read(string path)
     {
         using var file = File.OpenRead(path);
@@ -224,7 +197,6 @@ public sealed class ReplayFile
     }
 
     /// <summary>Writes the replay, gzipped, through a temporary file so a crash never leaves half a replay.</summary>
-    /// <param name="path">The file.</param>
     public void Write(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);

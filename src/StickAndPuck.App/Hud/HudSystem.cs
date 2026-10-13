@@ -8,16 +8,14 @@ using StickAndPuck.App.Hud.Dev;
 
 namespace StickAndPuck.App.Hud;
 
-/// <summary>
-/// W10: scorebug with crests and short names, clock, period and goal messages, drawn in DrawHud at
+/// <summary>Scorebug with crests and short names, clock, period and goal messages, drawn in DrawHud at
 /// 480x270 from <see cref="World.Match"/> and <see cref="World.Events"/>. Shows only in worlds
 /// that run the match flow (or when <see cref="WorldSwitches.HudAlways"/> is set), so test scenes stay clean.
-/// W24 adds the power play tag beside the scorebug (PP 5V4), the shootout panel under it with every
-/// round and who scored, and the extra banner lines (hat trick, shutout, game winner, first goal of the season).
-/// </summary>
+/// Adds the power play tag beside the scorebug (PP 5V4), the shootout panel under it with every
+/// round and who scored, and the extra banner lines (hat trick, shutout, game winner, first goal of the season).</summary>
 internal sealed class HudSystem : ISystem
 {
-    /// <summary>The first free row under the scorebug; W14's penalty box goes here.</summary>
+    /// <summary>The first free row under the scorebug; the penalty box goes here.</summary>
     public const int PenaltyTop = 28;
 
     /// <summary>The top of the centre banner, above the centre-ice faceoff.</summary>
@@ -53,8 +51,6 @@ internal sealed class HudSystem : ISystem
     }
 
     /// <summary>Gets the power play tag, "PP 5V4" or "PP 4V3" from the club with the extra skater, or empty at even strength.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>The text, or empty.</returns>
     public static string PowerPlayText(World world)
     {
         if (world.Match.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final) return "";
@@ -71,8 +67,6 @@ internal sealed class HudSystem : ISystem
     }
 
     /// <summary>Gets the period text: 1, 2, 3, OT or SO.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>The text.</returns>
     public static string PeriodText(World world)
     {
         var m = world.Match;
@@ -81,9 +75,6 @@ internal sealed class HudSystem : ISystem
     }
 
     /// <summary>Gets the club colour for the stripe under a short name: the kit that side wears, on the nearest palette colour.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="side">Which club.</param>
-    /// <returns>The colour.</returns>
     public static Color StripeColour(World world, Side side)
     {
         var club = world.Setup.Club(side);
@@ -128,10 +119,8 @@ internal sealed class HudSystem : ISystem
         art.DrawText(text[pp.Length..], tx + art.Measure(pp), ty, art.Text);
     }
 
-    /// <summary>
-    /// The shootout panel under the scorebug: one row per club with its crest, short name and a mark per
-    /// round (check scored, cross missed, a dot still to come), then who is shooting or who won.
-    /// </summary>
+    /// <summary>The shootout panel under the scorebug: one row per club with its crest, short name and a mark per
+    /// round (check scored, cross missed, a dot still to come), then who is shooting or who won.</summary>
     static void DrawShootout(World world, HudArt art, ShootoutState so)
     {
         const int pad = 3, crest = 16, gap = 4, row = 20, mark = 8, step = 10;

@@ -3,11 +3,10 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W4c: the numbers behind a body check. Pure maths with no Raylib, so AI, fights, the referee
+/// <summary>The numbers behind a body check. Pure maths with no Raylib, so AI, fights, the referee
 /// and tests can ask how hard a check would land without running a frame.
 /// <list type="bullet">
-/// <item>Pressing check lunges the skater at the opponent they would hit (W99: an opponent within
+/// <item>Pressing check lunges the skater at the opponent they would hit (an opponent within
 /// <see cref="Contact"/> not behind them, so one directly alongside counts), else forward; the first
 /// one in reach in the first <see cref="Window"/> seconds is hit. A press late in the recover is
 /// remembered and starts the next check as soon as it can (<see cref="Buffer"/>).</item>
@@ -16,19 +15,16 @@ namespace StickAndPuck.App.Players;
 /// Both scale down a little as energy runs out.</item>
 /// <item>A hit of strength around 1 is an average solid check; the harder it is, the likelier the
 /// target goes down. A target who goes down loses the puck and slides for a moment.</item>
-/// </list>
-/// </summary>
+/// </list></summary>
 public static class CheckingModel
 {
     /// <summary>Body centre to body centre at which a check connects, in metres (but see <see cref="Meet"/>).</summary>
     public const float Contact = 2.2f;
 
-    /// <summary>
-    /// Body centre to body centre at which bodies coming together meet. A check started at someone
+    /// <summary>Body centre to body centre at which bodies coming together meet. A check started at someone
     /// closing on the checker fast enough to get this near within <see cref="Window"/> (a carrier
     /// rushing at a defender) lands when they meet rather than at full reach, which leaves a
-    /// carrier's deke (W32) its moment to beat it; see <see cref="Waits"/>.
-    /// </summary>
+    /// carrier's deke its moment to beat it; see <see cref="Waits"/>.</summary>
     public const float Meet = 1.5f;
 
     /// <summary>Half the angle in front of the checker where a check can land: wider than a right angle, so a skater alongside can be hit.</summary>
@@ -37,7 +33,7 @@ public static class CheckingModel
     /// <summary>How far an AI skater's check reaches: <see cref="Contact"/> and <see cref="Cone"/>, whatever the difficulty.</summary>
     public static readonly CheckReach AiReach = new(Contact, Cone);
 
-    /// <summary>How far a human's check reaches at each difficulty (W99): Easy as far as the AI's, Hard asks for a square, close hit.</summary>
+    /// <summary>How far a human's check reaches at each difficulty: Easy as far as the AI's, Hard asks for a square, close hit.</summary>
     static readonly CheckReach EasyReach = new(2.2f, 100f * MathF.PI / 180f), NormalReach = new(1.9f, 90f * MathF.PI / 180f), HardReach = new(1.6f, 65f * MathF.PI / 180f);
 
     /// <summary>Metres a target's angle off the checker's way adds to their distance when picking whom to hit, per unit of 1 - cos(angle): one alongside counts as this much further.</summary>
@@ -55,28 +51,20 @@ public static class CheckingModel
     /// <summary>The burst of the lunge, at the target when there is one in reach, in metres per second.</summary>
     public const float Lunge = 3f;
 
-    /// <summary>A hit at least this strong is a hard check: fights (W15) may start from one.</summary>
+    /// <summary>A hit at least this strong is a hard check: fights may start from one.</summary>
     public const float HardHit = 1.5f;
 
-    /// <summary>
-    /// The impact of strength 1: an average checker closing at 4 m/s, lunge included. Kept at what it
-    /// was before the lunge grew (W99), so the bigger lunge makes checks harder rather than the scale moving with it.
-    /// </summary>
+    /// <summary>The impact of strength 1: an average checker closing at 4 m/s, lunge included. Kept at what it
+    /// was before the lunge grew, so the bigger lunge makes checks harder rather than the scale moving with it.</summary>
     const float AverageImpact = 7f;
 
     /// <summary>Gets how hard a checker hits: lunge plus closing speed, scaled by checking and energy.</summary>
-    /// <param name="checker">The checker.</param>
-    /// <param name="closing">The speed toward the target, in metres per second.</param>
-    /// <returns>The impact.</returns>
     public static float Impact(Player checker, float closing)
     {
         return (Lunge + Math.Max(0, closing)) * (0.5f + Traits.Unit(checker.Data.Traits.Checking)) * SkatingModel.EnergyFactor(checker.Energy);
     }
 
     /// <summary>Gets how well a target takes a hit: from checking, plus puck control when carrying.</summary>
-    /// <param name="target">The player hit.</param>
-    /// <param name="carrying">Whether they carry the puck.</param>
-    /// <returns>The resistance; 1 for an average fresh player without the puck.</returns>
     public static float Resistance(Player target, bool carrying)
     {
         var t = target.Data.Traits;
@@ -86,20 +74,12 @@ public static class CheckingModel
     }
 
     /// <summary>Gets a hit's strength: about 1 for an average solid check, <see cref="HardHit"/> and up is hard.</summary>
-    /// <param name="checker">The checker.</param>
-    /// <param name="target">The player hit.</param>
-    /// <param name="closing">The speed toward the target.</param>
-    /// <param name="carrying">Whether the target carries the puck.</param>
-    /// <returns>The strength.</returns>
     public static float Strength(Player checker, Player target, float closing, bool carrying)
     {
         return Impact(checker, closing) / Resistance(target, carrying) / AverageImpact;
     }
 
     /// <summary>Gets how a check's strength is scaled: 1 for an AI checker, for a human by the difficulty (Easy hits harder, Hard softer).</summary>
-    /// <param name="checker">The checker.</param>
-    /// <param name="difficulty">The match's difficulty.</param>
-    /// <returns>The factor.</returns>
     public static float StrengthScale(Player checker, Difficulty difficulty)
     {
         if (checker.Slot < 0) return 1f;
@@ -112,42 +92,30 @@ public static class CheckingModel
     }
 
     /// <summary>Gets whether a check started at a target waits for the bodies to meet: when they are further apart than <see cref="Meet"/> but closing fast enough to get there within <see cref="Window"/>.</summary>
-    /// <param name="distance">Metres between the bodies when the check starts.</param>
-    /// <param name="closing">The speed they close at before the lunge, in metres per second.</param>
-    /// <returns>True to hit when they meet, false to hit now.</returns>
     public static bool Waits(float distance, float closing)
     {
         return distance > Meet && closing * Window >= distance - Meet;
     }
 
     /// <summary>Gets the chance a hit of some strength knocks the target down.</summary>
-    /// <param name="strength">The hit's strength.</param>
-    /// <returns>0 to 0.95.</returns>
     public static float KnockdownChance(float strength)
     {
         return Math.Clamp((strength - 0.5f) / 0.8f, 0f, 0.95f);
     }
 
     /// <summary>Gets how long a knocked-down player stays down, in seconds.</summary>
-    /// <param name="strength">The hit's strength.</param>
-    /// <returns>The time on the ice.</returns>
     public static float DownTime(float strength)
     {
         return 0.9f + 0.5f * Math.Clamp(strength - 1f, 0f, 1.2f);
     }
 
     /// <summary>Gets the shove a hit gives the target, in metres per second.</summary>
-    /// <param name="strength">The hit's strength.</param>
-    /// <returns>The speed added along the hit.</returns>
     public static float Shove(float strength)
     {
         return Math.Min(6f, 1.5f + 2f * strength);
     }
 
     /// <summary>Gets how far a check reaches: <see cref="AiReach"/> for an AI checker, the difficulty's for a human.</summary>
-    /// <param name="checker">The checker.</param>
-    /// <param name="difficulty">The match's difficulty.</param>
-    /// <returns>The reach.</returns>
     public static CheckReach Reach(Player checker, Difficulty difficulty)
     {
         if (checker.Slot < 0) return AiReach;
@@ -159,14 +127,9 @@ public static class CheckingModel
         };
     }
 
-    /// <summary>
-    /// Gets the opponent a check would hit now: one within reach (<see cref="Reach"/>) and not
+    /// <summary>Gets the opponent a check would hit now: one within reach (<see cref="Reach"/>) and not
     /// behind the checker (within its cone of the way they mean), the nearest counting their angle off that way
-    /// (<see cref="AnglePenalty"/>), so the one most in front and nearest is picked.
-    /// </summary>
-    /// <param name="world">The match.</param>
-    /// <param name="checker">The checker.</param>
-    /// <returns>The target, or None.</returns>
+    /// (<see cref="AnglePenalty"/>), so the one most in front and nearest is picked.</summary>
     public static Maybe<Player> Target(World world, Player checker)
     {
         var facing = PuckHandling.Intent(checker);

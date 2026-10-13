@@ -33,24 +33,18 @@ public sealed class CycleTally
     public float BehindNet { get; set; }
 }
 
-/// <summary>
-/// W22a: the attacking-zone cycle. With the puck in the attacking zone, the forwards take three
+/// <summary>The attacking-zone cycle. With the puck in the attacking zone, the forwards take three
 /// stations (corner, behind the net, slot) while the defence hold the points. Every few seconds
 /// they rotate: on one turn the carrier skates the puck on from the corner behind the net, or
 /// from behind the net round to the other corner, and the forward there moves out; on the next the
 /// two forwards without the puck swap, so the slot is always filled by someone arriving. The
 /// carrier keeps looking for a pass or a shot while he goes, so the club passes the puck around
-/// until a lane to a good shot opens. A smarter line turns over quicker.
-/// </summary>
+/// until a lane to a good shot opens. A smarter line turns over quicker.</summary>
 public static class Cycle
 {
     const float Grace = 1.5f;   // seconds a cycle survives a loose puck (a shot, a bobble) before it breaks up
 
     /// <summary>Gets a station's spot, for the side attacking an end.</summary>
-    /// <param name="station">The station.</param>
-    /// <param name="end">The attacked end, +1 or -1.</param>
-    /// <param name="cornerSide">The side of the ice (z sign) the corner station is on.</param>
-    /// <returns>The spot on the ice (x, z).</returns>
     public static Vector2 Spot(Station station, int end, float cornerSide)
     {
         const float G = RinkSpec.GoalLineX;
@@ -64,22 +58,13 @@ public static class Cycle
     }
 
     /// <summary>Gets whether a spot is far enough into the attacking zone to cycle.</summary>
-    /// <param name="end">The attacked end.</param>
-    /// <param name="at">The spot (x, z).</param>
-    /// <returns>True inside the zone.</returns>
     public static bool InZone(int end, Vector2 at)
     {
         return end * at.X > RinkSpec.BlueLineX + 1f;
     }
 
-    /// <summary>
-    /// Gets the next point to skate to on the way to a spot without going through the attacked
-    /// net (W37 made it solid): round the side of the cage the skater is on.
-    /// </summary>
-    /// <param name="from">The skater (x, z).</param>
-    /// <param name="to">Where he is going (x, z).</param>
-    /// <param name="end">The net's end, +1 or -1.</param>
-    /// <returns>The spot itself, or a point beside the cage to head for first.</returns>
+    /// <summary>Gets the next point to skate to on the way to a spot without going through the attacked
+    /// net (it is solid): round the side of the cage the skater is on.</summary>
     public static Vector2 AroundNet(Vector2 from, Vector2 to, int end)
     {
         const float lo = RinkSpec.GoalLineX - 0.7f, hi = RinkSpec.GoalLineX + RinkSpec.NetDepth + 0.5f, hz = RinkSpec.NetWidth / 2 + 0.8f;
@@ -94,9 +79,6 @@ public static class Cycle
     }
 
     /// <summary>Gets whether a pass or a skate from one spot to another would run into either net's cage.</summary>
-    /// <param name="from">The start (x, z).</param>
-    /// <param name="to">The end (x, z).</param>
-    /// <returns>True when the line crosses a cage.</returns>
     public static bool ThroughNet(Vector2 from, Vector2 to)
     {
         const float lo = RinkSpec.GoalLineX - 0.2f, hi = RinkSpec.GoalLineX + RinkSpec.NetDepth + 0.2f, hz = RinkSpec.NetWidth / 2 + 0.25f;
@@ -130,13 +112,6 @@ public static class Cycle
     }
 
     /// <summary>Runs one side's cycle for this step: starts it, rotates it, or breaks it up.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="board">Positioning's state.</param>
-    /// <param name="side">The club.</param>
-    /// <param name="onPuck">The puck carrier, or None.</param>
-    /// <param name="play">Whether play is on.</param>
-    /// <param name="rng">Randomness for the turn timing.</param>
-    /// <param name="dt">The step.</param>
     internal static void Update(World world, PositioningBoard board, Side side, Maybe<Player> onPuck, bool play, Random rng, float dt)
     {
         var state = board.Cycle[(int)side];

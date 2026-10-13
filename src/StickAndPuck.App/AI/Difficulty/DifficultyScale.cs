@@ -2,19 +2,15 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// W29: easy, normal and hard. The difficulty scales the traits of the club no human plays for the
+/// <summary>Easy, normal and hard. The difficulty scales the traits of the club no human plays for the
 /// whole match: hockey IQ (every AI read rolls against it), shooting, puck control, skating,
 /// checking and the goalie. Everything that reads traits then plays weaker or sharper on its own.
 /// Normal keeps the data files' traits; versus and all-AI matches are never scaled, because there is
 /// no single AI club facing a human. The World constructor runs every match's setup through
-/// <see cref="Apply(MatchSetup, Difficulty)"/>.
-/// </summary>
+/// <see cref="Apply(MatchSetup, Difficulty)"/>.</summary>
 public static class DifficultyScale
 {
     /// <summary>Gets the AI club a difficulty applies to: the one side no human plays, or None when both or neither have a human.</summary>
-    /// <param name="setup">The match setup.</param>
-    /// <returns>The AI club's side, or None.</returns>
     public static SideOrNone AiSide(MatchSetup setup)
     {
         bool home = setup.Inputs.Any(i => i.Device != InputDevice.None && i.Side == Side.Home);
@@ -24,8 +20,6 @@ public static class DifficultyScale
     }
 
     /// <summary>Scales the AI club of a match by the difficulty.</summary>
-    /// <param name="setup">The match setup.</param>
-    /// <param name="level">The difficulty from the settings.</param>
     /// <returns>The setup with the AI club's traits scaled, or the same setup on normal or with no single AI club.</returns>
     public static MatchSetup Apply(MatchSetup setup, Difficulty level)
     {
@@ -33,10 +27,6 @@ public static class DifficultyScale
     }
 
     /// <summary>Scales one club of a match by a difficulty; the difficulty test plays hard against easy this way.</summary>
-    /// <param name="setup">The match setup.</param>
-    /// <param name="side">The club to scale.</param>
-    /// <param name="level">The difficulty.</param>
-    /// <returns>The setup with that club's traits scaled.</returns>
     public static MatchSetup Apply(MatchSetup setup, Side side, Difficulty level)
     {
         if (level == Difficulty.Normal) return setup;
@@ -44,9 +34,6 @@ public static class DifficultyScale
     }
 
     /// <summary>Scales every player of a club.</summary>
-    /// <param name="club">The club.</param>
-    /// <param name="level">The difficulty.</param>
-    /// <returns>The club with scaled traits; the same club on normal.</returns>
     public static ClubData Scale(ClubData club, Difficulty level)
     {
         if (level == Difficulty.Normal) return club;
@@ -54,9 +41,6 @@ public static class DifficultyScale
     }
 
     /// <summary>Scales one player's traits: each moves by its own step, down on easy and up on hard, kept within 0 to 100.</summary>
-    /// <param name="t">The traits from the data file.</param>
-    /// <param name="level">The difficulty.</param>
-    /// <returns>The scaled traits.</returns>
     public static Traits Scale(Traits t, Difficulty level)
     {
         float k = level switch
@@ -85,7 +69,7 @@ public static class DifficultyScale
     }
 }
 
-/// <summary>W29: how far easy moves each trait down, on the 0 to 100 scale; hard moves them up by <see cref="HardShare"/> of that.</summary>
+/// <summary>How far easy moves each trait down, on the 0 to 100 scale; hard moves them up by <see cref="HardShare"/> of that.</summary>
 public static class DifficultyTuning
 {
     /// <summary>Hockey IQ: easy reads the play worse and fumbles more often.</summary>

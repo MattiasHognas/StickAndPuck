@@ -6,7 +6,7 @@ using StickAndPuck.Tests.Support;
 namespace StickAndPuck.Tests;
 
 /// <summary>
-/// The intermission (W31), run with the match rules through two period breaks, and a third match
+/// The intermission, run with the match rules through two period breaks, and a third match
 /// where the drive is skipped: the Zamboni laps the ice between periods and the next period starts
 /// after it. Formerly SAP_SCENE=zambonitest.
 /// </summary>

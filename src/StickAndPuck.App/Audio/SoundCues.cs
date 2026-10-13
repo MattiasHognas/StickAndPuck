@@ -15,8 +15,6 @@ internal readonly record struct Cue(Sfx Sound, float Volume = 1, float Pitch = 1
 internal static class SoundCues
 {
     /// <summary>Gets the effects for one match event.</summary>
-    /// <param name="e">The event.</param>
-    /// <returns>The effects, in order.</returns>
     public static Cue[] For(MatchEvent e)
     {
         return e switch
@@ -42,8 +40,6 @@ internal static class SoundCues
     }
 
     /// <summary>Gets where on the ice an event happened, for panning; the centre for period and match ends.</summary>
-    /// <param name="e">The event.</param>
-    /// <returns>The position.</returns>
     public static Vector3 Where(MatchEvent e)
     {
         return e switch
@@ -68,9 +64,6 @@ internal static class SoundCues
     }
 
     /// <summary>Gets one sample of every event type at a spot, for the audio demo.</summary>
-    /// <param name="time">The match time.</param>
-    /// <param name="at">Where they happen.</param>
-    /// <returns>The samples.</returns>
     public static MatchEvent[] Samples(float time, Vector3 at)
     {
         return
@@ -84,28 +77,19 @@ internal static class SoundCues
     }
 
     /// <summary>Gets whether an event is the puck touching something, so the puck watcher does not play it twice.</summary>
-    /// <param name="e">The event.</param>
-    /// <returns>True for shots, passes, saves, boards, posts and faceoffs.</returns>
     public static bool IsPuckContact(MatchEvent e)
     {
         return e is ShotTaken or PassMade or ShotSaved or PuckHitBoards or PuckHitPost or PuckDropped;
     }
 
-    /// <summary>
-    /// A level from an event's strength (shot speed, hit force) against the strength that plays at
-    /// full level. Events published without a strength play at full level.
-    /// </summary>
-    /// <param name="strength">The event's strength, 0 when unknown.</param>
-    /// <param name="full">The strength that plays at full level.</param>
-    /// <returns>A level from 0.35 to 1.</returns>
+    /// <summary>A level from an event's strength (shot speed, hit force) against the strength that plays at
+    /// full level. Events published without a strength play at full level.</summary>
     public static float Hardness(float strength, float full)
     {
         return strength <= 0 ? 1 : Math.Clamp(strength / full, 0.35f, 1);
     }
 
     /// <summary>Gets the shot cue for a puck speed: harder shots play louder and a little lower, so a slap shot reads as heavier than a wrister.</summary>
-    /// <param name="strength">The puck speed, 0 when unknown.</param>
-    /// <returns>The cue.</returns>
     public static Cue Shot(float strength)
     {
         float hard = Hardness(strength, 40);

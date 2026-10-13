@@ -5,12 +5,10 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Arena;
 
-/// <summary>
-/// The flat diagonal light bands across the ice, like the Blender render: pairs of a wide and a
+/// <summary>The flat diagonal light bands across the ice, like the Blender render: pairs of a wide and a
 /// thin band, rising to the right on screen, clipped to the rounded rink so none spill past the
 /// boards. Built once, drawn on the ice plane with the depth test but no depth write, so a goalie or
-/// puck drawn earlier stays in front and the markings drawn later z-fight nothing.
-/// </summary>
+/// puck drawn earlier stays in front and the markings drawn later z-fight nothing.</summary>
 internal static class IceBands
 {
     const float Y = 0f;                   // on the ice plane; the sheet writes no depth while the bands go down
@@ -80,7 +78,6 @@ internal static class IceBands
     }
 
     /// <summary>Draws the bands in one flat colour. The caller has turned depth writes off.</summary>
-    /// <param name="tone">The band colour; alpha 0 skips them.</param>
     public static void Draw(Color tone)
     {
         if (tone.A == 0) return;

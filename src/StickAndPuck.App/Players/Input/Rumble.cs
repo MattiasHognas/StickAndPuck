@@ -3,12 +3,10 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>
-/// W30: gamepad rumble. Raylib's desktop build has no rumble (its SetGamepadVibration only logs a
+/// <summary>Gamepad rumble. Raylib's desktop build has no rumble (its SetGamepadVibration only logs a
 /// warning there), so this talks to the system directly: on Linux a force-feedback rumble effect on
 /// the pad's /dev/input event device, on Windows XInput. A pad or driver with no rumble is noted
-/// once in the log and left quiet. SAP_RUMBLE=0 turns it off.
-/// </summary>
+/// once in the log and left quiet. SAP_RUMBLE=0 turns it off.</summary>
 internal static partial class Rumble
 {
     const int Pads = 2;
@@ -25,10 +23,6 @@ internal static partial class Rumble
     }
 
     /// <summary>Rumbles the pad a device names; keyboard and none do nothing.</summary>
-    /// <param name="device">The input device.</param>
-    /// <param name="strong">The low, heavy motor, 0 to 1.</param>
-    /// <param name="weak">The high, light motor, 0 to 1.</param>
-    /// <param name="seconds">How long.</param>
     public static void Pulse(InputDevice device, float strong, float weak, float seconds)
     {
         int index = device switch { InputDevice.Gamepad1 => 0, InputDevice.Gamepad2 => 1, _ => -1 };
@@ -37,7 +31,6 @@ internal static partial class Rumble
     }
 
     /// <summary>Stops rumbles whose time is up, where the system does not time them itself. Call every step.</summary>
-    /// <param name="dt">The step length.</param>
     public static void Update(float dt)
     {
         foreach (var r in Rumblers)

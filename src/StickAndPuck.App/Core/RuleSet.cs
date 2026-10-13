@@ -51,14 +51,14 @@ public enum RefereeStrictness
     /// <summary>About half as many calls.</summary>
     Lenient,
 
-    /// <summary>Default: the calls W14 tuned, about eight per 60 minutes.</summary>
+    /// <summary>Default: about eight per 60 minutes.</summary>
     Normal,
 
     /// <summary>About half again as many calls.</summary>
     Strict,
 }
 
-/// <summary>Who shoots first in a shootout (W45 plays it).</summary>
+/// <summary>Who shoots first in a shootout.</summary>
 public enum ShootoutFirst
 {
     /// <summary>The away club shoots first and starts sudden death (SHL).</summary>
@@ -71,7 +71,7 @@ public enum ShootoutFirst
     HomeChooses,
 }
 
-/// <summary>What a fight costs (W48 plays it).</summary>
+/// <summary>What a fight costs.</summary>
 public enum FightPenalty
 {
     /// <summary>Both fighters get a 5 minute major and a game misconduct (SHL).</summary>
@@ -84,7 +84,7 @@ public enum FightPenalty
     Major,
 }
 
-/// <summary>Which penalty lengths the referee hands out (W47 plays it).</summary>
+/// <summary>Which penalty lengths the referee hands out.</summary>
 public enum PenaltySeverity
 {
     /// <summary>Minors, double minors, majors with a game misconduct and misconducts (SHL, NHL).</summary>
@@ -94,7 +94,7 @@ public enum PenaltySeverity
     MinorsOnly,
 }
 
-/// <summary>What equal minors on both clubs at once do (W46 plays it).</summary>
+/// <summary>What equal minors on both clubs at once do.</summary>
 public enum CoincidentalMinors
 {
     /// <summary>Immediate substitution, play stays 5 on 5 (SHL).</summary>
@@ -104,15 +104,13 @@ public enum CoincidentalMinors
     FourOnFour,
 }
 
-/// <summary>
-/// W44: every game rule as a switch, so a league is a preset and a player can turn any rule off.
+/// <summary>Every game rule as a switch, so a league is a preset and a player can turn any rule off.
 /// A match carries its resolved set on <see cref="MatchSetup.Rules"/>; systems read
 /// <c>world.Setup.Rules.X</c> and never a preset name. Presets: <see cref="Shl"/> (the default),
 /// <see cref="Arcade"/> and <see cref="Nhl"/>. A player's changes are a <see cref="RuleChoice"/>
 /// saved in settings.json and resolved once when a match starts; the arcade entries always play
 /// <see cref="Arcade"/> as it stands, and a season keeps the set it was started with in its save.
-/// The rows on the rules page, with their keys, are <see cref="RuleRows.All"/>.
-/// </summary>
+/// The rows on the rules page, with their keys, are <see cref="RuleRows.All"/>.</summary>
 public sealed record RuleSet
 {
     /// <summary>The SHL: the rules the game was built on.</summary>
@@ -153,73 +151,73 @@ public sealed record RuleSet
     /// <summary>Gets a value indicating whether the player changed a rule of the preset (shown as CUSTOM).</summary>
     public bool Custom { get; init; }
 
-    /// <summary>Gets a value indicating whether offside is called (W7b).</summary>
+    /// <summary>Gets a value indicating whether offside is called.</summary>
     public bool Offside { get; init; } = true;
 
-    /// <summary>Gets how icing is called (W7b).</summary>
+    /// <summary>Gets how icing is called.</summary>
     public IcingCall Icing { get; init; } = IcingCall.Hybrid;
 
-    /// <summary>Gets a value indicating whether a club may pull its goalie for an extra attacker (W23).</summary>
+    /// <summary>Gets a value indicating whether a club may pull its goalie for an extra attacker.</summary>
     public bool GoaliePull { get; init; } = true;
 
-    /// <summary>Gets how a tie is settled in a season, exhibition, versus or arcade game (W7c).</summary>
+    /// <summary>Gets how a tie is settled in a season, exhibition, versus or arcade game.</summary>
     public OvertimeStyle Overtime { get; init; } = OvertimeStyle.ThreeOnThree;
 
-    /// <summary>Gets how a tie is settled in a playoff game (W19).</summary>
+    /// <summary>Gets how a tie is settled in a playoff game.</summary>
     public OvertimeStyle PlayoffOvertime { get; init; } = OvertimeStyle.SuddenDeath;
 
-    /// <summary>Gets a value indicating whether the referee calls penalties (W14).</summary>
+    /// <summary>Gets a value indicating whether the referee calls penalties.</summary>
     public bool Penalties { get; init; } = true;
 
-    /// <summary>Gets how readily the referee calls a foul (W14's strictness).</summary>
+    /// <summary>Gets how readily the referee calls a foul.</summary>
     public RefereeStrictness Strictness { get; init; } = RefereeStrictness.Normal;
 
-    /// <summary>Gets a value indicating whether fights can start (W15).</summary>
+    /// <summary>Gets a value indicating whether fights can start.</summary>
     public bool Fights { get; init; } = true;
 
-    /// <summary>Gets the shooters per club before the shootout goes to sudden death (W45).</summary>
+    /// <summary>Gets the shooters per club before the shootout goes to sudden death.</summary>
     public int ShootoutShooters { get; init; } = 3;
 
-    /// <summary>Gets who shoots first in the shootout (W45).</summary>
+    /// <summary>Gets who shoots first in the shootout.</summary>
     public ShootoutFirst ShootoutFirst { get; init; } = ShootoutFirst.Away;
 
-    /// <summary>Gets a value indicating whether penalties still running at the end of regulation carry into overtime (W46).</summary>
+    /// <summary>Gets a value indicating whether penalties still running at the end of regulation carry into overtime.</summary>
     public bool PenaltiesCarryIntoOvertime { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether a third penalty waits in the box instead of being waved off (W46).</summary>
+    /// <summary>Gets a value indicating whether a third penalty waits in the box instead of being waved off.</summary>
     public bool StackPenalties { get; init; } = true;
 
-    /// <summary>Gets what equal minors on both clubs do (W46).</summary>
+    /// <summary>Gets what equal minors on both clubs do.</summary>
     public CoincidentalMinors CoincidentalMinors { get; init; } = CoincidentalMinors.Substitute;
 
-    /// <summary>Gets which penalty lengths are handed out (W47).</summary>
+    /// <summary>Gets which penalty lengths are handed out.</summary>
     public PenaltySeverity PenaltySeverity { get; init; } = PenaltySeverity.Full;
 
-    /// <summary>Gets a value indicating whether the referee calls interference: a hit on a skater without the puck (W47).</summary>
+    /// <summary>Gets a value indicating whether the referee calls interference: a hit on a skater without the puck.</summary>
     public bool Interference { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether the referee calls holding: close trailing contact on a slowed carrier (W47).</summary>
+    /// <summary>Gets a value indicating whether the referee calls holding: close trailing contact on a slowed carrier.</summary>
     public bool Holding { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether the referee calls high-sticking: the stick up on a face-to-face check (W47).</summary>
+    /// <summary>Gets a value indicating whether the referee calls high-sticking: the stick up on a face-to-face check.</summary>
     public bool HighSticking { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether the referee calls cross-checking: a hard hit from the front on the carrier (W47).</summary>
+    /// <summary>Gets a value indicating whether the referee calls cross-checking: a hard hit from the front on the carrier.</summary>
     public bool CrossChecking { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether the referee calls boarding: a hard hit from behind near the boards (W47).</summary>
+    /// <summary>Gets a value indicating whether the referee calls boarding: a hard hit from behind near the boards.</summary>
     public bool Boarding { get; init; } = true;
 
-    /// <summary>Gets a value indicating whether the referee calls roughing: a hit after the whistle, or the same skater hit again at once (W47).</summary>
+    /// <summary>Gets a value indicating whether the referee calls roughing: a hit after the whistle, or the same skater hit again at once.</summary>
     public bool Roughing { get; init; } = true;
 
-    /// <summary>Gets what a fight costs (W48).</summary>
+    /// <summary>Gets what a fight costs.</summary>
     public FightPenalty FightPenalty { get; init; } = FightPenalty.MajorAndEjection;
 
-    /// <summary>Gets a value indicating whether the icing club keeps its line until the faceoff (W49).</summary>
+    /// <summary>Gets a value indicating whether the icing club keeps its line until the faceoff.</summary>
     public bool IcingNoChange { get; init; } = true;
 
-    /// <summary>Gets the factor on W14's call chance for <see cref="Strictness"/>.</summary>
+    /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
     [JsonIgnore]
     public float StrictnessScale => Strictness switch
     {
@@ -233,8 +231,6 @@ public sealed record RuleSet
     public string Name => Custom ? Text.Get(K.RulesCustom) : NameOf(Preset);
 
     /// <summary>Gets a preset's rules.</summary>
-    /// <param name="preset">The preset.</param>
-    /// <returns>The rules.</returns>
     public static RuleSet Of(RulePreset preset) => preset switch
     {
         RulePreset.Arcade => Arcade,
@@ -243,8 +239,6 @@ public sealed record RuleSet
     };
 
     /// <summary>Gets a preset's name, in capitals.</summary>
-    /// <param name="preset">The preset.</param>
-    /// <returns>SHL, ARCADE or NHL.</returns>
     public static string NameOf(RulePreset preset) => preset.ToString().ToUpperInvariant();
 
     /// <inheritdoc/>
@@ -254,11 +248,9 @@ public sealed record RuleSet
     }
 }
 
-/// <summary>
-/// The player's rule choice as settings.json stores it: a preset and the rules changed from it,
+/// <summary>The player's rule choice as settings.json stores it: a preset and the rules changed from it,
 /// by <see cref="RuleRow.Key"/> (for example <c>"Offside": "Off"</c>). A rule set back to the
-/// preset's value drops out of <see cref="Overrides"/>, so CUSTOM shows only while something differs.
-/// </summary>
+/// preset's value drops out of <see cref="Overrides"/>, so CUSTOM shows only while something differs.</summary>
 public sealed record RuleChoice
 {
     /// <summary>Gets the preset.</summary>
@@ -272,7 +264,6 @@ public sealed record RuleChoice
     public bool Custom => Resolve().Custom;
 
     /// <summary>The rules a match is played by: the preset with the changed rules laid over it.</summary>
-    /// <returns>The resolved set; <see cref="RuleSet.Custom"/> is true when a change took.</returns>
     public RuleSet Resolve()
     {
         var preset = RuleSet.Of(Preset);
@@ -286,9 +277,6 @@ public sealed record RuleChoice
     }
 
     /// <summary>A choice with one rule changed; setting it back to the preset's value drops the override.</summary>
-    /// <param name="row">The rule.</param>
-    /// <param name="value">One of the row's values.</param>
-    /// <returns>The new choice.</returns>
     public RuleChoice With(RuleRow row, string value)
     {
         var overrides = new Dictionary<string, string>(Overrides, StringComparer.Ordinal);
@@ -298,7 +286,5 @@ public sealed record RuleChoice
     }
 
     /// <summary>A choice of a preset as it stands, with every change cleared.</summary>
-    /// <param name="preset">The preset.</param>
-    /// <returns>The new choice.</returns>
     public static RuleChoice Of(RulePreset preset) => new() { Preset = preset };
 }

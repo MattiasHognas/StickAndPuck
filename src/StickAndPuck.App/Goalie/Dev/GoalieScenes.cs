@@ -7,12 +7,10 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Goalie.Dev;
 
-/// <summary>
-/// SAP_SCENE=goalie: the away goalie in the +x net faces a loop of shots from the slot and the
+/// <summary>SAP_SCENE=goalie: the away goalie in the +x net faces a loop of shots from the slot and the
 /// circles, aimed anywhere on the net, with a tally of saves, rebounds and goals. The camera sits
 /// over that end. SAP_GOALIE_REFLEXES=0..100 overrides the goalie's reflexes to compare; the top line
-/// shows all of the goalie's traits.
-/// </summary>
+/// shows all of the goalie's traits.</summary>
 public sealed class GoalieScene : IScene
 {
     /// <inheritdoc/>
@@ -45,7 +43,6 @@ internal sealed class GoalieDemo
     int shots, saves, rebounds, goals;
 
     /// <summary>Starts the next shot when the last one is done, and counts goals.</summary>
-    /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
         if (world.Dev.Goalie.TryGet(out var demo)) demo.Run(world);
@@ -67,8 +64,6 @@ internal sealed class GoalieDemo
     }
 
     /// <summary>Puts the puck somewhere in the attacking zone and fires it at a random point on the +x net.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="dice">Where the shots come from and go.</param>
     public static void Shoot(World world, Random dice)
     {
         var from = new Vector3(RinkSpec.GoalLineX - 6 - dice.NextSingle() * 10, 0, (dice.NextSingle() * 2 - 1) * 7);
@@ -77,10 +72,6 @@ internal sealed class GoalieDemo
     }
 
     /// <summary>Fires the puck from a spot on the ice so it reaches a target point at a given speed, allowing for gravity.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="from">Where the puck starts, on the ice.</param>
-    /// <param name="target">Where it should arrive.</param>
-    /// <param name="speed">Speed over the ice.</param>
     public static void Fire(World world, Vector3 from, Vector3 target, float speed)
     {
         var flat = new Vector3(target.X - from.X, 0, target.Z - from.Z);
@@ -94,8 +85,6 @@ internal sealed class GoalieDemo
     }
 
     /// <summary>Counts a save.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="caught">Whether the goalie held it.</param>
     public static void Saved(World world, bool caught)
     {
         if (!world.Dev.Goalie.TryGet(out var demo)) return;
@@ -104,7 +93,6 @@ internal sealed class GoalieDemo
     }
 
     /// <summary>Draws the tally in the corner.</summary>
-    /// <param name="world">The match state.</param>
     public static void DrawHud(World world)
     {
         if (!world.Dev.Goalie.TryGet(out var demo)) return;

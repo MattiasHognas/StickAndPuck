@@ -4,13 +4,11 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Camera;
 
-/// <summary>
-/// The gameplay camera's motion. It pans along the rink after the puck, leading a little in the
+/// <summary>The gameplay camera's motion. It pans along the rink after the puck, leading a little in the
 /// direction of play, at a fixed height, distance and tilt, and zooms out with puck speed when the
 /// setting is on. The pan moves in whole pixels at the far boards, so the ad boards (which match
 /// their texture texel for texel) never shimmer. Anything that changes the boards' size on screen
-/// (the zoom, or moving toward the viewer) breaks that match, which is why the camera never trucks in z.
-/// </summary>
+/// (the zoom, or moving toward the viewer) breaks that match, which is why the camera never trucks in z.</summary>
 internal sealed class FollowCamera
 {
     /// <summary>Seconds of puck travel the camera leads by.</summary>
@@ -47,7 +45,6 @@ internal sealed class FollowCamera
     public float PixelStep => PixelAtFarBoards();
 
     /// <summary>Jumps straight to where the camera wants to be, with no easing (start of play, end of a replay).</summary>
-    /// <param name="world">The match state.</param>
     public void Cut(World world)
     {
         lead = 0;
@@ -58,8 +55,6 @@ internal sealed class FollowCamera
     }
 
     /// <summary>Moves the camera one step toward the play.</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="dt">The step length.</param>
     public void Update(World world, float dt)
     {
         var puck = world.Puck;
@@ -102,10 +97,8 @@ internal sealed class FollowCamera
         return Math.Max(0, RinkSpec.HalfLength + EndMargin - HalfWidthAtCentre());
     }
 
-    /// <summary>
-    /// One pixel of the 480-wide frame, in metres along x, at the far boards. Moving the camera by
-    /// whole steps of this shifts the far boards by whole pixels.
-    /// </summary>
+    /// <summary>One pixel of the 480-wide frame, in metres along x, at the far boards. Moving the camera by
+    /// whole steps of this shifts the far boards by whole pixels.</summary>
     float PixelAtFarBoards()
     {
         var forward = BroadcastCamera.Forward;

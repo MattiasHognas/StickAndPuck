@@ -4,13 +4,11 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Pregame;
 
-/// <summary>
-/// W28: the pre-game warm-up other code can steer. A match that someone will play (a world with a
+/// <summary>The pre-game warm-up other code can steer. A match that someone will play (a world with a
 /// human slot, started with <see cref="MatchFlow.Begin"/>) holds its intro while both squads skate
 /// around, until start is pressed; then the opening faceoff follows as before. A world without a
 /// human, and every self test, runs the plain two-second intro. SAP_WARMUP=0 turns the warm-up off;
-/// SAP_WARMUP=seconds starts the game by itself after that long, for scripted runs and captures.
-/// </summary>
+/// SAP_WARMUP=seconds starts the game by itself after that long, for scripted runs and captures.</summary>
 public static class Pregame
 {
 
@@ -24,32 +22,24 @@ public static class Pregame
             : float.PositiveInfinity;
 
     /// <summary>Asks for the warm-up in a world even without a human, or refuses it in one with a human (<paramref name="on"/> false).</summary>
-    /// <param name="world">The match state.</param>
-    /// <param name="on">Whether the intro waits for start.</param>
     public static void Enable(World world, bool on = true)
     {
         State(world).Forced = on;
     }
 
     /// <summary>Gets a value indicating whether the warm-up is on right now: the intro is being held for the start button.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>True while the squads warm up.</returns>
     public static bool IsWarmingUp(World world)
     {
         return world.Warmup.TryGet(out var s) && s.Running && !s.Started;
     }
 
     /// <summary>Gets the seconds the warm-up has run.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>The time, 0 before or without a warm-up.</returns>
     public static float Elapsed(World world)
     {
         return world.Warmup.TryGet(out var s) ? s.Elapsed : 0;
     }
 
     /// <summary>Start pressed: the warm-up ends, the skaters gather and the opening faceoff follows.</summary>
-    /// <param name="world">The match state.</param>
-    /// <returns>True if a warm-up was running.</returns>
     public static bool Start(World world)
     {
         if (!IsWarmingUp(world)) return false;

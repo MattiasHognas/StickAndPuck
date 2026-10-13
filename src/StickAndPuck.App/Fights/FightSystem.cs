@@ -8,13 +8,11 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Fights;
 
-/// <summary>
-/// W15: a fight may start after a hard check; accept or decline, punch and block timing, then the
-/// rule set's fight penalty (W48). See <see cref="Fighting"/> for the rules. Runs after the penalty rules, so it sees
+/// <summary>A fight may start after a hard check; accept or decline, punch and block timing, then the
+/// rule set's fight penalty. See <see cref="Fighting"/> for the rules. Runs after the penalty rules, so it sees
 /// this step's checks and the whistle it blows stops play before the referee and the bench look.
 /// While the fight lasts the match stays stopped (no clock, no faceoff) and the dead puck lies by the
-/// fighters, so the camera stays on them. Draws the offer prompt and the fight bar at the foot of the HUD.
-/// </summary>
+/// fighters, so the camera stays on them. Draws the offer prompt and the fight bar at the foot of the HUD.</summary>
 internal sealed class FightSystem : ISystem, IDisposable
 {
     static readonly Color Bar = HudArt.Hex("#555f6b");
@@ -174,10 +172,8 @@ internal sealed class FightSystem : ISystem, IDisposable
         }
     }
 
-    /// <summary>
-    /// W30: everyone else gives the fighters room. A skater inside the ring around the fight glides
-    /// out to its edge and faces the fighters; nobody is pulled from farther away.
-    /// </summary>
+    /// <summary>Everyone else gives the fighters room. A skater inside the ring around the fight glides
+    /// out to its edge and faces the fighters; nobody is pulled from farther away.</summary>
     static void BackOff(World world, Fight fight, float dt)
     {
         foreach (var p in world.Players)
@@ -305,12 +301,10 @@ internal sealed class FightSystem : ISystem, IDisposable
         s.Log(world, $"{Penalties.Name(world, world.Players[winner.PlayerId])} wins {(knockdown ? "by knockdown" : "on balance")}");
     }
 
-    /// <summary>
-    /// The fight is over: the rule set's fight penalty (W48) is handed out and the faceoff follows in the
+    /// <summary>The fight is over: the rule set's fight penalty is handed out and the faceoff follows in the
     /// loser's end. Arcade: the loser serves two minutes, the winner stays on. SHL and NHL: both fighters
     /// get a 5 minute major, coincidental and substituted so neither club plays short; under SHL both also
-    /// get a game misconduct and leave the squad.
-    /// </summary>
+    /// get a game misconduct and leave the squad.</summary>
     static void End(World world, FightState s, Fight fight, bool penalise)
     {
         s.Fight = Maybe<Fight>.None;

@@ -3,7 +3,6 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>A menu button.</summary>
 internal enum MenuButton
 {
     None,
@@ -16,15 +15,13 @@ internal enum MenuButton
     Pause,
 }
 
-/// <summary>
-/// Menu presses from the keyboard and both gamepads, found once per fixed step by comparing held
+/// <summary>Menu presses from the keyboard and both gamepads, found once per fixed step by comparing held
 /// buttons with the previous step, with key repeat on the arrows. Arrows or WASD move, enter or
 /// space picks, escape or backspace goes back, escape or P pauses; on a pad the d-pad or left
 /// stick moves, A picks, B goes back and start pauses.
 /// SAP_SCREEN_KEYS="down enter ..." presses scripted buttons instead (one every
 /// <see cref="ScriptGap"/> steps while a menu is up), for headless runs through the screens;
-/// "shot:name" saves name.png of the last frame and "wait" does nothing for one gap.
-/// </summary>
+/// "shot:name" saves name.png of the last frame and "wait" does nothing for one gap.</summary>
 internal sealed class MenuInput
 {
     const float RepeatDelay = 0.35f, RepeatEvery = 0.1f, StickDeadZone = 0.5f;
@@ -65,7 +62,7 @@ internal sealed class MenuInput
             if (Scripted(queue, menuUp) is var b and not MenuButton.None)
             {
                 pressed.Add(b);
-                DeviceInput.Scripted(b.ToString());    // W67: the replay presses it on the same step
+                DeviceInput.Scripted(b.ToString());    // the replay presses it on the same step
             }
             return pressed;
         }

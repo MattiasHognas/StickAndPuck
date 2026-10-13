@@ -3,13 +3,11 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Intermission;
 
-/// <summary>
-/// The Zamboni's drive between periods: in through a gate in the far boards near the home end,
+/// <summary>The Zamboni's drive between periods: in through a gate in the far boards near the home end,
 /// laps that spiral inward from the boards toward the centre, the way the ice gets resurfaced,
 /// then back out through the same gate. The route keeps in front of both creases, so the goalies
 /// can stay in their nets, and leaves the strip along the far boards free for the skaters waiting
-/// at their bench doors. Positions are (x, z) on the ice, for the wheelbase centre.
-/// </summary>
+/// at their bench doors. Positions are (x, z) on the ice, for the wheelbase centre.</summary>
 internal sealed class ZamboniRoute
 {
     /// <summary>Half the length of each lap's straights, in metres.</summary>
@@ -90,8 +88,6 @@ internal sealed class ZamboniRoute
     }
 
     /// <summary>Gets the distance driven after <paramref name="seconds"/>: speeding up, cruising, slowing to a stop at the end.</summary>
-    /// <param name="seconds">Time since it set off.</param>
-    /// <returns>Metres along the route.</returns>
     public float Distance(float seconds)
     {
         float ramp = Speed / Accel, rampDistance = Speed * ramp / 2, total = Duration;
@@ -104,8 +100,6 @@ internal sealed class ZamboniRoute
     }
 
     /// <summary>Gets the point on the route at a distance along it.</summary>
-    /// <param name="distance">Metres along the route.</param>
-    /// <returns>The point (x, z).</returns>
     public Vector2 At(float distance)
     {
         distance = Math.Clamp(distance, 0, Length);
@@ -117,8 +111,6 @@ internal sealed class ZamboniRoute
     }
 
     /// <summary>Gets the heading at a distance along the route, in radians, 0 facing +z like a player.</summary>
-    /// <param name="distance">Metres along the route.</param>
-    /// <returns>The heading.</returns>
     public float HeadingAt(float distance)
     {
         var d = At(distance + HeadingReach) - At(distance - HeadingReach);
@@ -126,16 +118,12 @@ internal sealed class ZamboniRoute
     }
 
     /// <summary>Gets whether the Zamboni is inside the boards at a distance along the route.</summary>
-    /// <param name="distance">Metres along the route.</param>
-    /// <returns>True on the ice.</returns>
     public bool OnIce(float distance)
     {
         return At(distance).Y > -RinkSpec.HalfWidth;
     }
 
     /// <summary>A point on one lap: the far straight toward +x, the turn at the away end, the near straight back, the turn at the home end.</summary>
-    /// <param name="f">How far round the lap, 0 to 1.</param>
-    /// <param name="r">The lap's radius.</param>
     static Vector2 Lap(float f, float r)
     {
         const float a = HalfStraight;

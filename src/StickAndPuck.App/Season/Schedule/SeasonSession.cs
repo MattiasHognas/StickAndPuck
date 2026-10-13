@@ -3,12 +3,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>
-/// The season being played in this run, if any, and which of its games the current match is.
-/// A scene (or W11's start screen) calls <see cref="Continue(IReadOnlyList{ClubData})"/> or <see cref="StartNew(IReadOnlyList{ClubData}, string)"/>, builds
+/// <summary>The season being played in this run, if any, and which of its games the current match is.
+/// A scene (or the start screen) calls <see cref="Continue(IReadOnlyList{ClubData})"/> or <see cref="StartNew(IReadOnlyList{ClubData}, string)"/>, builds
 /// the world from <see cref="NextSetup"/>, and <see cref="ScheduleSystem"/> records the result
-/// when that match ends; <see cref="AutosaveSystem"/> then writes the save.
-/// </summary>
+/// when that match ends; <see cref="AutosaveSystem"/> then writes the save.</summary>
 public static class SeasonSession
 {
     /// <summary>Gets the season being played, or None outside season mode.</summary>
@@ -27,14 +25,9 @@ public static class SeasonSession
     public static bool Unsaved { get; internal set; }
 
     /// <summary>Continues the season saved at <see cref="SeasonSave.DefaultPath"/>.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <returns>The season, or None when there is no save to continue.</returns>
     public static Maybe<SeasonState> Continue(IReadOnlyList<ClubData> clubs) => Continue(clubs, SeasonSave.DefaultPath);
 
     /// <summary>Continues the saved season.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="path">The save file.</param>
-    /// <returns>The season, or None when there is no save to continue.</returns>
     public static Maybe<SeasonState> Continue(IReadOnlyList<ClubData> clubs, string path)
     {
         if (!SeasonSave.Read(path).TryGet(out var season)) return Maybe<SeasonState>.None;
@@ -44,24 +37,12 @@ public static class SeasonSession
     }
 
     /// <summary>Starts a new season with a random seed at <see cref="SeasonSave.DefaultPath"/>, replacing any save, and saves it at once.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="userClub">The id of the human's club.</param>
-    /// <returns>The new season.</returns>
     public static SeasonState StartNew(IReadOnlyList<ClubData> clubs, string userClub) => StartNew(clubs, userClub, Maybe<int>.None, SeasonSave.DefaultPath);
 
     /// <summary>Starts a new season at <see cref="SeasonSave.DefaultPath"/>, replacing any save, and saves it at once.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="userClub">The id of the human's club.</param>
-    /// <param name="seed">The schedule seed, or None for a random one.</param>
-    /// <returns>The new season.</returns>
     public static SeasonState StartNew(IReadOnlyList<ClubData> clubs, string userClub, Maybe<int> seed) => StartNew(clubs, userClub, seed, SeasonSave.DefaultPath);
 
     /// <summary>Starts a new season, replacing any save, and saves it at once.</summary>
-    /// <param name="clubs">Every club from data/clubs/.</param>
-    /// <param name="userClub">The id of the human's club.</param>
-    /// <param name="seed">The schedule seed, or None for a random one.</param>
-    /// <param name="path">The save file.</param>
-    /// <returns>The new season.</returns>
     public static SeasonState StartNew(IReadOnlyList<ClubData> clubs, string userClub, Maybe<int> seed, string path)
     {
         var season = SeasonState.New(clubs, userClub, seed.TryGet(out int s) ? s : Random.Shared.Next());
@@ -71,12 +52,8 @@ public static class SeasonSession
         return season;
     }
 
-    /// <summary>
-    /// The setup for the human's next game, and marks it as the game being played, so its result is
-    /// recorded when the match ends. Over when the human's club has no games left.
-    /// </summary>
-    /// <param name="device">The human's input device.</param>
-    /// <returns>The match to play, or <see cref="NextMatch.Over"/>.</returns>
+    /// <summary>The setup for the human's next game, and marks it as the game being played, so its result is
+    /// recorded when the match ends. Over when the human's club has no games left.</summary>
     public static NextMatch NextSetup(InputDevice device = InputDevice.KeyboardMouse)
     {
         if (!Current.TryGet(out var season))
@@ -96,12 +73,8 @@ public static class SeasonSession
         Unsaved = false;
     }
 
-    /// <summary>
-    /// Records the result of the game being played, settles the rest of its round (and any earlier
-    /// games still open), and marks the season for saving. Ignored outside season mode.
-    /// </summary>
-    /// <param name="result">The result.</param>
-    /// <returns>True when a result was recorded.</returns>
+    /// <summary>Records the result of the game being played, settles the rest of its round (and any earlier
+    /// games still open), and marks the season for saving. Ignored outside season mode.</summary>
     public static bool Finish(FixtureResult result)
     {
         if (!Current.TryGet(out var season) || !Playing.TryGet(out var game)) return false;
@@ -112,14 +85,11 @@ public static class SeasonSession
         return true;
     }
 
-    /// <summary>
-    /// W26: plays the human's current game off screen instead of on the ice, with the same
+    /// <summary>Plays the human's current game off screen instead of on the ice, with the same
     /// <see cref="QuickSim"/> the other games of the round use (and the playoffs' other series),
     /// then records and saves it exactly as a played game: the result goes into the fixture or the
     /// series, the rest of the round is settled and the save is written. None when there is nothing
-    /// to play; once the regular season is over it starts the playoffs and sims the next playoff game.
-    /// </summary>
-    /// <returns>The game that was simmed, with its result, or None.</returns>
+    /// to play; once the regular season is over it starts the playoffs and sims the next playoff game.</summary>
     public static Maybe<SimmedGame> SimCurrentGame()
     {
         if (!Current.TryGet(out var season)) return Maybe<SimmedGame>.None;
@@ -140,7 +110,7 @@ public static class SeasonSession
         int round = playoffs.Rounds.Count - 1, index = playoffs.Current.Series.IndexOf(series), gameNo = series.Games.Count;
         string stage = playoffs.Current.Name, title = playoffs.CurrentTitle;    // read before Finish, which may draw the next round
         var r = QuickSim.Play(setup.Home, setup.Away, playoffs.GameSeed(round, index, gameNo));
-        if (r.Kind == ResultKind.Shootout && !PlayoffSession.Rules.Overtime.HasShootout) r = r with { Kind = ResultKind.Overtime };    // W19: the mode's overtime rules, SHL playoffs have no shootout
+        if (r.Kind == ResultKind.Shootout && !PlayoffSession.Rules.Overtime.HasShootout) r = r with { Kind = ResultKind.Overtime };    // the mode's overtime rules, SHL playoffs have no shootout
         if (!PlayoffSession.Finish(r)) return Maybe<SimmedGame>.None;
         Save();
         Console.WriteLine($"SAP: simmed playoff game {gameNo + 1} of {stage}: {setup.Home.Id} {r.HomeGoals}-{r.AwayGoals} {setup.Away.Id} ({r.Kind})");

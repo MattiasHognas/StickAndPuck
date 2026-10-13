@@ -6,29 +6,27 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Rules;
 
-/// <summary>
-/// W7c: a tie after regulation goes to overtime and then a shootout as the mode's <see cref="OvertimeFormat"/>
-/// says (W19): SHL 3 on 3 then a shootout in the season, 5 on 5 until a goal in the playoffs.
+/// <summary>A tie after regulation goes to overtime and then a shootout as the mode's <see cref="OvertimeFormat"/>
+/// says: SHL 3 on 3 then a shootout in the season, 5 on 5 until a goal in the playoffs.
 /// <list type="bullet">
-/// <item>Overtime: when W7a hands over (<see cref="MatchPhase.Overtime"/>), each club keeps the
+/// <item>Overtime: when the match flow hands over (<see cref="MatchPhase.Overtime"/>), each club keeps the
 /// format's skaters (centre and two defence where it can, for 3 on 3), the rest go to the bench, and
 /// after a short break <see cref="MatchFlow.StartPeriod"/> starts a sudden death period of
-/// <see cref="PeriodLength"/>. A goal ends the match there (W7a); a scoreless period hands over to
+/// <see cref="PeriodLength"/>. A goal ends the match there; a scoreless period hands over to
 /// the shootout, or to another overtime period when the format plays on until a goal.</item>
 /// <item>Shootout: every skater leaves the ice and each goalie stays in their own net. Clubs take turns,
-/// the rules' first club first (W45, <see cref="ShootoutOrder"/>: SHL away, NHL home chooses), each shooter
+/// the rules' first club first (<see cref="ShootoutOrder"/>: SHL away, NHL home chooses), each shooter
 /// alone from centre with the puck against the other club's goalie; the rules' shooters each, then sudden
 /// death rounds opened by the same club. An attempt ends on a goal,
 /// the goalie covering the puck, the puck going dead or behind the goal line, or time running out; no rebounds.
 /// A human slot shoots for its club; otherwise the shooter skates in and shoots by itself.</item>
 /// <item>The winner gets one goal added to the final score (as in the SHL) and MatchEnd is published.</item>
 /// </list>
-/// <see cref="Shootout"/> gives the tally for the HUD.
-/// </summary>
+/// <see cref="Shootout"/> gives the tally for the HUD.</summary>
 internal sealed class OvertimeRules : ISystem
 {
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 9;
 
     readonly Random rng;
@@ -39,7 +37,6 @@ internal sealed class OvertimeRules : ISystem
     }
 
     /// <summary>Initializes the rules with their own randomness, so tests repeat.</summary>
-    /// <param name="rng">Randomness for how AI shooters skate in and shoot.</param>
     public OvertimeRules(Random rng)
     {
         this.rng = rng;
@@ -47,16 +44,12 @@ internal sealed class OvertimeRules : ISystem
 
 
     /// <summary>Gets the length of an overtime period in this match: the format's own, or <see cref="WorldSwitches.OvertimeSeconds"/>.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>Game seconds.</returns>
     public static float PeriodLength(World world)
     {
         return OvertimeFormat.Of(world.Setup).PeriodSeconds.Or(world.Switches.OvertimeSeconds);
     }
 
     /// <summary>Gets the shootout of a match, or None before it starts.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>The tally.</returns>
     public static Maybe<ShootoutState> Shootout(World world)
     {
         return world.Overtime.TryGet(out var s) ? s.Shootout : Maybe<ShootoutState>.None;
@@ -74,7 +67,7 @@ internal sealed class OvertimeRules : ISystem
     {
         if (world.Overtime.TryGet(out var st) && st.Shootout.HasValue && !st.First.IsSet()) DrawChoice(world);
 
-        // a plain shootout line under W7a's debug line, until W10's scorebug shows the tally
+        // a plain shootout line under the match debug line
         if (!world.Switches.MatchLine || !Shootout(world).TryGet(out var so)) return;
         string Marks(Side side) => string.Concat(so.Shots.Where(x => x.Side == side).Select(x => x.Scored ? "o" : "x"));
         string text = $"SO  {world.Setup.Home.ShortName} {Marks(Side.Home)}   {world.Setup.Away.ShortName} {Marks(Side.Away)}";
@@ -82,7 +75,7 @@ internal sealed class OvertimeRules : ISystem
         DrawText(text, 8, 238, 10, new Raylib_cs.Color(239, 224, 194, 255));
     }
 
-    /// <summary>W45: the home human's choice, blinking at the top until they pick.</summary>
+    /// <summary>The home human's choice, blinking at the top until they pick.</summary>
     static void DrawChoice(World world)
     {
         string text = Text.Format(K.ShootoutChoice, world.Setup.Home.ShortName, Key(world, GameAction.Shoot), Key(world, GameAction.Pass));
@@ -151,7 +144,7 @@ internal sealed class OvertimeRules : ISystem
             case ShootoutStage.Break:
                 if (!s.First.IsSet())
                 {
-                    // W45: the human home club picks; nothing else runs until it does (or the time runs out)
+                    // The human home club picks; nothing else runs until it does (or the time runs out)
                     s.Timer -= dt;
                     var pick = ShootoutOrder.Pick(world);
                     s.First = pick.IsSet() ? pick : s.Timer <= -ShootoutOrder.ChooseSeconds ? SideOrNone.Home : SideOrNone.None;
@@ -409,7 +402,6 @@ internal enum ShootoutStage
     /// <summary>The shooter waits at centre.</summary>
     Ready,
 
-    /// <summary>The attempt is on.</summary>
     Attempt,
 
     /// <summary>The pause after an attempt.</summary>
@@ -431,7 +423,7 @@ internal sealed class OvertimeState
     /// <summary>Gets the shootout under way; only asked once it has begun.</summary>
     public ShootoutState Live => Shootout.TryGet(out var so) ? so : throw new InvalidOperationException("no shootout under way");
 
-    /// <summary>Gets or sets the club that shoots first (W45), or None while the home human chooses.</summary>
+    /// <summary>Gets or sets the club that shoots first, or None while the home human chooses.</summary>
     public SideOrNone First { get; set; }
 
     public ShootoutStage Stage { get; set; }

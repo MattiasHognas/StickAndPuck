@@ -3,13 +3,11 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.AI.Dev;
 
-/// <summary>
-/// SAP_SCENE=specialteams: an all-AI match with a skater of the away club in the box for good, so
+/// <summary>SAP_SCENE=specialteams: an all-AI match with a skater of the away club in the box for good, so
 /// home plays a power play the whole first period, with each skater's spot drawn on the ice and the shapes and clears
 /// on the bottom line. SAP_ST_KILL=home puts the home club a man short instead. SAP_ST_WAIT=1 plays
 /// off screen until the power play has held its shape in the zone for a couple of seconds, for a
-/// headless screenshot (SAP_SCREENSHOT=1) of the shape.
-/// </summary>
+/// headless screenshot (SAP_SCREENSHOT=1) of the shape.</summary>
 public sealed class SpecialTeamsScene : IScene
 {
     /// <inheritdoc/>

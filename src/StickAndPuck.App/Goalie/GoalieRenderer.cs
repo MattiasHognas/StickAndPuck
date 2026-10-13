@@ -7,11 +7,9 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Goalie;
 
-/// <summary>
-/// Draws every goalie on the ice with goalie.glb and each club's goalie kit: the ready clip while
+/// <summary>Draws every goalie on the ice with goalie.glb and each club's goalie kit: the ready clip while
 /// standing and the butterfly clip while down, held poses at 24 frames per second like the skaters.
-/// The mask pass uses <see cref="MaskIds.For"/>, so a goalie gets its own outline in front of the net.
-/// </summary>
+/// The mask pass uses <see cref="MaskIds.For"/>, so a goalie gets its own outline in front of the net.</summary>
 internal sealed unsafe class GoalieRenderer : IDisposable
 {
     /// <summary>The Blender scene draws players at 1.15.</summary>
@@ -41,11 +39,9 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         return Array.FindIndex(clips, a => string.Equals(Marshal.PtrToStringUTF8((IntPtr)a.Name), $"goalie_{name}", StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>
-    /// Picks and advances the clip: glove or blocker for a moment after a save with that hand,
-    /// butterfly from its first frame when the goalie drops (or slumps after a loss, W40), then
-    /// held on its last pose.
-    /// </summary>
+    /// <summary>Picks and advances the clip: glove or blocker for a moment after a save with that hand,
+    /// butterfly from its first frame when the goalie drops (or slumps after a loss), then
+    /// held on its last pose.</summary>
     public void Animate(Player g, GoalieState state, float now, float dt, bool slump = false)
     {
         if (!loaded) return;
@@ -76,7 +72,7 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         string path = Assets.KitAtlas(world.Setup.Club(g.Side).Id, g.Side, "goalie", g.Data.Number);
         if (!kits.TryGetValue(path, out var tex))
         {
-            tex = Camera.FarTexture.Load(path);   // W58: mipmapped so stripes hold still at broadcast range
+            tex = Camera.FarTexture.Load(path);   // mipmapped so stripes hold still at broadcast range
             kits[path] = tex;
         }
         return tex;

@@ -4,9 +4,8 @@ using StickAndPuck.App.Players;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// W22b: the defending side's reads while the other side carries the puck. Runs after positioning
-/// (W6a) and before decisions (W6b): it takes over the AI skaters of the side without the puck,
+/// <summary>The defending side's reads while the other side carries the puck. Runs after positioning
+/// and before decisions: it takes over the AI skaters of the side without the puck,
 /// sets their job to <see cref="Job.Requested"/> with its own target, and writes the move, so
 /// decisions leave them alone. Loose pucks, faceoffs and the attacking side stay positioning's.
 /// <list type="bullet">
@@ -20,14 +19,13 @@ namespace StickAndPuck.App.AI;
 /// passing lane from the carrier, so the open man is covered rather than everyone chasing the puck.</item>
 /// <item>Hockey IQ sets the odds: a smart defender leads his man and sticks to the right spot; a
 /// poor one reads late, stands a little off, and now and then turns to watch the puck instead.</item>
-/// </list>
-/// </summary>
+/// </list></summary>
 internal sealed class DefenceSystem : ISystem
 {
     const float Spacing = 2.2f;   // defenders closer than this push their spots apart
 
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 2;
 
     readonly Random rng;
@@ -38,16 +36,12 @@ internal sealed class DefenceSystem : ISystem
     }
 
     /// <summary>Initializes the system with its own randomness, so tests repeat.</summary>
-    /// <param name="rng">Randomness for misreads, puck watching and body checks.</param>
     public DefenceSystem(Random rng)
     {
         this.rng = rng;
     }
 
     /// <summary>Gets what a defender is doing this step, for tests and the HUD.</summary>
-    /// <param name="world">The match.</param>
-    /// <param name="p">The skater.</param>
-    /// <returns>The duty, or <see cref="Duty.None"/> when the defence is not steering him.</returns>
     public static Duty DutyOf(World world, Player p)
     {
         return Board(world).Get(p.Id).TryGet(out var plan) ? plan.Duty : Duty.None;
@@ -170,10 +164,8 @@ internal sealed class DefenceSystem : ISystem
         return Flat(attacker.Position + attacker.Velocity * (0.45f * defender.Data.Traits.Iq));
     }
 
-    /// <summary>
-    /// The spot as this defender reads it: trailing the ideal one (slower for a poor reader), a little
-    /// off it, and now and then, for a poor reader, drawn toward the puck instead.
-    /// </summary>
+    /// <summary>The spot as this defender reads it: trailing the ideal one (slower for a poor reader), a little
+    /// off it, and now and then, for a poor reader, drawn toward the puck instead.</summary>
     Vector2 Read(World world, DefencePlan plan, Player p, Vector2 spot, Vector2 carrier, float dt)
     {
         float iq = p.Data.Traits.Iq;

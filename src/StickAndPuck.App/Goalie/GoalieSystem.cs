@@ -4,8 +4,7 @@ using StickAndPuck.App.Goalie.Dev;
 
 namespace StickAndPuck.App.Goalie;
 
-/// <summary>
-/// W5: goalies hold the crease, react to shots from goalie reflexes, and catch or leave rebounds.
+/// <summary>Goalies hold the crease, react to shots from goalie reflexes, and catch or leave rebounds.
 /// Runs before puck physics: physics lets the puck pass through goalies, so this system decides
 /// every save. A goalie squares up to the puck and cuts the angle (<see cref="GoalieModel.Spot(int, Vector3, int)"/>);
 /// when a shot comes it reacts after its reaction time and pushes or drops toward where the puck
@@ -14,19 +13,18 @@ namespace StickAndPuck.App.Goalie;
 /// carries it: <see cref="Puck.Carrier"/> is the goalie, which rules read as a freeze to whistle)
 /// or left as a rebound. Every stop publishes <see cref="ShotSaved"/> with the goalie's
 /// side and id and the shot speed as Strength. With no whistle, a held puck is played out.
-/// W34 goalie traits: positioning (the goalie's hockey IQ) sets how far out and how square the
+/// Goalie traits: positioning (the goalie's hockey IQ) sets how far out and how square the
 /// goalie stands and how fast it shuffles; glove and blocker set the reach and the clean-stop chance
 /// on each side of the body, so a weak hand is a weak side; rebound control sets how often a shot
 /// is held and how hard and how central the rebounds are; puck handling sets whether a held puck goes
 /// to a teammate or the corner, how true that pass is, and whether the goalie leaves the crease to
-/// stop a loose puck behind the net and move it on.
-/// </summary>
+/// stop a loose puck behind the net and move it on.</summary>
 internal sealed class GoalieSystem : ISystem, IDisposable
 {
     readonly Dictionary<int, GoalieState> states = [];
     readonly GoalieRenderer renderer = new();
 
-    /// <summary>The dice seed without a match seed (W67).</summary>
+    /// <summary>The dice seed without a match seed.</summary>
     internal const int Fallback = 5;
 
     /// <summary>Gets or sets the dice for squeezes and rebounds; tests seed it.</summary>
@@ -183,11 +181,9 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         GoalieDemo.Saved(world, caught: true);
     }
 
-    /// <summary>
-    /// Keeps a held puck in the glove; with no whistle after <see cref="GoalieTuning.HoldSeconds"/>,
+    /// <summary>Keeps a held puck in the glove; with no whistle after <see cref="GoalieTuning.HoldSeconds"/>,
     /// plays it out: a good puck handler passes to an open teammate, anyone else rims it to the nearer
-    /// corner. Puck handling also sets how hard and how true the puck goes.
-    /// </summary>
+    /// corner. Puck handling also sets how hard and how true the puck goes.</summary>
     void Hold(World world, Player g, GoalieState state, int end)
     {
         var pk = world.Puck;
@@ -204,12 +200,9 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         state.PassedOut = mate.HasValue;
     }
 
-    /// <summary>
-    /// Leaves the crease for a loose, slowish puck behind the net when the goalie gets there first,
+    /// <summary>Leaves the crease for a loose, slowish puck behind the net when the goalie gets there first,
     /// as often as its puck handling says (rolled once per loose puck), then moves it on to an open
-    /// teammate, or up the boards with none. Gives up when an opponent closes in or it takes too long.
-    /// </summary>
-    /// <returns>True while the goalie is out playing the puck this step.</returns>
+    /// teammate, or up the boards with none. Gives up when an opponent closes in or it takes too long.</summary>
     bool PlayPuck(World world, Player g, GoalieState state, int end, float dt)
     {
         var pk = world.Puck;
@@ -402,9 +395,6 @@ internal sealed class GoalieState
     public float HandPoseUntil { get; private set; }
 
     /// <summary>Shows a glove or blocker save for a moment.</summary>
-    /// <param name="now">The world time.</param>
-    /// <param name="side">The z side the puck met the goalie on.</param>
-    /// <param name="glove">The z side of the glove.</param>
     public void Pose(float now, int side, int glove)
     {
         HandPose = side == glove ? 1 : -1;
@@ -412,7 +402,6 @@ internal sealed class GoalieState
     }
 
     /// <summary>Drops into the butterfly, or stays down longer.</summary>
-    /// <param name="now">The world time.</param>
     public void Drop(float now)
     {
         if (!Down) DownSince = now;
@@ -424,7 +413,6 @@ internal sealed class GoalieState
     public float Until { get; private set; }
 
     /// <summary>Stands back up once the butterfly time is over.</summary>
-    /// <param name="now">The world time.</param>
     public void Rise(float now)
     {
         if (Down && now >= Until)

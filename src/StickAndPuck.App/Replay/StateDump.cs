@@ -6,12 +6,10 @@ using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Replays;
 
-/// <summary>W67: the match state at one step as plain text, for scrubbing a replay (SAP_AT) and for comparing two runs by eye.</summary>
+/// <summary>The match state at one step as plain text, for scrubbing a replay (SAP_AT) and for comparing two runs by eye.</summary>
 public static class StateDump
 {
     /// <summary>Writes the state.</summary>
-    /// <param name="world">The match.</param>
-    /// <returns>Several lines of text.</returns>
     public static string Of(World world)
     {
         var c = CultureInfo.InvariantCulture;

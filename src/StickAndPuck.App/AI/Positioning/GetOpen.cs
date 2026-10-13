@@ -4,15 +4,13 @@ using StickAndPuck.App.Players;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>
-/// W22a: where an off-puck attacker goes to be open. Around the spot the shape or the cycle gives
+/// <summary>Where an off-puck attacker goes to be open. Around the spot the shape or the cycle gives
 /// him, he tries a ring of spots and picks the one where a pass from the carrier would get through
 /// and the puck would be worth most: a clear lane (<see cref="Choices.LaneSuccess"/>), a good shot
 /// from there (<see cref="Choices.SpotValue"/>), room around it, and not too far off his spot.
 /// He reads the defenders like he reads a pass, by hockey IQ, and every read is rolled with
 /// <see cref="Jitter"/>, so a smart skater mostly finds the hole and now and then drifts into a
-/// covered lane, and a poor one sometimes finds it anyway.
-/// </summary>
+/// covered lane, and a poor one sometimes finds it anyway.</summary>
 public static class GetOpen
 {
     const int Angles = 8;
@@ -28,7 +26,6 @@ public static class GetOpen
     /// <param name="hockeyIq">The hockey IQ this read is played with, after the jitter roll.</param>
     /// <param name="rng">Randomness for misreads and judgement.</param>
     /// <param name="last">Where he was going after his last read, kept a little longer to stop him dithering.</param>
-    /// <returns>The spot (x, z).</returns>
     public static Vector2 Best(World world, Player p, Player carrier, Vector2 spot, float radius, float minA, float maxA, int hockeyIq, Random rng, Maybe<Vector2> last)
     {
         int end = PuckHandling.AttackEnd(world, p.Side);
@@ -68,18 +65,9 @@ public static class GetOpen
         return best;
     }
 
-    /// <summary>
-    /// Gets what being on a spot is worth to an off-puck attacker: the chance a pass from the puck
+    /// <summary>Gets what being on a spot is worth to an off-puck attacker: the chance a pass from the puck
     /// gets there, times what the puck is worth there and the room around it, less a little for
-    /// straying from his spot.
-    /// </summary>
-    /// <param name="end">The attacked end.</param>
-    /// <param name="from">The puck (x, z).</param>
-    /// <param name="at">The spot tried (x, z).</param>
-    /// <param name="home">The spot the shape or the cycle gives him (x, z).</param>
-    /// <param name="defenders">The opponents as he reads them.</param>
-    /// <param name="hockeyIq">The hockey IQ the read is played with.</param>
-    /// <returns>The value; higher is better.</returns>
+    /// straying from his spot.</summary>
     public static float Value(int end, Vector2 from, Vector2 at, Vector2 home, IReadOnlyList<(Vector2 At, float Speed)> defenders, int hockeyIq)
     {
         float d = Vector2.Distance(from, at);
