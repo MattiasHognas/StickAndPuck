@@ -752,10 +752,10 @@ public sealed class PenaltyTests : CheckedTest
         var setup = WorldBuilder.DefaultSetup with { PeriodSeconds = Period };
         var (calls, broken, served) = Match(setup with { PeriodSeconds = 240 }, 8f, 1);
         Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step in play");
+        // the strict match ran alone, as it sets the shared strictness; the normal ones all play at 1, so they play at once
         int normal = 0, broken2 = 0;
-        foreach (int seed in Seeds)
+        foreach (var (n, b, _) in Matches.Play(Seeds.Length, i => Match(setup with { PeriodSeconds = 600 }, 1f, Seeds[i])))
         {
-            var (n, b, _) = Match(setup with { PeriodSeconds = 600 }, 1f, seed);
             normal += n;
             broken2 += b;
         }

@@ -36,7 +36,7 @@ jobs:
           global-json-file: global.json
 
       - name: Test
-        run: dotnet test --project tests/StickAndPuck.Tests
+        run: dotnet test --project tests/StickAndPuck.Tests -c Release
 
   build:
     runs-on: ubuntu-latest

@@ -118,7 +118,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `SAP_RECORD=seconds`: saves every frame for that many seconds as numbered PNGs, then quits. `SAP_FRAMES` sets the folder (default `frames/`).
 - `SAP_STEPS=n`: runs n fixed steps as fast as the machine can, without waiting for the screen, then quits.
 - `tools/record.sh out.mp4 seconds [input.sh]`: records an mp4 headless (needs xvfb-run and ffmpeg; xdotool for input.sh). `SAP_AUDIO=1` records in real time with sound.
-- Tests: `dotnet test --project tests/StickAndPuck.Tests` runs every check (TUnit; the former `SAP_SCENE=...test` scenes). One class: `dotnet test --project tests/StickAndPuck.Tests -- --treenode-filter "/*/*/LinesTests/*"`. Each check prints PASS or FAIL; a test fails listing its failed checks. CI runs them on every pull request.
+- Tests: `dotnet test --project tests/StickAndPuck.Tests -c Release` runs every check (TUnit; the former `SAP_SCENE=...test` scenes); Release plays the simulated matches over twice as fast as Debug. One class: `dotnet test --project tests/StickAndPuck.Tests -c Release -- --treenode-filter "/*/*/LinesTests/*"`. Each check prints PASS or FAIL; a test fails listing its failed checks. CI runs them on every pull request.
 - `SAP_REPLAYTEST_PRINT=1` with the replay tests prints new golden values after a deliberate gameplay change.
 
 ### Replays
