@@ -68,7 +68,7 @@ internal sealed class LightingSystem : ISystem
         return new Color(Mul(c.R, tone.X), Mul(c.G, tone.Y), Mul(c.B, tone.Z), c.A);
     }
 
-    /// <summary>Sets the toon shader's tones; runs before the arena and skaters draw.</summary>
+    /// <summary>Sets the toon shader's tones and dither start; runs before the arena and skaters draw.</summary>
     public void DrawScene(World world, RenderContext render)
     {
         var shader = render.Toon;
@@ -84,5 +84,6 @@ internal sealed class LightingSystem : ISystem
         SetShaderValue(shader, midLoc, Preset.Mid * tone, ShaderUniformDataType.Vec3);
         SetShaderValue(shader, fullLoc, Preset.Full * tone, ShaderUniformDataType.Vec3);
         SetShaderValue(shader, dirLoc, Preset.LightDir, ShaderUniformDataType.Vec3);
+        Render.DitherGrid.Apply(world.Camera, shader);     // W60: the dither pattern hangs from the ice, not the screen
     }
 }

@@ -12,7 +12,8 @@ namespace StickAndPuck.Render;
 /// fits the window. W59: close shots draw the scene and mask at 240x135 or 160x90 instead
 /// (<see cref="RenderScale"/>), so the post pass and its outline run on the coarser grid, and the
 /// mask carries each pixel's depth so the post pass can also draw lines inside a player where an
-/// arm or stick passes in front of the body.
+/// arm or stick passes in front of the body. W60: toon band edges and palette snaps are dithered
+/// with a 4x4 Bayer pattern on the scene's pixel grid (see <see cref="Dither"/>).
 /// </summary>
 public sealed class PixelFrame : IDisposable
 {
@@ -34,10 +35,22 @@ public sealed class PixelFrame : IDisposable
     /// <summary>Lines inside a player are drawn where the depth jumps by more than this many metres; only on the close scales.</summary>
     const float InnerDepth = 0.25f;
 
+    /// <summary>Half the width, in light (0-1 of the toon ramp), of the dithered run at each toon band edge.</summary>
+    const float BandWidth = 0.05f;
+
+    /// <summary>How far either side of the midpoint between two palette colours the post pass mixes them.</summary>
+    const float DitherSpread = 0.15f;
+
+    /// <summary>Only palette colours closer than this (rgb distance, 0-1 channels) are mixed; farther pairs keep a hard edge.</summary>
+    const float DitherGap = 0.18f;
+
+    /// <summary>Gets whether dithering is on: SAP_DITHER=0 turns it off, for before and after captures.</summary>
+    public static bool Dither { get; } = !string.Equals(Environment.GetEnvironmentVariable("SAP_DITHER"), "0", StringComparison.Ordinal);
+
     readonly RenderTexture2D[] scenes, masks;
     readonly RenderTexture2D hud;
     readonly int width, height;
-    readonly int texelLoc, innerLoc;
+    readonly int texelLoc, innerLoc, originLoc;
     int divisor = 1;
 
     /// <summary>
@@ -59,6 +72,7 @@ public sealed class PixelFrame : IDisposable
 
         Toon = LoadShader("shaders/toon.vs", "shaders/toon.fs");
         SetShaderValue(Toon, GetShaderLocation(Toon, "lightDir"), new Vector3(-0.45f, 0.75f, 0.5f), ShaderUniformDataType.Vec3);
+        SetShaderValue(Toon, GetShaderLocation(Toon, "bandWidth"), Dither ? BandWidth : 0f, ShaderUniformDataType.Float);
         Mask = LoadShader(null, "shaders/mask.fs");
         SetShaderValue(Mask, GetShaderLocation(Mask, "nearPlane"), (float)Rlgl.GetCullDistanceNear(), ShaderUniformDataType.Float);
         SetShaderValue(Mask, GetShaderLocation(Mask, "farPlane"), (float)Rlgl.GetCullDistanceFar(), ShaderUniformDataType.Float);
@@ -68,8 +82,11 @@ public sealed class PixelFrame : IDisposable
         SetShaderValue(Post, GetShaderLocation(Post, "paletteSize"), palette.Count, ShaderUniformDataType.Int);
         SetShaderValue(Post, GetShaderLocation(Post, "kitStart"), Palette.KitStart, ShaderUniformDataType.Int);
         SetShaderValue(Post, GetShaderLocation(Post, "outline"), Palette.Outline, ShaderUniformDataType.Vec3);
+        SetShaderValue(Post, GetShaderLocation(Post, "ditherSpread"), Dither ? DitherSpread : 0f, ShaderUniformDataType.Float);
+        SetShaderValue(Post, GetShaderLocation(Post, "ditherGap"), DitherGap, ShaderUniformDataType.Float);
         texelLoc = GetShaderLocation(Post, "texel");
         innerLoc = GetShaderLocation(Post, "innerDepth");
+        originLoc = GetShaderLocation(Post, "ditherOrigin");
     }
 
     static RenderTexture2D Target(int w, int h)
@@ -122,6 +139,7 @@ public sealed class PixelFrame : IDisposable
         BeginShaderMode(Post);
         SetShaderValue(Post, texelLoc, new Vector2(1f / sw, 1f / sh), ShaderUniformDataType.Vec2);
         SetShaderValue(Post, innerLoc, divisor > 1 ? InnerDepth : 0f, ShaderUniformDataType.Float);
+        SetShaderValue(Post, originLoc, DitherGrid.Origin, ShaderUniformDataType.Vec2);
         SetShaderValueTexture(Post, GetShaderLocation(Post, "maskTex"), masks[divisor - 1].Texture);
         DrawTexturePro(scenes[divisor - 1].Texture, src, dest, Vector2.Zero, 0, Color.White);
         EndShaderMode();
