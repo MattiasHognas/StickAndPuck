@@ -9,13 +9,16 @@ namespace StickAndPuck.Camera;
 /// positions and events. F6 toggles the zoom while trying it out (a dev key); SAP_CAMERA_ZOOM=0 or 1
 /// sets it at start, for headless checks. W30 adds the impact feel (hit-stop, shake, rumble, the
 /// fight close-up) and draws the marker under each skater a person controls. W59: the replay and
-/// the fight close-up ask for a coarser render scale, so a kit texel stays about one pixel.
+/// the fight close-up ask for a coarser render scale, so a kit texel stays about one pixel. W61 adds
+/// the close-ups (<see cref="CloseUp"/>): the fight, a push-in on the scorer before the replay, the
+/// warm-up and the final horn, each at the scale its distance asks for.
 /// </summary>
 internal sealed class CameraSystem : ISystem
 {
     readonly FollowCamera follow = new();
     readonly Replay replay = new();
     readonly Impact impact = new();
+    readonly CloseUp closeUp = new();
     int scale = 1;
 
     public bool RunsWhilePaused => true;
@@ -37,6 +40,7 @@ internal sealed class CameraSystem : ISystem
 
         impact.Update(world, dt);
         if (replay.Update(world, dt)) follow.Cut(world);
+        closeUp.Update(world, dt, replay.Waiting);
         if (Replay.Playing)
         {
             (world.Camera, scale) = PixelGrid.SnapScaled(replay.Camera, scale);
@@ -45,8 +49,8 @@ internal sealed class CameraSystem : ISystem
         }
 
         follow.Update(world, dt);
-        world.Camera = impact.Apply(follow.Camera, follow.PixelStep);
-        if (impact.Close > 0) (world.Camera, scale) = PixelGrid.SnapScaled(world.Camera, scale);
+        world.Camera = impact.Apply(closeUp.Apply(follow.Camera), follow.PixelStep);
+        if (closeUp.Weight > 0) (world.Camera, scale) = PixelGrid.SnapScaled(world.Camera, scale);
         else scale = 1;
         Render.RenderScale.Request(scale);
     }

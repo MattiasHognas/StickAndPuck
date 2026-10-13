@@ -51,6 +51,7 @@ public sealed class Replay
     float goalTime = float.NaN, playSince, playhead, shown;
     int endIndex, end = 1;
     bool waiting;
+    float lastTime;
     Vector3 camTarget;
 
     /// <summary>Gets a value indicating whether a replay is playing right now. Rules wait on it before the next faceoff.</summary>
@@ -63,12 +64,16 @@ public sealed class Replay
     /// </summary>
     public Camera3D Camera => BroadcastCamera.IceLevel(ChasePosition(camTarget), camTarget);
 
+    /// <summary>Gets the seconds since a goal while the celebration runs before the replay cuts in, or NaN (W61's push-in runs then).</summary>
+    public float Waiting => waiting ? lastTime - goalTime : float.NaN;
+
     /// <summary>Records or plays back one step. Runs after every gameplay system.</summary>
     /// <param name="world">The match state.</param>
     /// <param name="dt">The step length.</param>
     /// <returns>True when the replay just ended and the gameplay camera should cut back.</returns>
     public bool Update(World world, float dt)
     {
+        lastTime = world.Time;
         if (Playing) return Play(world, dt);
 
         buffer.Record(world);
