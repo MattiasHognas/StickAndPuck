@@ -34,8 +34,7 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         idle = Find("idle");
         skate = Find("skate");
         armUp = Find("armup");
-        kit = LoadTexture(Assets.RefereeKit);
-        SetTextureFilter(kit, TextureFilter.Point);
+        kit = Camera.FarTexture.Load(Assets.RefereeKit);   // W58: mipmapped so stripes hold still at broadcast range
         loaded = true;
     }
 
