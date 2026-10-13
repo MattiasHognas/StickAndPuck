@@ -28,11 +28,11 @@ internal sealed class OffsideRule : ISystem
 
     /// <summary>Gets the club with an offside pending (the linesman's arm is up), if any.</summary>
     /// <param name="world">The match state.</param>
-    /// <returns>The offending club, or null.</returns>
-    public static Side? Pending(World world)
+    /// <returns>The offending club, or None.</returns>
+    public static SideOrNone Pending(World world)
     {
         var s = States.GetOrCreateValue(world);
-        return s.PendingEnd != 0 ? Attacker(world.Match, s.PendingEnd) : null;
+        return s.PendingEnd != 0 ? Attacker(world.Match, s.PendingEnd).OrNone() : SideOrNone.None;
     }
 
     /// <summary>Gets a value indicating whether a player stands in a zone with both skates past its blue line.</summary>
@@ -89,7 +89,7 @@ internal sealed class OffsideRule : ISystem
         var pk = world.Puck;
         var attacker = Attacker(world.Match, end);
         // a puck the defending club sends into its own zone (or a loose one nobody played) is never offside
-        if (SideOf(world, pk.Carrier >= 0 ? pk.Carrier : pk.LastTouch) != attacker) return;
+        if (!SideOf(world, pk.Carrier >= 0 ? pk.Carrier : pk.LastTouch).Is(attacker)) return;
         if (!Offside(world, attacker, end, pk.Carrier)) return;
         s.PendingEnd = end;
         s.EntryTouch = pk.LastTouch;
@@ -109,8 +109,8 @@ internal sealed class OffsideRule : ISystem
         }
 
         // carried in with a teammate ahead counts as played at once; a pass or dump waits for an attacking touch
-        bool touched = (pk.Carrier >= 0 && SideOf(world, pk.Carrier) == attacker)
-            || (pk.LastTouch != s.EntryTouch && SideOf(world, pk.LastTouch) == attacker);
+        bool touched = (pk.Carrier >= 0 && SideOf(world, pk.Carrier).Is(attacker))
+            || (pk.LastTouch != s.EntryTouch && SideOf(world, pk.LastTouch).Is(attacker));
         if (touched || OnGoal(pk, end)) Call(world, s, end, attacker);
     }
 
@@ -155,9 +155,9 @@ internal sealed class OffsideRule : ISystem
         return was == Math.Sign(x) ? was : 0;
     }
 
-    static Side? SideOf(World world, int playerId)
+    static SideOrNone SideOf(World world, int playerId)
     {
-        return playerId >= 0 && playerId < world.Players.Count ? world.Players[playerId].Side : null;
+        return playerId >= 0 && playerId < world.Players.Count ? world.Players[playerId].Side.OrNone() : SideOrNone.None;
     }
 }
 

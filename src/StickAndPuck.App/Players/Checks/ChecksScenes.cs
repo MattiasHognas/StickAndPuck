@@ -41,7 +41,7 @@ public sealed class ChecksDemoScene : IScene
 /// <summary>The script behind <see cref="ChecksScene"/> and <see cref="ChecksDemoScene"/>, driven from <see cref="SwitchingSystem"/> so its commands land before skating.</summary>
 internal static class ChecksDemo
 {
-    static Player? carrier, hunter, mate1, mate2;
+    static Maybe<ChecksCast> cast;
     static bool scripted;
     static float start, lostAt = float.PositiveInfinity;
 
@@ -56,14 +56,16 @@ internal static class ChecksDemo
         var home = Skaters(world.Setup.Home);
         var away = Skaters(world.Setup.Away);
         // the hunter is the club's best checker, the carrier the away club's weakest, so the hit shows
-        hunter = world.AddPlayer(Side.Home, home.MaxBy(p => p.Traits.Checking)!, Vector3.Zero);
-        mate1 = world.AddPlayer(Side.Home, home[0] == hunter.Data ? home[1 % home.Count] : home[0], Vector3.Zero);
-        mate2 = world.AddPlayer(Side.Home, home[2 % home.Count], Vector3.Zero);
-        carrier = world.AddPlayer(Side.Away, away.MinBy(p => p.Traits.Checking)!, Vector3.Zero);
+        var hunter = world.AddPlayer(Side.Home, home.MaxBy(p => p.Traits.Checking)!, Vector3.Zero);
+        var mate1 = world.AddPlayer(Side.Home, home[0] == hunter.Data ? home[1 % home.Count] : home[0], Vector3.Zero);
+        var mate2 = world.AddPlayer(Side.Home, home[2 % home.Count], Vector3.Zero);
+        var carrier = world.AddPlayer(Side.Away, away.MinBy(p => p.Traits.Checking)!, Vector3.Zero);
+        var c = new ChecksCast(carrier, hunter, mate1, mate2);
+        cast = c;
         scripted = script;
         Enabled = true;
         if (!script) hunter.Slot = 0;
-        Reset(world);
+        Reset(world, c);
     }
 
     static List<PlayerData> Skaters(ClubData club)
@@ -72,17 +74,17 @@ internal static class ChecksDemo
         return list.Count > 0 ? list : [new PlayerData { Position = PlayingPosition.C }];
     }
 
-    static void Reset(World world)
+    static void Reset(World world, ChecksCast c)
     {
-        Place(carrier!, new Vector3(4, 0, 1), -MathF.PI / 2);
-        Place(hunter!, new Vector3(7.5f, 0, 1.5f), -MathF.PI / 2);
-        Place(mate1!, new Vector3(-6, 0, -5), MathF.PI / 2);
-        Place(mate2!, new Vector3(-8, 0, 5), MathF.PI / 2);
-        carrier!.Velocity = new Vector3(-3, 0, 0);
-        hunter!.Velocity = new Vector3(-5, 0, 0);
+        Place(c.Carrier, new Vector3(4, 0, 1), -MathF.PI / 2);
+        Place(c.Hunter, new Vector3(7.5f, 0, 1.5f), -MathF.PI / 2);
+        Place(c.Mate1, new Vector3(-6, 0, -5), MathF.PI / 2);
+        Place(c.Mate2, new Vector3(-8, 0, 5), MathF.PI / 2);
+        c.Carrier.Velocity = new Vector3(-3, 0, 0);
+        c.Hunter.Velocity = new Vector3(-5, 0, 0);
         var pk = world.Puck;
-        pk.Carrier = carrier.Id;
-        pk.Position = PuckHandling.Blade(carrier);
+        pk.Carrier = c.Carrier.Id;
+        pk.Position = PuckHandling.Blade(c.Carrier);
         pk.Velocity = Vector3.Zero;
         pk.Live = true;
         start = world.Time;
@@ -102,11 +104,12 @@ internal static class ChecksDemo
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (!Enabled) return;
+        if (!Enabled || !cast.TryGet(out var c)) return;
+        var (carrier, hunter) = (c.Carrier, c.Hunter);
         float t = world.Time - start;
 
         // the carrier circles centre ice while they have the puck
-        if (carrier!.Slot < 0 && world.Puck.Carrier == carrier.Id)
+        if (carrier.Slot < 0 && world.Puck.Carrier == carrier.Id)
         {
             float a = t * 0.6f;
             carrier.Command = new PlayerCommand { Move = new Vector2(-SimMath.Cos(a), -SimMath.Sin(a)) * 0.6f };
@@ -118,19 +121,19 @@ internal static class ChecksDemo
 
         if (scripted)
         {
-            var to = carrier.Position - hunter!.Position;
+            var to = carrier.Position - hunter.Position;
             bool press = hunter.Action == PlayerAction.None && world.Puck.Carrier == carrier.Id && to.Length() < 1.4f;
             hunter.Command = world.Puck.Carrier == carrier.Id
                 ? new PlayerCommand { Move = Vector2.Normalize(new Vector2(to.X, to.Z)), Sprint = true, Check = press }
                 : new PlayerCommand { Move = ToPuck(world, hunter) };
-            if (t > 4.5f) Reset(world);
+            if (t > 4.5f) Reset(world, c);
         }
         else
         {
             // a few seconds after the carrier loses the puck, start a new chase
             if (world.Puck.Carrier == carrier.Id) lostAt = float.PositiveInfinity;
             else if (float.IsPositiveInfinity(lostAt)) lostAt = world.Time;
-            if (world.Time - lostAt > 4f) Reset(world);
+            if (world.Time - lostAt > 4f) Reset(world, c);
         }
     }
 
@@ -141,3 +144,10 @@ internal static class ChecksDemo
         return v.Length() > 0.3f ? Vector2.Normalize(v) * 0.6f : Vector2.Zero;
     }
 }
+
+/// <summary>The four skaters a checks scene adds.</summary>
+/// <param name="Carrier">The away carrier.</param>
+/// <param name="Hunter">The home checker.</param>
+/// <param name="Mate1">A home teammate.</param>
+/// <param name="Mate2">Another home teammate.</param>
+internal sealed record ChecksCast(Player Carrier, Player Hunter, Player Mate1, Player Mate2);

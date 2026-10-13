@@ -195,12 +195,12 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         if (!pk.Live || world.Match.Phase != MatchPhase.Play || world.Time - state.HeldSince < GoalieTuning.HoldSeconds) return;
         float side = g.Position.Z < 0 ? -1 : 1;
         int handling = g.Data.Traits.GoaliePuckHandling;
-        var mate = Dice.NextSingle() < Traits.Scale(handling, GoalieTuning.PassOutPoor, GoalieTuning.PassOutGood) ? OpenMate(world, g, end) : null;
+        var mate = Dice.NextSingle() < Traits.Scale(handling, GoalieTuning.PassOutPoor, GoalieTuning.PassOutGood) ? OpenMate(world, g, end) : Maybe<Player>.None;
         var start = g.Position + new Vector3(0, 0, side * 0.5f);
-        var dir = mate != null ? Flat(mate.Position - start) : Vector3.Normalize(new Vector3(end * 0.35f, 0, side));
+        var dir = mate.TryGet(out var to) ? Flat(to.Position - start) : Vector3.Normalize(new Vector3(end * 0.35f, 0, side));
         pk.Carrier = -1;
-        Release(world, g, state, start, dir, handling, pass: mate != null);
-        state.PassedOut = mate != null;
+        Release(world, g, state, start, dir, handling, pass: mate.HasValue);
+        state.PassedOut = mate.HasValue;
     }
 
     /// <summary>
@@ -251,10 +251,10 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         if (mine > GoalieTuning.PlayTouch) return true;
 
         var mate = OpenMate(world, g, end);
-        var dir = mate != null ? Flat(mate.Position - pk.Position) : Vector3.Normalize(new Vector3(-end * 0.6f, 0, pk.Position.Z < 0 ? -1 : 1));
-        Release(world, g, state, Flat(pk.Position), dir, g.Data.Traits.GoaliePuckHandling, pass: mate != null);
+        var dir = mate.TryGet(out var to) ? Flat(to.Position - pk.Position) : Vector3.Normalize(new Vector3(-end * 0.6f, 0, pk.Position.Z < 0 ? -1 : 1));
+        Release(world, g, state, Flat(pk.Position), dir, g.Data.Traits.GoaliePuckHandling, pass: mate.HasValue);
         state.Playing = false;
-        state.PassedOut = mate != null;
+        state.PassedOut = mate.HasValue;
         return true;
     }
 
@@ -276,11 +276,11 @@ internal sealed class GoalieSystem : ISystem, IDisposable
         if (pass) world.Events.Publish(new PassMade(world.Time, g.Side, g.Id, start, speed));
     }
 
-    /// <summary>The teammate a goalie passes to: the nearest skater in front of the goal line with no opponent near the lane, or null.</summary>
-    static Player? OpenMate(World world, Player g, int end)
+    /// <summary>The teammate a goalie passes to: the nearest skater in front of the goal line with no opponent near the lane, or None.</summary>
+    static Maybe<Player> OpenMate(World world, Player g, int end)
     {
         var pk = world.Puck;
-        Player? best = null;
+        var best = Maybe<Player>.None;
         float bestDistance = float.MaxValue;
         foreach (var m in world.Players)
         {

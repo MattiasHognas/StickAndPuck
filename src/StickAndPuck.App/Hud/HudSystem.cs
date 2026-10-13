@@ -23,7 +23,7 @@ internal sealed class HudSystem : ISystem
     const int BannerTop = 88;
 
     readonly HudMessages messages = new();
-    HudArt? art;
+    Maybe<HudArt> art;
 
     /// <summary>Gets or sets a value indicating whether the scorebug shows in a world without the match flow (the hud scene).</summary>
     public static bool ShowAlways { get; set; }
@@ -44,21 +44,22 @@ internal sealed class HudSystem : ISystem
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (art == null || !(ShowAlways || MatchFlow.IsRunning(world))) return;
-        DrawScorebug(world, art);
-        if (PowerPlayText(world) is { } pp) DrawPowerPlay(world, art, pp);
-        if (OvertimeRules.Shootout(world) is { } so && world.Match.Phase is MatchPhase.Shootout or MatchPhase.Final) DrawShootout(world, art, so);
-        if (world.Match.Phase == MatchPhase.Intro) DrawIntro(world, art);
-        else if (messages.Current is { } m) DrawBanner(m, art);
+        if (!art.TryGet(out var hud) || !(ShowAlways || MatchFlow.IsRunning(world))) return;
+        DrawScorebug(world, hud);
+        string pp = PowerPlayText(world);
+        if (pp.Length > 0) DrawPowerPlay(world, hud, pp);
+        if (OvertimeRules.Shootout(world).TryGet(out var so) && world.Match.Phase is MatchPhase.Shootout or MatchPhase.Final) DrawShootout(world, hud, so);
+        if (world.Match.Phase == MatchPhase.Intro) DrawIntro(world, hud);
+        else if (messages.Current.TryGet(out var m)) DrawBanner(m, hud);
     }
 
-    /// <summary>Gets the power play tag, "PP 5V4" or "PP 4V3" from the club with the extra skater, or null at even strength.</summary>
+    /// <summary>Gets the power play tag, "PP 5V4" or "PP 4V3" from the club with the extra skater, or empty at even strength.</summary>
     /// <param name="world">The match state.</param>
-    /// <returns>The text, or null.</returns>
-    public static string? PowerPlayText(World world)
+    /// <returns>The text, or empty.</returns>
+    public static string PowerPlayText(World world)
     {
-        if (world.Match.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final) return null;
-        if (Penalties.PowerPlay(world) is not { } pp) return null;
+        if (world.Match.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final) return "";
+        if (!Penalties.PowerPlay(world).TryGetSide(out var pp)) return "";
         var other = pp == Side.Home ? Side.Away : Side.Home;
         return Text.Get(K.PowerPlay) + Text.Format(K.PowerPlayStrength, Skaters(world, pp), Skaters(world, other));
     }
@@ -115,7 +116,7 @@ internal sealed class HudSystem : ISystem
     /// <summary>The power play tag right of the scorebug: the crest of the club with the extra skater and PP 5V4.</summary>
     static void DrawPowerPlay(World world, HudArt art, string text)
     {
-        var side = Penalties.PowerPlay(world) ?? Side.Home;
+        var side = Penalties.PowerPlay(world).TryGetSide(out var leader) ? leader : Side.Home;
         const int pad = 3, crest = 16, gap = 4;
         int h = art.BugSize.H;
         int x = art.BugPosition.X + art.BugSize.W + 3, y = art.BugPosition.Y;
@@ -166,7 +167,7 @@ internal sealed class HudSystem : ISystem
     /// <summary>The shootout panel's last line: the shooter up now, or the winner.</summary>
     static string Footer(World world, ShootoutState so)
     {
-        if (so.Winner is { } w) return Text.Format(K.ShootoutWin, world.Setup.Club(w).ShortName, so.Goals(w), so.Goals(w == Side.Home ? Side.Away : Side.Home));
+        if (so.Winner.TryGetSide(out var w)) return Text.Format(K.ShootoutWin, world.Setup.Club(w).ShortName, so.Goals(w), so.Goals(w == Side.Home ? Side.Away : Side.Home));
         if (so.ShooterId >= 0 && so.ShooterId < world.Players.Count)
         {
             var p = world.Players[so.ShooterId];
@@ -202,20 +203,20 @@ internal sealed class HudSystem : ISystem
     static void DrawBanner(HudMessage m, HudArt art)
     {
         const int pad = 6, crest = 16, gap = 6, line = 11;
-        int lead = m.Crest != null ? crest + gap : m.Icon != null ? 8 + gap : 0;
+        int lead = m.Crest.Length > 0 ? crest + gap : m.Icon.Length > 0 ? 8 + gap : 0;
         var rows = new List<string> { m.Title };
         if (m.Detail.Length > 0) rows.Add(m.Detail);
         rows.AddRange(m.Lines);
         int textW = rows.Max(r => art.Measure(r.ToUpperInvariant()));
         int textH = (rows.Count * line) - 2;
-        int inner = Math.Max(textH, m.Crest != null ? crest : 0);
+        int inner = Math.Max(textH, m.Crest.Length > 0 ? crest : 0);
         int w = pad + lead + textW + pad, h = pad + inner + pad;
         int x = (Game.Width - w) / 2, y = BannerTop;
         art.DrawPanel(m.Panel, x, y, w, h);
 
         int top = y + pad + ((inner - textH) / 2) - 2;     // text y is 2 px above the capitals
-        if (m.Crest != null) art.DrawCrest(m.Crest, x + pad, y + pad + ((inner - crest) / 2));
-        else if (m.Icon != null) art.DrawIcon(m.Icon, x + pad, top + 2);
+        if (m.Crest.Length > 0) art.DrawCrest(m.Crest, x + pad, y + pad + ((inner - crest) / 2));
+        else if (m.Icon.Length > 0) art.DrawIcon(m.Icon, x + pad, top + 2);
         int tx = x + pad + lead;
         bool gold = string.Equals(m.Panel, "panel_gold", StringComparison.Ordinal);
         art.DrawText(m.Title, tx, top, gold ? art.Text : art.Score);

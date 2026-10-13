@@ -25,7 +25,7 @@ public sealed class HandlingDemoScene : IScene
 /// <summary>The script behind <see cref="HandlingDemoScene"/>, driven from <see cref="PuckHandlingSystem"/>.</summary>
 internal static class HandlingDemo
 {
-    static Player? carrier, receiver, defender, goalie;
+    static Maybe<Player> carrier, receiver, defender, goalie;
     static float start;
     static int got = -1, shotAt = -1, round;
 
@@ -50,14 +50,15 @@ internal static class HandlingDemo
 
     static void Reset(World world)
     {
-        Place(carrier!, new Vector3(-8, 0, 2 + (round % 2) * 3), MathF.PI / 2);
-        Place(receiver!, new Vector3(11, 0, round % 2 == 0 ? -4.5f : 4.5f), MathF.PI / 2);
-        Place(defender!, new Vector3(17, 0, round % 2 == 0 ? 3 : -3), -MathF.PI / 2);
-        if (goalie != null) Place(goalie, new Vector3(RinkSpec.GoalLineX - 1f, 0, 0), -MathF.PI / 2);
-        carrier!.Command = new PlayerCommand { Move = Vector2.UnitX };
+        if (!carrier.TryGet(out var c) || !receiver.TryGet(out var r) || !defender.TryGet(out var d)) return;   // never: Setup adds them first
+        Place(c, new Vector3(-8, 0, 2 + (round % 2) * 3), MathF.PI / 2);
+        Place(r, new Vector3(11, 0, round % 2 == 0 ? -4.5f : 4.5f), MathF.PI / 2);
+        Place(d, new Vector3(17, 0, round % 2 == 0 ? 3 : -3), -MathF.PI / 2);
+        if (goalie.TryGet(out var g)) Place(g, new Vector3(RinkSpec.GoalLineX - 1f, 0, 0), -MathF.PI / 2);
+        c.Command = new PlayerCommand { Move = Vector2.UnitX };
         var pk = world.Puck;
-        pk.Carrier = carrier.Id;
-        pk.Position = PuckHandling.Blade(carrier);
+        pk.Carrier = c.Id;
+        pk.Position = PuckHandling.Blade(c);
         pk.Velocity = Vector3.Zero;
         pk.Live = true;
         start = world.Time;
@@ -78,26 +79,26 @@ internal static class HandlingDemo
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (!Enabled) return;
+        if (!Enabled || !carrier.TryGet(out var c) || !receiver.TryGet(out var r)) return;
         var pk = world.Puck;
         int step = (int)MathF.Round((world.Time - start) / Game.Step);
         if (step == 80)
         {
-            var toMate = PuckHandling.Blade(receiver!) - pk.Position;
-            carrier!.Command = new PlayerCommand { Move = Vector2.Normalize(new Vector2(toMate.X, toMate.Z)), Pass = true };
+            var toMate = PuckHandling.Blade(r) - pk.Position;
+            c.Command = new PlayerCommand { Move = Vector2.Normalize(new Vector2(toMate.X, toMate.Z)), Pass = true };
         }
         else if (step > 80)
         {
-            carrier!.Command = default;
+            c.Command = default;
         }
 
-        if (got < 0 && pk.Carrier == receiver!.Id) got = step;
+        if (got < 0 && pk.Carrier == r.Id) got = step;
         if (got >= 0 && shotAt < 0)
         {
             bool slap = round % 2 == 0;
             int release = got + (slap ? 70 : 35);
-            receiver!.Command = new PlayerCommand { Move = new Vector2(1, receiver.Position.Z > 0 ? -0.3f : 0.3f), Shoot = step >= got + 20 && step < release };
-            if (step >= release) { shotAt = step; receiver.Command = default; }
+            r.Command = new PlayerCommand { Move = new Vector2(1, r.Position.Z > 0 ? -0.3f : 0.3f), Shoot = step >= got + 20 && step < release };
+            if (step >= release) { shotAt = step; r.Command = default; }
         }
         if (step > 420 || (shotAt >= 0 && step > shotAt + 150)) Reset(world);
         Follow(world);

@@ -45,16 +45,16 @@ internal sealed class PuckHandlingSystem : ISystem
     /// <summary>The dice seed without a match seed (W67).</summary>
     internal const int Fallback = 7;
 
-    static readonly ConditionalWeakTable<World, StrongBox<HumanPass?>> HumanPasses = [];
+    static readonly ConditionalWeakTable<World, StrongBox<HumanPass>> HumanPasses = [];
 
     readonly Random rng;
     readonly HashSet<int> shootHeld = [];
     readonly Dictionary<int, float> charge = [];
-    (int Player, ShotKind Kind, float Speed, float Held)? pendingShot;
+    Maybe<(int Player, ShotKind Kind, float Speed, float Held)> pendingShot;
     int releasedBy = -1;
     float releasedAt = float.NegativeInfinity;
     Vector3 lastPuck;
-    (Side Side, int Passer, float At)? lastPass;
+    Maybe<(Side Side, int Passer, float At)> lastPass;
     readonly Dictionary<int, float> armed = [];
     readonly Dictionary<int, (float At, Vector2 Side, float Speed)> deking = [];
     readonly Dictionary<int, float> dekedAt = [];
@@ -85,15 +85,15 @@ internal sealed class PuckHandlingSystem : ISystem
         var pk = world.Puck;
         if (pk.Carrier >= 0 && (pk.Carrier >= world.Players.Count || world.Players[pk.Carrier].IsGoalie))
         {
-            Buttons(world, dt, null);   // a goalie's puck is W5's
+            Buttons(world, dt, Maybe<Player>.None);   // a goalie's puck is W5's
             lastPuck = pk.Position;
             return;
         }
 
-        var carrier = pk.Carrier >= 0 ? world.Players[pk.Carrier] : null;
-        if (carrier == null) TakeLoose(world);
-        carrier = pk.Carrier >= 0 ? world.Players[pk.Carrier] : null;
-        if (carrier != null || !PassOpen(world)) { lastPass = null; armed.Clear(); }
+        var carrier = pk.Carrier >= 0 ? world.Players[pk.Carrier] : Maybe<Player>.None;
+        if (!carrier.HasValue) TakeLoose(world);
+        carrier = pk.Carrier >= 0 ? world.Players[pk.Carrier] : Maybe<Player>.None;
+        if (carrier.HasValue || !PassOpen(world)) { lastPass = Maybe<(Side Side, int Passer, float At)>.None; armed.Clear(); }
 
         Buttons(world, dt, carrier);
         if (pk.Carrier >= 0) Deke(world, world.Players[pk.Carrier]);
@@ -104,7 +104,7 @@ internal sealed class PuckHandlingSystem : ISystem
     }
 
     /// <summary>Reads shoot and pass for every skater: winds up, fires, passes, and ends finished actions.</summary>
-    void Buttons(World world, float dt, Player? carrier)
+    void Buttons(World world, float dt, Maybe<Player> carrier)
     {
         foreach (var p in world.Players)
         {
@@ -113,7 +113,7 @@ internal sealed class PuckHandlingSystem : ISystem
             if (shoot) shootHeld.Add(p.Id); else shootHeld.Remove(p.Id);
             EndAction(p);
 
-            if (p != carrier || pendingShot != null)
+            if (p != carrier || pendingShot.HasValue)
             {
                 if (pressed && CanArm(world, p)) armed[p.Id] = world.Time;
                 if (armed.ContainsKey(p.Id))
@@ -135,7 +135,7 @@ internal sealed class PuckHandlingSystem : ISystem
                 var kind = PuckHandling.KindOf(held);
                 float speed = kind == ShotKind.Slap ? PuckHandling.SlapSpeed(p.Data.Traits, held) : PuckHandling.WristSpeed(p.Data.Traits);
                 speed *= Lines.LinesTuning.ShotFactor(p.Energy);   // W13: tired skaters shoot softer
-                pendingShot = (p.Id, kind, speed, held);
+                pendingShot = Maybe.Some((p.Id, kind, speed, held));
                 p.Begin(PlayerAction.Shoot);
             }
         }
@@ -153,12 +153,13 @@ internal sealed class PuckHandlingSystem : ISystem
         var pk = world.Puck;
         var from = pk.Position;
         bool human = passer.Slot >= 0;
-        var receiver = PuckHandling.PickReceiver(world, passer) ?? (human ? PuckHandling.PickOpen(world, passer) : null);
+        var receiver = PuckHandling.PickReceiver(world, passer);
+        if (!receiver.HasValue && human) receiver = PuckHandling.PickOpen(world, passer);
         int smart = passer.Data.Traits.HockeyIq;
         Vector3 velocity;
-        if (receiver != null)
+        if (receiver.TryGet(out var lead))
         {
-            var (target, speed) = PuckHandling.Lead(from, receiver, smart);
+            var (target, speed) = PuckHandling.Lead(from, lead, smart);
             velocity = PuckHandling.PassVelocity(from, target, speed, smart, rng);
         }
         else
@@ -169,35 +170,35 @@ internal sealed class PuckHandlingSystem : ISystem
 
         Release(world, passer, velocity);
         passer.Begin(PlayerAction.Pass);
-        lastPass = (passer.Side, passer.Id, world.Time);
+        lastPass = Maybe.Some((passer.Side, passer.Id, world.Time));
         armed.Clear();
         world.Events.Publish(new PassMade(world.Time, passer.Side, passer.Id, from, velocity.Length()));
-        if (human && receiver != null) HumanPasses.AddOrUpdate(world, new StrongBox<HumanPass?>(new HumanPass(passer.Id, receiver.Id, passer.Command.Move, world.Time)));
+        if (human && receiver.TryGet(out var mate)) HumanPasses.AddOrUpdate(world, new StrongBox<HumanPass>(new HumanPass(passer.Id, mate.Id, passer.Command.Move, world.Time)));
 
-        if (receiver != null && passer.Slot >= 0 && world.Settings.Switching != ControlSwitching.Manual)
+        if (receiver.TryGet(out var taker) && passer.Slot >= 0 && world.Settings.Switching != ControlSwitching.Manual)
         {
-            receiver.Slot = passer.Slot;
+            taker.Slot = passer.Slot;
             passer.Slot = -1;
             passer.Command = default;   // glide on rather than keep the human's last stick
         }
     }
 
-    /// <summary>Gets a human's last pass to a teammate in this match (W96), or null before the first.</summary>
+    /// <summary>Gets a human's last pass to a teammate in this match (W96), or None before the first.</summary>
     /// <param name="world">The match.</param>
     /// <returns>The pass.</returns>
-    internal static HumanPass? LastHumanPass(World world)
+    internal static Maybe<HumanPass> LastHumanPass(World world)
     {
-        return HumanPasses.TryGetValue(world, out var box) ? box.Value : null;
+        return HumanPasses.TryGetValue(world, out var box) ? box.Value : Maybe<HumanPass>.None;
     }
 
     /// <summary>Fires a wound-up shot once the clip reaches the sweep.</summary>
     void Strike(World world)
     {
-        if (pendingShot is not { } shot) return;
+        if (!pendingShot.TryGet(out var shot)) return;
         var p = world.Players[shot.Player];
-        if (world.Puck.Carrier != p.Id || p.Action != PlayerAction.Shoot) { pendingShot = null; return; }
+        if (world.Puck.Carrier != p.Id || p.Action != PlayerAction.Shoot) { pendingShot = Maybe<(int Player, ShotKind Kind, float Speed, float Held)>.None; return; }
         if (p.ActionTime < PuckHandling.StrikeDelay) return;
-        pendingShot = null;
+        pendingShot = Maybe<(int Player, ShotKind Kind, float Speed, float Held)>.None;
         var from = world.Puck.Position;
         var velocity = PuckHandling.ShotVelocity(world, p, from, shot.Kind, shot.Speed, rng, shot.Held);
         Release(world, p, velocity);
@@ -210,13 +211,13 @@ internal sealed class PuckHandlingSystem : ISystem
     /// <summary>Gets a value indicating whether a teammate's pass is still on its way, loose and live, inside the one-timer window.</summary>
     bool PassOpen(World world)
     {
-        return lastPass is { } pass && world.Puck.Live && world.Puck.Carrier < 0 && world.Time - pass.At <= OneTimerWindow;
+        return lastPass.TryGet(out var pass) && world.Puck.Live && world.Puck.Carrier < 0 && world.Time - pass.At <= OneTimerWindow;
     }
 
     /// <summary>Gets a value indicating whether a press of shoot arms a one-timer: switched on, a teammate's pass on its way, on their feet and free.</summary>
     bool CanArm(World world, Player p)
     {
-        return world.Settings.OneTimers && PassOpen(world) && lastPass is { } pass && pass.Side == p.Side && pass.Passer != p.Id
+        return world.Settings.OneTimers && PassOpen(world) && lastPass.TryGet(out var pass) && pass.Side == p.Side && pass.Passer != p.Id
             && p.OnIce && p.Action == PlayerAction.None;
     }
 
@@ -226,7 +227,7 @@ internal sealed class PuckHandlingSystem : ISystem
         float held = charge.GetValueOrDefault(p.Id);
         charge.Remove(p.Id);
         armed.Clear();
-        lastPass = null;
+        lastPass = Maybe<(Side Side, int Passer, float At)>.None;
         var pk = world.Puck;
         var from = pk.Position with { Y = 0 };
         // a one-timer borrows the pass's pace: struck like a slap shot wound up at least half way
@@ -247,24 +248,24 @@ internal sealed class PuckHandlingSystem : ISystem
     {
         bool down = carrier.Command.Deke, pressed = down && !dekeHeld.Contains(carrier.Id);
         if (down) dekeHeld.Add(carrier.Id); else dekeHeld.Remove(carrier.Id);
-        if (carrier.Action != PlayerAction.None || pendingShot != null || deking.ContainsKey(carrier.Id)) return;
+        if (carrier.Action != PlayerAction.None || pendingShot.HasValue || deking.ContainsKey(carrier.Id)) return;
         if (world.Time - dekedAt.GetValueOrDefault(carrier.Id, float.NegativeInfinity) < DekeModel.Cooldown) return;
 
         var threat = DekeModel.Threat(world, carrier);
-        if (threat == null) autoTried.Remove(carrier.Id);   // the next defender to come gets a fresh auto-deke
+        if (!threat.HasValue) autoTried.Remove(carrier.Id);   // the next defender to come gets a fresh auto-deke
         int pc = carrier.Data.Traits.PuckControl;
         float chance;
-        if (pressed) chance = threat is { } t ? DekeModel.Chance(DekeModel.Timing(t.Distance), pc) : 1f;
-        else if (world.Settings.AutoDeke && carrier.Slot >= 0 && threat is { } a && a.Distance <= DekeModel.SweetFar && autoTried.Add(carrier.Id))
+        if (pressed) chance = threat.TryGet(out var t) ? DekeModel.Chance(DekeModel.Timing(t.Distance), pc) : 1f;
+        else if (world.Settings.AutoDeke && carrier.Slot >= 0 && threat.TryGet(out var a) && a.Distance <= DekeModel.SweetFar && autoTried.Add(carrier.Id))
             chance = DekeModel.AutoChance(pc);
         else return;
 
-        var defender = threat?.Defender;
+        var defender = threat.Select(static x => x.Defender);
         bool beaten = rng.NextSingle() < chance;
         dekedAt[carrier.Id] = world.Time;
-        deking[carrier.Id] = (world.Time, DekeModel.StepSide(carrier, defender), DekeModel.StepSpeed(pc, beaten || defender == null));
-        if (defender == null) return;   // a shimmy in open ice: nothing to beat, nothing to lose
-        if (beaten) Bite(carrier, defender);
+        deking[carrier.Id] = (world.Time, DekeModel.StepSide(carrier, defender), DekeModel.StepSpeed(pc, beaten || !defender.HasValue));
+        if (!defender.TryGet(out var beat)) return;   // a shimmy in open ice: nothing to beat, nothing to lose
+        if (beaten) Bite(carrier, beat);
         else Fumble(world, carrier);
     }
 
@@ -325,7 +326,7 @@ internal sealed class PuckHandlingSystem : ISystem
     {
         var pk = world.Puck;
         if (!pk.Live || pk.Position.Y > PuckHandling.StickHeight || PuckHandling.InNet(pk.Position)) return;
-        Player? best = null;
+        var nearest = Maybe<Player>.None;
         float bestDistance = float.MaxValue;
         foreach (var p in world.Players)
         {
@@ -341,10 +342,10 @@ internal sealed class PuckHandlingSystem : ISystem
             bool skates = !oneTimer && body <= 0 && relative <= PuckHandling.CatchSpeed(traits) * 0.6f;
             if (skates && !stick) d = Math.Max(0, body + PuckHandling.Reach(traits));
             if (!(stick || skates) || d >= bestDistance) continue;
-            best = p;
+            nearest = p;
             bestDistance = d;
         }
-        if (best == null) return;
+        if (!nearest.TryGet(out var best)) return;
         if (armed.ContainsKey(best.Id)) { OneTimer(world, best); return; }
         pk.Carrier = best.Id;
         pk.LastTouch = best.Id;

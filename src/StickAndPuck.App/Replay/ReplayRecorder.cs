@@ -35,13 +35,13 @@ public sealed class ReplayRecorder
     /// <summary>Gets the folder screens matches are recorded to.</summary>
     public static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "replays");
 
-    /// <summary>Gets the SAP_CHECKSUMS log, or null.</summary>
-    internal static StreamWriter? Sums { get; private set; }
+    /// <summary>Gets the SAP_CHECKSUMS log, when it is open.</summary>
+    internal static Maybe<StreamWriter> Sums { get; private set; }
 
     /// <summary>Opens the SAP_CHECKSUMS log once, when it is set.</summary>
     public static void OpenChecksums()
     {
-        if (Sums != null || Environment.GetEnvironmentVariable("SAP_CHECKSUMS") is not { Length: > 0 } f) return;
+        if (Sums.HasValue || Environment.GetEnvironmentVariable("SAP_CHECKSUMS") is not { Length: > 0 } f) return;
         Sums = new StreamWriter(AssetRoot.Output(f)) { AutoFlush = false };
         Console.WriteLine($"SAP: replay: checksum of every step to {AssetRoot.Output(f)}");
     }
@@ -51,14 +51,14 @@ public sealed class ReplayRecorder
     /// <param name="sum">Its checksum.</param>
     public static void LogChecksum(long tick, ulong sum)
     {
-        Sums?.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{tick} {WorldChecksum.Text(sum)}"));
+        if (Sums.TryGet(out var sums)) sums.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{tick} {WorldChecksum.Text(sum)}"));
     }
 
     /// <summary>Closes the SAP_CHECKSUMS log.</summary>
     public static void CloseChecksums()
     {
-        Sums?.Dispose();
-        Sums = null;
+        if (Sums.TryGet(out var sums)) sums.Dispose();
+        Sums = Maybe<StreamWriter>.None;
     }
 
     /// <summary>
@@ -66,28 +66,31 @@ public sealed class ReplayRecorder
     /// the screens started, or any SAP_SCENE world when SAP_REPLAY_OUT names a file.
     /// </summary>
     /// <param name="world">The new world; its systems have not started yet.</param>
-    /// <param name="scene">The SAP_SCENE it came from, or null for a world the screens built.</param>
-    /// <returns>The recorder, or null.</returns>
-    public static ReplayRecorder? Begin(World world, string? scene)
+    /// <param name="scene">The SAP_SCENE it came from, or "" for a world the screens built.</param>
+    /// <returns>The recorder, or None.</returns>
+    public static Maybe<ReplayRecorder> Begin(World world, string scene)
     {
-        string? target = Environment.GetEnvironmentVariable("SAP_REPLAY_OUT");
-        if (string.Equals(target, "0", StringComparison.Ordinal)) return null;
-        bool screensMatch = scene == null && ScreenFlow.Playing != null && ScreenFlow.Started != null;
-        if (!screensMatch && (scene == null || string.IsNullOrEmpty(target))) return null;
+        string target = Environment.GetEnvironmentVariable("SAP_REPLAY_OUT") ?? "";
+        if (string.Equals(target, "0", StringComparison.Ordinal)) return Maybe<ReplayRecorder>.None;
+        bool built = scene.Length == 0;
+        var playing = built ? ScreenFlow.Playing : Maybe<MatchPlan>.None;
+        var started = built ? ScreenFlow.Started : Maybe<MatchSetup>.None;
+        bool screensMatch = playing.HasValue && started.HasValue;
+        if (!screensMatch && (built || target.Length == 0)) return Maybe<ReplayRecorder>.None;
 
         var header = new ReplayHeader
         {
             Seed = world.Seed,
             Kind = screensMatch ? "match" : "scene",
-            Scene = scene ?? "",
+            Scene = scene,
             Env = Variables(),
-            Setup = screensMatch ? ReplaySetup.Of(ScreenFlow.Started!) : null,
-            Mode = screensMatch ? ScreenFlow.Playing!.Mode?.GetType().Name ?? "" : "",
+            Setup = screensMatch ? started.Select(ReplaySetup.Of) : Maybe<ReplaySetup>.None,
+            Mode = screensMatch ? playing.Select(ModeName).Or("") : "",
             Prefs = screensMatch ? ScreenPrefsFile.ToJson(ScreenFlow.Prefs) : "",
             Clubs = ClubsHash(world.Setup.Home, world.Setup.Away),
             Recorded = string.Create(CultureInfo.InvariantCulture, $"{Environment.MachineName}, {RuntimeInformation.OSDescription}, {RuntimeInformation.ProcessArchitecture}, .NET {Environment.Version}, {DateTime.Now:yyyy-MM-dd HH:mm}"),
         };
-        return Begin(header, DeviceInput.Current, string.IsNullOrEmpty(target) ? NewPath(world) : AssetRoot.Output(target));
+        return Begin(header, DeviceInput.Current, target.Length == 0 ? NewPath(world) : AssetRoot.Output(target));
     }
 
     /// <summary>Starts recording with a given header and start frame (a take-over keeps the replay's own).</summary>
@@ -128,7 +131,7 @@ public sealed class ReplayRecorder
         if (file.End.Length == 0) file.End = ReplayFile.EndLine(world);
         file.Write(path);
         Console.WriteLine($"SAP: replay: {file.LastTick + 1} steps, {file.Events.Count} events, {file.Inputs.Count} input changes, final {file.End.Split(' ')[1]} written to {path}");
-        if (string.Equals(Path.GetDirectoryName(path), Folder, StringComparison.Ordinal)) Prune();
+        if (string.Equals(Path.GetDirectoryName(path) ?? "", Folder, StringComparison.Ordinal)) Prune();
     }
 
     /// <summary>Gets the SAP_* variables now, without the ones that steer recording and replaying.</summary>
@@ -139,6 +142,9 @@ public sealed class ReplayRecorder
             if (e.Key is string k && k.StartsWith("SAP_", StringComparison.Ordinal) && !ControlVariables.Contains(k, StringComparer.Ordinal)) vars[k] = e.Value as string ?? "";
         return vars;
     }
+
+    /// <summary>Gets the game mode's type name of a screens match, "" for a season game.</summary>
+    static string ModeName(MatchPlan plan) => plan.Mode.Select(m => m.GetType().Name).Or("");
 
     /// <summary>Gets a short hash of two clubs' data.</summary>
     /// <param name="home">The home club.</param>

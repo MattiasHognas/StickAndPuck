@@ -63,14 +63,14 @@ public static class Momentum
         return States.TryGetValue(world, out var s) ? s.Level[(int)side] : 0f;
     }
 
-    /// <summary>Gets the club with the bigger boost, or null when neither has one.</summary>
+    /// <summary>Gets the club with the bigger boost, or None when neither has one.</summary>
     /// <param name="world">The match.</param>
-    /// <returns>The side, or null.</returns>
-    public static Side? Leader(World world)
+    /// <returns>The side, or None.</returns>
+    public static SideOrNone Leader(World world)
     {
         float home = Of(world, Side.Home), away = Of(world, Side.Away);
-        if (home <= 0f && away <= 0f) return null;
-        return home >= away ? Side.Home : Side.Away;
+        if (home <= 0f && away <= 0f) return SideOrNone.None;
+        return home >= away ? SideOrNone.Home : SideOrNone.Away;
     }
 
     /// <summary>Gets a match's momentum, made on first use.</summary>

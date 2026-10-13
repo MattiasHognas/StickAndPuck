@@ -18,6 +18,9 @@
 
   <ItemGroup>
     <ProjectReference Include="$(RepoRoot)src/StickAndPuck.App/StickAndPuck.App.csproj" />
+    <!-- SAP0001/SAP0002/SAP0003: no nullable types, null literals or patterns on Maybe in the tests either -->
+    <ProjectReference Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

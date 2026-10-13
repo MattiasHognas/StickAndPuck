@@ -106,9 +106,7 @@ internal static class GoalieDemo
     public static void DrawHud(World world)
     {
         if (!Enabled) return;
-        var g = world.Players.Find(p => p.IsGoalie);
-        var t = g?.Data.Traits;
-        string who = g == null || t == null ? "" : $"{g.Data.LastName.ToUpperInvariant()} REF {t.GoalieReflexes} POS {t.HockeyIq} GLV {t.GoalieGlove} BLK {t.GoalieBlocker} REB {t.GoalieReboundControl} PH {t.GoaliePuckHandling}";
+        string who = world.Players.Find(p => p.IsGoalie) is not { Data.Traits: { } t } g ? "" : $"{g.Data.LastName.ToUpperInvariant()} REF {t.GoalieReflexes} POS {t.HockeyIq} GLV {t.GoalieGlove} BLK {t.GoalieBlocker} REB {t.GoalieReboundControl} PH {t.GoaliePuckHandling}";
         DrawText(who, 6, 6, 10, new Color(0xef, 0xe0, 0xc2, 255));
         DrawText($"SHOTS {shots}  SAVES {saves}  REBOUNDS {rebounds}  GOALS {goals}", 6, 18, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }

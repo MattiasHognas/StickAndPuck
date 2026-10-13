@@ -122,13 +122,13 @@ public static class Coverage
     /// <summary>Gets where the stay-home defenceman stands: in front of the net, goal side of the most dangerous man near it.</summary>
     /// <param name="net">The defended net (x, z).</param>
     /// <param name="carrier">The puck carrier (x, z).</param>
-    /// <param name="threat">The attacker nearest the net front, or null with nobody there.</param>
+    /// <param name="threat">The attacker nearest the net front, or None with nobody there.</param>
     /// <returns>The spot (x, z).</returns>
-    public static Vector2 HomeSpot(Vector2 net, Vector2 carrier, Vector2? threat)
+    public static Vector2 HomeSpot(Vector2 net, Vector2 carrier, Maybe<Vector2> threat)
     {
         float outward = MathF.Sign(-net.X);
         var crease = new Vector2(net.X + outward * 3.2f, Math.Clamp(carrier.Y * 0.15f, -1.2f, 1.2f));
-        if (threat is not { } t) return crease;
+        if (!threat.TryGet(out var t)) return crease;
         var spot = t + Dir(t, net) * 1.0f;
         // never further out than the hash marks, never inside the crease
         float o = outward * (spot.X - net.X);

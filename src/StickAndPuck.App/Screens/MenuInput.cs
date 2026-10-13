@@ -32,7 +32,7 @@ internal sealed class MenuInput
     /// <summary>Steps between scripted presses.</summary>
     public const int ScriptGap = 20;
 
-    static Queue<string>? script;
+    static Maybe<Queue<string>> script;
     static int scriptWait;
 
     static readonly MenuButton[] Repeats = [MenuButton.Up, MenuButton.Down, MenuButton.Left, MenuButton.Right];
@@ -42,14 +42,15 @@ internal sealed class MenuInput
     float heldFor;
 
     /// <summary>Gets a value indicating whether a script drives the menus.</summary>
-    public static bool IsScripted => script != null;
+    public static bool IsScripted => script.HasValue;
 
     /// <summary>Reads SAP_SCREEN_KEYS once.</summary>
     public static void LoadScript()
     {
-        if (script != null || Environment.GetEnvironmentVariable("SAP_SCREEN_KEYS") is not { Length: > 0 } keys) return;
-        script = new Queue<string>(keys.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries));
-        Console.WriteLine($"SAP: screens: {script.Count} scripted presses");
+        if (script.HasValue || Environment.GetEnvironmentVariable("SAP_SCREEN_KEYS") is not { Length: > 0 } keys) return;
+        var queue = new Queue<string>(keys.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries));
+        script = queue;
+        Console.WriteLine($"SAP: screens: {queue.Count} scripted presses");
     }
 
     /// <summary>Finds this step's presses.</summary>
@@ -59,9 +60,9 @@ internal sealed class MenuInput
     public IReadOnlySet<MenuButton> Next(bool menuUp, float dt)
     {
         pressed.Clear();
-        if (script != null)
+        if (script.TryGet(out var queue))
         {
-            if (Scripted(menuUp) is var b and not MenuButton.None)
+            if (Scripted(queue, menuUp) is var b and not MenuButton.None)
             {
                 pressed.Add(b);
                 DeviceInput.Scripted(b.ToString());    // W67: the replay presses it on the same step
@@ -99,15 +100,15 @@ internal sealed class MenuInput
     /// <summary>Forgets held buttons, so a button still down from the last screen does not press again.</summary>
     public void Swallow()
     {
-        if (script != null) return;
+        if (script.HasValue) return;
         last.Clear();
         last.UnionWith(Held());
         heldFor = 0;
     }
 
-    static MenuButton Scripted(bool menuUp)
+    static MenuButton Scripted(Queue<string> script, bool menuUp)
     {
-        if (script!.Count == 0) return MenuButton.None;
+        if (script.Count == 0) return MenuButton.None;
         string token = script.Peek();
         if (!menuUp && !string.Equals(token, "pause", StringComparison.OrdinalIgnoreCase))
         {

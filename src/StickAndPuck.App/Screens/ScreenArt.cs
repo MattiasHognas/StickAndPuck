@@ -163,8 +163,9 @@ internal sealed class ScreenArt
             var ink = !item.Enabled ? Muted : on ? Gold : Text;
             if (on) Hud.DrawIcon("arrow_right", x + 6, y + 2);
             Left(item.Label, x + 18, y, ink);
-            if (item.Value is { } value)
+            if (item.Value.HasValue)
             {
+                string value = item.Value.Or("");
                 string shown = on ? $"< {value} >" : value;
                 Right(shown, x + w - 10, y, ink);
             }

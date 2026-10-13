@@ -40,9 +40,9 @@ public static class Infraction
     public const string CheckingFromBehind = "checking from behind";
 
     /// <summary>Gets an infraction's name as the penalty banner shows it, in the language shown (W53).</summary>
-    /// <param name="infraction">One of these infractions, fighting, or null.</param>
+    /// <param name="infraction">One of these infractions, fighting, or "" for none.</param>
     /// <returns>The name.</returns>
-    public static string Label(string? infraction) => Text.Get(infraction switch
+    public static string Label(string infraction) => Text.Get(infraction switch
     {
         Tripping => K.InfTripping,
         Hooking => K.InfHooking,
@@ -188,13 +188,13 @@ public static class Penalties
         return Book(world).Substituted.Contains(playerId);
     }
 
-    /// <summary>Gets the club on the power play: the one serving fewer penalties, or null at even strength.</summary>
+    /// <summary>Gets the club on the power play: the one serving fewer penalties, or None at even strength.</summary>
     /// <param name="world">The match.</param>
     /// <returns>The club with the extra skater.</returns>
-    public static Side? PowerPlay(World world)
+    public static SideOrNone PowerPlay(World world)
     {
         int home = Serving(world, Side.Home), away = Serving(world, Side.Away);
-        return home < away ? Side.Home : away < home ? Side.Away : null;
+        return home < away ? SideOrNone.Home : away < home ? SideOrNone.Away : SideOrNone.None;
     }
 
     /// <summary>Gets the skaters each club plays at full strength this period: 5 in regulation, 3 (or 5) in overtime, read off the ice when the period started.</summary>
@@ -461,11 +461,11 @@ public static class Penalties
         {
             // W47: the offender stays (ejected or a misconduct to sit); the teammate serving for him comes out
             world.Match.Penalties.Remove(penalty);
-            var sub = world.Players
+            var sub = Maybe.From<Player>(world.Players
                 .Where(o => o.Side == penalty.Side && !o.OnIce && !o.IsGoalie && !InBox(world, o.Id))
-                .MaxBy(o => o.Energy);
-            if (sub != null) OutOfTheBox(sub);
-            book.Log(world, $"{(sub == null ? "nobody" : Name(world, sub))} out of the box for {Name(world, world.Players[penalty.PlayerId])} ({why})");
+                .MaxBy(o => o.Energy));
+            if (sub.TryGet(out var serving)) OutOfTheBox(serving);
+            book.Log(world, $"{(sub.TryGet(out var named) ? Name(world, named) : "nobody")} out of the box for {Name(world, world.Players[penalty.PlayerId])} ({why})");
             return;
         }
 
@@ -554,7 +554,7 @@ public static class Penalties
         var to = world.OnIce(p.Side)
             .Where(o => o != p && !o.IsGoalie && o.Slot < 0)
             .MinBy(o => Vector3.DistanceSquared(o.Position, world.Puck.Position));
-        if (to != null) to.Slot = p.Slot;
+        if (to is { } mate) mate.Slot = p.Slot;
         p.Slot = -1;
     }
 

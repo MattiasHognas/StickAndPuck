@@ -24,7 +24,7 @@ internal sealed class FightSystem : ISystem, IDisposable
     static readonly Color Health = HudArt.Hex("#f2c14e");
     static readonly Color Hurt = HudArt.Hex("#a34e4d");
 
-    HudArt? art;
+    Maybe<HudArt> art;
 
     public void Start(World world)
     {
@@ -36,14 +36,14 @@ internal sealed class FightSystem : ISystem, IDisposable
         if (!MatchFlow.IsRunning(world)) return;
         var s = Fighting.State(world);
         if (float.IsNaN(s.FirstDrop) && world.Match.Phase == MatchPhase.Play) s.FirstDrop = world.Time;
-        if (s.Fight is { } fight)
+        if (s.Fight.TryGet(out var fight))
         {
             Run(world, s, fight, dt);
             return;
         }
-        if (s.Offer == null) Watch(world, s);
-        if (s.Offer == null) Script(world, s);
-        if (s.Offer is { } offer) Resolve(world, s, offer);
+        if (!s.Offer.HasValue) Watch(world, s);
+        if (!s.Offer.HasValue) Script(world, s);
+        if (s.Offer.TryGet(out var offer)) Resolve(world, s, offer);
     }
 
     /// <summary>Every hard check this step may drop the gloves.</summary>
@@ -55,7 +55,7 @@ internal sealed class FightSystem : ISystem, IDisposable
             var victim = world.Players
                 .Where(p => p.Side != check.Side && p.OnIce && !p.IsGoalie)
                 .MinBy(p => Vector3.DistanceSquared(p.Position, check.Position));
-            if (victim == null || Vector3.DistanceSquared(victim.Position, check.Position) > 1f) continue;
+            if (victim is not { } || Vector3.DistanceSquared(victim.Position, check.Position) > 1f) continue;
             if (s.Rng.NextSingle() >= s.OfferChance) continue;
             if (Fighting.Offer(world, check.CheckerId, victim.Id)) return;
         }
@@ -68,9 +68,9 @@ internal sealed class FightSystem : ISystem, IDisposable
         s.ScriptAfterDrop = float.NaN;
         var home = world.OnIce(Side.Home).Where(p => !p.IsGoalie).MinBy(p => p.Position.LengthSquared());
         var away = world.OnIce(Side.Away).Where(p => !p.IsGoalie).MinBy(p => p.Position.LengthSquared());
-        if (home == null || away == null) return;
+        if (home is not { } || away is not { }) return;
         // the AI says yes to this one; a human still has to accept
-        bool? answer = s.ForceAccept;
+        var answer = s.ForceAccept;
         s.ForceAccept = true;
         Fighting.Offer(world, away.Id, home.Id);
         s.ForceAccept = answer;
@@ -82,25 +82,25 @@ internal sealed class FightSystem : ISystem, IDisposable
         if (!Fighting.CanFight(world, offer.CheckerId, offer.VictimId)
             || Vector3.Distance(world.Players[offer.CheckerId].Position, world.Players[offer.VictimId].Position) > 6f)
         {
-            s.Offer = null;
+            s.Offer = Maybe<FightOffer>.None;
             return;
         }
         bool aiSaidNo = false;
         for (int i = 0; i < 2; i++)
         {
             if (offer.Slots[i] < 0) aiSaidNo |= !offer.Accepted[i];
-            else if (world.Controlled(offer.Slots[i])?.Command.AcceptFight == true) offer.Accepted[i] = true;
+            else if (world.Controlled(offer.Slots[i]).Is(c => c.Command.AcceptFight)) offer.Accepted[i] = true;
         }
         bool humans = offer.Slots[0] >= 0 || offer.Slots[1] >= 0;
         bool expired = world.Time - offer.Time >= FightTuning.OfferSeconds;
         if (offer.Accepted[0] && offer.Accepted[1])
         {
-            s.Offer = null;
+            s.Offer = Maybe<FightOffer>.None;
             Start(world, s, offer.CheckerId, offer.VictimId);
         }
         else if (!humans || expired || (aiSaidNo && (offer.Accepted[0] || offer.Accepted[1])))
         {
-            s.Offer = null;
+            s.Offer = Maybe<FightOffer>.None;
             s.Declined++;
             s.Log(world, "no fight: declined");
         }
@@ -182,7 +182,7 @@ internal sealed class FightSystem : ISystem, IDisposable
     {
         foreach (var p in world.Players)
         {
-            if (!p.OnIce || p.IsGoalie || fight.Of(p.Id) != null) continue;
+            if (!p.OnIce || p.IsGoalie || fight.Of(p.Id).HasValue) continue;
             var away = p.Position - fight.Spot;
             away.Y = 0;
             float d = away.Length();
@@ -220,7 +220,7 @@ internal sealed class FightSystem : ISystem, IDisposable
             bool block, punch;
             if (f.Slot >= 0)
             {
-                var cmd = world.Controlled(f.Slot)?.Command ?? default;
+                var cmd = world.Controlled(f.Slot).TryGet(out var me) ? me.Command : default;
                 block = cmd.Block;
                 punch = cmd.Punch;
             }
@@ -313,7 +313,7 @@ internal sealed class FightSystem : ISystem, IDisposable
     /// </summary>
     static void End(World world, FightState s, Fight fight, bool penalise)
     {
-        s.Fight = null;
+        s.Fight = Maybe<Fight>.None;
         s.Last = fight;
         s.LastEnded = world.Time;
         foreach (var f in fight.Both)
@@ -349,10 +349,10 @@ internal sealed class FightSystem : ISystem, IDisposable
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (art == null || !MatchFlow.IsRunning(world)) return;
+        if (!art.TryGet(out var hud) || !MatchFlow.IsRunning(world)) return;
         var s = Fighting.State(world);
-        if (s.Fight is { } fight) DrawFight(world, art, fight);
-        else if (s.Offer is { } offer && (offer.Slots[0] >= 0 || offer.Slots[1] >= 0)) DrawOffer(world, art, offer);
+        if (s.Fight.TryGet(out var fight)) DrawFight(world, hud, fight);
+        else if (s.Offer.TryGet(out var offer) && (offer.Slots[0] >= 0 || offer.Slots[1] >= 0)) DrawOffer(world, hud, offer);
     }
 
     static void DrawOffer(World world, HudArt art, FightOffer offer)
@@ -416,7 +416,7 @@ internal sealed class FightSystem : ISystem, IDisposable
 
     public void Dispose()
     {
-        art?.Unload();
-        art = null;
+        if (art.TryGet(out var hud)) hud.Unload();
+        art = Maybe<HudArt>.None;
     }
 }

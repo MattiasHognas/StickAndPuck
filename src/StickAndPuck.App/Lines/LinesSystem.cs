@@ -51,7 +51,7 @@ internal sealed class LinesSystem : ISystem
     {
         if (!MatchFlow.IsRunning(world)) return;
         var b = Bench.Board(world);
-        if (b.Squads[0] == null) SetUp(world);
+        if (!b.Squads[0].HasValue) SetUp(world);
         var m = world.Match;
         if (m.Phase == MatchPhase.Play) b.GameTime += dt;
 
@@ -65,7 +65,7 @@ internal sealed class LinesSystem : ISystem
         {
             foreach (var side in BothSides)
             {
-                if (b.Changing[(int)side] is { } change) Progress(world, b, change);
+                if (b.Changing[(int)side].TryGet(out var change)) Progress(world, b, change);
                 else OnTheFly(world, b, side);
             }
         }
@@ -77,7 +77,7 @@ internal sealed class LinesSystem : ISystem
     internal static void SetUp(World world)
     {
         var b = Bench.Board(world);
-        if (b.Squads[0] != null) return;
+        if (b.Squads[0].HasValue) return;
         foreach (var side in BothSides) b.Squads[(int)side] = Squad.Build(world, side);
         for (int i = 0; i < 2; i++) b.LastScore[i] = world.Match.Score[i];
     }
@@ -119,7 +119,7 @@ internal sealed class LinesSystem : ISystem
             for (int g = b.LastScore[i]; g < score; g++) against.Add(b.GameTime);
             b.LastScore[i] = score;
             against.RemoveAll(t => t < b.GameTime - spell);
-            if (against.Count >= LinesTuning.GoalieGoals && Backup(b.Squads[(int)conceding]) != null)
+            if (against.Count >= LinesTuning.GoalieGoals && Backup(b.Squads[(int)conceding]).HasValue)
             {
                 b.GoalieSwap[(int)conceding] = true;
                 against.Clear();
@@ -139,7 +139,7 @@ internal sealed class LinesSystem : ISystem
             var group = BothGroups.MinBy(g => Bench.OnIceEnergy(world, side, g));
             if (world.Match.Phase == MatchPhase.Play)
             {
-                if (b.Changing[(int)side] == null && Best(b, side, group) is { } unit) Begin(world, b, side, group, unit);
+                if (!b.Changing[(int)side].HasValue && Best(b, side, group).TryGet(out var unit)) Begin(world, b, side, group, unit);
             }
             else if (!IcingRule.HoldsLines(world, side))   // W49: a club that iced the puck keeps its skaters
             {
@@ -153,7 +153,7 @@ internal sealed class LinesSystem : ISystem
     {
         foreach (var side in BothSides)
         {
-            if (b.Changing[(int)side] is { } change) Finish(world, b, change, onTheFly: false);
+            if (b.Changing[(int)side].TryGet(out var change)) Finish(world, b, change, onTheFly: false);
             b.FirstUnits[(int)side] = true;
         }
         foreach (var p in world.Players) p.Energy = 1f;
@@ -170,14 +170,13 @@ internal sealed class LinesSystem : ISystem
                 Hold(world, b, side);
                 continue;
             }
-            if (b.Changing[s] is { } change) Finish(world, b, change, onTheFly: false);
-            var squad = b.Squads[s]!;
+            if (b.Changing[s].TryGet(out var change)) Finish(world, b, change, onTheFly: false);
+            if (!b.Squads[s].TryGet(out var squad)) continue;   // never: the squads are built before any faceoff
 
             if (b.GoalieSwap[s])
             {
                 b.GoalieSwap[s] = false;
-                var on = world.OnIce(side).FirstOrDefault(p => p.IsGoalie);
-                if (on != null && Backup(squad) is { } backup)
+                if (world.OnIce(side).FirstOrDefault(p => p.IsGoalie) is { } on && Backup(squad).TryGet(out var backup))
                 {
                     Put(on, backup, onTheFly: false);
                     world.Events.Publish(new LineChanged(world.Time, side, backup.Id, backup.Position));
@@ -188,22 +187,22 @@ internal sealed class LinesSystem : ISystem
 
             foreach (var group in BothGroups)
             {
-                Unit? unit;
+                Maybe<Unit> unit;
                 if (b.FirstUnits[s])
                 {
-                    unit = squad.Units(group).FirstOrDefault();
-                    if (unit != null && unit.Members.All(p => p.OnIce)) unit = null;
+                    unit = squad.Units(group).FirstOrNone();
+                    if (unit.Is(static u => u.Members.All(p => p.OnIce))) unit = Maybe<Unit>.None;
                 }
                 else
                 {
                     unit = Best(b, side, group);
                     float energy = Bench.OnIceEnergy(world, side, group);
                     bool want = b.Pending[s, (int)group]
-                        || (Automatic(world, side) && energy < LinesTuning.FaceoffBelow && unit != null && unit.Energy >= energy + LinesTuning.FresherBy);
-                    if (!want) unit = null;
+                        || (Automatic(world, side) && energy < LinesTuning.FaceoffBelow && unit.Is(u => u.Energy >= energy + LinesTuning.FresherBy));
+                    if (!want) unit = Maybe<Unit>.None;
                 }
                 b.Pending[s, (int)group] = false;
-                if (unit != null && Begin(world, b, side, group, unit) is { } instant) Finish(world, b, instant, onTheFly: false);
+                if (unit.TryGet(out var next) && Begin(world, b, side, group, next).TryGet(out var instant)) Finish(world, b, instant, onTheFly: false);
             }
             b.FirstUnits[s] = false;
         }
@@ -217,7 +216,7 @@ internal sealed class LinesSystem : ISystem
     static void Hold(World world, LinesBoard b, Side side)
     {
         int s = (int)side;
-        b.Changing[s] = null;
+        b.Changing[s] = Maybe<ShiftChange>.None;
         foreach (var group in BothGroups) b.Pending[s, (int)group] = false;
         Log(world, $"{world.Setup.Club(side).ShortName} iced the puck: no line change");
     }
@@ -231,17 +230,17 @@ internal sealed class LinesSystem : ISystem
             float energy = Bench.OnIceEnergy(world, side, group);
             if (energy >= LinesTuning.ChangeBelow) continue;
             if (energy >= LinesTuning.ForceBelow && !Safe(world, side)) continue;
-            if (Best(b, side, group) is not { } unit || unit.Energy < energy + LinesTuning.FresherBy) continue;
+            if (!Best(b, side, group).TryGet(out var unit) || unit.Energy < energy + LinesTuning.FresherBy) continue;
             Begin(world, b, side, group, unit);
             return;
         }
     }
 
     /// <summary>Calls a change: pairs each skater of the group on the ice with one coming on, and takes the human off a leaving skater.</summary>
-    static ShiftChange? Begin(World world, LinesBoard b, Side side, Group group, Unit unit)
+    static Maybe<ShiftChange> Begin(World world, LinesBoard b, Side side, Group group, Unit unit)
     {
         var leaving = Bench.OnIce(world, side, group).ToList();
-        if (leaving.Count == 0) return null;
+        if (leaving.Count == 0) return Maybe<ShiftChange>.None;
         // a skater in the penalty box (W14) never comes on
         var coming = unit.Members.Where(p => !p.OnIce && !Penalties.InBox(world, p.Id)).ToList();
         var spares = world.Players
@@ -252,13 +251,12 @@ internal sealed class LinesSystem : ISystem
         var swaps = new List<Swap>();
         foreach (var off in leaving)
         {
-            var on = coming.Find(p => p.Data.Position == off.Data.Position) ?? coming.FirstOrDefault() ?? spares.FirstOrDefault();
-            if (on == null) break;
+            if ((coming.Find(p => p.Data.Position == off.Data.Position) ?? coming.FirstOrDefault() ?? spares.FirstOrDefault()) is not { } on) break;
             coming.Remove(on);
             spares.Remove(on);
             swaps.Add(new Swap(off, on));
         }
-        if (swaps.Count == 0) return null;
+        if (swaps.Count == 0) return Maybe<ShiftChange>.None;
 
         var change = new ShiftChange(side, group, unit, swaps, world.Time);
         b.Changing[(int)side] = change;
@@ -284,7 +282,7 @@ internal sealed class LinesSystem : ISystem
             if (off.Slot >= 0) HandOff(world, off, change);
             if (off.Slot < 0) off.Command = Steering.Toward(off, s.Door, 1.2f, sprint: d > Steering.SprintFrom);
         }
-        if (change.Swaps.TrueForAll(s => s.Done)) b.Changing[(int)change.Side] = null;
+        if (change.Swaps.TrueForAll(s => s.Done)) b.Changing[(int)change.Side] = Maybe<ShiftChange>.None;
     }
 
     static void Finish(World world, LinesBoard b, ShiftChange change, bool onTheFly)
@@ -294,7 +292,7 @@ internal sealed class LinesSystem : ISystem
             if (s.Out.OnIce && !s.In.OnIce) Swap(world, b, change, s, onTheFly);
             s.Done = true;
         }
-        b.Changing[(int)change.Side] = null;
+        b.Changing[(int)change.Side] = Maybe<ShiftChange>.None;
     }
 
     static void Swap(World world, LinesBoard b, ShiftChange change, Swap s, bool onTheFly)
@@ -333,10 +331,12 @@ internal sealed class LinesSystem : ISystem
     static void HandOff(World world, Player off, ShiftChange change)
     {
         if (off.Slot < 0) return;
-        var to = world.OnIce(off.Side)
+        if (world.OnIce(off.Side)
             .Where(p => !p.IsGoalie && p.Slot < 0 && !change.Swaps.Exists(s => !s.Done && s.Out == p))
-            .MinBy(p => Vector3.DistanceSquared(p.Position, world.Puck.Position));
-        if (to == null) return;
+            .MinBy(p => Vector3.DistanceSquared(p.Position, world.Puck.Position)) is not { } to)
+        {
+            return;
+        }
         var carried = off.Command;
         to.Command = carried with { Pass = false, Check = false, Shoot = false, SwitchPlayer = false, ChangeLine = false };
         to.Slot = off.Slot;
@@ -345,19 +345,18 @@ internal sealed class LinesSystem : ISystem
     }
 
     /// <summary>Gets the freshest unit of a group with nobody on the ice, lines 1 to 3 a little ahead of line 4.</summary>
-    static Unit? Best(LinesBoard b, Side side, Group group)
+    static Maybe<Unit> Best(LinesBoard b, Side side, Group group)
     {
-        var squad = b.Squads[(int)side];
-        if (squad == null) return null;
+        if (!b.Squads[(int)side].TryGet(out var squad)) return Maybe<Unit>.None;
         float[] bias = group == Group.Forwards ? LinesTuning.ForwardBias : LinesTuning.PairBias;
-        return squad.Units(group)
+        return Maybe.From<Unit>(squad.Units(group)
             .Where(u => u.Members.All(p => !p.OnIce))
-            .MaxBy(u => u.Energy - bias[Math.Min(u.Number - 1, bias.Length - 1)]);
+            .MaxBy(u => u.Energy - bias[Math.Min(u.Number - 1, bias.Length - 1)]));
     }
 
-    static Player? Backup(Squad? squad)
+    static Maybe<Player> Backup(Maybe<Squad> squad)
     {
-        return squad?.Goalies.FirstOrDefault(g => !g.OnIce);
+        return squad.TryGet(out var s) ? s.Goalies.FirstOrNone(g => !g.OnIce) : Maybe<Player>.None;
     }
 
     /// <summary>Gets whether the bench calls this club's changes by itself: always for the AI, for a human only in automatic mode.</summary>
@@ -404,7 +403,7 @@ internal sealed class LinesSystem : ISystem
             int cx = x + 28;
             foreach (var group in BothGroups)
             {
-                string name = Bench.OnIceUnit(world, side, group)?.Name ?? "-";
+                string name = Bench.OnIceUnit(world, side, group).Select(static u => u.Name).Or("-");
                 float energy = Bench.OnIceEnergy(world, side, group);
                 DrawText(name, cx, y, 10, cream);
                 DrawRectangle(cx + 14, y + 2, 30, 5, new Color(0x4a, 0x3a, 0x52, 255));

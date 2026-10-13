@@ -25,7 +25,7 @@ internal sealed class SettingsScreen : MenuScreen
     static readonly InputDevice[] Devices = [InputDevice.KeyboardMouse, InputDevice.Gamepad1];
     static readonly InputDevice[] Player2Devices = [InputDevice.None, InputDevice.KeyboardMouse, InputDevice.Gamepad1, InputDevice.Gamepad2];
 
-    World? world;
+    Maybe<World> world;
     int first;
 
     static ScreenPrefs Prefs => ScreenFlow.Prefs;
@@ -36,32 +36,32 @@ internal sealed class SettingsScreen : MenuScreen
         var s = Prefs.Settings;
         return
         [
-            new MenuItem(Text.Get(K.Rules), () => ScreenFlow.Push(new RulesScreen()), Value: Prefs.Rules.Resolve().Name),
-            new MenuItem(Text.Get(K.ControlSwitching), Value: Text.Get(s.Switching switch
+            new MenuItem(Text.Get(K.Rules), () => ScreenFlow.Push(new RulesScreen()), value: Prefs.Rules.Resolve().Name),
+            new MenuItem(Text.Get(K.ControlSwitching), value: Text.Get(s.Switching switch
             {
                 ControlSwitching.Auto => K.SwitchAuto,
                 ControlSwitching.PassesOnly => K.SwitchPassesOnly,
                 _ => K.SwitchManual,
-            }), Change: d => Set(s with { Switching = Cycle(s.Switching, d) })),
-            new MenuItem(Text.Get(K.LineChanges), Value: Text.Get(s.Lines == LineChanges.Automatic ? K.LinesAutomatic : K.LinesManual),
-                Change: d => Set(s with { Lines = Cycle(s.Lines, d) })),
-            new MenuItem(Text.Get(K.Difficulty), Value: Text.Get(s.Difficulty switch { Difficulty.Easy => K.DifficultyEasy, Difficulty.Hard => K.DifficultyHard, _ => K.DifficultyNormal }), Change: d => Set(s with { Difficulty = Cycle(s.Difficulty, d) })),
-            new MenuItem(Text.Get(K.PeriodLength), Value: Text.Format(K.PeriodMinutes, Prefs.PeriodMinutes), Change: Period),
-            new MenuItem(Text.Get(K.SimThisGame), Value: OnOff(s.SimGame), Change: _ => Set(s with { SimGame = !s.SimGame })),
-            new MenuItem(Text.Get(K.AutoDeke), Value: OnOff(s.AutoDeke), Change: _ => Set(s with { AutoDeke = !s.AutoDeke })),
-            new MenuItem(Text.Get(K.OneTimers), Value: OnOff(s.OneTimers), Change: _ => Set(s with { OneTimers = !s.OneTimers })),
-            new MenuItem(Text.Get(K.Controls), Value: Device(Prefs.Controls), Change: Controls),
-            new MenuItem(Text.Get(K.Player2Controls), Value: Device(Prefs.Player2), Change: Player2),
+            }), change: d => Set(s with { Switching = Cycle(s.Switching, d) })),
+            new MenuItem(Text.Get(K.LineChanges), value: Text.Get(s.Lines == LineChanges.Automatic ? K.LinesAutomatic : K.LinesManual),
+                change: d => Set(s with { Lines = Cycle(s.Lines, d) })),
+            new MenuItem(Text.Get(K.Difficulty), value: Text.Get(s.Difficulty switch { Difficulty.Easy => K.DifficultyEasy, Difficulty.Hard => K.DifficultyHard, _ => K.DifficultyNormal }), change: d => Set(s with { Difficulty = Cycle(s.Difficulty, d) })),
+            new MenuItem(Text.Get(K.PeriodLength), value: Text.Format(K.PeriodMinutes, Prefs.PeriodMinutes), change: Period),
+            new MenuItem(Text.Get(K.SimThisGame), value: OnOff(s.SimGame), change: _ => Set(s with { SimGame = !s.SimGame })),
+            new MenuItem(Text.Get(K.AutoDeke), value: OnOff(s.AutoDeke), change: _ => Set(s with { AutoDeke = !s.AutoDeke })),
+            new MenuItem(Text.Get(K.OneTimers), value: OnOff(s.OneTimers), change: _ => Set(s with { OneTimers = !s.OneTimers })),
+            new MenuItem(Text.Get(K.Controls), value: Device(Prefs.Controls), change: Controls),
+            new MenuItem(Text.Get(K.Player2Controls), value: Device(Prefs.Player2), change: Player2),
             new MenuItem(Text.Get(K.KeyMapping), () => ScreenFlow.Push(new KeyMappingScreen())),
-            new MenuItem(Text.Get(K.ControlMarker), Value: OnOff(s.ControlMarker), Change: _ => Set(s with { ControlMarker = !s.ControlMarker })),
-            new MenuItem(Text.Get(K.CameraZoom), Value: OnOff(s.CameraZoom), Change: _ => Set(s with { CameraZoom = !s.CameraZoom })),
-            new MenuItem(Text.Get(K.Lighting), Value: Text.Get(s.Lighting switch { LightingMood.Early => K.LightingEarly, LightingMood.Afternoon => K.LightingAfternoon, LightingMood.Late => K.LightingLate, _ => K.LightingRandom }), Change: d => Set(s with { Lighting = Cycle(s.Lighting, d) })),
-            new MenuItem(Text.Get(K.SwapKits), Value: OnOff(s.SwapKits), Change: _ => Set(s with { SwapKits = !s.SwapKits })),
-            new MenuItem(Text.Get(K.Volume), Value: ((int)MathF.Round(s.Volume * 10)).ToString(CultureInfo.InvariantCulture), Change: Volume),
-            new MenuItem(Text.Get(K.Language), Value: Text.NameOf(s.Language), Change: d => Set(s with { Language = Cycle(s.Language, d) })),
-            new MenuItem(Text.Get(K.FpsLine), Value: OnOff(s.FpsLine), Change: _ => Set(s with { FpsLine = !s.FpsLine })),
-            new MenuItem(Text.Get(K.MatchDebugLine), Value: OnOff(s.MatchDebug), Change: _ => Set(s with { MatchDebug = !s.MatchDebug })),
-            new MenuItem(Text.Get(K.LinesPanel), Value: OnOff(s.LinesDebug), Change: _ => Set(s with { LinesDebug = !s.LinesDebug })),
+            new MenuItem(Text.Get(K.ControlMarker), value: OnOff(s.ControlMarker), change: _ => Set(s with { ControlMarker = !s.ControlMarker })),
+            new MenuItem(Text.Get(K.CameraZoom), value: OnOff(s.CameraZoom), change: _ => Set(s with { CameraZoom = !s.CameraZoom })),
+            new MenuItem(Text.Get(K.Lighting), value: Text.Get(s.Lighting switch { LightingMood.Early => K.LightingEarly, LightingMood.Afternoon => K.LightingAfternoon, LightingMood.Late => K.LightingLate, _ => K.LightingRandom }), change: d => Set(s with { Lighting = Cycle(s.Lighting, d) })),
+            new MenuItem(Text.Get(K.SwapKits), value: OnOff(s.SwapKits), change: _ => Set(s with { SwapKits = !s.SwapKits })),
+            new MenuItem(Text.Get(K.Volume), value: ((int)MathF.Round(s.Volume * 10)).ToString(CultureInfo.InvariantCulture), change: Volume),
+            new MenuItem(Text.Get(K.Language), value: Text.NameOf(s.Language), change: d => Set(s with { Language = Cycle(s.Language, d) })),
+            new MenuItem(Text.Get(K.FpsLine), value: OnOff(s.FpsLine), change: _ => Set(s with { FpsLine = !s.FpsLine })),
+            new MenuItem(Text.Get(K.MatchDebugLine), value: OnOff(s.MatchDebug), change: _ => Set(s with { MatchDebug = !s.MatchDebug })),
+            new MenuItem(Text.Get(K.LinesPanel), value: OnOff(s.LinesDebug), change: _ => Set(s with { LinesDebug = !s.LinesDebug })),
             new MenuItem(Text.Get(K.Back), Back),
         ];
     }
@@ -95,7 +95,7 @@ internal sealed class SettingsScreen : MenuScreen
     /// <inheritdoc/>
     protected override void Back()
     {
-        if (world != null) ScreenFlow.ApplySettings(world);
+        if (world.TryGet(out var onShow)) ScreenFlow.ApplySettings(onShow);
         Console.WriteLine($"SAP: screens: settings saved, {Prefs}");
         ScreenFlow.Pop();
     }
@@ -120,7 +120,7 @@ internal sealed class SettingsScreen : MenuScreen
     void Set(Settings settings)
     {
         ScreenFlow.Prefs = Prefs with { Settings = settings };
-        if (world != null) ScreenFlow.Apply(world, ScreenFlow.Settings);
+        if (world.TryGet(out var onShow)) ScreenFlow.Apply(onShow, ScreenFlow.Settings);
     }
 
     static void Period(int dir)

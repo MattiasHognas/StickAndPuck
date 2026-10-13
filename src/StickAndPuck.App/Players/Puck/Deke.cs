@@ -51,11 +51,11 @@ public static class DekeModel
     /// </summary>
     /// <param name="world">The match.</param>
     /// <param name="carrier">The puck carrier.</param>
-    /// <returns>The defender and the distance between the bodies, or null.</returns>
-    public static (Player Defender, float Distance)? Threat(World world, Player carrier)
+    /// <returns>The defender and the distance between the bodies, or None.</returns>
+    public static Maybe<(Player Defender, float Distance)> Threat(World world, Player carrier)
     {
         var travel = Travel(carrier);
-        (Player, float)? best = null;
+        var best = Maybe<(Player Defender, float Distance)>.None;
         float bestDistance = Range;
         foreach (var p in world.Players)
         {
@@ -64,7 +64,7 @@ public static class DekeModel
             float d = off.Length();
             if (d > bestDistance) continue;
             if (d > 0.01f && Vector2.Dot(off / d, travel) < SimMath.Cos(FrontCone)) continue;
-            best = (p, d);
+            best = Maybe.Some((p, d));
             bestDistance = d;
         }
         return best;
@@ -112,15 +112,15 @@ public static class DekeModel
 
     /// <summary>Gets the side a carrier steps to: away from the defender, or toward the backhand when the defender is dead ahead.</summary>
     /// <param name="carrier">The carrier.</param>
-    /// <param name="defender">The defender, or null.</param>
+    /// <param name="defender">The defender, or None.</param>
     /// <returns>A unit vector across the carrier's path.</returns>
-    public static Vector2 StepSide(Player carrier, Player? defender)
+    public static Vector2 StepSide(Player carrier, Maybe<Player> defender)
     {
         var travel = Travel(carrier);
         var left = new Vector2(-travel.Y, travel.X);
-        if (defender != null)
+        if (defender.TryGet(out var d))
         {
-            var off = new Vector2(defender.Position.X - carrier.Position.X, defender.Position.Z - carrier.Position.Z);
+            var off = new Vector2(d.Position.X - carrier.Position.X, d.Position.Z - carrier.Position.Z);
             float across = Vector2.Dot(off, left);
             if (MathF.Abs(across) > 0.15f) return across > 0 ? -left : left;
         }

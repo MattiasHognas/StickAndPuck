@@ -36,8 +36,8 @@ public sealed class SeasonStats
     /// <returns>The key.</returns>
     public static string PlayoffKey(int round, int series, int game) => $"p{round}.{series}.{game}";
 
-    /// <summary>Gets the latest award, or null before any game.</summary>
-    public PlayerOfGameAward? LastAward => Awards.Count == 0 ? null : Awards[^1];
+    /// <summary>Gets the latest award, or None before any game.</summary>
+    public Maybe<PlayerOfGameAward> LastAward => Awards.Count == 0 ? Maybe<PlayerOfGameAward>.None : Awards[^1];
 
     /// <summary>Gets the awards a club's players won.</summary>
     /// <param name="club">The club id.</param>
@@ -55,7 +55,7 @@ public sealed class SeasonStats
     {
         if (!Credited.Add(key)) return false;
         (key.StartsWith('p') ? Playoffs : Regular).Add(sheet);
-        if (sheet.Award(key) is { } award) Awards.Add(award);
+        if (sheet.Award(key).TryGet(out var award)) Awards.Add(award);
         return true;
     }
 
@@ -72,11 +72,11 @@ public sealed class SeasonStats
         int count = 0;
         foreach (var g in season.Games)
         {
-            if (g.Result == null || Credited.Contains(GameKey(g.Number))) continue;
+            if (!g.Result.TryGet(out var result) || Credited.Contains(GameKey(g.Number))) continue;
             if (!byId.TryGetValue(g.Home, out var home) || !byId.TryGetValue(g.Away, out var away)) continue;
-            if (Credit(GameKey(g.Number), SyntheticStats.Sheet(home, away, g.Result, season.GameSeed(g.Number)))) count++;
+            if (Credit(GameKey(g.Number), SyntheticStats.Sheet(home, away, result, season.GameSeed(g.Number)))) count++;
         }
-        if (season.Playoffs is { } playoffs)
+        if (season.Playoffs.TryGet(out var playoffs))
         {
             for (int r = 0; r < playoffs.Rounds.Count; r++)
             {

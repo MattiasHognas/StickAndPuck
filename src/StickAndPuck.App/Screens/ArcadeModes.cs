@@ -21,7 +21,7 @@ internal abstract class ArcadeMode : IGameMode
     public virtual int Order => 20;
 
     /// <inheritdoc/>
-    public bool HasNextGame => ArcadeSession.Current is { IsOver: false };
+    public bool HasNextGame => ArcadeSession.Current.Is(r => !r.IsOver);
 
     /// <inheritdoc/>
     public virtual int ClubPicks => 1;
@@ -30,30 +30,31 @@ internal abstract class ArcadeMode : IGameMode
     public virtual bool Available => true;
 
     /// <inheritdoc/>
-    public string? Status
+    public Maybe<string> Status
     {
         get
         {
-            if (ArcadeSession.Current is not { } run) return null;
+            if (!ArcadeSession.Current.TryGet(out var run)) return Maybe<string>.None;
             string wins = Text.Format(K.ArcadeStatusWins, run.Stage, run.Opponents.Count);
             if (run.Champion) return Text.Format(K.ArcadeStatusChampions, wins);
             if (run.Lost) return Text.Format(K.ArcadeStatusOver, wins);
-            string next = ScreenFlow.Clubs.FirstOrDefault(c => string.Equals(c.Id, run.NextOpponent, StringComparison.Ordinal))?.Name ?? run.NextOpponent ?? "";
+            string opponent = run.NextOpponent.Or("");
+            string next = ScreenFlow.Clubs.FirstOrDefault(c => string.Equals(c.Id, opponent, StringComparison.Ordinal)) is { } club ? club.Name : opponent;
             return Text.Format(K.ArcadeStatusNext, wins, run.LivesLeft, next);
         }
     }
 
-    /// <summary>Gets the rule of a new run, or null to continue the saved one.</summary>
-    protected abstract ArcadeRule? Rule { get; }
+    /// <summary>Gets the rule of a new run, or None to continue the saved one.</summary>
+    protected abstract Maybe<ArcadeRule> Rule { get; }
 
     /// <inheritdoc/>
-    public MatchSetup? Setup(GameModeStart start)
+    public Maybe<MatchSetup> Setup(GameModeStart start)
     {
         // the first game of a new run starts it; every other game continues the save the last result went into
-        if (Rule is { } rule && !begun) ArcadeSession.StartNew(start.Clubs, start.Picks[0].Id, rule);
+        if (Rule.TryGet(out var rule) && !begun) ArcadeSession.StartNew(start.Clubs, start.Picks[0].Id, rule);
         else ArcadeSession.Continue(start.Clubs);
         begun = true;
-        return ArcadeSession.NextSetup(start.Device);
+        return ArcadeSession.NextSetup(start.Device) is NextMatch.Play play ? play.Setup : Maybe<MatchSetup>.None;
     }
 }
 
@@ -64,7 +65,7 @@ internal sealed class ArcadeLivesMode : ArcadeMode
     public override string Title => Text.Get(K.ArcadeThreeLives);
 
     /// <inheritdoc/>
-    protected override ArcadeRule? Rule => ArcadeRule.ThreeLives;
+    protected override Maybe<ArcadeRule> Rule => ArcadeRule.ThreeLives;
 }
 
 /// <summary>A new arcade run where the first loss ends it.</summary>
@@ -77,7 +78,7 @@ internal sealed class ArcadeSuddenDeathMode : ArcadeMode
     public override int Order => 21;
 
     /// <inheritdoc/>
-    protected override ArcadeRule? Rule => ArcadeRule.SuddenDeath;
+    protected override Maybe<ArcadeRule> Rule => ArcadeRule.SuddenDeath;
 }
 
 /// <summary>Continues the saved arcade run; shown only when there is one still going.</summary>
@@ -96,5 +97,5 @@ internal sealed class ArcadeContinueMode : ArcadeMode
     public override bool Available => ArcadeSession.CanContinue();
 
     /// <inheritdoc/>
-    protected override ArcadeRule? Rule => null;
+    protected override Maybe<ArcadeRule> Rule => Maybe<ArcadeRule>.None;
 }

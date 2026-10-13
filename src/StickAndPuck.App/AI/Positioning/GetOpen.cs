@@ -29,7 +29,7 @@ public static class GetOpen
     /// <param name="rng">Randomness for misreads and judgement.</param>
     /// <param name="last">Where he was going after his last read, kept a little longer to stop him dithering.</param>
     /// <returns>The spot (x, z).</returns>
-    public static Vector2 Best(World world, Player p, Player carrier, Vector2 spot, float radius, float minA, float maxA, int hockeyIq, Random rng, Vector2? last)
+    public static Vector2 Best(World world, Player p, Player carrier, Vector2 spot, float radius, float minA, float maxA, int hockeyIq, Random rng, Maybe<Vector2> last)
     {
         int end = PuckHandling.AttackEnd(world, p.Side);
         var from = new Vector2(world.Puck.Position.X, world.Puck.Position.Z);
@@ -54,7 +54,7 @@ public static class GetOpen
         }
 
         Try(spot, 0f);
-        if (last is { } l && Vector2.Distance(l, spot) < radius * 1.2f) Try(l, 0.015f);
+        if (last.TryGet(out var l) && Vector2.Distance(l, spot) < radius * 1.2f) Try(l, 0.015f);
         float turn = rng.NextSingle() * MathF.Tau / Angles;
         foreach (float r in new[] { radius * 0.5f, radius })
         {

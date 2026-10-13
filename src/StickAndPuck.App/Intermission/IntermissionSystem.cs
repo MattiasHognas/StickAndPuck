@@ -64,8 +64,8 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     /// </summary>
     public static float StartAt { get; set; }
 
-    /// <summary>Gets the Zamboni's drive in this world, while one is under way.</summary>
-    public Drive? Current { get; private set; }
+    /// <summary>Gets the Zamboni's drive in this world while one is under way, or None.</summary>
+    public Maybe<Drive> Current { get; private set; }
 
     public void Start(World world)
     {
@@ -77,22 +77,22 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
         if (!MatchFlow.IsRunning(world)) return;
         if (world.Match.Phase != MatchPhase.Intermission)
         {
-            Current = null;
+            Current = Maybe<Drive>.None;
             blend = 0;
             return;
         }
 
         var flow = MatchFlow.State(world);
-        if (Current == null)
+        if (!Current.TryGet(out var drive))
         {
             if (flow.Timer <= 0) return;   // the next period is starting this step
-            Current = new Drive { Seconds = StartAt, Period = world.Match.Period };
+            drive = new Drive { Seconds = StartAt, Period = world.Match.Period };
+            Current = drive;
             StartAt = 0;
-            cameraX = Route.At(Route.Distance(Current.Seconds)).X;
+            cameraX = Route.At(Route.Distance(drive.Seconds)).X;
             cameraVx = 0;
         }
 
-        var drive = Current;
         if (!drive.Finished)
         {
             drive.Seconds += dt;
@@ -154,17 +154,17 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
 
     public void DrawScene(World world, RenderContext render)
     {
-        if (Showing() is { } d) renderer.DrawScene(Route.At(d), Route.HeadingAt(d), render);
+        if (Showing().TryGet(out float d)) renderer.DrawScene(Route.At(d), Route.HeadingAt(d), render);
     }
 
     public void DrawMask(World world, RenderContext render)
     {
-        if (Showing() is { } d) renderer.DrawMask(Route.At(d), Route.HeadingAt(d), render);
+        if (Showing().TryGet(out float d)) renderer.DrawMask(Route.At(d), Route.HeadingAt(d), render);
     }
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (Current is not { Finished: false } drive || drive.Shown < SkipAfterSeconds) return;
+        if (!Current.TryGet(out var drive) || drive.Finished || drive.Shown < SkipAfterSeconds) return;
         string text = Text.Get(K.Skip);
         int w = MeasureText(text, 10) + 10;
         const int h = 13, y = Game.Height - h - 6;
@@ -178,12 +178,12 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
         renderer.Dispose();
     }
 
-    /// <summary>Gets the distance along the route to draw at, or null while the Zamboni is out of sight behind the boards or gone.</summary>
-    float? Showing()
+    /// <summary>Gets the distance along the route to draw at, or None while the Zamboni is out of sight behind the boards or gone.</summary>
+    Maybe<float> Showing()
     {
-        if (Current is not { Skipped: false } drive) return null;
+        if (!Current.TryGet(out var drive) || drive.Skipped) return Maybe<float>.None;
         float d = Route.Distance(drive.Seconds);
-        return d > 0 && d < Route.Length ? d : null;
+        return d > 0 && d < Route.Length ? d : Maybe<float>.None;
     }
 
     static bool SkipPressed()

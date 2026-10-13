@@ -85,7 +85,7 @@ public sealed class ReplayTests : CheckedTest
         file.Write(path);
         var read = ReplayFile.Read(path);
         File.Delete(path);
-        var rebuilt = read.Header.Setup!.ToSetup(WorldBuilder.Clubs);
+        var rebuilt = read.Header.Setup.TryGet(out var stored) ? stored.ToSetup(WorldBuilder.Clubs) : throw new InvalidOperationException("the replay lost its setup");
         Check(read.Header.Seed == 99 && string.Equals(read.Header.Env["SAP_PERIOD"], "60", StringComparison.Ordinal) && read.Inputs.Count == 1 && read.Checks[0] == 0xdeadbeefcafef00dUL && read.Events.Count == 1 && read.LastTick == 100,
             "a replay file reads back as written");
         Check(rebuilt.Home == setup.Home && rebuilt.Away == setup.Away && rebuilt.Rules == setup.Rules && rebuilt.Overtime == setup.Overtime && rebuilt.OvertimeFormat == setup.OvertimeFormat && rebuilt.Inputs.SequenceEqual(setup.Inputs),

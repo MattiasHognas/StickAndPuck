@@ -32,16 +32,19 @@ public sealed class PenaltyTests : CheckedTest
     [Before(Test)]
     public void NormalReferee() => Penalties.Strictness = 1f;
 
-    /// <summary>A match in play with 10:00 periods, in the given period and under the given rules (null for the default).</summary>
-    static World Make(int period = 1, RuleSet? rules = null)
+    static T Must<T>(Maybe<T> m)
+        where T : notnull => m.TryGet(out var v) ? v : throw new InvalidOperationException("expected a value");
+
+    /// <summary>A match in play with 10:00 periods, in the given period and under the given rules (none for the default).</summary>
+    static World Make(int period = 1, Maybe<RuleSet> rules = default)
     {
         var builder = new WorldBuilder().Setup(s => s with { PeriodSeconds = Period });
-        if (rules is { } r) builder.Rules(r);
+        if (rules.TryGet(out var r)) builder.Rules(r);
         return builder
             .Then(w =>
             {
                 if (period > 1) MatchFlow.StartPeriod(w, period, Period);
-                Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+                Run(w, x => x.Match.Phase == MatchPhase.Play, 15);
             })
             .Build();
     }
@@ -54,14 +57,16 @@ public sealed class PenaltyTests : CheckedTest
         return Sets.GetValue(world, _ => [new LinesSystem(), new PuckPhysics(), new MatchRules(), new OffsideRule(), new IcingRule(), new OvertimeRules(), new PenaltyRules(), new RefereeSystem()]);
     }
 
-    static List<MatchEvent> Run(World world, Func<World, bool> until, Action<World>? each = null, float limit = 10)
+    static List<MatchEvent> Run(World world, Func<World, bool> until, float limit = 10) => Run(world, until, _ => { }, limit);
+
+    static List<MatchEvent> Run(World world, Func<World, bool> until, Action<World> each, float limit = 10)
     {
         var systems = Systems(world);
         var events = new List<MatchEvent>();
         for (int i = 0; i < limit / Game.Step && !until(world); i++)
         {
             world.Events.Clear();
-            each?.Invoke(world);
+            each(world);
             foreach (var s in systems) s.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
             world.Time += Game.Step; world.Tick++;
@@ -84,14 +89,14 @@ public sealed class PenaltyTests : CheckedTest
     {
         Penalties.Signal(w, p.Id, infraction, severity);
         w.Puck.Carrier = (w.OnIce(p.Side).FirstOrDefault(o => o.Data.Position == PlayingPosition.C && o != p) ?? w.OnIce(p.Side).First(o => !o.IsGoalie && o != p)).Id;
-        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        Run(w, x => x.Match.Phase != MatchPhase.Play, 1);
         w.Puck.Carrier = -1;
         return w.Match.Penalties.Last(x => x.PlayerId == p.Id);
     }
 
     static void ToPlay(World w)
     {
-        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+        Run(w, x => x.Match.Phase == MatchPhase.Play, 15);
     }
 
     static void PublishGoal(World w, Side scorer)
@@ -113,12 +118,12 @@ public sealed class PenaltyTests : CheckedTest
         w.Puck.Carrier = ac.Id;
         w.Puck.Position = new Vector3(-10, 0, 3);
         bool signalled = Penalties.Signal(w, lw.Id, Infraction.Tripping);
-        Check(signalled && Penalties.Delayed(w).Count == 1 && Referee.Of(w).Call?.PlayerId == lw.Id, "a trip is signalled: the referee's arm goes up");
-        Run(w, _ => false, null, 1);
+        Check(signalled && Penalties.Delayed(w).Count == 1 && Referee.Of(w).Call.Is(c => c.PlayerId == lw.Id), "a trip is signalled: the referee's arm goes up");
+        Run(w, _ => false, 1);
         Check(w.Match.Phase == MatchPhase.Play && w.Match.Penalties.Count == 0 && lw.OnIce, "play goes on while the fouled club keeps the puck");
 
         w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.C).Id;
-        var events = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        var events = Run(w, x => x.Match.Phase != MatchPhase.Play, 1);
         w.Puck.Carrier = -1;
         var call = events.OfType<PenaltyCalled>().First();
         Check(w.Match.Phase == MatchPhase.Stopped && events.Exists(e => e is WhistleBlown), "the whistle goes when the offending club touches the puck");
@@ -127,9 +132,9 @@ public sealed class PenaltyTests : CheckedTest
             && Math.Abs(Penalties.MinorSeconds(w) - (2 * 60 * Period / 1200)) < 0.01f, "a two minute minor, shortened with the period");
         Check(!lw.OnIce && Penalties.InBox(w, lw.Id) && lw.Position.Z > RinkSpec.HalfWidth, "the skater goes to the box off the ice");
         Check(MatchFlow.FaceoffDot(w) is { X: < -20 } dot && Math.Abs(dot.X + 20.7f) < 0.01f, "the faceoff is in the penalised club's end");
-        Check(string.Equals(Referee.Of(w).Announced?.Infraction, Infraction.Tripping, StringComparison.Ordinal) && Referee.Of(w).Call == null, "the referee calls tripping and lowers the arm");
+        Check(Referee.Of(w).Announced.Is(c => string.Equals(c.Infraction, Infraction.Tripping, StringComparison.Ordinal)) && !Referee.Of(w).Call.HasValue, "the referee calls tripping and lowers the arm");
         ToPlay(w);
-        Check(Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == Side.Away, "home kills it four on five, away is on the power play");
+        Check(Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == SideOrNone.Away, "home kills it four on five, away is on the power play");
     }
 
     [Test]
@@ -208,7 +213,7 @@ public sealed class PenaltyTests : CheckedTest
         bool goalie = Penalties.Signal(w, w.OnIce(Side.Away).First(p => p.IsGoalie).Id, Infraction.Slashing);
         Check(second && !third && !goalie, "Arcade: a club is never more than two short, and goalies are not called");
         w.Puck.Carrier = skaters[2].Id;
-        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        Run(w, x => x.Match.Phase != MatchPhase.Play, 1);
         w.Puck.Carrier = -1;
         ToPlay(w);
         Check(Skaters(w, Side.Home) == 3 && Penalties.Serving(w, Side.Home) == 2, "two penalties: three on five");
@@ -221,12 +226,12 @@ public sealed class PenaltyTests : CheckedTest
         var skaters = w.OnIce(Side.Home).Where(p => !p.IsGoalie).ToList();
         var first = Penalise(w, skaters[0]);
         ToPlay(w);
-        Run(w, _ => false, null, 5);
+        Run(w, _ => false, 5);
         Penalise(w, skaters[1]);
         ToPlay(w);
         Penalties.Signal(w, skaters[2].Id, Infraction.Slashing);
         w.Puck.Carrier = skaters[3].Id;
-        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        Run(w, x => x.Match.Phase != MatchPhase.Play, 1);
         w.Puck.Carrier = -1;
         ToPlay(w);
         Check(Penalties.Serving(w, Side.Home) == 2 && Penalties.Waiting(w) is [{ PlayerId: var waiting }] && waiting == skaters[2].Id && Penalties.InBox(w, skaters[2].Id) && Skaters(w, Side.Home) == 3,
@@ -234,15 +239,15 @@ public sealed class PenaltyTests : CheckedTest
         float clock = w.Match.Clock;
         bool steady = true;
         Run(w, x => !x.Match.Penalties.Exists(p => p.PlayerId == first.PlayerId), x => steady &= Skaters(x, Side.Home) == 3, 120);
-        var third = w.Match.Penalties.Find(p => p.PlayerId == skaters[2].Id);
-        Check(steady && third != null && Math.Abs(third.SecondsLeft - Penalties.MinorSeconds(w)) < 0.05f && Penalties.Waiting(w).Count == 0 && Math.Abs(clock - w.Match.Clock - (Penalties.MinorSeconds(w) - 5)) < 0.05f,
+        var third = w.Match.Penalties.FirstOrNone(p => p.PlayerId == skaters[2].Id);
+        Check(steady && third.Is(t => Math.Abs(t.SecondsLeft - Penalties.MinorSeconds(w)) < 0.05f) && Penalties.Waiting(w).Count == 0 && Math.Abs(clock - w.Match.Clock - (Penalties.MinorSeconds(w) - 5)) < 0.05f,
             "the third penalty starts in full when the first expires");
         Check(Penalties.InBox(w, skaters[0].Id) && !skaters[0].OnIce && Skaters(w, Side.Home) == 3 && Penalties.Serving(w, Side.Home) == 2,
             "the skater whose time is up stays in the box, home still three");
         MatchFlow.Whistle(w, RinkSpec.CentreDot);
         ToPlay(w);
         Check(!Penalties.InBox(w, skaters[0].Id) && Skaters(w, Side.Home) == 3, "at the whistle he goes to the bench and home plays on with three");
-        Run(w, x => !Penalties.InBox(x, skaters[2].Id), null, 120);
+        Run(w, x => !Penalties.InBox(x, skaters[2].Id), 120);
         Check(skaters[1].OnIce || !Penalties.InBox(w, skaters[1].Id), "the second and third penalties run out in turn");
     }
 
@@ -263,11 +268,11 @@ public sealed class PenaltyTests : CheckedTest
         Penalties.Signal(w, home.Id, Infraction.Hooking);
         Penalties.Signal(w, away.Id, Infraction.Slashing);
         w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.C).Id;
-        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        Run(w, x => x.Match.Phase != MatchPhase.Play, 1);
         w.Puck.Carrier = -1;
         ToPlay(w);
         int want = shl ? 5 : 4;
-        Check(Penalties.InBox(w, home.Id) && Penalties.InBox(w, away.Id) && Skaters(w, Side.Home) == want && Skaters(w, Side.Away) == want && Penalties.PowerPlay(w) == null,
+        Check(Penalties.InBox(w, home.Id) && Penalties.InBox(w, away.Id) && Skaters(w, Side.Home) == want && Skaters(w, Side.Away) == want && Penalties.PowerPlay(w) == SideOrNone.None,
             shl ? "SHL: coincidental minors are substituted, 5 on 5" : "NHL: coincidental minors from full strength play 4 on 4");
         bool steady = true;
         Run(w, x => !Penalties.InBox(x, home.Id), x => steady &= Skaters(x, Side.Home) == want && Skaters(x, Side.Away) == want, 120);
@@ -294,10 +299,10 @@ public sealed class PenaltyTests : CheckedTest
         Penalties.Signal(w, home.Id, Infraction.Hooking);
         Penalties.Signal(w, away.Id, Infraction.Slashing);
         w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.D).Id;
-        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        Run(w, x => x.Match.Phase != MatchPhase.Play, 1);
         w.Puck.Carrier = -1;
         ToPlay(w);
-        Check(Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == Side.Away,
+        Check(Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == SideOrNone.Away,
             "NHL: coincidental minors during a power play are substituted, still 5 on 4");
     }
 
@@ -309,7 +314,7 @@ public sealed class PenaltyTests : CheckedTest
         ToPlay(w);
         Penalise(w, Skater(w, Side.Away, PlayingPosition.LW));
         ToPlay(w);
-        Check(Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 4 && Penalties.PowerPlay(w) == null, "one each: four on four, no power play");
+        Check(Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 4 && Penalties.PowerPlay(w) == SideOrNone.None, "one each: four on four, no power play");
     }
 
     [Test]
@@ -319,9 +324,9 @@ public sealed class PenaltyTests : CheckedTest
         w.Match.Clock = 10;
         var c = Skater(w, Side.Home, PlayingPosition.C);
         Penalise(w, c);
-        Run(w, x => x.Match.Period == 2 && x.Match.Phase == MatchPhase.Play, null, 60);
-        var p = w.Match.Penalties.SingleOrDefault();
-        Check(p != null && Math.Abs(p.SecondsLeft - (Penalties.MinorSeconds(w) - 10)) < 0.05f && !c.OnIce && Skaters(w, Side.Home) == 4,
+        Run(w, x => x.Match.Period == 2 && x.Match.Phase == MatchPhase.Play, 60);
+        var p = Maybe.From<PenaltyState>(w.Match.Penalties.SingleOrDefault());
+        Check(p.Is(x => Math.Abs(x.SecondsLeft - (Penalties.MinorSeconds(w) - 10)) < 0.05f) && !c.OnIce && Skaters(w, Side.Home) == 4,
             "a penalty carries over the intermission: still short in period 2 with the rest of the time");
     }
 
@@ -332,8 +337,8 @@ public sealed class PenaltyTests : CheckedTest
         w.Match.Clock = 5;
         var lw = Skater(w, Side.Home, PlayingPosition.LW);
         Penalise(w, lw);
-        Run(w, x => x.Match.Phase is MatchPhase.Overtime or MatchPhase.Final, null, 30);
-        Run(w, _ => false, null, 0.1f);
+        Run(w, x => x.Match.Phase is MatchPhase.Overtime or MatchPhase.Final, 30);
+        Run(w, _ => false, 0.1f);
         Check(w.Match.Phase == MatchPhase.Overtime && w.Match.Penalties.Count == 0 && !lw.OnIce, "Arcade: penalties end with regulation (he waits on the bench)");
     }
 
@@ -345,16 +350,16 @@ public sealed class PenaltyTests : CheckedTest
         var lw = Skater(w, Side.Home, PlayingPosition.LW);
         Penalise(w, lw);
         ToPlay(w);
-        Run(w, x => x.Match.Phase is MatchPhase.Overtime or MatchPhase.Final, null, 30);
-        var carried = w.Match.Penalties.SingleOrDefault();
-        Check(w.Match.Phase == MatchPhase.Overtime && carried != null && carried.PlayerId == lw.Id && Math.Abs(carried.SecondsLeft - (Penalties.MinorSeconds(w) - 5)) < 0.05f,
+        Run(w, x => x.Match.Phase is MatchPhase.Overtime or MatchPhase.Final, 30);
+        var carried = Maybe.From<PenaltyState>(w.Match.Penalties.SingleOrDefault());
+        Check(w.Match.Phase == MatchPhase.Overtime && carried.Is(x => x.PlayerId == lw.Id && Math.Abs(x.SecondsLeft - (Penalties.MinorSeconds(w) - 5)) < 0.05f),
             "SHL: a penalty running at 60:00 carries into overtime with its time left");
-        Run(w, x => x.Match.Period == 4 && x.Match.Phase == MatchPhase.Play, null, 30);
-        Check(Penalties.InBox(w, lw.Id) && Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 4 && Penalties.BaseSkaters(w) == 3 && Penalties.PowerPlay(w) == Side.Away,
+        Run(w, x => x.Match.Period == 4 && x.Match.Phase == MatchPhase.Play, 30);
+        Check(Penalties.InBox(w, lw.Id) && Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 4 && Penalties.BaseSkaters(w) == 3 && Penalties.PowerPlay(w) == SideOrNone.Away,
             "overtime starts 4 on 3 for the rest of it");
         float clock = w.Match.Clock;
-        Run(w, x => !Penalties.InBox(x, lw.Id), null, 120);
-        Check(lw.OnIce && Math.Abs(clock - w.Match.Clock - carried!.SecondsLeft) < 0.05f && Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 4,
+        Run(w, x => !Penalties.InBox(x, lw.Id), 120);
+        Check(lw.OnIce && Math.Abs(clock - w.Match.Clock - Must(carried).SecondsLeft) < 0.05f && Skaters(w, Side.Home) == 4 && Skaters(w, Side.Away) == 4,
             "it runs out in overtime and he plays on, 4 on 4 until the whistle");
         MatchFlow.Whistle(w, RinkSpec.CentreDot);
         ToPlay(w);
@@ -366,17 +371,17 @@ public sealed class PenaltyTests : CheckedTest
     {
         var w = Make();
         var lw = Skater(w, Side.Home, PlayingPosition.LW);
-        var squad = Bench.SquadOf(w, Side.Home)!;
-        var line = squad.UnitOf(lw)!;
+        var squad = Must(Bench.SquadOf(w, Side.Home));
+        var line = Must(squad.UnitOf(lw));
         int lastCount = squad.Lines[^1].Members.Count;
         var major = Penalise(w, lw, Infraction.Boarding, Severity.MajorAndGameMisconduct);
         Check(Penalties.Ejected(w, lw.Id) && Penalties.InBox(w, lw.Id) && !lw.OnIce && Math.Abs(major.SecondsLeft - Penalties.ClubSeconds(w, Severity.Major)) < 0.01f
             && Math.Abs(Penalties.ClubSeconds(w, Severity.Major) - (2.5f * Penalties.MinorSeconds(w))) < 0.01f, "boarding at full force: a five minute major and a game misconduct, the skater is ejected");
         var refilled = squad.Lines.First(u => u.Number == line.Number);
-        Check(squad.UnitOf(lw) == null && refilled.Members.Count == line.Members.Count && squad.Lines[^1].Members.Count == lastCount - 1,
+        Check(!squad.UnitOf(lw).HasValue && refilled.Members.Count == line.Members.Count && squad.Lines[^1].Members.Count == lastCount - 1,
             $"the lines refill without him: {refilled.Name} takes a skater from the last line, which plays short ({string.Join(" ", squad.Lines.Select(u => $"{u.Name}:{u.Members.Count}"))})");
         ToPlay(w);
-        Check(Skaters(w, Side.Home) == 4 && Penalties.PowerPlay(w) == Side.Away, "home kills the major four on five");
+        Check(Skaters(w, Side.Home) == 4 && Penalties.PowerPlay(w) == SideOrNone.Away, "home kills the major four on five");
         PublishGoal(w, Side.Away);
         ToPlay(w);
         Check(w.Match.Penalties.Exists(p => p.PlayerId == lw.Id) && Skaters(w, Side.Home) == 4, "a power play goal does not end a major");
@@ -421,9 +426,9 @@ public sealed class PenaltyTests : CheckedTest
             && Math.Abs(Penalties.MisconductSeconds(w) - (5 * Penalties.MinorSeconds(w))) < 0.01f, "roughing with a misconduct: two minutes for the club, twelve in the box for him");
         ToPlay(w);
         Check(Skaters(w, Side.Home) == 4, "home kills the minor four on five");
-        Run(w, x => !x.Match.Penalties.Exists(p => p.PlayerId == d.Id), null, 200);
+        Run(w, x => !x.Match.Penalties.Exists(p => p.PlayerId == d.Id), 200);
         Check(Skaters(w, Side.Home) == 5 && !d.OnIce && Penalties.InBox(w, d.Id), "after the minor a teammate comes out, he sits on: five on five");
-        Run(w, x => Penalties.Misconducts(x).Count == 0, null, 600);
+        Run(w, x => Penalties.Misconducts(x).Count == 0, 600);
         Check(Penalties.Misconducts(w).Count == 0 && Penalties.InBox(w, d.Id), "the misconduct runs out on its own clock and he waits for the whistle");
         MatchFlow.Whistle(w, RinkSpec.CentreDot);
         ToPlay(w);
@@ -557,7 +562,7 @@ public sealed class PenaltyTests : CheckedTest
                 new LinesSystem().Start(w);
                 OvertimeRules.ThreeOnThree(w);
                 MatchFlow.StartPeriod(w, 4, 300);
-                Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+                Run(w, x => x.Match.Phase == MatchPhase.Play, 15);
             })
             .Build();
     }
@@ -570,7 +575,7 @@ public sealed class PenaltyTests : CheckedTest
         var d = w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.D);
         Penalise(w, d, Infraction.Hooking);
         ToPlay(w);
-        Check(Penalties.InBox(w, d.Id) && !d.OnIce && Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 4 && Penalties.PowerPlay(w) == Side.Away,
+        Check(Penalties.InBox(w, d.Id) && !d.OnIce && Skaters(w, Side.Home) == 3 && Skaters(w, Side.Away) == 4 && Penalties.PowerPlay(w) == SideOrNone.Away,
             "a penalty in overtime: home keeps three, away adds a skater, 4 on 3");
         Check(w.OnIce(Side.Away).Count(p => !p.IsGoalie && Squad.GroupOf(p) == Group.Forwards) == 2, "the skater away adds is a forward");
         bool steady = true;
@@ -621,13 +626,13 @@ public sealed class PenaltyTests : CheckedTest
         w.Puck.Carrier = Skater(w, Side.Away, PlayingPosition.C).Id;
         w.Puck.Position = new Vector3(-10, 0, 3);
         Penalties.Signal(w, lw.Id, Infraction.Tripping);
-        Run(w, _ => false, null, 0.5f);
-        Check(GoaliePull.IsPulled(w, Side.Away) && !goalie.OnIce && Skaters(w, Side.Away) == 6 && GoaliePull.ExtraAttacker(w, Side.Away) is { Data.Position: not PlayingPosition.D },
+        Run(w, _ => false, 0.5f);
+        Check(GoaliePull.IsPulled(w, Side.Away) && !goalie.OnIce && Skaters(w, Side.Away) == 6 && GoaliePull.ExtraAttacker(w, Side.Away).Is(e => e.Data.Position != PlayingPosition.D),
             "a delayed call against home: away pulls its goalie for a sixth skater at once");
         w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.C).Id;
-        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        Run(w, x => x.Match.Phase != MatchPhase.Play, 1);
         w.Puck.Carrier = -1;
-        Run(w, _ => false, null, 0.1f);
+        Run(w, _ => false, 0.1f);
         Check(!GoaliePull.IsPulled(w, Side.Away) && goalie.OnIce && Math.Abs(goalie.Position.X - (RinkSpec.GoalLineX - 1)) < 0.01f,
             "the goalie is back in his crease at the whistle");
         ToPlay(w);
@@ -642,18 +647,18 @@ public sealed class PenaltyTests : CheckedTest
         w.Match.Score[1] = 1;
         w.Match.Clock = GoaliePull.PullSeconds(w) + 5;
         w.Puck.Position = new Vector3(5, 0, 0);
-        Run(w, _ => false, null, 1);
+        Run(w, _ => false, 1);
         Check(!GoaliePull.IsPulled(w, Side.Home) && goalie.OnIce, "a goal down with more than the window left: the goalie stays in");
-        Run(w, x => GoaliePull.IsPulled(x, Side.Home), null, 10);
+        Run(w, x => GoaliePull.IsPulled(x, Side.Home), 10);
         Check(GoaliePull.IsPulled(w, Side.Home) && !goalie.OnIce && Skaters(w, Side.Home) == 6 && w.Match.Clock <= GoaliePull.PullSeconds(w),
             $"inside the last {MatchFlow.ClockText(GoaliePull.PullSeconds(w))} the AI pulls the goalie for a sixth skater");
         PublishGoal(w, Side.Home);
-        Run(w, _ => false, null, 0.1f);
+        Run(w, _ => false, 0.1f);
         Check(!GoaliePull.IsPulled(w, Side.Home) && goalie.OnIce, "the equaliser: the goalie is back for the faceoff");
         ToPlay(w);
         Check(Skaters(w, Side.Home) == 5 && !GoaliePull.IsPulled(w, Side.Home), "tied now, so five skaters and no pull");
         w.Match.Score[1] = 4;
-        Run(w, _ => false, null, 1);
+        Run(w, _ => false, 1);
         Check(!GoaliePull.IsPulled(w, Side.Home), "three down the AI leaves the goalie in");
     }
 
@@ -666,10 +671,10 @@ public sealed class PenaltyTests : CheckedTest
         w.Match.Score[1] = 1;
         w.Match.Clock = 10;
         w.Puck.Position = new Vector3(5, 0, 0);
-        Run(w, _ => false, null, 2);
+        Run(w, _ => false, 2);
         Check(goalie.OnIce && !GoaliePull.IsPulled(w, Side.Home), "a human's club does not pull by itself when trailing");
         bool pulled = GoaliePull.Pull(w, Side.Home);
-        Run(w, _ => false, null, 0.5f);
+        Run(w, _ => false, 0.5f);
         Check(pulled && !goalie.OnIce && Skaters(w, Side.Home) == 6, "the button pulls it: six skaters");
         bool back = GoaliePull.Return(w, Side.Home);
         Check(back && goalie.OnIce && Skaters(w, Side.Home) == 5, "the button again brings him back and the extra attacker off");
@@ -682,8 +687,7 @@ public sealed class PenaltyTests : CheckedTest
         var lw = Skater(w, Side.Home, PlayingPosition.LW);
         lw.Slot = 0;
         Penalise(w, lw);
-        var now = w.Controlled(0);
-        Check(lw.Slot < 0 && now != null && now.Side == Side.Home && now.OnIce && !now.IsGoalie, "a human whose skater is penalised takes a teammate");
+        Check(lw.Slot < 0 && w.Controlled(0).TryGet(out var now) && now.Side == Side.Home && now.OnIce && !now.IsGoalie, "a human whose skater is penalised takes a teammate");
     }
 
     [Test]
@@ -699,7 +703,7 @@ public sealed class PenaltyTests : CheckedTest
         fresh.Position = lw.Position;
         lw.OnIce = false;
         w.Puck.Carrier = Skater(w, Side.Home, PlayingPosition.C).Id;
-        Run(w, x => x.Match.Phase != MatchPhase.Play, null, 1);
+        Run(w, x => x.Match.Phase != MatchPhase.Play, 1);
         w.Puck.Carrier = -1;
         ToPlay(w);
         Check(Penalties.InBox(w, lw.Id) && !lw.OnIce && Skaters(w, Side.Home) == 4, "a skater who changed off during the delay still serves, and his club still plays short");
@@ -719,15 +723,15 @@ public sealed class PenaltyTests : CheckedTest
         CheckLanded Hit(float strength) => new CheckLanded(w.Time, Side.Away, checker.Id, target.Position, strength);
 
         target.Begin(PlayerAction.Fallen);
-        Check(PenaltyModel.Judge(w, Hit(1)) is { Infraction: Infraction.Tripping, Chance: > 0.05f } f1 && f1.PlayerId == checker.Id, "knocking a skater down from behind is tripping");
+        Check(PenaltyModel.Judge(w, Hit(1)).TryGet(out var f1) && f1 is { Infraction: Infraction.Tripping, Chance: > 0.05f } && f1.PlayerId == checker.Id, "knocking a skater down from behind is tripping");
         target.Begin(PlayerAction.None);
         w.Puck.Carrier = target.Id;
-        Check(PenaltyModel.Judge(w, Hit(1)) is { Infraction: Infraction.Hooking }, "a hit from behind on the carrier who stays up is hooking");
+        Check(PenaltyModel.Judge(w, Hit(1)).Is(f => f is { Infraction: Infraction.Hooking }), "a hit from behind on the carrier who stays up is hooking");
         checker.Position = new Vector3(1, 0, 0);    // in front
         w.Puck.Carrier = -1;
-        Check(PenaltyModel.Judge(w, Hit(CheckingModel.HardHit + 0.2f)) is { Infraction: Infraction.Slashing, Chance: > 0.08f }, "a hard hit away from the puck is slashing");
+        Check(PenaltyModel.Judge(w, Hit(CheckingModel.HardHit + 0.2f)).Is(f => f is { Infraction: Infraction.Slashing, Chance: > 0.08f }), "a hard hit away from the puck is slashing");
         w.Puck.Carrier = target.Id;
-        Check(PenaltyModel.Judge(w, Hit(1)) is { Chance: < 0.03f }, "a clean hit on the carrier from the front is rarely called");
+        Check(PenaltyModel.Judge(w, Hit(1)).Is(f => f is { Chance: < 0.03f }), "a clean hit on the carrier from the front is rarely called");
 
         // a fast carrier with a defender on his back
         target.Velocity = new Vector3(6, 0, 0);

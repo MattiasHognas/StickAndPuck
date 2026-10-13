@@ -20,7 +20,7 @@ public sealed class FightScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        float period = Env("SAP_PERIOD") is { } p and > 0 ? p : 20 * 60;
+        float period = Env("SAP_PERIOD").TryGet(out float p) && p > 0 ? p : 20 * 60;
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = period }, settings with { Fights = true });
         Scenes.AddStarters(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
@@ -34,12 +34,12 @@ public sealed class FightScene : IScene
         MatchFlow.Drop(world);
         var s = Fighting.State(world);
         s.ScriptAfterDrop = 0.25f;
-        if (Env("SAP_FIGHT_CHANCE") is { } chance and >= 0) s.OfferChance = chance;
+        if (Env("SAP_FIGHT_CHANCE").TryGet(out float chance) && chance >= 0) s.OfferChance = chance;
         return world;
     }
 
-    static float? Env(string name)
+    static Maybe<float> Env(string name)
     {
-        return float.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : null;
+        return float.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : Maybe<float>.None;
     }
 }

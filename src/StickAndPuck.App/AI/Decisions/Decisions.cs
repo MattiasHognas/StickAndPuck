@@ -90,13 +90,13 @@ internal sealed class DecisionBoard
     public DecisionTally[] Tally { get; } = [new(), new()];
 
     /// <summary>Gets or sets the pass in flight, until someone takes it or it dies.</summary>
-    public InFlight? Pass { get; set; }
+    public Maybe<InFlight> Pass { get; set; }
 
     /// <summary>Gets or sets the human receiver the AI skates to meet the pass in flight, until the player steers him (W96).</summary>
-    public HumanMeet? Meet { get; set; }
+    public Maybe<HumanMeet> Meet { get; set; }
 
     /// <summary>Gets or sets the side whose shot is in flight and when it left the stick, for the rebound chase.</summary>
-    public (Side Side, float At)? Shot { get; set; }
+    public Maybe<(Side Side, float At)> Shot { get; set; }
 
     /// <summary>Gets or sets the carrier at the end of the last step.</summary>
     public int LastCarrier { get; set; } = -1;
@@ -161,7 +161,7 @@ internal sealed class Brain
     public int PassTo { get; set; } = -1;
 
     /// <summary>Gets or sets a pass decided on but fumbled: released a beat late, at <see cref="PassAt"/>.</summary>
-    public PassOption? LatePass { get; set; }
+    public Maybe<PassOption> LatePass { get; set; }
 
     /// <summary>Gets or sets when a late pass is released.</summary>
     public float PassAt { get; set; }

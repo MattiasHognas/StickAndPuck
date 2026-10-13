@@ -81,7 +81,10 @@ public sealed class PregameTests : CheckedTest
     }
 
     /// <summary>Runs the AI, the warm-up, skating, physics and the rules step by step until <paramref name="until"/> or the limit.</summary>
-    static void Run(World world, Func<World, bool> until, float limit, Action<World>? each = null)
+    static void Run(World world, Func<World, bool> until, float limit) => Run(world, until, limit, _ => { });
+
+    /// <summary>Runs as above, calling <paramref name="each"/> after every step.</summary>
+    static void Run(World world, Func<World, bool> until, float limit, Action<World> each)
     {
 #pragma warning disable S2245 // a fixed seed, so the test repeats
         var systems = new ISystem[] { new PositioningSystem(new Random(28)), new PregameSystem(), new SkatingSystem(), new PuckPhysics(), new MatchRules() };
@@ -90,7 +93,7 @@ public sealed class PregameTests : CheckedTest
         {
             world.Events.Clear();
             foreach (var s in systems) s.Update(world, Game.Step);
-            each?.Invoke(world);
+            each(world);
             world.Time += Game.Step; world.Tick++;
         }
     }

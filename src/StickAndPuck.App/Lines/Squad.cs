@@ -91,8 +91,7 @@ public sealed class Squad
         var players = new List<Player>();
         foreach (var data in world.Setup.Club(side).Roster)
         {
-            var p = world.Players.Find(o => o.Side == side && ReferenceEquals(o.Data, data));
-            if (p == null)
+            if (world.Players.Find(o => o.Side == side && ReferenceEquals(o.Data, data)) is not { } p)
             {
                 p = world.AddPlayer(side, data, new Vector3(door.X, 0, door.Y - 1.5f));
                 p.OnIce = false;
@@ -111,7 +110,7 @@ public sealed class Squad
             foreach (var q in new[] { centres, lefts, rights })
             {
                 var from = q.Count > 0 ? q : Spare(centres, lefts, rights);
-                if (from != null) members.Add(from.Dequeue());
+                if (from.TryGet(out var queue)) members.Add(queue.Dequeue());
             }
             if (members.Count > 0) lines.Add(new Unit(Group.Forwards, i + 1, members));
         }
@@ -129,10 +128,10 @@ public sealed class Squad
 
     /// <summary>Gets the unit a player belongs to, if any.</summary>
     /// <param name="p">The player.</param>
-    /// <returns>The unit, or null for a goalie or an extra.</returns>
-    public Unit? UnitOf(Player p)
+    /// <returns>The unit, or None for a goalie or an extra.</returns>
+    public Maybe<Unit> UnitOf(Player p)
     {
-        return Lines.Concat(Pairs).FirstOrDefault(u => u.Members.Contains(p));
+        return Lines.Concat(Pairs).FirstOrNone(u => u.Members.Contains(p));
     }
 
     /// <summary>
@@ -142,21 +141,22 @@ public sealed class Squad
     /// A unit left with nobody is dropped.
     /// </summary>
     /// <param name="p">The player.</param>
-    /// <returns>The skater who moved up into the gap, or null when nobody did.</returns>
-    public Player? Remove(Player p)
+    /// <returns>The skater who moved up into the gap, or None when nobody did.</returns>
+    public Maybe<Player> Remove(Player p)
     {
-        if (UnitOf(p) is not { } unit) return null;
+        if (!UnitOf(p).TryGet(out var unit)) return Maybe<Player>.None;
         var units = unit.Group == Group.Forwards ? lines : pairs;
         int at = units.IndexOf(unit);
         var members = unit.Members.ToList();
         int slot = members.IndexOf(p);
         var last = units[^1];
-        Player? donor = null;
+        var donor = Maybe<Player>.None;
         if (last != unit && last.Members.Count > 0)
         {
-            donor = last.Members.FirstOrDefault(m => m.Data.Position == p.Data.Position) ?? last.Members[^1];
-            members[slot] = donor;
-            units[^1] = last with { Members = [.. last.Members.Where(m => m != donor)] };
+            var up = last.Members.FirstOrDefault(m => m.Data.Position == p.Data.Position) ?? last.Members[^1];
+            donor = up;
+            members[slot] = up;
+            units[^1] = last with { Members = [.. last.Members.Where(m => m != up)] };
         }
         else
         {
@@ -173,8 +173,8 @@ public sealed class Squad
         return new Queue<Player>(players.Where(p => p.Data.Position == position).OrderByDescending(p => p.OnIce));
     }
 
-    static Queue<Player>? Spare(params Queue<Player>[] queues)
+    static Maybe<Queue<Player>> Spare(params Queue<Player>[] queues)
     {
-        return queues.Where(q => q.Count > 0).MaxBy(q => q.Count);
+        return Maybe.From<Queue<Player>>(queues.Where(q => q.Count > 0).MaxBy(q => q.Count));
     }
 }

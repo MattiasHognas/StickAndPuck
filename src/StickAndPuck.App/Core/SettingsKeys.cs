@@ -103,7 +103,7 @@ public static class KeyBindings
     /// <returns>The rebound binding, or the default.</returns>
     public static KeyBinding Of(Settings settings, GameAction action)
     {
-        return settings.Keys.TryGetValue(action, out var b) && b != null ? b : Defaults[action];
+        return settings.Keys.TryGetValue(action, out var b) && b is { } ? b : Defaults[action];
     }
 
     /// <summary>Binds a keyboard key to an action, replacing both of its keys.</summary>

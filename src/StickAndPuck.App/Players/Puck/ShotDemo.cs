@@ -28,7 +28,7 @@ internal static class ShotDemo
     /// <summary>Steps shoot is held in each round: a tap, a half hold, a full wind-up.</summary>
     static readonly int[] Holds = [2, 30, 66];
 
-    static Player? shooter;
+    static Maybe<Player> shooter;
     static float start;
     static int round;
 
@@ -52,7 +52,7 @@ internal static class ShotDemo
     static void Reset(World world)
     {
         round++;
-        var p = shooter!;
+        if (!shooter.TryGet(out var p)) return;
         p.Position = new Vector3(RinkSpec.GoalLineX - 10f, 0, round % 2 == 0 ? 2f : -2f);
         p.Velocity = Vector3.Zero;
         p.Heading = MathF.PI / 2;
@@ -70,10 +70,10 @@ internal static class ShotDemo
     /// <param name="world">The match state.</param>
     public static void Update(World world)
     {
-        if (!Enabled) return;
+        if (!Enabled || !shooter.TryGet(out var p)) return;
         int step = (int)MathF.Round((world.Time - start) / Game.Step);
         const int press = 30;
-        shooter!.Command = new PlayerCommand { Shoot = step >= press && step < press + Hold };   // standing still, shooting the way they face
+        p.Command = new PlayerCommand { Shoot = step >= press && step < press + Hold };   // standing still, shooting the way they face
         if (step > press + Hold + 120) Reset(world);
     }
 }

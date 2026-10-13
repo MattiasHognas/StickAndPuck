@@ -65,7 +65,7 @@ public static class Pregame
     {
         if (Disabled || !MatchFlow.IsRunning(world)) return false;
         var s = State(world);
-        return s.Forced ?? world.Players.Exists(p => p.Slot >= 0);
+        return s.Forced.TryGet(out bool forced) ? forced : world.Players.Exists(p => p.Slot >= 0);
     }
 
     internal static WarmupState State(World world)
@@ -77,8 +77,8 @@ public static class Pregame
 /// <summary>The warm-up's own state for one world.</summary>
 internal sealed class WarmupState
 {
-    /// <summary>Gets or sets the explicit choice from <see cref="Pregame.Enable"/>, or null to decide from the human slots.</summary>
-    public bool? Forced { get; set; }
+    /// <summary>Gets or sets the explicit choice from <see cref="Pregame.Enable"/>, or None to decide from the human slots.</summary>
+    public Maybe<bool> Forced { get; set; }
 
     /// <summary>Gets or sets a value indicating whether the warm-up has begun in this world's intro.</summary>
     public bool Running { get; set; }

@@ -58,17 +58,17 @@ public sealed class PlayoffState
     [JsonIgnore]
     public PlayoffRound Current => Rounds[^1];
 
-    /// <summary>Gets the champion's club id, or null until the final is won.</summary>
+    /// <summary>Gets the champion's club id, or None until the final is won.</summary>
     [JsonIgnore]
-    public string? Champion => Rounds.Count == Format.Length && Current.IsOver ? Current.Series[0].Winner : null;
+    public Maybe<string> Champion => Rounds.Count == Format.Length && Current.IsOver ? Current.Series[0].Winner : Maybe<string>.None;
 
     /// <summary>Gets a value indicating whether the playoffs have a champion.</summary>
     [JsonIgnore]
-    public bool IsOver => Champion != null;
+    public bool IsOver => Champion.HasValue;
 
-    /// <summary>Gets the human's open series, or null when the human's club is out, waiting for a round, or done.</summary>
+    /// <summary>Gets the human's open series, or None when the human's club is out, waiting for a round, or done.</summary>
     [JsonIgnore]
-    public PlayoffSeries? UserSeries => Rounds.Count == 0 ? null : Current.Series.Find(s => !s.IsOver && s.Involves(UserClub));
+    public Maybe<PlayoffSeries> UserSeries => Rounds.Count == 0 ? Maybe<PlayoffSeries>.None : Current.Series.FirstOrNone(s => !s.IsOver && s.Involves(UserClub));
 
     /// <summary>Gets a value indicating whether the human's club made the playoffs.</summary>
     [JsonIgnore]
@@ -76,7 +76,7 @@ public sealed class PlayoffState
 
     /// <summary>Gets a value indicating whether the human's club can still win the title.</summary>
     [JsonIgnore]
-    public bool UserAlive => UserQualified && (IsOver ? Same(Champion!, UserClub) : Alive());
+    public bool UserAlive => UserQualified && (IsOver ? Same(Champion.Or(""), UserClub) : Alive());
 
     /// <summary>Seeds the playoffs from a finished season and starts the play-in.</summary>
     /// <param name="season">The season; its table gives the seeds.</param>
@@ -126,17 +126,17 @@ public sealed class PlayoffState
         while (!IsOver)
         {
             var user = UserSeries;
-            int upTo = user?.Games.Count ?? int.MaxValue;
+            int upTo = user.TryGet(out var mine) ? mine.Games.Count : int.MaxValue;
             for (int i = 0; i < Current.Series.Count; i++)
             {
                 var s = Current.Series[i];
-                while (s != user && !s.IsOver && s.Games.Count < upTo)
+                while (!user.Is(u => u == s) && !s.IsOver && s.Games.Count < upTo)
                 {
                     Record(s, Simulate(byId, s, i));
                     count++;
                 }
             }
-            if (user != null || !NextRound()) break;
+            if (user.HasValue || !NextRound()) break;
         }
         return count;
     }
@@ -146,7 +146,7 @@ public sealed class PlayoffState
     public bool NextRound()
     {
         if (!Current.IsOver || Rounds.Count >= Format.Length) return false;
-        var winners = Current.Series.Select(s => SeedOf(s.Winner!));
+        var winners = Current.Series.Select(s => SeedOf(s.Winner.Or("")));
         var seeds = Rounds.Count == 1 ? Enumerable.Range(1, Direct).Concat(winners) : winners;
         Rounds.Add(Pair(Rounds.Count, seeds));
         return true;
@@ -164,8 +164,8 @@ public sealed class PlayoffState
 
     FixtureResult Simulate(Dictionary<string, ClubData> byId, PlayoffSeries s, int index)
     {
-        var home = byId.GetValueOrDefault(s.NextHome) ?? throw new InvalidOperationException($"club {s.NextHome} from the save has no data file");
-        var away = byId.GetValueOrDefault(s.NextAway) ?? throw new InvalidOperationException($"club {s.NextAway} from the save has no data file");
+        var home = byId.TryGetValue(s.NextHome, out var h) ? h : throw new InvalidOperationException($"club {s.NextHome} from the save has no data file");
+        var away = byId.TryGetValue(s.NextAway, out var a) ? a : throw new InvalidOperationException($"club {s.NextAway} from the save has no data file");
         var r = QuickSim.Play(home, away, GameSeed(Rounds.Count - 1, index, s.Games.Count));
 
         // a simulated game follows the mode's overtime rules like a played one: with no shootout in
@@ -189,7 +189,7 @@ public sealed class PlayoffState
     bool Alive()
     {
         // the human's club has not lost a series of the current round, or waits out the play-in as a top six seed
-        if (Current.Series.Find(s => s.Involves(UserClub)) is { } series) return !series.IsOver || Same(series.Winner!, UserClub);
+        if (Current.Series.Find(s => s.Involves(UserClub)) is { } series) return !series.IsOver || Same(series.Winner.Or(""), UserClub);
         return Rounds.Count == 1 && SeedOf(UserClub) <= Direct;
     }
 

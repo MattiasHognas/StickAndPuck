@@ -22,9 +22,14 @@ public sealed class PuckTests : CheckedTest
     }
 
     /// <summary>Runs the physics system alone for some seconds and returns every event it published.</summary>
-    static List<MatchEvent> Run(World world, float seconds, PuckPhysics? physics = null, Action<World>? each = null)
+    static List<MatchEvent> Run(World world, float seconds) => Run(world, seconds, new PuckPhysics(), _ => { });
+
+    /// <summary>Runs the physics system alone for some seconds, calling back after each step; returns every event it published.</summary>
+    static List<MatchEvent> Run(World world, float seconds, Action<World> each) => Run(world, seconds, new PuckPhysics(), each);
+
+    /// <summary>Runs this physics system alone for some seconds, calling back after each step; returns every event it published.</summary>
+    static List<MatchEvent> Run(World world, float seconds, PuckPhysics physics, Action<World> each)
     {
-        physics ??= new PuckPhysics();
         var events = new List<MatchEvent>();
         int steps = (int)MathF.Round(seconds / Game.Step);
         for (int i = 0; i < steps; i++)
@@ -32,7 +37,7 @@ public sealed class PuckTests : CheckedTest
             world.Events.Clear();
             physics.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
-            each?.Invoke(world);
+            each(world);
             world.Time += Game.Step; world.Tick++;
         }
         return events;

@@ -23,6 +23,13 @@ public sealed class SeasonTests : CheckedTest
 
     static bool Same(string a, string b) => string.Equals(a, b, StringComparison.Ordinal);
 
+    /// <summary>Gets a value the test needs, failing loudly when it is absent.</summary>
+    static T Must<T>(Maybe<T> maybe)
+        where T : notnull => maybe.TryGet(out var value) ? value : throw new InvalidOperationException("expected a value");
+
+    /// <summary>Gets the next match's setup, failing loudly when the run is over.</summary>
+    static MatchSetup Must(NextMatch next) => next is NextMatch.Play play ? play.Setup : throw new InvalidOperationException("expected a match to play");
+
     [Test]
     public void Schedule()
     {
@@ -73,28 +80,30 @@ public sealed class SeasonTests : CheckedTest
         string user = clubs[^1].Id;
         var season = SeasonSession.StartNew(clubs, user, seed: 7, path: path);
         Check(SeasonSave.Exists(path), "a new season is saved at once");
-        var setup = SeasonSession.NextSetup();
-        var game = SeasonSession.Playing;
-        Check(setup != null && game is { Round: 0 } && game.Involves(user), "the first game is the human's round 1 game");
-        var side = Same(game!.Home, user) ? Side.Home : Side.Away;
-        Check(setup!.Inputs[0] is { Device: InputDevice.KeyboardMouse } && setup.Inputs[0].Side == side && setup.Overtime == OvertimeRule.Shl,
+        var firstSetup = SeasonSession.NextSetup();
+        var firstGame = SeasonSession.Playing;
+        Check(firstSetup is NextMatch.Play && firstGame.Is(g => g.Round == 0 && g.Involves(user)), "the first game is the human's round 1 game");
+        var game = Must(firstGame);
+        var side = Same(game.Home, user) ? Side.Home : Side.Away;
+        var setup = Must(firstSetup);
+        Check(setup.Inputs[0] is { Device: InputDevice.KeyboardMouse } && setup.Inputs[0].Side == side && setup.Overtime == OvertimeRule.Shl,
             "keyboard and mouse play the human's club, SHL overtime");
 
         // the match ends 2-2 after regulation and goes to a shootout the home side wins 3-2
         var world = new World(setup, new Settings());
         var schedule = new ScheduleSystem();
         var autosave = new AutosaveSystem();
-        void Step(Action<World>? publish = null)
+        void Step(Action<World> publish)
         {
             world.Events.Clear();
-            publish?.Invoke(world);
+            publish(world);
             schedule.Update(world, Game.Step);
             autosave.Update(world, Game.Step);
             world.Time += Game.Step;
         }
         world.Match.Period = 4;
         world.Match.Phase = MatchPhase.Shootout;
-        Step();
+        Step(_ => { });
         Check(!season.Games[game.Number].Played, "nothing is recorded before MatchEnd");
         world.Match.Score[0] = 3;
         world.Match.Score[1] = 2;
@@ -112,11 +121,11 @@ public sealed class SeasonTests : CheckedTest
         // restart: nothing in memory, read the save back
         string before = File.ReadAllText(path);
         SeasonSession.End();
-        var resumed = SeasonSession.Continue(clubs, path);
-        Check(resumed != null && resumed.Games.SequenceEqual(season.Games), "continuing after a restart reads back every result");
-        Check(Same(resumed!.UserClub, user) && resumed.Seed == 7, "the save keeps the human's club and the seed");
-        var next = SeasonSession.NextSetup();
-        Check(next != null && SeasonSession.Playing is { Round: 1 }, "after the restart the next game is in round 2");
+        var reread = SeasonSession.Continue(clubs, path);
+        Check(reread.Is(x => x.Games.SequenceEqual(season.Games)), "continuing after a restart reads back every result");
+        var resumed = Must(reread);
+        Check(Same(resumed.UserClub, user) && resumed.Seed == 7, "the save keeps the human's club and the seed");
+        Check(SeasonSession.NextSetup() is NextMatch.Play && SeasonSession.Playing.Is(x => x.Round == 1), "after the restart the next game is in round 2");
         Check(Same(File.ReadAllText(path), before), "continuing does not rewrite the save");
 
         // a game that is not a season game records nothing
@@ -125,7 +134,7 @@ public sealed class SeasonTests : CheckedTest
         var other = new World(WorldBuilder.DefaultSetup, new Settings());
         other.Events.Publish(new MatchWon(other.Time, Side.Home));
         new ScheduleSystem().Update(other, Game.Step);
-        Check(SeasonSession.Current!.Games.Count(g => g.Played) == 7 && !SeasonSession.Unsaved, "a match that is not a season game records nothing");
+        Check(Must(SeasonSession.Current).Games.Count(g => g.Played) == 7 && !SeasonSession.Unsaved, "a match that is not a season game records nothing");
     }
 
     [Test]
@@ -135,12 +144,12 @@ public sealed class SeasonTests : CheckedTest
         string path = SavePath;
         var season = SeasonSession.StartNew(clubs, clubs[0].Id, seed: 2026, path: path);
         int games = 0;
-        while (SeasonSession.NextSetup() != null)
+        while (SeasonSession.NextSetup() is NextMatch.Play)
         {
             // home goals 0 to 4 against 2; the 2-2 games go to a shootout
             int home = games % 5;
             SeasonSession.Finish(home == 2 ? new FixtureResult(3, 2, ResultKind.Shootout) : new FixtureResult(home, 2, ResultKind.Regulation));
-            SeasonSave.Write(SeasonSession.Current!, path);
+            SeasonSave.Write(Must(SeasonSession.Current), path);
             games++;
             if (games > 60) break;
         }
@@ -150,17 +159,16 @@ public sealed class SeasonTests : CheckedTest
         Check(table.Sum(r => r.Wins + r.OvertimeWins) == season.Games.Count && table.Sum(r => r.Losses + r.OvertimeLosses) == season.Games.Count, "every game has one winner and one loser");
         Check(table.Sum(r => r.GoalsFor) == table.Sum(r => r.GoalsAgainst), "goals for and against balance");
         Check(table.Zip(table.Skip(1)).All(p => p.First.Points >= p.Second.Points), "the table is sorted by points");
-        double perSide = season.Games.Where(g => !g.Involves(season.UserClub)).Average(g => (g.Result!.HomeGoals + g.Result.AwayGoals) / 2.0);
+        double perSide = season.Games.Where(g => !g.Involves(season.UserClub)).Average(g => (Must(g.Result).HomeGoals + Must(g.Result).AwayGoals) / 2.0);
         Check(perSide is > 2 and < 4.5, $"simulated games score about three a side ({perSide:0.00})");
-        var top = clubs.First(c => Same(c.Id, table[0].ClubId));
-        Check(top != null, $"leader after 52 rounds: {top?.Name} {table[0].Points} pts");
+        var top = clubs.FirstOrNone(c => Same(c.Id, table[0].ClubId));
+        Check(top.HasValue, $"leader after 52 rounds: {top.Select(c => c.Name).Or("none")} {table[0].Points} pts");
         var again = QuickSim.Play(clubs[1], clubs[2], 99);
         Check(again == QuickSim.Play(clubs[1], clubs[2], 99), "a simulated game is the same every time");
 
         SeasonSession.End();
-        var resumed = SeasonSession.Continue(clubs, path);
-        Check(resumed != null && resumed.IsOver && resumed.Table.SequenceEqual(table), "a finished season reads back with the same table");
-        Check(SeasonSession.NextSetup() == null, "a finished season has no next game");
+        Check(SeasonSession.Continue(clubs, path).Is(x => x.IsOver && x.Table.SequenceEqual(table)), "a finished season reads back with the same table");
+        Check(SeasonSession.NextSetup() is not NextMatch.Play, "a finished season has no next game");
     }
 
     /// <summary>
@@ -180,47 +188,47 @@ public sealed class SeasonTests : CheckedTest
         SeasonSession.End();
         var season = SeasonSession.StartNew(clubs, clubs[3].Id, seed: 11, path: path);
         string before = File.ReadAllText(path);
-        var game = season.NextGame!;
+        var game = Must(season.NextGame);
         var simmed = SeasonSession.SimCurrentGame();
-        Check(simmed is { Playoff: false } && Same(simmed.Home, game.Home) && Same(simmed.Away, game.Away), "sim this game settles the human's next game");
+        Check(simmed.Is(x => !x.Playoff && Same(x.Home, game.Home) && Same(x.Away, game.Away)), "sim this game settles the human's next game");
         var recorded = season.Games[game.Number];
-        Check(recorded.Played && recorded.Result == simmed!.Result && recorded.Result.HomeGoals != recorded.Result.AwayGoals, "the result is recorded in the fixture with a winner");
+        Check(recorded.Played && recorded.Result == Must(simmed).Result && Must(recorded.Result).HomeGoals != Must(recorded.Result).AwayGoals, "the result is recorded in the fixture with a winner");
         Check(recorded.Result == QuickSim.Play(clubs.First(c => Same(c.Id, game.Home)), clubs.First(c => Same(c.Id, game.Away)), season.GameSeed(game.Number)),
             "the simmed game uses the same simulation as the round's other games");
         Check(season.Round(0).All(g => g.Played) && !season.Round(1).Any(g => g.Played), "the rest of the round is settled too");
         var table = season.Table;
         Check(table.All(r => r.Played == 1) && table.Sum(r => r.Points) == 7 * 3, "the table updates: every club has played once, 21 points handed out");
-        Check(SeasonSession.Playing == null && !SeasonSession.Unsaved && !Same(File.ReadAllText(path), before), "the sim is saved at once and no game is left marked as playing");
-        Check(season.NextGame is { Round: 1 }, "the next game is in round 2");
+        Check(!SeasonSession.Playing.HasValue && !SeasonSession.Unsaved && !Same(File.ReadAllText(path), before), "the sim is saved at once and no game is left marked as playing");
+        Check(season.NextGame.Is(x => x.Round == 1), "the next game is in round 2");
 
         // the whole regular season can be simmed, then the playoffs start and sim too
         int count = 1;
-        while (!season.IsOver && SeasonSession.SimCurrentGame() != null && ++count < 60) { }
+        while (!season.IsOver && SeasonSession.SimCurrentGame().HasValue && ++count < 60) { }
         Check(count == 52 && season.IsOver, $"simming every game ends the regular season ({count} sims)");
         var playoffSim = SeasonSession.SimCurrentGame();
         var playoffs = season.Playoffs;
-        if (playoffs == null || !playoffs.UserQualified)
+        if (!playoffs.TryGet(out var bracket) || !bracket.UserQualified)
         {
-            Check(playoffs != null && playoffSim == null, "a club out of the playoffs has nothing to sim");
+            Check(playoffs.HasValue && !playoffSim.HasValue, "a club out of the playoffs has nothing to sim");
         }
         else
         {
-            Check(playoffSim is { Playoff: true } && playoffSim.Result.Kind != ResultKind.Shootout && playoffs.Rounds.Any(r => r.Series.Any(s => s.Games.Count > 0 && s.Involves(season.UserClub))),
-                $"the first playoff game is simmed and recorded in the series ({playoffSim?.Stage})");
+            Check(playoffSim.Is(x => x.Playoff && x.Result.Kind != ResultKind.Shootout) && bracket.Rounds.Any(r => r.Series.Any(s => s.Games.Count > 0 && s.Involves(season.UserClub))),
+                $"the first playoff game is simmed and recorded in the series ({playoffSim.Select(x => x.Stage).Or("")})");
             int more = 0;
-            while (SeasonSession.SimCurrentGame() != null && ++more < 40) { }
-            Check(playoffs.IsOver || !playoffs.UserAlive, $"simming on plays the human's playoffs out ({more + 1} playoff sims, champion {playoffs.Champion ?? "none yet"})");
+            while (SeasonSession.SimCurrentGame().HasValue && ++more < 40) { }
+            Check(bracket.IsOver || !bracket.UserAlive, $"simming on plays the human's playoffs out ({more + 1} playoff sims, champion {bracket.Champion.Or("none yet")})");
         }
         SeasonSession.End();
-        var resumed = SeasonSession.Continue(clubs, path);
-        Check(resumed != null && resumed.Games.SequenceEqual(season.Games) && Equals(resumed.Playoffs?.Champion, playoffs?.Champion), "the simmed season reads back from the save");
+        var champion = playoffs.Select(x => x.Champion);
+        Check(SeasonSession.Continue(clubs, path).Is(x => x.Games.SequenceEqual(season.Games) && x.Playoffs.Select(y => y.Champion) == champion), "the simmed season reads back from the save");
     }
 
     void BadSave(string path)
     {
         SeasonSession.End();
         File.WriteAllText(path, "{ not json");
-        Check(SeasonSave.Read(path) == null, "a broken save reads as no save");
+        Check(!SeasonSave.Read(path).HasValue, "a broken save reads as no save");
         SeasonSave.Delete(path);
         Check(!SeasonSave.Exists(path), "a deleted save is gone");
     }

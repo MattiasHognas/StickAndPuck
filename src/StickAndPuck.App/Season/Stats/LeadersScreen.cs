@@ -17,13 +17,13 @@ internal sealed class LeadersScreen : MenuScreen
     static readonly string[] Views = [K.ViewPoints, K.ViewGoals, K.ViewGoalies, K.ViewStars];
 
     int view;
-    bool playoffs = SeasonSession.Current?.Playoffs != null;
+    bool playoffs = HasPlayoffs;
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        List<MenuItem> items = [new MenuItem(Text.Get(K.Show), Value: Text.Get(Views[view]), Change: d => view = ((view + d) % Views.Length + Views.Length) % Views.Length)];
-        if (SeasonSession.Current?.Playoffs != null) items.Add(new MenuItem(Text.Get(K.Games), Value: Text.Get(playoffs ? K.Playoffs : K.SeasonWord), Change: _ => playoffs = !playoffs));
+        List<MenuItem> items = [new MenuItem(Text.Get(K.Show), value: Text.Get(Views[view]), change: d => view = ((view + d) % Views.Length + Views.Length) % Views.Length)];
+        if (HasPlayoffs) items.Add(new MenuItem(Text.Get(K.Games), value: Text.Get(playoffs ? K.Playoffs : K.SeasonWord), change: _ => playoffs = !playoffs));
         items.Add(new MenuItem(Text.Get(K.TableItem), () => ScreenFlow.Replace(new StandingsScreen())));
         items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
         return items;
@@ -32,16 +32,16 @@ internal sealed class LeadersScreen : MenuScreen
     /// <inheritdoc/>
     public override void Draw(ScreenArt art, World world)
     {
-        if (SeasonSession.Current is not { } season) return;
+        if (!SeasonSession.Current.TryGet(out var season)) return;
         var clubs = ScreenFlow.Clubs;
         season.Stats.CatchUp(season, clubs);
-        var table = playoffs && season.Playoffs != null ? season.Stats.Playoffs : season.Stats.Regular;
+        var table = playoffs && season.Playoffs.HasValue ? season.Stats.Playoffs : season.Stats.Regular;
         var items = Items();
         bool goalies = view == 2;
         var lines = view switch { 0 => table.Leaders(Rows), 1 => table.Scorers(Rows), 2 => table.Goalies(Rows), _ => table.Stars(Rows) };
 
         int h = 5 + ScreenArt.Row + 2 + Line + (Rows * Line) + 4 + Line + 4 + (items.Count * ScreenArt.Row) + 4;
-        string heading = Text.Format(playoffs && season.Playoffs != null ? K.LeadersHeadingPlayoff : K.LeadersHeadingSeason, Text.Get(Views[view]));
+        string heading = Text.Format(playoffs && season.Playoffs.HasValue ? K.LeadersHeadingPlayoff : K.LeadersHeadingSeason, Text.Get(Views[view]));
         var (x, top) = art.Panel(heading, PanelW, h, Math.Max(2, (Game.Height - h - 14) / 2));
 
         (string Head, int X)[] columns = goalies
@@ -72,13 +72,15 @@ internal sealed class LeadersScreen : MenuScreen
         }
 
         top += 4;
-        string star = season.Stats.LastAward is { } a
+        string star = season.Stats.LastAward.TryGet(out var a)
             ? Text.Format(K.StarLine, a.Label, Short(clubs, a.Club), a.Summary, Short(clubs, a.Home), a.HomeGoals, a.AwayGoals, Short(clubs, a.Away))
             : Text.Get(K.StarNobody);
         art.Centred(star, Game.Width / 2, top, art.Gold);
         top += Line + 4;
         art.Menu(items, Selected, x + 110, PanelW - 220, top);
     }
+
+    static bool HasPlayoffs => SeasonSession.Current.Is(s => s.Playoffs.HasValue);
 
     static string Short(IReadOnlyList<ClubData> clubs, string id)
     {

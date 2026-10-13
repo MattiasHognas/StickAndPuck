@@ -133,7 +133,7 @@ internal sealed class CloseUp
     Shot Pick(World world, float replayWaiting, out Vector3 spot)
     {
         spot = default;
-        if (Fighting.Current(world) is { } fight)
+        if (Fighting.Current(world).TryGet(out var fight))
         {
             spot = fight.Spot with { Y = Chest };
             return Shot.Fight;
@@ -143,12 +143,12 @@ internal sealed class CloseUp
             spot = (scorer >= 0 && scorer < world.Players.Count ? world.Players[scorer].Position : goalSpot) with { Y = Chest };
             return Shot.Goal;
         }
-        if (MatchFlow.State(world).Celebration is { } c && c.Elapsed >= PileDelay)
+        if (MatchFlow.State(world).Celebration.TryGet(out var c) && c.Elapsed >= PileDelay)
         {
             spot = c.Pile with { Y = PileAim };
             return Shot.Pile;
         }
-        if (Pregame.Pregame.IsWarmingUp(world) && WarmupSubject(world) is { } p)
+        if (Pregame.Pregame.IsWarmingUp(world) && WarmupSubject(world).TryGet(out var p))
         {
             spot = p with { Y = Chest };
             return Shot.Warmup;
@@ -176,11 +176,11 @@ internal sealed class CloseUp
     }
 
     /// <summary>The warm-up frames the skater a person controls, else the middle of the home squad.</summary>
-    static Vector3? WarmupSubject(World world)
+    static Maybe<Vector3> WarmupSubject(World world)
     {
         if (world.Players.Find(p => p.OnIce && p.Slot >= 0) is { } human) return human.Position;
         var home = world.OnIce(Side.Home).Where(p => !p.IsGoalie).ToList();
-        if (home.Count == 0) return null;
+        if (home.Count == 0) return Maybe<Vector3>.None;
         var sum = Vector3.Zero;
         foreach (var p in home) sum += p.Position;
         return sum / home.Count;
@@ -190,7 +190,7 @@ internal sealed class CloseUp
     void Punches(World world, float dt)
     {
         jolt = Math.Max(0, jolt - (dt / JoltSeconds));
-        if (shot != Shot.Fight || Fighting.Current(world) is not { } fight)
+        if (shot != Shot.Fight || !Fighting.Current(world).TryGet(out var fight))
         {
             lastLanded = float.NaN;
             return;

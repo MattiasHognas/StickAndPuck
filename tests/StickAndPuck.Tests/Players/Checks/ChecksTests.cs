@@ -30,8 +30,11 @@ public sealed class ChecksTests : CheckedTest
         return new WorldBuilder().Settings(s => s with { Switching = mode }).NoStarters().NotBegun().Build();
     }
 
+    /// <summary>Runs the systems for some seconds with no commands set.</summary>
+    List<MatchEvent> Run(World world, float seconds) => Run(world, seconds, (_, _) => { });
+
     /// <summary>Runs the systems for some seconds; <paramref name="each"/> sets commands before each step.</summary>
-    List<MatchEvent> Run(World world, float seconds, Action<World, int>? each = null)
+    List<MatchEvent> Run(World world, float seconds, Action<World, int> each)
     {
 #pragma warning disable S2245 // a fixed seed per run so the checks repeat
         ISystem[] systems =
@@ -47,7 +50,7 @@ public sealed class ChecksTests : CheckedTest
         for (int i = 0; i < steps; i++)
         {
             world.Events.Clear();
-            each?.Invoke(world, i);
+            each(world, i);
             foreach (var s in systems) s.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
             world.Time += Game.Step; world.Tick++;
@@ -55,9 +58,9 @@ public sealed class ChecksTests : CheckedTest
         return events;
     }
 
-    static Player Add(World w, Side side, Vector3 at, float heading = Right, Traits? traits = null)
+    static Player Add(World w, Side side, Vector3 at, float heading = Right, Maybe<Traits> traits = default)
     {
-        var p = w.AddPlayer(side, new PlayerData { Position = PlayingPosition.C, Traits = traits ?? new Traits() }, at);
+        var p = w.AddPlayer(side, new PlayerData { Position = PlayingPosition.C, Traits = traits.Or(new Traits()) }, at);
         p.Heading = heading;
         return p;
     }
@@ -245,7 +248,7 @@ public sealed class ChecksTests : CheckedTest
         {
             float t = i * 0.08f;
             them.Command = new PlayerCommand { Move = new Vector2(SimMath.Cos(t), SimMath.Sin(t)) };
-            int now = x.Controlled(0)?.Id ?? -1;
+            int now = x.Controlled(0).Select(p => p.Id).Or(-1);
             if (now != last) switches++;
             last = now;
         });
@@ -287,7 +290,7 @@ public sealed class ChecksTests : CheckedTest
         human.Slot = 0;
         Give(w, human);
         Run(w, 0.6f, (x, i) => checker.Command = new PlayerCommand { Check = i == 0, Move = Vector2.UnitX });
-        Check(human.Action == PlayerAction.Fallen && w.Controlled(0) is { } c && c != human && c.Side == Side.Home,
+        Check(human.Action == PlayerAction.Fallen && w.Controlled(0).Is(c => c != human && c.Side == Side.Home),
             "Auto: a knocked-down human's control goes to a teammate on their feet");
         _ = mate;
     }

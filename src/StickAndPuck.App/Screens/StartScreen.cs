@@ -12,7 +12,7 @@ internal sealed class StartScreen : MenuScreen
 {
     const int PanelW = 200;
 
-    SeasonState? save;
+    Maybe<SeasonState> save;
     bool read;
 
     /// <inheritdoc/>
@@ -23,25 +23,25 @@ internal sealed class StartScreen : MenuScreen
             save = SeasonSave.Read();
             read = true;
         }
-        bool saved = save != null;
-        List<MenuItem> items = [new MenuItem(Text.Get(K.ContinueSeason), ScreenFlow.PlaySeasonGame, Enabled: saved)];
-        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame, Enabled: Season is { } s && HasNextGame(s)));    // W33, off with the SimGame setting
+        bool saved = save.HasValue;
+        List<MenuItem> items = [new MenuItem(Text.Get(K.ContinueSeason), ScreenFlow.PlaySeasonGame, enabled: saved)];
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame, enabled: Season.Is(HasNextGame)));    // W33, off with the SimGame setting
         items.Add(new MenuItem(Text.Get(K.NewSeason), NewSeason));
         items.Add(new MenuItem(Text.Get(K.NewGame), () => ScreenFlow.Push(new ModeScreen())));
-        items.Add(new MenuItem(Text.Get(K.Standings), Standings, Enabled: saved));
+        items.Add(new MenuItem(Text.Get(K.Standings), Standings, enabled: saved));
         items.Add(new MenuItem(Text.Get(K.Settings), () => ScreenFlow.Push(new SettingsScreen())));
         items.Add(new MenuItem(Text.Get(K.Quit), ScreenFlow.Quit));
         return items;
     }
 
-    /// <summary>Gets the season to describe: the open one (a game simmed from here changes it), else the save read on opening.</summary>
-    SeasonState? Season => SeasonSession.Current ?? save;
+    /// <summary>Gets the season to describe: the open one (a game simmed from here changes it), else the save read on opening, or None.</summary>
+    Maybe<SeasonState> Season => SeasonSession.Current.HasValue ? SeasonSession.Current : save;
 
     /// <summary>Whether the human's club has a season or playoff game left, as <see cref="ScreenFlow.SeasonHasNextGame"/> asks of the open season.</summary>
     static bool HasNextGame(SeasonState season)
     {
-        if (!season.IsOver) return season.NextGame != null;
-        return season.Playoffs == null || season.Playoffs.UserSeries != null;
+        if (!season.IsOver) return season.NextGame.HasValue;
+        return !season.Playoffs.TryGet(out var playoffs) || playoffs.UserSeries.HasValue;
     }
 
     /// <inheritdoc/>
@@ -59,13 +59,13 @@ internal sealed class StartScreen : MenuScreen
         var (x, top) = art.Panel("", PanelW, h, 80);
         art.Menu(items, Selected, x, PanelW, top);
 
-        if (Season is { } season)
+        if (Season.TryGet(out var season))
         {
-            string club = ScreenFlow.Clubs.FirstOrDefault(c => string.Equals(c.Id, season.UserClub, StringComparison.Ordinal))?.Name ?? season.UserClub;
+            string club = ScreenFlow.Clubs.FirstOrNone(c => string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)).Select(c => c.Name).Or(season.UserClub);
             int played = season.Games.Count(g => g.Played && g.Involves(season.UserClub));
             int total = season.Games.Count(g => g.Involves(season.UserClub));
             string line = !season.IsOver ? Text.Format(K.StartGameOf, club, played + 1, total)
-                : season.Playoffs is { Champion: not null } || season.Playoffs is { UserSeries: null } ? Text.Format(K.StartSeasonOver, club)
+                : season.Playoffs.Is(p => p.Champion.HasValue || !p.UserSeries.HasValue) ? Text.Format(K.StartSeasonOver, club)
                 : Text.Format(K.StartPlayoffs, club);
             art.Centred(line, Game.Width / 2, 80 + h + 6, art.Text);
         }
@@ -74,7 +74,7 @@ internal sealed class StartScreen : MenuScreen
 
     void NewSeason()
     {
-        ScreenFlow.Push(new TeamSelectScreen(Text.Get(K.PickYourClub), null, club =>
+        ScreenFlow.Push(new TeamSelectScreen(Text.Get(K.PickYourClub), Maybe<ClubData>.None, club =>
         {
             void Begin()
             {
@@ -83,13 +83,13 @@ internal sealed class StartScreen : MenuScreen
                 ScreenFlow.PlaySeasonGame();
             }
 
-            if (save == null) Begin();
+            if (!save.HasValue) Begin();
             else ScreenFlow.Push(new ConfirmScreen(Text.Get(K.ReplaceSave), Begin));
         }));
     }
 
     static void Standings()
     {
-        if (SeasonSession.Continue(ScreenFlow.Clubs) != null) ScreenFlow.Push(ScreenFlow.Overview());
+        if (SeasonSession.Continue(ScreenFlow.Clubs).HasValue) ScreenFlow.Push(ScreenFlow.Overview());
     }
 }

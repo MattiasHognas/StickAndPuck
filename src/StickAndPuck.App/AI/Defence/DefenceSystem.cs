@@ -52,7 +52,7 @@ internal sealed class DefenceSystem : ISystem
     /// <returns>The duty, or <see cref="Duty.None"/> when the defence is not steering him.</returns>
     public static Duty DutyOf(World world, Player p)
     {
-        return Board(world).Get(p.Id)?.Duty ?? Duty.None;
+        return Board(world).Get(p.Id).TryGet(out var plan) ? plan.Duty : Duty.None;
     }
 
     public void Update(World world, float dt)
@@ -97,8 +97,7 @@ internal sealed class DefenceSystem : ISystem
     /// <summary>The skater positioning sent at the carrier contains him, or plays the body on this approach.</summary>
     void Press(World world, DefenceBoard board, View view, Player carrier, List<Player> free, Dictionary<int, Vector2> spots)
     {
-        var presser = free.FirstOrDefault(p => Positioning.JobOf(world, p) == Job.Pressure);
-        if (presser == null) return;
+        if (free.FirstOrDefault(p => Positioning.JobOf(world, p) == Job.Pressure) is not { } presser) return;
         free.Remove(presser);
         var plan = board.For(presser.Id);
         if (plan.On != carrier.Id || world.Time >= plan.DecideAt)
@@ -123,15 +122,18 @@ internal sealed class DefenceSystem : ISystem
     /// <summary>In the own zone the defenceman furthest across from the puck stays home, on the man in front of the net.</summary>
     static void StayHome(World world, DefenceBoard board, View view, List<Player> free, List<Player> attackers, Dictionary<int, Vector2> spots)
     {
-        var home = free.Where(p => Roles.IsDefence(Positioning.RoleOf(world, p)))
-            .MaxBy(p => MathF.Abs(p.Position.Z - view.Carrier.Y));
-        if (home == null) return;
+        if (free.Where(p => Roles.IsDefence(Positioning.RoleOf(world, p)))
+            .MaxBy(p => MathF.Abs(p.Position.Z - view.Carrier.Y)) is not { } home)
+        {
+            return;
+        }
+
         free.Remove(home);
-        var threat = attackers.Where(a => Vector2.Distance(Flat(a.Position), view.Net) < 8f)
-            .MinBy(a => Vector2.Distance(Flat(a.Position), view.Net));
-        if (threat != null) attackers.Remove(threat);
+        var threat = Maybe.From<Player>(attackers.Where(a => Vector2.Distance(Flat(a.Position), view.Net) < 8f)
+            .MinBy(a => Vector2.Distance(Flat(a.Position), view.Net)));
+        if (threat.TryGet(out var man)) attackers.Remove(man);
         board.For(home.Id).Duty = Duty.Home;
-        spots[home.Id] = Coverage.HomeSpot(view.Net, view.Carrier, threat is null ? null : Lead(threat, home));
+        spots[home.Id] = Coverage.HomeSpot(view.Net, view.Carrier, threat.TryGet(out var near) ? Lead(near, home) : Maybe<Vector2>.None);
     }
 
     /// <summary>The rest mark a man each, most dangerous first, the nearest free defender taking him.</summary>
@@ -186,7 +188,7 @@ internal sealed class DefenceSystem : ISystem
         }
         if (plan.Watching) spot = Vector2.Lerp(spot, carrier, 0.4f);
         float follow = Math.Min(1f, (2f + 6f * iq) * dt);
-        var read = plan.Read is { } r && world.Tick - plan.ReadTick <= 2 ? r : Flat(p.Position);
+        var read = plan.Read.TryGet(out var r) && world.Tick - plan.ReadTick <= 2 ? r : Flat(p.Position);
         read += (spot - read) * follow;
         plan.Read = read;
         plan.ReadTick = world.Tick;
@@ -259,9 +261,9 @@ internal sealed class DefenceBoard
 
     public IEnumerable<DefencePlan> All => plans.Values;
 
-    public DefencePlan? Get(int id)
+    public Maybe<DefencePlan> Get(int id)
     {
-        return plans.GetValueOrDefault(id);
+        return plans.TryGetValue(id, out var plan) ? plan : Maybe<DefencePlan>.None;
     }
 
     public DefencePlan For(int id)
@@ -288,7 +290,7 @@ internal sealed class DefencePlan
     /// <summary>Gets or sets whether this approach ends in a body check.</summary>
     public bool Engage { get; set; }
 
-    public Vector2? Read { get; set; }
+    public Maybe<Vector2> Read { get; set; }
 
     public long ReadTick { get; set; } = long.MinValue;
 

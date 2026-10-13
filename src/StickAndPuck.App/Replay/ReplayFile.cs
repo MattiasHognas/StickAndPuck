@@ -17,9 +17,9 @@ namespace StickAndPuck.App.Replays;
 /// <param name="PeriodSeconds">The period length.</param>
 /// <param name="Periods">The regulation periods.</param>
 /// <param name="Overtime">The overtime rule.</param>
-/// <param name="OvertimeFormat">The mode's own overtime format, or null.</param>
+/// <param name="OvertimeFormat">The mode's own overtime format, or None.</param>
 /// <param name="Rules">The rules.</param>
-public sealed record ReplaySetup(string Home, string Away, IReadOnlyList<InputSlot> Inputs, float PeriodSeconds, int Periods, OvertimeRule Overtime, OvertimeFormat? OvertimeFormat, RuleSet Rules)
+public sealed record ReplaySetup(string Home, string Away, IReadOnlyList<InputSlot> Inputs, float PeriodSeconds, int Periods, OvertimeRule Overtime, Maybe<OvertimeFormat> OvertimeFormat, RuleSet Rules)
 {
     /// <summary>Gets the stored form of a setup.</summary>
     /// <param name="s">The setup.</param>
@@ -62,8 +62,8 @@ public sealed record ReplayHeader
     /// <summary>Gets the SAP_* variables the match ran with; a replay sets them again.</summary>
     public IReadOnlyDictionary<string, string> Env { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
-    /// <summary>Gets the setup a screens match started from.</summary>
-    public ReplaySetup? Setup { get; init; }
+    /// <summary>Gets the setup a screens match started from (None for a scene).</summary>
+    public Maybe<ReplaySetup> Setup { get; init; }
 
     /// <summary>Gets the game mode a screens match was played in, by its type name ("" for a season game).</summary>
     public string Mode { get; init; } = "";

@@ -55,15 +55,15 @@ internal sealed class OvertimeRules : ISystem
     /// <returns>Game seconds.</returns>
     public static float PeriodLength(World world)
     {
-        return OvertimeFormat.Of(world.Setup).PeriodSeconds ?? PeriodSeconds;
+        return OvertimeFormat.Of(world.Setup).PeriodSeconds.Or(PeriodSeconds);
     }
 
-    /// <summary>Gets the shootout of a match, or null before it starts.</summary>
+    /// <summary>Gets the shootout of a match, or None before it starts.</summary>
     /// <param name="world">The match.</param>
     /// <returns>The tally.</returns>
-    public static ShootoutState? Shootout(World world)
+    public static Maybe<ShootoutState> Shootout(World world)
     {
-        return States.TryGetValue(world, out var s) ? s.Shootout : null;
+        return States.TryGetValue(world, out var s) ? s.Shootout : Maybe<ShootoutState>.None;
     }
 
     public void Update(World world, float dt)
@@ -76,10 +76,10 @@ internal sealed class OvertimeRules : ISystem
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (States.TryGetValue(world, out var st) && st is { Shootout: not null, First: null }) DrawChoice(world);
+        if (States.TryGetValue(world, out var st) && st.Shootout.HasValue && !st.First.IsSet()) DrawChoice(world);
 
         // a plain shootout line under W7a's debug line, until W10's scorebug shows the tally
-        if (!MatchRules.ShowLine || Shootout(world) is not { } so) return;
+        if (!MatchRules.ShowLine || !Shootout(world).TryGet(out var so)) return;
         string Marks(Side side) => string.Concat(so.Shots.Where(x => x.Side == side).Select(x => x.Scored ? "o" : "x"));
         string text = $"SO  {world.Setup.Home.ShortName} {Marks(Side.Home)}   {world.Setup.Away.ShortName} {Marks(Side.Away)}";
         DrawRectangle(4, 236, MeasureText(text, 10) + 8, 14, new Raylib_cs.Color(24, 19, 31, 255));
@@ -148,17 +148,18 @@ internal sealed class OvertimeRules : ISystem
 
     void ShootoutStep(World world, OvertimeState s, float dt)
     {
-        if (s.Shootout == null) Begin(world, s);
-        var so = s.Shootout!;
+        if (!s.Shootout.HasValue) Begin(world, s);
+        var so = s.Live;
         switch (s.Stage)
         {
             case ShootoutStage.Break:
-                if (s.First == null)
+                if (!s.First.IsSet())
                 {
                     // W45: the human home club picks; nothing else runs until it does (or the time runs out)
                     s.Timer -= dt;
-                    s.First = ShootoutOrder.Pick(world) ?? (s.Timer <= -ShootoutOrder.ChooseSeconds ? Side.Home : null);
-                    if (s.First is { } picked) { s.Timer = 0.5f; Log(world, $"{world.Setup.Home.ShortName} choose to shoot {(picked == Side.Home ? "first" : "second")}"); }
+                    var pick = ShootoutOrder.Pick(world);
+                    s.First = pick.IsSet() ? pick : s.Timer <= -ShootoutOrder.ChooseSeconds ? SideOrNone.Home : SideOrNone.None;
+                    if (s.First.TryGetSide(out var picked)) { s.Timer = 0.5f; Log(world, $"{world.Setup.Home.ShortName} choose to shoot {(picked == Side.Home ? "first" : "second")}"); }
                     break;
                 }
 
@@ -173,7 +174,7 @@ internal sealed class OvertimeRules : ISystem
                 break;
             case ShootoutStage.Result:
                 if (!Wait(s, dt)) break;
-                if (so.Decided(so.Rounds) is { } winner) End(world, s, winner);
+                if (so.Decided(so.Rounds).TryGetSide(out var winner)) End(world, s, winner);
                 else NextShooter(world, s);
                 break;
             default:
@@ -189,7 +190,7 @@ internal sealed class OvertimeRules : ISystem
         s.Timer = OvertimeTuning.BreakSeconds;
         s.InBreak = false;
         s.First = ShootoutOrder.First(world.Setup);
-        if (s.First == null) s.Timer = 0;
+        if (!s.First.IsSet()) s.Timer = 0;
         world.Puck.Live = false;
         foreach (var p in world.Players.Where(p => !p.IsGoalie)) Bench(p);
         foreach (var side in new[] { Side.Home, Side.Away })
@@ -200,15 +201,15 @@ internal sealed class OvertimeRules : ISystem
                 .ThenBy(p => p.Id)];
         }
 
-        Log(world, $"shootout, {ShootoutOrder.Shooters(world.Setup)} shooters each, {(s.First is { } f ? $"{world.Setup.Club(f).ShortName} first" : $"{world.Setup.Home.ShortName} to choose")}");
+        Log(world, $"shootout, {ShootoutOrder.Shooters(world.Setup)} shooters each, {(s.First.TryGetSide(out var f) ? $"{world.Setup.Club(f).ShortName} first" : $"{world.Setup.Home.ShortName} to choose")}");
     }
 
     /// <summary>Brings out the next shooter: the clubs in turn, the first club opening every round, round after round through the order.</summary>
     static void NextShooter(World world, OvertimeState s)
     {
-        var so = s.Shootout!;
+        var so = s.Live;
         if (so.ShooterId >= 0) Bench(world.Players[so.ShooterId]);
-        var side = ShootoutOrder.Next(so, s.First ?? Side.Home);
+        var side = ShootoutOrder.Next(so, s.First.TryGetSide(out var first) ? first : Side.Home);
         var order = s.Order[(int)side];
         if (order.Count == 0)
         {
@@ -240,7 +241,7 @@ internal sealed class OvertimeRules : ISystem
     /// <summary>Keeps the shooter and the dead puck at centre until the attempt starts.</summary>
     static void Hold(World world, OvertimeState s)
     {
-        var shooter = world.Players[s.Shootout!.ShooterId];
+        var shooter = world.Players[s.Live.ShooterId];
         int attack = PuckHandling.AttackEnd(world, shooter.Side);
         shooter.Position = RinkSpec.CentreDot - new Vector3(attack * 1.2f, 0, 0);
         shooter.Velocity = Vector3.Zero;
@@ -255,7 +256,7 @@ internal sealed class OvertimeRules : ISystem
     /// <summary>Starts the attempt: the puck is live on the shooter's stick; an AI shooter picks a lane and a distance to shoot from.</summary>
     void Go(World world, OvertimeState s)
     {
-        var shooter = world.Players[s.Shootout!.ShooterId];
+        var shooter = world.Players[s.Live.ShooterId];
         var pk = world.Puck;
         pk.Live = true;
         pk.Carrier = shooter.Id;
@@ -281,7 +282,7 @@ internal sealed class OvertimeRules : ISystem
     /// <summary>Watches one attempt to its end; skates and shoots for an AI shooter.</summary>
     void Attempt(World world, OvertimeState s, float dt)
     {
-        var so = s.Shootout!;
+        var so = s.Live;
         var shooter = world.Players[so.ShooterId];
         var pk = world.Puck;
         s.AttemptTime += dt;
@@ -358,7 +359,7 @@ internal sealed class OvertimeRules : ISystem
 
     static void Finish(World world, OvertimeState s, bool scored)
     {
-        var so = s.Shootout!;
+        var so = s.Live;
         var shooter = world.Players[so.ShooterId];
         so.Add(new ShootoutShot(shooter.Side, shooter.Id, scored));
         world.Puck.Live = false;
@@ -370,8 +371,8 @@ internal sealed class OvertimeRules : ISystem
     /// <summary>The shootout is decided: the winner gets one goal on the final score and the match ends.</summary>
     static void End(World world, OvertimeState s, Side winner)
     {
-        var so = s.Shootout!;
-        so.Winner = winner;
+        var so = s.Live;
+        so.Winner = winner.OrNone();
         so.ShooterId = -1;
         s.Stage = ShootoutStage.Done;
         var m = world.Match;
@@ -429,10 +430,13 @@ internal sealed class OvertimeState
 
     public float Timer { get; set; }
 
-    public ShootoutState? Shootout { get; set; }
+    public Maybe<ShootoutState> Shootout { get; set; }
 
-    /// <summary>Gets or sets the club that shoots first (W45), or null while the home human chooses.</summary>
-    public Side? First { get; set; }
+    /// <summary>Gets the shootout under way; only asked once it has begun.</summary>
+    public ShootoutState Live => Shootout.TryGet(out var so) ? so : throw new InvalidOperationException("no shootout under way");
+
+    /// <summary>Gets or sets the club that shoots first (W45), or None while the home human chooses.</summary>
+    public SideOrNone First { get; set; }
 
     public ShootoutStage Stage { get; set; }
 

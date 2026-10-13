@@ -33,7 +33,7 @@ public sealed class VersusTests : CheckedTest
     [Test]
     public void Devices()
     {
-        Environment.SetEnvironmentVariable("SAP_VERSUS_P2", null);
+        Environment.SetEnvironmentVariable("SAP_VERSUS_P2", "");
         var inputs = VersusMode.Inputs(InputDevice.KeyboardMouse);
         Check(inputs.Count == 2 && inputs[0] == new InputSlot(InputDevice.KeyboardMouse, Side.Home) && inputs[1] == new InputSlot(InputDevice.Gamepad1, Side.Away),
             "by default player one is keyboard and mouse on the home club, player two the first gamepad on the visitors");
@@ -43,7 +43,7 @@ public sealed class VersusTests : CheckedTest
         Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse) == InputDevice.Gamepad2, "SAP_VERSUS_P2=pad2 puts player two on the second gamepad");
         Environment.SetEnvironmentVariable("SAP_VERSUS_P2", "keyboard");
         Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse) == InputDevice.Gamepad1, "SAP_VERSUS_P2 never gives both players the same device");
-        Environment.SetEnvironmentVariable("SAP_VERSUS_P2", null);
+        Environment.SetEnvironmentVariable("SAP_VERSUS_P2", "");
         var ai = VersusMode.Inputs(InputDevice.None);
         Check(ai.All(s => s.Device == InputDevice.None), "with no human (SAP_HUMAN=0) both clubs go to the AI");
     }
@@ -54,10 +54,10 @@ public sealed class VersusTests : CheckedTest
         var clubs = WorldBuilder.Clubs;
         var picks = clubs.Count > 1 ? new[] { clubs[1], clubs[0] } : new[] { clubs[0], clubs[0] };
         var setup = new VersusMode().Setup(new GameModeStart(clubs, picks, InputDevice.KeyboardMouse));
-        Check(setup != null && setup.Home == picks[0] && setup.Away == picks[1], "player one's pick is the home club, player two's the visitors");
-        Check(setup != null && setup.Inputs.Count(s => s.Device != InputDevice.None) == 2 && setup.Inputs[0].Side != setup.Inputs[1].Side,
+        Check(setup.Is(x => x.Home == picks[0] && x.Away == picks[1]), "player one's pick is the home club, player two's the visitors");
+        Check(setup.Is(x => x.Inputs.Count(s => s.Device != InputDevice.None) == 2 && x.Inputs[0].Side != x.Inputs[1].Side),
             "the setup has two human slots on opposite clubs");
-        Check(setup is { Overtime: OvertimeRule.Shl }, "a tie goes to 3 on 3 overtime, then a shootout");
+        Check(setup.Is(x => x.Overtime == OvertimeRule.Shl), "a tie goes to 3 on 3 overtime, then a shootout");
     }
 
     /// <summary>A one-period match with both humans scripted: each skates for the puck and shoots when carrying it.</summary>
@@ -68,10 +68,10 @@ public sealed class VersusTests : CheckedTest
         var world = new World(setup, new Settings());
         Scenes.AddStarters(world);
         VersusMode.AssignSlots(world);
-        var first = (world.Controlled(0), world.Controlled(1));
-        Check(first.Item1 is { Side: Side.Home, IsGoalie: false } && first.Item2 is { Side: Side.Away, IsGoalie: false },
+        var first = (Held(world, 0), Held(world, 1));
+        Check(first.Item1.Is(p => p.Side == Side.Home && !p.IsGoalie) && first.Item2.Is(p => p.Side == Side.Away && !p.IsGoalie),
             "at the faceoff player one controls a home skater and player two an away skater");
-        Check(first.Item1?.Data.Position == PlayingPosition.C && first.Item2?.Data.Position == PlayingPosition.C, "both start on their centre");
+        Check(first.Item1.Is(p => p.Data.Position == PlayingPosition.C) && first.Item2.Is(p => p.Data.Position == PlayingPosition.C), "both start on their centre");
         MatchFlow.Begin(world, log: false);
 
 #pragma warning disable S2245 // fixed seeds so the checks repeat
@@ -101,7 +101,7 @@ public sealed class VersusTests : CheckedTest
         Check(!overwritten, "the AI never overwrites a human's command");
         Check(!crossed, "control switching keeps each player on their own club");
         Check(carried[0] > 0 && carried[1] > 0, "both humans get the puck during the period");
-        Check(world.Controlled(0) != null && world.Controlled(1) != null, "both slots still control a skater at the final");
+        Check(world.Controlled(0).HasValue && world.Controlled(1).HasValue, "both slots still control a skater at the final");
     }
 
     /// <summary>What the scripted humans did over the match.</summary>
@@ -110,13 +110,13 @@ public sealed class VersusTests : CheckedTest
         public bool Crossed, Overwritten;
         public float[] Moved = new float[2];
         public int[] Carried = new int[2], Shots = new int[2];
-        readonly Vector3?[] starts = new Vector3?[2];
+        readonly Maybe<Vector3>[] starts = new Maybe<Vector3>[2];
 
         public void Before(World world)
         {
             for (int slot = 0; slot < 2; slot++)
             {
-                if (world.Controlled(slot) is not { } me) continue;
+                if (!world.Controlled(slot).TryGet(out var me)) continue;
                 if (me.Side != setup.Inputs[slot].Side) Crossed = true;
                 var (carrying, shot) = Drive(world, me);
                 if (carrying) Carried[slot]++;
@@ -128,10 +128,11 @@ public sealed class VersusTests : CheckedTest
         {
             for (int slot = 0; slot < 2; slot++)
             {
-                if (world.Controlled(slot) is not { } me || world.Match.Phase != MatchPhase.Play) continue;
+                if (!world.Controlled(slot).TryGet(out var me) || world.Match.Phase != MatchPhase.Play) continue;
                 if (me.Command.Move == Vector2.Zero && me.Action == PlayerAction.None && Vector3.Distance(me.Position, world.Puck.Position) > 1f) Overwritten = true;
-                starts[slot] ??= me.Position;
-                Moved[slot] = Math.Max(Moved[slot], Vector3.Distance(starts[slot]!.Value, me.Position));
+                var start = starts[slot].Or(me.Position);
+                starts[slot] = start;
+                Moved[slot] = Math.Max(Moved[slot], Vector3.Distance(start, me.Position));
             }
         }
 
@@ -156,12 +157,19 @@ public sealed class VersusTests : CheckedTest
         var world = new WorldBuilder().Setup(s => s with { Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse) }).NotBegun().Build();
         VersusMode.AssignSlots(world);
         var input = new InputSystem();
-        var one = world.Controlled(0)!;
-        var two = world.Controlled(1)!;
+        var one = Must(Held(world, 0));
+        var two = Must(Held(world, 1));
         one.Command = new PlayerCommand { Move = Vector2.UnitX, Shoot = true };
         two.Command = new PlayerCommand { Move = Vector2.UnitX, Pass = true };
         input.Update(world, Game.Step);
         Check(one.Command.Move == Vector2.Zero && !one.Command.Shoot && two.Command.Move == Vector2.Zero && !two.Command.Pass,
             "the input system writes both slots' devices to their players every step");
     }
+
+    /// <summary>The player a slot controls, if any.</summary>
+    static Maybe<Player> Held(World world, int slot) => world.Controlled(slot);
+
+    /// <summary>Gets a value the test needs, failing loudly when it is absent.</summary>
+    static T Must<T>(Maybe<T> maybe)
+        where T : notnull => maybe.TryGet(out var value) ? value : throw new InvalidOperationException("expected a value");
 }

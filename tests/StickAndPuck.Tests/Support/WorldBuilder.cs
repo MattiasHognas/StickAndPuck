@@ -18,7 +18,7 @@ public sealed class WorldBuilder
     bool starters = true;
     bool begin = true;
     int seed;
-    PlayingPosition? human;
+    Maybe<PlayingPosition> human;
     readonly List<Action<World>> after = [];
 
     /// <summary>Gets every club from data/clubs/, loaded once.</summary>
@@ -130,7 +130,7 @@ public sealed class WorldBuilder
     {
         var world = new World(setup, settings) { Seed = seed };
         if (starters) Scenes.AddStarters(world, skaters);
-        if (human is { } position) world.OnIce(Side.Home).First(p => p.Data.Position == position).Slot = 0;
+        if (human.TryGet(out var position)) world.OnIce(Side.Home).First(p => p.Data.Position == position).Slot = 0;
         if (begin) MatchFlow.Begin(world, log: false);
         foreach (var step in after) step(world);
         return world;

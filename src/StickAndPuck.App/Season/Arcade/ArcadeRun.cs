@@ -98,8 +98,8 @@ public sealed class ArcadeRun
     /// <summary>Gets a value indicating whether the run is over, either way.</summary>
     public bool IsOver => Lost || Champion;
 
-    /// <summary>Gets the next opponent's id, or null when the run is over.</summary>
-    public string? NextOpponent => IsOver ? null : Opponents[Stage];
+    /// <summary>Gets the next opponent's id, or None when the run is over.</summary>
+    public Maybe<string> NextOpponent => IsOver ? Maybe<string>.None : Opponents[Stage];
 
     /// <summary>Gets a value indicating whether the human's club is at home in the next game: home on even stages.</summary>
     public bool NextAtHome => Stage % 2 == 0;
@@ -140,7 +140,7 @@ public sealed class ArcadeRun
     public void Credit(MatchStatSheet sheet)
     {
         Stats.Add(sheet);
-        if (sheet.Award($"a{Games.Count}") is { } award) Awards.Add(award);
+        if (sheet.Award($"a{Games.Count}").TryGet(out var award)) Awards.Add(award);
     }
 
     /// <summary>Records the next game's result.</summary>
@@ -148,7 +148,8 @@ public sealed class ArcadeRun
     /// <returns>The game as recorded.</returns>
     public ArcadeGame Record(FixtureResult result)
     {
-        string opponent = NextOpponent ?? throw new InvalidOperationException("the arcade run is over");
+        if (IsOver) throw new InvalidOperationException("the arcade run is over");
+        string opponent = Opponents[Stage];
         var game = new ArcadeGame(Stage, opponent, NextAtHome, result);
         Games.Add(game);
         return game;
@@ -157,20 +158,21 @@ public sealed class ArcadeRun
     /// <summary>The setup for the next game: the human on their club, the AI on the other, SHL overtime so there is always a winner.</summary>
     /// <param name="clubs">Every club from data/clubs/.</param>
     /// <param name="device">The human's input device.</param>
-    /// <returns>The setup, or null when the run is over.</returns>
-    public MatchSetup? NextSetup(IReadOnlyList<ClubData> clubs, InputDevice device = InputDevice.KeyboardMouse)
+    /// <returns>The match to play, or <see cref="NextMatch.Over"/> when the run is over.</returns>
+    public NextMatch NextSetup(IReadOnlyList<ClubData> clubs, InputDevice device = InputDevice.KeyboardMouse)
     {
-        if (NextOpponent is not { } opponent) return null;
-        ClubData Find(string id) => clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal)) ?? throw new InvalidOperationException($"club {id} from the arcade save has no data file");
+        if (IsOver) return NextMatch.Over;
+        string opponent = Opponents[Stage];
+        ClubData Find(string id) => clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).TryGet(out var club) ? club : throw new InvalidOperationException($"club {id} from the arcade save has no data file");
         var user = Find(UserClub);
         var other = Find(opponent);
         var side = NextAtHome ? Side.Home : Side.Away;
-        return new MatchSetup
+        return new NextMatch.Play(new MatchSetup
         {
             Home = NextAtHome ? user : other,
             Away = NextAtHome ? other : user,
             Inputs = [new InputSlot(device, side), new InputSlot(InputDevice.None, side == Side.Home ? Side.Away : Side.Home)],
             Overtime = OvertimeRule.Shl,
-        };
+        });
     }
 }

@@ -1,3 +1,5 @@
+using StickAndPuck.App.Core;
+
 namespace StickAndPuck.App.Season;
 
 /// <summary>Shared setup for the stats screenshots and checks.</summary>
@@ -11,12 +13,11 @@ internal static class StatsScenes
     /// <returns>The rounds settled.</returns>
     public static int SettleSomeRounds(int rounds)
     {
-        if (SeasonSession.Current is not { } season || season.Games.Any(g => g.Played)) return 0;
+        if (!SeasonSession.Current.TryGet(out var season) || season.Games.Any(g => g.Played)) return 0;
         var byId = SeasonSession.Clubs.ToDictionary(c => c.Id, StringComparer.Ordinal);
         int settled = 0;
-        for (int r = 0; r < rounds && SeasonSession.NextSetup() != null; r++)
+        for (int r = 0; r < rounds && SeasonSession.NextSetup() is NextMatch.Play && SeasonSession.Playing.TryGet(out var game); r++)
         {
-            var game = SeasonSession.Playing!;
             SeasonSession.Finish(QuickSim.Play(byId[game.Home], byId[game.Away], season.GameSeed(game.Number)));
             settled++;
         }

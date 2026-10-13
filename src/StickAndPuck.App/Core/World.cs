@@ -74,9 +74,9 @@ public sealed class World
 
     /// <summary>Gets the player a human slot controls, if any.</summary>
     /// <param name="slot">The slot index, 0 or 1.</param>
-    /// <returns>The player, or null.</returns>
-    public Player? Controlled(int slot)
+    /// <returns>The player, or None.</returns>
+    public Maybe<Player> Controlled(int slot)
     {
-        return Players.Find(p => p.Slot == slot);
+        return Players.Find(p => p.Slot == slot) is { } player ? player : Maybe<Player>.None;
     }
 }

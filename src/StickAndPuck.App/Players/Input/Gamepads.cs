@@ -25,7 +25,7 @@ public static class Gamepads
     const string BuiltInMappings =
         "03000000321500000410000000010000,Razer Raiju Ultimate Wired,a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:a3,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,righttrigger:a4,rightx:a2,righty:a5,start:b9,x:b0,y:b3,platform:Linux,\n";
 
-    static readonly string?[] Seen = new string?[MaxSlots];
+    static readonly string[] Seen = [.. Enumerable.Repeat(string.Empty, MaxSlots)];   // "" for no pad: a slot's name is never empty
     static bool mappingsLoaded;
     static double lastLog = double.NegativeInfinity;
 
@@ -55,11 +55,11 @@ public static class Gamepads
 
     /// <summary>Gets the name of the n-th connected pad, as the settings and versus screens show it.</summary>
     /// <param name="index">0 for the first pad, 1 for the second.</param>
-    /// <returns>The pad's name, or null when it is not connected.</returns>
-    public static string? Name(int index)
+    /// <returns>The pad's name, or None when it is not connected.</returns>
+    public static Maybe<string> Name(int index)
     {
         int slot = Slot(index);
-        return slot < 0 ? null : SlotName(slot);
+        return slot < 0 ? Maybe<string>.None : SlotName(slot);
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public static class Gamepads
         const int MaxName = 16;
         int index = device switch { InputDevice.Gamepad1 => 0, InputDevice.Gamepad2 => 1, _ => -1 };
         if (index < 0) return Text.Get(device == InputDevice.KeyboardMouse ? K.DeviceKeyboard : K.DeviceOff);
-        if (Name(index) is not { } name) return Text.Format(K.NoGamepad, index + 1);
+        if (!Name(index).TryGet(out string name)) return Text.Format(K.NoGamepad, index + 1);
         name = new string([.. name.ToUpperInvariant().Where(c => c is (>= 'A' and <= 'Z') or (>= '0' and <= '9') or ' ')]).Trim();
         if (name.Length == 0) return Text.Format(K.GamepadN, index + 1);
         return name.Length <= MaxName ? name : name[..MaxName].TrimEnd();
@@ -115,9 +115,9 @@ public static class Gamepads
 
         for (int slot = 0; slot < MaxSlots; slot++)
         {
-            string? now = IsGamepadAvailable(slot) ? SlotName(slot) : null;
+            string now = IsGamepadAvailable(slot) ? SlotName(slot) : string.Empty;
             if (string.Equals(now, Seen[slot], StringComparison.Ordinal)) continue;
-            Console.WriteLine(now == null ? $"SAP: gamepad left slot {slot}" : $"SAP: gamepad in slot {slot}: {now}");
+            Console.WriteLine(now.Length == 0 ? $"SAP: gamepad left slot {slot}" : $"SAP: gamepad in slot {slot}: {now}");
             Seen[slot] = now;
         }
     }

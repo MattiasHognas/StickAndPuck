@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
@@ -42,9 +43,9 @@ public sealed record ArcadeRecord(string Club, ArcadeRule Rule, int Beaten, bool
     /// <returns>The record.</returns>
     public static ArcadeRecord Of(ArcadeRun run)
     {
-        var top = run.Stats.Leaders(1, run.UserClub).FirstOrDefault();
+        var top = run.Stats.Leaders(1, run.UserClub).FirstOrNone();
         return new ArcadeRecord(run.UserClub, run.Rule, run.Stage, run.Champion, run.Losses,
-            run.Games.Sum(g => g.GoalsFor), run.Games.Sum(g => g.GoalsAgainst), DateTime.UtcNow, top?.Label ?? "", top?.Points ?? 0);
+            run.Games.Sum(g => g.GoalsFor), run.Games.Sum(g => g.GoalsAgainst), DateTime.UtcNow, top.Select(t => t.Label).Or(""), top.Select(t => t.Points).Or(0));
     }
 
     /// <summary>Adds a run to a board and keeps the best <see cref="Kept"/>, best first.</summary>

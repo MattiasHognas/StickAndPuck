@@ -35,11 +35,11 @@ public sealed class SeasonState
     /// <summary>Gets or sets when the season was last saved (UTC).</summary>
     public DateTime Saved { get; set; }
 
-    /// <summary>Gets or sets the playoffs (W16b), null until the regular season is over and they start.</summary>
-    public PlayoffState? Playoffs { get; set; }
+    /// <summary>Gets or sets the playoffs (W16b), None until the regular season is over and they start.</summary>
+    public Maybe<PlayoffState> Playoffs { get; set; }
 
-    /// <summary>Gets or sets the rules every game of this season plays (W44), stored when its first game starts so a later settings change never alters a running season; null in a save from before W44 until then.</summary>
-    public RuleSet? Rules { get; set; }
+    /// <summary>Gets or sets the rules every game of this season plays (W44), stored when its first game starts so a later settings change never alters a running season; None in a save from before W44 until then.</summary>
+    public Maybe<RuleSet> Rules { get; set; }
 
     /// <summary>Gets or sets the player stats and records (W25), filled as games are played or settled.</summary>
     public SeasonStats Stats { get; set; } = new();
@@ -50,11 +50,11 @@ public sealed class SeasonState
     /// <summary>Gets a value indicating whether every game has been played, so the playoffs can start.</summary>
     public bool IsOver => Games.TrueForAll(g => g.Played);
 
-    /// <summary>Gets the human's next unplayed game, or null when the human's club has played them all.</summary>
-    public Fixture? NextGame => Games.Find(g => !g.Played && g.Involves(UserClub));
+    /// <summary>Gets the human's next unplayed game, or None when the human's club has played them all.</summary>
+    public Maybe<Fixture> NextGame => Games.FirstOrNone(g => !g.Played && g.Involves(UserClub));
 
     /// <summary>Gets the round being played: the first round with an unplayed game, or <see cref="Rounds"/> when the season is over.</summary>
-    public int CurrentRound => Games.Find(g => !g.Played)?.Round ?? Rounds;
+    public int CurrentRound => Games.FirstOrNone(g => !g.Played).TryGet(out var open) ? open.Round : Rounds;
 
     /// <summary>Gets the current table, best first.</summary>
     public IReadOnlyList<StandingRow> Table => Standings.Compute(Clubs, Games);
@@ -140,7 +140,7 @@ public sealed class SeasonState
     /// <returns>The setup.</returns>
     public MatchSetup SetupFor(Fixture game, IReadOnlyList<ClubData> clubs, InputDevice device = InputDevice.KeyboardMouse)
     {
-        ClubData Find(string id) => clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal)) ?? throw new InvalidOperationException($"club {id} from the save has no data file");
+        ClubData Find(string id) => clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).TryGet(out var club) ? club : throw new InvalidOperationException($"club {id} from the save has no data file");
         var side = string.Equals(game.Home, UserClub, StringComparison.Ordinal) ? Side.Home : Side.Away;
         var other = side == Side.Home ? Side.Away : Side.Home;
         return new MatchSetup

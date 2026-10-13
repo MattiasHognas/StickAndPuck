@@ -139,3 +139,8 @@ dotnet_diagnostic.MA0046.severity = suggestion  # event delegate signature
 dotnet_diagnostic.MA0047.severity = suggestion  # type outside a namespace
 dotnet_diagnostic.MA0084.severity = suggestion  # local hides outer symbol
 dotnet_diagnostic.MA0158.severity = suggestion  # use System.Threading.Lock
+
+# ---------------------------------------------------------------------------
+# No nulls (analyzers/StickAndPuck.Analyzers: the game project and the tests)
+# ---------------------------------------------------------------------------
+# SAP0001 nullable type, SAP0002 null literal, SAP0003 pattern on Maybe: errors by default in the analyzer.

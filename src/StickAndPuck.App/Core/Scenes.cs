@@ -31,7 +31,7 @@ public static class Scenes
     {
         return typeof(Scenes).Assembly.GetTypes()
             .Where(t => typeof(IScene).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false }
-                && t.GetConstructor(Type.EmptyTypes) != null)
+                && t.GetConstructor(Type.EmptyTypes) is { })
             .Select(t => (IScene)Activator.CreateInstance(t)!)
             .ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
     }
@@ -59,15 +59,15 @@ public static class Scenes
     public static MatchSetup DefaultSetup(IReadOnlyList<ClubData> clubs)
     {
         if (clubs.Count == 0) throw new InvalidOperationException($"no club files in {Assets.ClubFolder}");
-        var home = Pick(clubs, "SAP_HOME") ?? clubs[0];
-        var away = Pick(clubs, "SAP_AWAY") ?? clubs.FirstOrDefault(c => c != home) ?? home;
+        var home = Pick(clubs, "SAP_HOME").Or(clubs[0]);
+        var away = Pick(clubs, "SAP_AWAY").TryGet(out var picked) ? picked : clubs.FirstOrDefault(c => c != home) ?? home;
         return new MatchSetup { Home = home, Away = away };
     }
 
-    static ClubData? Pick(IReadOnlyList<ClubData> clubs, string variable)
+    static Maybe<ClubData> Pick(IReadOnlyList<ClubData> clubs, string variable)
     {
-        string? id = Environment.GetEnvironmentVariable(variable);
-        if (string.IsNullOrEmpty(id)) return null;
+        string id = Environment.GetEnvironmentVariable(variable) ?? "";
+        if (id.Length == 0) return Maybe<ClubData>.None;
         return clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException($"{variable}={id} is not a club id");
     }
@@ -85,19 +85,18 @@ public static class Scenes
             float end = side == Side.Home ? -1 : 1;
             var roster = world.Setup.Club(side).Roster;
             var used = new HashSet<PlayerData>();
-            PlayerData? Take(PlayingPosition pos) => roster.FirstOrDefault(p => p.Position == pos && used.Add(p));
-            PlayerData? Any() => roster.FirstOrDefault(p => p.Position != PlayingPosition.G && used.Add(p));
+            Maybe<PlayerData> Take(PlayingPosition pos) => roster.FirstOrNone(p => p.Position == pos && used.Add(p));
+            Maybe<PlayerData> Any() => roster.FirstOrNone(p => p.Position != PlayingPosition.G && used.Add(p));
 
             Vector3[] spots = [new(-0.8f, 0, 0), new(-1.5f, 0, -6.5f), new(-1.5f, 0, 6.5f), new(-9.5f, 0, -3.5f), new(-9.5f, 0, 3.5f)];
             PlayingPosition[] positions = [PlayingPosition.C, PlayingPosition.LW, PlayingPosition.RW, PlayingPosition.D, PlayingPosition.D];
             for (int i = 0; i < Math.Min(skatersPerSide, spots.Length); i++)
             {
-                var data = Take(positions[i]) ?? Any();
-                if (data == null) break;
+                if (!Take(positions[i]).TryGet(out var data) && !Any().TryGet(out data)) break;
                 var p = world.AddPlayer(side, data, spots[i] with { X = spots[i].X * -end });
                 p.Heading = end < 0 ? MathF.PI / 2 : -MathF.PI / 2;
             }
-            if (Take(PlayingPosition.G) is { } goalie)
+            if (Take(PlayingPosition.G).TryGet(out var goalie))
             {
                 var g = world.AddPlayer(side, goalie, new Vector3(end * (RinkSpec.GoalLineX - 1f), 0, 0));
                 g.Heading = end < 0 ? MathF.PI / 2 : -MathF.PI / 2;

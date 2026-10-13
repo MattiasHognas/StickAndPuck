@@ -20,15 +20,17 @@ public sealed class MatchTests : CheckedTest
         return new WorldBuilder().Setup(s => s with { PeriodSeconds = Period, Overtime = rule }).Build();
     }
 
+    static List<MatchEvent> Run(World world, Func<World, bool> until, float limit = 600) => Run(world, until, _ => { }, limit);
+
     /// <summary>Runs physics and rules step by step, calling <paramref name="each"/> before each step, and returns every event.</summary>
-    static List<MatchEvent> Run(World world, Func<World, bool> until, Action<World>? each = null, float limit = 600)
+    static List<MatchEvent> Run(World world, Func<World, bool> until, Action<World> each, float limit = 600)
     {
         var systems = new ISystem[] { new PuckPhysics(), new MatchRules() };
         var events = new List<MatchEvent>();
         for (int i = 0; i < limit / Game.Step && !until(world); i++)
         {
             world.Events.Clear();
-            each?.Invoke(world);
+            each(world);
             foreach (var s in systems) s.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
             world.Time += Game.Step; world.Tick++;
@@ -36,7 +38,9 @@ public sealed class MatchTests : CheckedTest
         return events;
     }
 
-    static List<MatchEvent> RunFor(World world, float seconds, Action<World>? each = null)
+    static List<MatchEvent> RunFor(World world, float seconds) => RunFor(world, seconds, _ => { });
+
+    static List<MatchEvent> RunFor(World world, float seconds, Action<World> each)
     {
         float end = world.Time + seconds;
         return Run(world, w => w.Time >= end - Game.Step / 2, each);
@@ -105,7 +109,7 @@ public sealed class MatchTests : CheckedTest
     {
         var w = Make();
         Check(w.Match.Phase == MatchPhase.Intro && !w.Puck.Live, "the match starts in the intro with a dead puck");
-        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, null, 10);
+        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, 10);
         Check(w.Match.Phase == MatchPhase.Faceoff && w.Puck.Position == RinkSpec.CentreDot, "then a faceoff at centre");
         bool Halves() => w.Players.Where(p => !p.IsGoalie).All(p => FaceoffFormation.DefendedEnd(w.Match, p.Side) * p.Position.X > 0);
         Check(Halves(), "every skater lines up in their own half");
@@ -113,7 +117,7 @@ public sealed class MatchTests : CheckedTest
         var events = RunFor(w, 0.5f, x => { foreach (var p in x.Players) p.Position += new Vector3(0.1f, 0, 0); });
         Check(w.Players.All(p => p.Velocity == Vector3.Zero) && Halves() && Same(w.Match.Clock, clock), "players hold their spots and the clock waits");
         Check(events.Count == 0, "nothing is published before the drop");
-        events = Run(w, x => x.Match.Phase == MatchPhase.Play, null, 5);
+        events = Run(w, x => x.Match.Phase == MatchPhase.Play, 5);
         Check(w.Puck.Live && events.Count(e => e is PuckDropped) == 1, "the puck drops live with one Faceoff event");
     }
 
@@ -127,7 +131,7 @@ public sealed class MatchTests : CheckedTest
         var events = RunFor(w, 2);
         Check(w.Match.Score[0] == 0 && events.All(e => e is not GoalScored), "a shot still travelling at the horn is no goal");
         Check(w.Match.Phase == MatchPhase.Intermission && events.Count(e => e is PeriodEnded) == 1, "the period ends into the intermission");
-        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 20);
+        Run(w, x => x.Match.Phase == MatchPhase.Play, 20);
         Check(w.Match.Period == 2 && w.Match.Clock <= Period, "period 2 starts with a full clock");
     }
 
@@ -148,7 +152,7 @@ public sealed class MatchTests : CheckedTest
         Check(so.Match.Phase == MatchPhase.Shootout, "shootout only: a tie goes straight to the shootout");
 
         MatchFlow.StartPeriod(shl, 4, 10);
-        Run(shl, x => x.Match.Phase is MatchPhase.Shootout or MatchPhase.Final, null, 30);
+        Run(shl, x => x.Match.Phase is MatchPhase.Shootout or MatchPhase.Final, 30);
         Check(shl.Match.Phase == MatchPhase.Shootout && shl.Match.Period == 4, "a scoreless overtime goes to the shootout");
     }
 
@@ -159,7 +163,7 @@ public sealed class MatchTests : CheckedTest
         var w = Make();
         Run(w, x => x.Match.Phase == MatchPhase.Overtime);
         MatchFlow.StartPeriod(w, 4, MatchTuning.OvertimeSeconds);
-        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 5);
+        Run(w, x => x.Match.Phase == MatchPhase.Play, 5);
         Check(Same(w.Match.Clock, MatchTuning.OvertimeSeconds) && w.Puck.Position == RinkSpec.CentreDot, "overtime starts at centre with a 5:00 clock");
         Shoot(w, Side.Away);
         var ev = RunFor(w, 1);
@@ -171,16 +175,16 @@ public sealed class MatchTests : CheckedTest
     /// <summary>W40: after the horn of a decided game the winners gather and celebrate, the losers slump or leave, then the final.</summary>
     void Celebrates(World w, Side winner)
     {
-        Check(w.Match.Phase == MatchPhase.Stopped && Celebration.Winner(w) == winner, "the horn starts the winners' celebration before the final");
+        Check(w.Match.Phase == MatchPhase.Stopped && Celebration.Winner(w) == winner.OrNone(), "the horn starts the winners' celebration before the final");
         RunFor(w, MatchTuning.CelebrationSeconds - 1.5f);
         var pile = w.OnIce(winner).Where(p => !p.IsGoalie).Select(p => p.Position).ToList();
         var centre = pile.Aggregate(Vector3.Zero, (a, b) => a + b) / pile.Count;
         Check(pile.All(p => Vector3.Distance(p, centre) < 2.5f), "the winning skaters gather in a pile");
-        Check(w.OnIce(winner).Where(p => !p.IsGoalie).All(p => string.Equals(Celebration.Pose(w, p)?.Clip, "celebrate", StringComparison.Ordinal)), "every winning skater plays the celebrate clip");
+        Check(w.OnIce(winner).Where(p => !p.IsGoalie).All(p => Celebration.Pose(w, p).Is(c => string.Equals(c.Clip, "celebrate", StringComparison.Ordinal))), "every winning skater plays the celebrate clip");
         var losers = w.Players.Where(p => p.OnIce && !p.IsGoalie && p.Side != winner).ToList();
-        Check(losers.All(p => Celebration.Pose(w, p)?.Clip is "fall" or "block" || (Celebration.Pose(w, p) == null && p.Speed > 1f && p.Velocity.Z < 0)),
+        Check(losers.All(p => Celebration.Pose(w, p).Is(c => c.Clip is "fall" or "block") || (!Celebration.Pose(w, p).HasValue && p.Speed > 1f && p.Velocity.Z < 0)),
             "every losing skater is down on the ice, or trudging to the bench or there with his head down");
-        Check(losers.Count(p => string.Equals(Celebration.Pose(w, p)?.Clip, "fall", StringComparison.Ordinal)) == Math.Min(2, losers.Count), "the two losers nearest the pile drop to the ice");
+        Check(losers.Count(p => Celebration.Pose(w, p).Is(c => string.Equals(c.Clip, "fall", StringComparison.Ordinal))) == Math.Min(2, losers.Count), "the two losers nearest the pile drop to the ice");
         Check(w.Players.Where(p => p.OnIce && p.IsGoalie && p.Side != winner).All(g => Celebration.Slumps(w, g)), "the losing goalie slumps");
         Check(w.Match.Phase == MatchPhase.Stopped && !w.Puck.Live, "the final waits for the celebration");
         var ev = RunFor(w, 2);
@@ -199,13 +203,13 @@ public sealed class MatchTests : CheckedTest
         Check(dot == new Vector3(20.7f, 0, 6.7f), "the nearest dot to the +x corner is the end-zone dot there");
         Check(MatchFlow.Whistle(w, dot) && w.Match.Phase == MatchPhase.Stopped && !w.Puck.Live, "a whistle stops play and kills the puck");
         float clock = w.Match.Clock;
-        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, null, 5);
+        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, 5);
         Check(Same(w.Match.Clock, clock) && w.Puck.Position == dot && MatchFlow.FaceoffDot(w) == dot, "the clock waits and the puck goes to the dot");
         bool inside = w.Players.All(p => MathF.Abs(p.Position.X) <= RinkSpec.GoalLineX && MathF.Abs(p.Position.Z) < RinkSpec.HalfWidth);
         Check(inside, "an end-zone lineup stays inside the rink");
         var centre = w.Players.Where(p => p.Data.Position == PlayingPosition.C && p.OnIce).ToList();
         Check(centre.All(p => Vector3.Distance(p.Position, dot) < 1), "both centres face off at the dot");
-        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 5);
+        Run(w, x => x.Match.Phase == MatchPhase.Play, 5);
         Check(w.Puck.Live && w.Puck.Position == dot, "the puck drops at the dot");
     }
 
@@ -219,7 +223,7 @@ public sealed class MatchTests : CheckedTest
         w.Puck.Carrier = g.Id;
         var ev = RunFor(w, MatchTuning.FreezeSeconds + 0.1f, x => x.Puck.Position = g.Position);
         Check(ev.Any(e => e is WhistleBlown) && w.Match.Phase == MatchPhase.Stopped, "a frozen puck brings a whistle");
-        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, null, 5);
+        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, 5);
         Check(MathF.Abs(MatchFlow.FaceoffDot(w).X) > 20 && w.Puck.Carrier < 0, "the faceoff is at an end-zone dot with the puck loose");
     }
 
@@ -229,7 +233,7 @@ public sealed class MatchTests : CheckedTest
     {
         var w = Make();
         MatchFlow.SetRefereeDrops(w, true);
-        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, null, 10);
+        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, 10);
         RunFor(w, MatchTuning.FaceoffSeconds * 3);
         Check(w.Match.Phase == MatchPhase.Faceoff && !w.Puck.Live, "the faceoff waits for the referee");
         Check(MatchFlow.Drop(w) && w.Puck.Live && w.Match.Phase == MatchPhase.Play, "Drop puts the puck in play");

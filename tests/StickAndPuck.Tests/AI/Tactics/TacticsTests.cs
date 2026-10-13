@@ -87,7 +87,7 @@ public sealed class TacticsTests : CheckedTest
         var trap = new ClubTactics { Forecheck = Forecheck.Trap, Entry = ZoneEntry.Carry };
         var p = new TacticsTally();
         var t = new TacticsTally();
-        World world = null!;
+        var last = Maybe<World>.None;
         int goals = 0, pressShots = 0, trapShots = 0;
         var played = Matches.Play(Rounds * 2, i =>
         {
@@ -101,7 +101,8 @@ public sealed class TacticsTests : CheckedTest
             foreach (var pressSide in new[] { Side.Home, Side.Away })
             {
                 var trapSide = pressSide == Side.Home ? Side.Away : Side.Home;
-                world = played[(2 * round) + (int)pressSide];
+                var world = played[(2 * round) + (int)pressSide];
+                last = world;
                 Add(p, AiTactics.Tally(world, pressSide));
                 Add(t, AiTactics.Tally(world, trapSide));
                 goals += world.Match.Score[0] + world.Match.Score[1];
@@ -118,7 +119,7 @@ public sealed class TacticsTests : CheckedTest
         check(p.Dumps >= 10 * Rounds && t.Dumps == 0, "the dump-and-chase club dumps the puck in, the carrying club never does");
         check(p.CarryShare + 0.1f < t.CarryShare, $"the carrying club carries clearly more of its zone entries over the line ({t.CarryShare:P0} vs {p.CarryShare:P0})");
         check(goals <= 14 * Rounds && pressShots >= 6 * Rounds && trapShots >= 6 * Rounds, "the tactics still play hockey: shots for both clubs, a normal number of goals");
-        return world;
+        return last.TryGet(out var match) ? match : throw new InvalidOperationException("expected a match to have been played");
     }
 
     static void Add(TacticsTally into, TacticsTally from)

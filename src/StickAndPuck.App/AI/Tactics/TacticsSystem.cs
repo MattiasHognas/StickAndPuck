@@ -63,50 +63,50 @@ internal sealed class TacticsSystem : ISystem
         var pk = world.Puck;
         if (!Positioning.Drives(world) || world.Match.Phase is not (MatchPhase.Play or MatchPhase.Overtime) || !pk.Live)
         {
-            board.Chasing = null;
-            board.Dump = null;
-            Track(world, board, null, 0f, false);
+            board.Chasing = Maybe<ChaseWatch>.None;
+            board.Dump = Maybe<DumpPlan>.None;
+            Track(world, board, Maybe<Player>.None, 0f, false);
             return;
         }
 
-        var carrier = pk.Carrier >= 0 && pk.Carrier < world.Players.Count ? world.Players[pk.Carrier] : null;
-        if (Penalties.PowerPlay(world) is { } pp) PowerPlay(world, pp);
-        bool even = world.Match.Phase == MatchPhase.Play && Penalties.PowerPlay(world) == null
+        var carrier = pk.Carrier >= 0 && pk.Carrier < world.Players.Count ? world.Players[pk.Carrier] : Maybe<Player>.None;
+        if (Penalties.PowerPlay(world).TryGetSide(out var pp)) PowerPlay(world, pp);
+        bool even = world.Match.Phase == MatchPhase.Play && Penalties.PowerPlay(world) == SideOrNone.None
             && Skaters(world, Side.Home).Count == Skaters(world, Side.Away).Count;
         Track(world, board, carrier, dt, even);
-        if (!even) { board.Chasing = null; board.Dump = null; return; }
+        if (!even) { board.Chasing = Maybe<ChaseWatch>.None; board.Dump = Maybe<DumpPlan>.None; return; }
 
         Watch(world, board, carrier);
-        if (carrier is { IsGoalie: false })
+        if (carrier.TryGet(out var skater) && !skater.IsGoalie)
         {
-            if (Tactics.Of(world, carrier.Side).Entry == ZoneEntry.DumpAndChase && carrier.Slot < 0) Entry(world, board, carrier);
-            var defending = Other(carrier.Side);
+            if (Tactics.Of(world, skater.Side).Entry == ZoneEntry.DumpAndChase && skater.Slot < 0) Entry(world, board, skater);
+            var defending = Other(skater.Side);
             switch (Tactics.Of(world, defending).Forecheck)
             {
-                case Forecheck.Aggressive: Aggressive(world, board, defending, carrier, dt); break;
-                case Forecheck.Trap: Trap(world, board, defending, carrier, dt); break;
+                case Forecheck.Aggressive: Aggressive(world, board, defending, skater, dt); break;
+                case Forecheck.Trap: Trap(world, board, defending, skater, dt); break;
                 default: break;
             }
         }
-        else if (carrier == null && board.Chasing is { } chase)
+        else if (!carrier.HasValue && board.Chasing.TryGet(out var chase))
         {
-            if (world.Time > chase.Until) board.Chasing = null;
+            if (world.Time > chase.Until) board.Chasing = Maybe<ChaseWatch>.None;
             else Chase(world, board, chase.Side, dt);
         }
     }
 
     /// <summary>Follows a dump: off the stick, then who gets to it first.</summary>
-    static void Watch(World world, TacticsBoard board, Player? carrier)
+    static void Watch(World world, TacticsBoard board, Maybe<Player> onPuck)
     {
-        if (board.Chasing is not { } dumped) return;
-        if (carrier == null)
+        if (!board.Chasing.TryGet(out var dumped)) return;
+        if (!onPuck.TryGet(out var carrier))
         {
             board.Chasing = dumped with { Released = true };
         }
         else if (dumped.Released || carrier.Id != dumped.Dumper || world.Time > dumped.Until)
         {
             if (dumped.Released && carrier.Side == dumped.Side) Tactics.Tally(world, dumped.Side).Recovered++;
-            board.Chasing = null;
+            board.Chasing = Maybe<ChaseWatch>.None;
         }
     }
 
@@ -114,7 +114,7 @@ internal sealed class TacticsSystem : ISystem
     static void PowerPlay(World world, Side pp)
     {
         var st = SpecialTeams.Board(world);
-        if (st.PowerPlay == pp && PowerPlayShapes.Formation(Tactics.Of(world, pp).PowerPlay) is { } shape) st.PpShape = shape;
+        if (st.PowerPlay.Is(pp) && PowerPlayShapes.Formation(Tactics.Of(world, pp).PowerPlay).TryGet(out var shape)) st.PpShape = shape;
     }
 
     /// <summary>
@@ -130,9 +130,9 @@ internal sealed class TacticsSystem : ISystem
         float a = end * at.X;
         var brain = Decisions.Board(world).For(p.Id);
         var run = (p.Id, brain.GotAt);
-        if (board.Dump is { } plan && (plan.Player, plan.GotAt) != run) board.Dump = null;
+        if (board.Dump.TryGet(out var plan) && (plan.Player, plan.GotAt) != run) board.Dump = Maybe<DumpPlan>.None;
 
-        if (board.Dump == null)
+        if (!board.Dump.HasValue)
         {
             if (a is < -8f or > 0.5f || board.Weighed == run) return;
             board.Weighed = run;
@@ -143,8 +143,8 @@ internal sealed class TacticsSystem : ISystem
             board.Dump = new DumpPlan(p.Id, brain.GotAt, wide);
         }
 
-        var dump = board.Dump;
-        if (a > RinkSpec.BlueLineX - 0.5f) { board.Dump = null; return; }   // missed the moment: carry it in
+        if (!board.Dump.TryGet(out var dump)) return;   // set just above
+        if (a > RinkSpec.BlueLineX - 0.5f) { board.Dump = Maybe<DumpPlan>.None; return; }   // missed the moment: carry it in
         if (AiCommand.Committed(world, p)) return;
         AiCommand.Hold(world, p);   // no pass or shot of decisions' own meanwhile
 
@@ -161,7 +161,7 @@ internal sealed class TacticsSystem : ISystem
         var aim = Vector2.Normalize(DumpTarget(world, p.Side, end) - at);
         AiCommand.Shoot(world, p, AiLayer.Tactics, aim, 3, "dump");   // a tap: a wrist shot along the ice
         Tactics.Tally(world, p.Side).Dumps++;
-        board.Dump = null;
+        board.Dump = Maybe<DumpPlan>.None;
         board.Chasing = new ChaseWatch(p.Side, p.Id, world.Time + Release + ChaseFor, Released: false);
     }
 
@@ -184,10 +184,13 @@ internal sealed class TacticsSystem : ISystem
     void Chase(World world, TacticsBoard board, Side side, float dt)
     {
         var puck = Flat(world.Puck.Position);
-        var second = Skaters(world, side)
+        if (Skaters(world, side)
             .Where(p => p.Slot < 0 && !Roles.IsDefence(Positioning.RoleOf(world, p)) && Positioning.JobOf(world, p) != Job.Chase)
-            .MinBy(p => Vector2.Distance(Flat(p.Position), puck));
-        if (second == null) return;
+            .MinBy(p => Vector2.Distance(Flat(p.Position), puck)) is not { } second)
+        {
+            return;
+        }
+
         int end = PuckHandling.AttackEnd(world, side);
         // never ahead of the puck over the blue line: that is offside
         var spot = end * puck.X > RinkSpec.BlueLineX ? puck : new Vector2(end * Math.Min(end * puck.X, RinkSpec.BlueLineX - 0.8f), puck.Y);
@@ -210,8 +213,7 @@ internal sealed class TacticsSystem : ISystem
         var forwards = team.Where(p => !Roles.IsDefence(Positioning.RoleOf(world, p))).ToList();
         var defence = team.Where(p => Roles.IsDefence(Positioning.RoleOf(world, p))).ToList();
 
-        var outlet = Skaters(world, carrier.Side).Where(p => p != carrier).MinBy(p => Vector3.Distance(p.Position, carrier.Position));
-        if (outlet != null && forwards.Count > 0)
+        if (Skaters(world, carrier.Side).Where(p => p != carrier).MinBy(p => Vector3.Distance(p.Position, carrier.Position)) is { } outlet && forwards.Count > 0)
         {
             var o = Flat(outlet.Position);
             var second = forwards.MinBy(p => Vector2.Distance(Flat(p.Position), o))!;
@@ -249,9 +251,8 @@ internal sealed class TacticsSystem : ISystem
         if (team.Count == 0) return;
 
         // the first forward: whoever positioning sent at the carrier, else the nearest forward
-        var first = team.FirstOrDefault(p => OnCarrier(world, p))
-            ?? team.Where(p => !Roles.IsDefence(Positioning.RoleOf(world, p))).MinBy(p => Vector2.Distance(Flat(p.Position), c));
-        if (first != null)
+        if ((team.FirstOrDefault(p => OnCarrier(world, p))
+            ?? team.Where(p => !Roles.IsDefence(Positioning.RoleOf(world, p))).MinBy(p => Vector2.Distance(Flat(p.Position), c))) is { } first)
         {
             team.Remove(first);
             var angle = new Vector2(end * Math.Min(ca - 3f, RinkSpec.BlueLineX + 2f), c.Y * 0.6f);
@@ -259,8 +260,7 @@ internal sealed class TacticsSystem : ISystem
         }
 
         // the defenceman furthest back stays back; the other three make the wall
-        var back = team.Where(p => Roles.IsDefence(Positioning.RoleOf(world, p))).MinBy(p => end * p.Position.X);
-        if (back != null && team.Count > 3)
+        if (team.Where(p => Roles.IsDefence(Positioning.RoleOf(world, p))).MinBy(p => end * p.Position.X) is { } back && team.Count > 3)
         {
             team.Remove(back);
             var spot = new Vector2(end * (-RinkSpec.BlueLineX - 2f), c.Y * 0.2f);
@@ -296,14 +296,15 @@ internal sealed class TacticsSystem : ISystem
     }
 
     /// <summary>Counts each side's zone entries and, while the other side breaks out of its zone, where its skaters stand.</summary>
-    static void Track(World world, TacticsBoard board, Player? carrier, float dt, bool even)
+    static void Track(World world, TacticsBoard board, Maybe<Player> carrier, float dt, bool even)
     {
         var pk = world.Puck;
-        var lastTouch = pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count ? world.Players[pk.LastTouch] : null;
-        var owner = carrier?.Side ?? lastTouch?.Side;
-        if (carrier != null && carrier.Side != board.Owner)
+        var lastTouch = pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count ? world.Players[pk.LastTouch] : Maybe<Player>.None;
+        var owner = carrier.TryGet(out var holder) ? holder.Side.OrNone() : lastTouch.TryGet(out var toucher) ? toucher.Side.OrNone() : SideOrNone.None;
+        var skater = carrier.TryGet(out var held) && !held.IsGoalie ? held : Maybe<Player>.None;
+        if (carrier.TryGet(out var onPuck) && !board.Owner.Is(onPuck.Side))
         {
-            board.Owner = carrier.Side;
+            board.Owner = onPuck.Side.OrNone();
             board.OwnedSince = world.Time;
         }
         foreach (var side in new[] { Side.Home, Side.Away })
@@ -314,22 +315,22 @@ internal sealed class TacticsSystem : ISystem
             board.LastA[(int)side] = a;
             if (!even) continue;
             var tally = Tactics.Tally(world, side);
-            if (owner == side && last <= RinkSpec.BlueLineX && a > RinkSpec.BlueLineX)
+            if (owner.Is(side) && last <= RinkSpec.BlueLineX && a > RinkSpec.BlueLineX)
             {
                 tally.Entries++;
-                if (carrier?.Side == side) tally.Carried++;
+                if (carrier.TryGet(out var entering) && entering.Side == side) tally.Carried++;
             }
 
             // the other side carrying the puck out over its own blue line: how many of this side are back, goal side of it
-            if (carrier is { IsGoalie: false } && carrier.Side != side && board.LastCarrierA[(int)side] > RinkSpec.BlueLineX && end * carrier.Position.X <= RinkSpec.BlueLineX)
+            if (skater.TryGet(out var exiting) && exiting.Side != side && board.LastCarrierA[(int)side] > RinkSpec.BlueLineX && end * exiting.Position.X <= RinkSpec.BlueLineX)
             {
                 tally.Exits++;
-                tally.BackAtExits += Skaters(world, side).Count(p => end * p.Position.X < end * carrier.Position.X - 1f);
+                tally.BackAtExits += Skaters(world, side).Count(p => end * p.Position.X < end * exiting.Position.X - 1f);
             }
-            board.LastCarrierA[(int)side] = carrier is { IsGoalie: false } && carrier.Side != side ? end * carrier.Position.X : float.NegativeInfinity;
+            board.LastCarrierA[(int)side] = skater.TryGet(out var leaving) && leaving.Side != side ? end * leaving.Position.X : float.NegativeInfinity;
 
             // the other side carrying the puck in its own zone, settled for a moment: a breakout this side is meeting
-            if (carrier is not { IsGoalie: false } || carrier.Side == side || end * carrier.Position.X <= RinkSpec.BlueLineX) continue;
+            if (!skater.TryGet(out var breaking) || breaking.Side == side || end * breaking.Position.X <= RinkSpec.BlueLineX) continue;
             if (world.Time - board.OwnedSince < Settled) continue;
             tally.BreakoutSeconds += dt;
             foreach (var p in Skaters(world, side))

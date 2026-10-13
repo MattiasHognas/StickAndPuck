@@ -22,7 +22,7 @@ public sealed class PenaltyScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        float period = Env("SAP_PERIOD") is { } s and > 0 ? s : 20 * 60;
+        float period = Env("SAP_PERIOD").TryGet(out float s) && s > 0 ? s : 20 * 60;
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = period }, settings);
         Scenes.AddStarters(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_AI_HUMAN"), "1", StringComparison.Ordinal)
@@ -31,7 +31,7 @@ public sealed class PenaltyScene : IScene
             centre.Slot = 0;
         }
 
-        if (Env("SAP_PENALTY_STRICT") is { } strict and >= 0) Penalties.Strictness = strict;
+        if (Env("SAP_PENALTY_STRICT").TryGet(out float strict) && strict >= 0) Penalties.Strictness = strict;
         MatchFlow.Begin(world);
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_PENALTY_OT"), "1", StringComparison.Ordinal))
         {
@@ -46,13 +46,13 @@ public sealed class PenaltyScene : IScene
         Penalties.Book(world).ScriptAfterDrop = 2f;
         if (string.Equals(Environment.GetEnvironmentVariable("SAP_PENALTY_MAJOR"), "1", StringComparison.Ordinal))
             Penalties.Book(world).ScriptCall = (Infraction.Boarding, Severity.MajorAndGameMisconduct);
-        if (Env("SAP_PENALTY_SKIP") is { } skip and > 0) PenaltyScenes.FastForward(world, skip);
+        if (Env("SAP_PENALTY_SKIP").TryGet(out float skip) && skip > 0) PenaltyScenes.FastForward(world, skip);
         return world;
     }
 
-    static float? Env(string name)
+    static Maybe<float> Env(string name)
     {
-        return float.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : null;
+        return float.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : Maybe<float>.None;
     }
 }
 

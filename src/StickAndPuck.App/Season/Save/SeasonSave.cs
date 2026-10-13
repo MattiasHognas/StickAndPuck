@@ -28,21 +28,28 @@ public static class SeasonSave
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "season.json");
 
     /// <summary>Gets a value indicating whether a season save exists, for the start screen's Continue.</summary>
-    /// <param name="path">The file, by default <see cref="DefaultPath"/>.</param>
     /// <returns>True when there is a save to continue.</returns>
-    public static bool Exists(string? path = null)
+    public static bool Exists() => Exists(DefaultPath);
+
+    /// <summary>Gets a value indicating whether a season save exists, for the start screen's Continue.</summary>
+    /// <param name="path">The file.</param>
+    /// <returns>True when there is a save to continue.</returns>
+    public static bool Exists(string path)
     {
-        return File.Exists(path ?? DefaultPath);
+        return File.Exists(path);
     }
 
     /// <summary>Writes the season, replacing any earlier save.</summary>
     /// <param name="season">The season.</param>
-    /// <param name="path">The file, by default <see cref="DefaultPath"/>.</param>
-    public static void Write(SeasonState season, string? path = null)
+    public static void Write(SeasonState season) => Write(season, DefaultPath);
+
+    /// <summary>Writes the season, replacing any earlier save.</summary>
+    /// <param name="season">The season.</param>
+    /// <param name="path">The file.</param>
+    public static void Write(SeasonState season, string path)
     {
         if (DeviceInput.Playing) return;    // W67: a replay never touches the saves
-        path ??= DefaultPath;
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(path) ?? "");
         season.Saved = DateTime.UtcNow;
         string temp = path + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(season, Json));
@@ -50,30 +57,34 @@ public static class SeasonSave
     }
 
     /// <summary>Reads the saved season.</summary>
-    /// <param name="path">The file, by default <see cref="DefaultPath"/>.</param>
-    /// <returns>The season, or null when there is no save, it cannot be read, or it is from a newer version.</returns>
-    public static SeasonState? Read(string? path = null)
+    /// <returns>The season, or None when there is no save, it cannot be read, or it is from a newer version.</returns>
+    public static Maybe<SeasonState> Read() => Read(DefaultPath);
+
+    /// <summary>Reads the saved season.</summary>
+    /// <param name="path">The file.</param>
+    /// <returns>The season, or None when there is no save, it cannot be read, or it is from a newer version.</returns>
+    public static Maybe<SeasonState> Read(string path)
     {
-        path ??= DefaultPath;
-        if (!File.Exists(path)) return null;
+        if (!File.Exists(path)) return Maybe<SeasonState>.None;
         try
         {
-            var season = JsonSerializer.Deserialize<SeasonState>(File.ReadAllText(path), Json);
-            if (season == null || season.Version > SeasonState.CurrentVersion || season.Games.Count == 0) return null;
+            if (JsonSerializer.Deserialize<SeasonState>(File.ReadAllText(path), Json) is not { } season || season.Version > SeasonState.CurrentVersion || season.Games.Count == 0) return Maybe<SeasonState>.None;
             return season;
         }
         catch (JsonException e)
         {
             Console.WriteLine($"SAP: season save {path} could not be read ({e.Message})");
-            return null;
+            return Maybe<SeasonState>.None;
         }
     }
 
     /// <summary>Removes the save, for New season on the start screen.</summary>
-    /// <param name="path">The file, by default <see cref="DefaultPath"/>.</param>
-    public static void Delete(string? path = null)
+    public static void Delete() => Delete(DefaultPath);
+
+    /// <summary>Removes the save, for New season on the start screen.</summary>
+    /// <param name="path">The file.</param>
+    public static void Delete(string path)
     {
-        path ??= DefaultPath;
         if (File.Exists(path)) File.Delete(path);
     }
 }

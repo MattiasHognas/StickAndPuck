@@ -30,10 +30,11 @@ public sealed class LightingTests : CheckedTest
         var world = new WorldBuilder().Setup(s => s with { PeriodSeconds = 60 }).Build();
         var cues = new LightCues();
         var systems = new ISystem[] { new PuckPhysics(), new MatchRules() };
-        void Step(Action<World>? before = null)
+        void Step() => StepAfter(_ => { });
+        void StepAfter(Action<World> before)
         {
             world.Events.Clear();
-            before?.Invoke(world);
+            before(world);
             foreach (var s in systems) s.Update(world, Game.Step);
             cues.Update(world, Game.Step);
             world.Time += Game.Step; world.Tick++;
@@ -48,7 +49,7 @@ public sealed class LightingTests : CheckedTest
         for (int i = 0; i < LightCues.LightsUpSeconds / Game.Step + 1; i++) Step();
         Check(cues.Current() == new CueLight(Vector3.One, true, false), "full light once they are up");
 
-        Step(w => w.Events.Publish(new GoalScored(w.Time, Side.Home, w.Players.First(p => p.Side == Side.Home).Id, default, 0)));
+        StepAfter(w => w.Events.Publish(new GoalScored(w.Time, Side.Home, w.Players.First(p => p.Side == Side.Home).Id, default, 0)));
         Check(cues.Flashing && cues.Current().Flash, "a goal starts a flash");
         bool dark = false;
         for (int i = 0; i < LightCues.FlashSeconds / Game.Step - 2; i++) { Step(); dark |= !cues.Current().Flash; }

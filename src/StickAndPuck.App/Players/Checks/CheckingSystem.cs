@@ -84,7 +84,7 @@ internal sealed class CheckingSystem : ISystem
         landed.Remove(p.Id);
         waiting.Remove(p.Id);
         var dir = PuckHandling.Intent(p);
-        if (CheckingModel.Target(world, p) is { } target)
+        if (CheckingModel.Target(world, p).TryGet(out var target))
         {
             var off = new Vector2(target.Position.X - p.Position.X, target.Position.Z - p.Position.Z);
             if (off.LengthSquared() > 1e-6f) dir = Vector2.Normalize(off);
@@ -98,7 +98,7 @@ internal sealed class CheckingSystem : ISystem
 
     void TryHit(World world, Player checker)
     {
-        if (CheckingModel.Target(world, checker) is not { } target) return;
+        if (!CheckingModel.Target(world, checker).TryGet(out var target)) return;
         var off = new Vector2(target.Position.X - checker.Position.X, target.Position.Z - checker.Position.Z);
         if (waiting.Contains(checker.Id) && off.Length() > CheckingModel.Meet) return;   // coming together: hit when they meet
         landed.Add(checker.Id);

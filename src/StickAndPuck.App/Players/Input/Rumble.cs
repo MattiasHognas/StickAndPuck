@@ -14,8 +14,8 @@ internal static partial class Rumble
     const int Pads = 2;
 
     static readonly bool Off = string.Equals(Environment.GetEnvironmentVariable("SAP_RUMBLE"), "0", StringComparison.Ordinal);
-    static readonly IRumbler?[] Rumblers = new IRumbler?[Pads];
-    static readonly string?[] Opened = new string?[Pads];
+    static readonly Maybe<IRumbler>[] Rumblers = new Maybe<IRumbler>[Pads];
+    static readonly string[] Opened = [.. Enumerable.Repeat(string.Empty, Pads)];   // "" for none: a pad's name is never empty
 
     interface IRumbler : IDisposable
     {
@@ -33,28 +33,28 @@ internal static partial class Rumble
     {
         int index = device switch { InputDevice.Gamepad1 => 0, InputDevice.Gamepad2 => 1, _ => -1 };
         if (index < 0 || Off) return;
-        if (Rumbler(index) is { } r) r.Start(Math.Clamp(strong, 0, 1), Math.Clamp(weak, 0, 1), seconds);
+        if (Rumbler(index).TryGet(out var r)) r.Start(Math.Clamp(strong, 0, 1), Math.Clamp(weak, 0, 1), seconds);
     }
 
     /// <summary>Stops rumbles whose time is up, where the system does not time them itself. Call every step.</summary>
     /// <param name="dt">The step length.</param>
     public static void Update(float dt)
     {
-        foreach (var r in Rumblers) r?.Tick(dt);
+        foreach (var r in Rumblers)
+            if (r.TryGet(out var rumbler)) rumbler.Tick(dt);
     }
 
     /// <summary>Finds or reopens the rumble for the n-th pad; a different pad in that place gets a fresh one.</summary>
-    static IRumbler? Rumbler(int index)
+    static Maybe<IRumbler> Rumbler(int index)
     {
-        string? name = Gamepads.Name(index);
-        if (name == null) return null;
+        if (!Gamepads.Name(index).TryGet(out string name)) return Maybe<IRumbler>.None;
         if (string.Equals(Opened[index], name, StringComparison.Ordinal)) return Rumblers[index];
-        Rumblers[index]?.Dispose();
+        if (Rumblers[index].TryGet(out var old)) old.Dispose();
         Opened[index] = name;
         Rumblers[index] = OperatingSystem.IsLinux() ? Evdev.Open(index, name)
-            : OperatingSystem.IsWindows() ? new XInput(index)
-            : null;
-        if (Rumblers[index] == null) Console.WriteLine($"SAP: rumble: {name} has no rumble here");
+            : OperatingSystem.IsWindows() ? Maybe.Some<IRumbler>(new XInput(index))
+            : Maybe<IRumbler>.None;
+        if (!Rumblers[index].HasValue) Console.WriteLine($"SAP: rumble: {name} has no rumble here");
         return Rumblers[index];
     }
 
@@ -77,7 +77,7 @@ internal static partial class Rumble
         }
 
         /// <summary>Opens the event device of the n-th pad that can rumble, preferring one whose name matches.</summary>
-        public static Evdev? Open(int index, string name)
+        public static Maybe<IRumbler> Open(int index, string name)
         {
             var pads = new List<(string Path, string Name)>();
             foreach (string dir in Directory.Exists("/sys/class/input") ? Directory.GetDirectories("/sys/class/input", "event*").Order(StringComparer.Ordinal) : Enumerable.Empty<string>())
@@ -90,17 +90,17 @@ internal static partial class Rumble
                 pads.Add(("/dev/input/" + Path.GetFileName(dir), devName));
             }
 
-            var pick = pads.FirstOrDefault(p => Matches(p.Name, name));
-            if (pick.Path == null && index < pads.Count) pick = pads[index];
-            if (pick.Path == null) return null;
+            var found = pads.FirstOrNone(p => Matches(p.Name, name));
+            if (!found.HasValue && index < pads.Count) found = pads[index];
+            if (!found.TryGet(out var pick)) return Maybe<IRumbler>.None;
             int fd = open(pick.Path, OpenWrite);
             if (fd < 0)
             {
                 Console.WriteLine($"SAP: rumble: cannot open {pick.Path} for {name} (no write access)");
-                return null;
+                return Maybe<IRumbler>.None;
             }
             Console.WriteLine($"SAP: rumble: {name} on {pick.Path} ({pick.Name})");
-            return new Evdev(fd);
+            return Maybe.Some<IRumbler>(new Evdev(fd));
         }
 
         public unsafe void Start(float strong, float weak, float seconds)

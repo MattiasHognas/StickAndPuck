@@ -63,29 +63,29 @@ internal sealed class PositioningSystem : ISystem
     }
 
     /// <summary>This step's reading of the play: who has the puck, whether play is on, and who chases and presses for each side.</summary>
-    sealed record StepView(Player? Carrier, bool Play, int?[] Chaser, int?[] Presser);
+    sealed record StepView(Maybe<Player> Carrier, bool Play, Maybe<int>[] Chaser, Maybe<int>[] Presser);
 
     static StepView Read(World world, PositioningBoard board)
     {
         var pk = world.Puck;
-        var carrier = pk.Carrier >= 0 && pk.Carrier < world.Players.Count ? world.Players[pk.Carrier] : null;
-        var lastTouch = pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count ? world.Players[pk.LastTouch] : null;
+        var carrier = pk.Carrier >= 0 && pk.Carrier < world.Players.Count ? world.Players[pk.Carrier] : Maybe<Player>.None;
+        var lastTouch = pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count ? world.Players[pk.LastTouch] : Maybe<Player>.None;
         bool play = world.Match.Phase is MatchPhase.Play or MatchPhase.Overtime && pk.Live;
 
-        var owner = carrier?.Side ?? lastTouch?.Side;
+        var owner = carrier.TryGet(out var holder) ? holder.Side.OrNone() : lastTouch.TryGet(out var toucher) ? toucher.Side.OrNone() : SideOrNone.None;
         foreach (var side in new[] { Side.Home, Side.Away })
-            board.Phase[(int)side] = owner == side ? TeamPhase.Attack : owner == null ? Loose(world, side) : TeamPhase.Defend;
+            board.Phase[(int)side] = owner.Is(side) ? TeamPhase.Attack : owner == SideOrNone.None ? Loose(world, side) : TeamPhase.Defend;
 
-        var view = new StepView(carrier, play, new int?[2], new int?[2]);
-        if (play && carrier == null && Chaseable(pk))
+        var view = new StepView(carrier, play, new Maybe<int>[2], new Maybe<int>[2]);
+        if (play && !carrier.HasValue && Chaseable(pk))
         {
             view.Chaser[0] = Quickest(world, Side.Home);
             view.Chaser[1] = Quickest(world, Side.Away);
         }
-        if (play && carrier != null)
+        if (play && carrier.TryGet(out var onPuck))
         {
-            var defending = carrier.Side == Side.Home ? Side.Away : Side.Home;
-            view.Presser[(int)defending] = Nearest(world, defending, carrier);
+            var defending = onPuck.Side == Side.Home ? Side.Away : Side.Home;
+            view.Presser[(int)defending] = Nearest(world, defending, onPuck);
         }
         return view;
     }
@@ -100,32 +100,32 @@ internal sealed class PositioningSystem : ISystem
         plan.Ideal = TeamShape.Spot(plan.Role, teamPhase, end, new Vector2(pk.Position.X, pk.Position.Z));
 
         plan.Job = p.Slot >= 0 ? Job.Human
-            : world.Tick - plan.RequestTick <= 1 && plan.Request != null ? Job.Requested
+            : world.Tick - plan.RequestTick <= 1 && plan.Request.HasValue ? Job.Requested
             : world.Match.Phase == MatchPhase.Faceoff ? Job.Faceoff
             : !step.Play ? Job.Idle
-            : step.Carrier == p ? Job.Carry
+            : step.Carrier.TryGet(out var carrier) && carrier == p ? Job.Carry
             : step.Chaser[(int)p.Side] == p.Id ? Job.Chase
             : step.Presser[(int)p.Side] == p.Id ? Job.Pressure
             : Job.Shape;
 
         var cycle = Positioning.Board(world).Cycle[(int)p.Side];
-        plan.Station = cycle.Active && cycle.Stations.TryGetValue(p.Id, out var station) ? station : null;
+        plan.Station = cycle.Active && cycle.Stations.TryGetValue(p.Id, out var station) ? station : Maybe<Station>.None;
         var at = new Vector2(p.Position.X, p.Position.Z);
 
         plan.Target = plan.Job switch
         {
-            Job.Requested => plan.Request!.Value,
+            Job.Requested => plan.Request.Or(at),   // Requested only with a request
             Job.Faceoff => TeamShape.Faceoff(plan.Role, end, new Vector2(pk.Position.X, pk.Position.Z)),
-            Job.Carry when plan.Station is { } own => Cycle.AroundNet(at, Cycle.Spot(own, end, cycle.CornerSide), end),
+            Job.Carry when plan.Station.TryGet(out var own) => Cycle.AroundNet(at, Cycle.Spot(own, end, cycle.CornerSide), end),
             Job.Carry => CarryTarget(world, p, end),
             Job.Chase => ChaseTarget(p, pk, smart),
-            Job.Pressure => PressureTarget(step.Carrier!, end, smart),
+            Job.Pressure when step.Carrier.TryGet(out var pressed) => PressureTarget(pressed, end, smart),   // a presser only with a carrier
             Job.Shape => ShapeTarget(world, plan, p, OpenSpot(world, plan, p, step.Carrier, teamPhase, end, cycle, Read(pk, smart)), smart, dt),
             _ => at,
         };
-        if (plan.Job == Job.Shape && plan.Open != null) plan.Job = Job.Support;
-        if (plan.Job is Job.Shape or Job.Support && plan.Station != null) plan.Target = Cycle.AroundNet(at, plan.Target, end);
-        if (plan.Job is not (Job.Shape or Job.Support)) { plan.Read = null; plan.Open = null; }
+        if (plan.Job == Job.Shape && plan.Open.HasValue) plan.Job = Job.Support;
+        if (plan.Job is Job.Shape or Job.Support && plan.Station.HasValue) plan.Target = Cycle.AroundNet(at, plan.Target, end);
+        if (plan.Job is not (Job.Shape or Job.Support)) { plan.Read = Maybe<Vector2>.None; plan.Open = Maybe<Vector2>.None; }
     }
 
     /// <summary>
@@ -135,16 +135,16 @@ internal sealed class PositioningSystem : ISystem
     /// get through to a spot worth having (<see cref="GetOpen"/>). Each read is rolled against his
     /// hockey IQ and lasts a moment before the next, shorter for a smart skater.
     /// </summary>
-    Vector2 OpenSpot(World world, SkaterPlan plan, Player p, Player? carrier, TeamPhase phase, int end, CycleState cycle, Vector2 puckRead)
+    Vector2 OpenSpot(World world, SkaterPlan plan, Player p, Maybe<Player> onPuck, TeamPhase phase, int end, CycleState cycle, Vector2 puckRead)
     {
         var shape = TeamShape.Spot(plan.Role, phase, end, puckRead);
-        if (phase != TeamPhase.Attack || carrier == null || carrier.Side != p.Side)
+        if (phase != TeamPhase.Attack || !onPuck.TryGet(out var carrier) || carrier.Side != p.Side)
         {
-            plan.Open = null;
+            plan.Open = Maybe<Vector2>.None;
             return shape;
         }
 
-        var spot = plan.Station is { } station ? Cycle.Spot(station, end, cycle.CornerSide) : shape;
+        var spot = plan.Station.TryGet(out var station) ? Cycle.Spot(station, end, cycle.CornerSide) : shape;
         float radius;
         float minA = -RinkSpec.HalfLength, maxA = RinkSpec.HalfLength;
         float puckA = end * world.Puck.Position.X;
@@ -156,7 +156,7 @@ internal sealed class PositioningSystem : ISystem
             if (inZone) (minA, maxA) = (RinkSpec.BlueLineX + 0.6f, RinkSpec.BlueLineX + 4.5f);
             else maxA = end * spot.X + 2f;
         }
-        else if (plan.Station != null)
+        else if (plan.Station.HasValue)
         {
             radius = 2.2f;
             minA = RinkSpec.BlueLineX + 1.5f;
@@ -167,12 +167,13 @@ internal sealed class PositioningSystem : ISystem
             if (puckA <= RinkSpec.BlueLineX) maxA = RinkSpec.BlueLineX - 0.8f;   // stay onside
         }
 
-        bool stale = plan.Open is not { } open || Vector2.Distance(open, spot) > radius * 1.6f;
-        if (!stale && world.Time < plan.OpenNext) return plan.Open!.Value;
+        bool stale = !plan.Open.TryGet(out var open) || Vector2.Distance(open, spot) > radius * 1.6f;
+        if (!stale && world.Time < plan.OpenNext) return open;
         int iq = Jitter.Roll(world, p, rng).Iq;
-        plan.Open = GetOpen.Best(world, p, carrier, spot, radius, minA, maxA, iq, rng, plan.Open);
+        var best = GetOpen.Best(world, p, carrier, spot, radius, minA, maxA, iq, rng, plan.Open);
+        plan.Open = best;
         plan.OpenNext = world.Time + Traits.Scale(p.Data.Traits.HockeyIq, 0.7f, 0.3f) * (0.8f + 0.4f * rng.NextSingle());
-        return plan.Open.Value;
+        return best;
     }
 
     /// <summary>Writes the command that takes an AI skater to its target; decisions may add a shot, pass or check.</summary>
@@ -187,7 +188,7 @@ internal sealed class PositioningSystem : ISystem
         {
             Job.Idle => Steering.Toward(p, at),
             Job.Chase or Job.Pressure => Steering.Toward(p, target, 0.8f, sprint: true),
-            Job.Carry when plan.Station != null => Steering.Toward(p, target, 1f),
+            Job.Carry when plan.Station.HasValue => Steering.Toward(p, target, 1f),
             Job.Carry => Steering.Toward(p, target, 1.5f, sprint: true),
             Job.Requested => Steering.Toward(p, target, round ? 0.5f : Steering.Arrive, sprint: plan.RequestSprint),
             Job.Faceoff => Steering.Toward(p, target, round ? 0.5f : 1.5f),
@@ -254,9 +255,9 @@ internal sealed class PositioningSystem : ISystem
     }
 
     /// <summary>Gets the AI skater of a side that would reach the puck first, unless a human on that side would.</summary>
-    static int? Quickest(World world, Side side)
+    static Maybe<int> Quickest(World world, Side side)
     {
-        Player? best = null;
+        var best = Maybe<Player>.None;
         float bestTime = float.MaxValue;
         foreach (var p in world.OnIce(side))
         {
@@ -264,7 +265,7 @@ internal sealed class PositioningSystem : ISystem
             float t = TimeTo(p, world.Puck);
             if (t < bestTime) { bestTime = t; best = p; }
         }
-        return best is { Slot: < 0 } ? best.Id : null;
+        return best.TryGet(out var quickest) && quickest.Slot < 0 ? quickest.Id : Maybe<int>.None;
     }
 
     static float BestTime(World world, Side side)
@@ -301,11 +302,10 @@ internal sealed class PositioningSystem : ISystem
     }
 
     /// <summary>The nearest AI skater of the defending side to the carrier; nobody when a human is nearer.</summary>
-    static int? Nearest(World world, Side side, Player carrier)
+    static Maybe<int> Nearest(World world, Side side, Player carrier)
     {
-        var best = world.OnIce(side).Where(p => !p.IsGoalie && p.Action is not (PlayerAction.Fallen or PlayerAction.Fight))
-            .MinBy(p => Vector3.DistanceSquared(p.Position, carrier.Position));
-        return best is { Slot: < 0 } ? best.Id : null;
+        return world.OnIce(side).Where(p => !p.IsGoalie && p.Action is not (PlayerAction.Fallen or PlayerAction.Fight))
+            .MinBy(p => Vector3.DistanceSquared(p.Position, carrier.Position)) is { Slot: < 0 } best ? best.Id : Maybe<int>.None;
     }
 
     /// <summary>Goal side of the carrier, a step ahead of where he is going for a smart defender.</summary>
@@ -329,14 +329,17 @@ internal sealed class PositioningSystem : ISystem
         var spot = pa > RinkSpec.GoalLineX - 9f
             ? new Vector2(RinkSpec.GoalLineX - 8f, pz > 0 ? -2.5f : 2.5f)
             : new Vector2(Math.Min(pa + 10f, RinkSpec.GoalLineX - 8f), pz * 0.5f);
-        var ahead = world.Players
+        if (world.Players
             .Where(o => o.OnIce && o.Side != p.Side && !o.IsGoalie)
             .Select(o => (o, a: end * o.Position.X - pa, d: Vector3.Distance(o.Position, p.Position)))
             .Where(x => x.a > 0 && x.d < 5f)
             .OrderBy(x => x.d)
             .Select(x => x.o)
-            .FirstOrDefault();
-        if (ahead != null) spot.Y += ahead.Position.Z > pz ? -3f : 3f;
+            .FirstOrDefault() is { } ahead)
+        {
+            spot.Y += ahead.Position.Z > pz ? -3f : 3f;
+        }
+
         return TeamShape.Inside(new Vector2(end * spot.X, spot.Y));
     }
 
@@ -350,7 +353,7 @@ internal sealed class PositioningSystem : ISystem
             plan.ErrorUntil = world.Time + 4f + rng.NextSingle() * 4f;
         }
         float follow = Math.Min(1f, (1.2f + 4.8f * smart) * dt);
-        var read = plan.Read ?? new Vector2(p.Position.X, p.Position.Z);
+        var read = plan.Read.TryGet(out var was) ? was : new Vector2(p.Position.X, p.Position.Z);
         read += (spot - read) * follow;
         plan.Read = read;
         return TeamShape.Inside(read + plan.Error);

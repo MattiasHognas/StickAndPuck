@@ -18,8 +18,8 @@ internal sealed class MomentumSystem : ISystem, IDisposable
     const int Voices = 3;
 
     readonly Sound[] crowd = new Sound[Voices];
-    Fight? credited;
-    HudArt? art;
+    Maybe<Fight> credited;
+    Maybe<HudArt> art;
     bool sound;
     int voice;
     float swell;
@@ -62,17 +62,17 @@ internal sealed class MomentumSystem : ISystem, IDisposable
     /// <inheritdoc/>
     public void DrawHud(World world, RenderContext render)
     {
-        if (art == null || !MatchFlow.IsRunning(world) || world.Match.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final) return;
-        if (Momentum.Leader(world) is not { } side) return;
+        if (!art.TryGet(out var hud) || !MatchFlow.IsRunning(world) || world.Match.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final) return;
+        if (!Momentum.Leader(world).TryGetSide(out var side)) return;
         float level = Momentum.Of(world, side);
-        MomentumBar.Draw(world, art, side, level);
+        MomentumBar.Draw(world, hud, side, level);
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        art?.Unload();
-        art = null;
+        if (art.TryGet(out var hud)) hud.Unload();
+        art = Maybe<HudArt>.None;
         if (!sound) return;
         sound = false;
         if (!IsAudioDeviceReady()) return;     // W12 closes the device first; then raylib has freed the sounds
@@ -85,13 +85,14 @@ internal sealed class MomentumSystem : ISystem, IDisposable
         foreach (var e in world.Events.Current)
         {
             if (e is GoalScored goal) Boost(world, goal.Side, MomentumCause.Goal);
-            else if (e is CheckLanded check && check.Strength >= MomentumTuning.BigHitStrength && Fighting.Current(world) == null) Boost(world, check.Side, MomentumCause.BigHit);
+            else if (e is CheckLanded check && check.Strength >= MomentumTuning.BigHitStrength && !Fighting.Current(world).HasValue) Boost(world, check.Side, MomentumCause.BigHit);
         }
 
-        if (Fighting.Current(world) is { LoserId: >= 0 } fight && !ReferenceEquals(fight, credited))
+        if (Fighting.Current(world).TryGet(out var fight) && fight.LoserId >= 0 && !credited.Is(c => ReferenceEquals(c, fight)))
         {
             credited = fight;
-            Boost(world, world.Players[fight.Other(fight.Of(fight.LoserId)!).PlayerId].Side, MomentumCause.FightWon);
+            var won = fight.Of(fight.LoserId).TryGet(out var loser) ? fight.Other(loser) : fight.Checker;
+            Boost(world, world.Players[won.PlayerId].Side, MomentumCause.FightWon);
         }
     }
 
@@ -115,7 +116,7 @@ internal sealed class MomentumSystem : ISystem, IDisposable
     {
         swell -= dt;
         if (swell > 0f) return;
-        float level = Momentum.Leader(world) is { } side ? Momentum.Of(world, side) : 0f;
+        float level = Momentum.Leader(world).TryGetSide(out var side) ? Momentum.Of(world, side) : 0f;
         if (level < MomentumTuning.SwellBelow) return;
         swell = MomentumTuning.SwellGap;
         var state = Momentum.State(world);

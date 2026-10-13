@@ -30,9 +30,8 @@ internal static class PlayoffBracket
         for (int r = 0; r < PlayoffState.RoundCount; r++)
         {
             int cx = x + Pad + 4 + (r * Column);
-            var round = r < playoffs.Rounds.Count ? playoffs.Rounds[r] : null;
             art.DrawText(PlayoffState.RoundTitle(r), cx, top, art.Text);
-            var series = round?.Series ?? (r == 1 ? Waiting(playoffs) : []);
+            var series = r < playoffs.Rounds.Count ? playoffs.Rounds[r].Series : (r == 1 ? Waiting(playoffs) : []);
             int gap = r == 0 ? 3 * Line : (Height - (Pad * 2) - (Line * 6)) / Math.Max(1, series.Count);
             for (int s = 0; s < series.Count; s++)
             {
@@ -57,7 +56,7 @@ internal static class PlayoffBracket
             return;
         }
         var ink = string.Equals(club, user, StringComparison.Ordinal) ? art.Score : art.Text;
-        if (series.IsOver && !string.Equals(series.Winner, club, StringComparison.Ordinal)) ink = Raylib.ColorAlpha(ink, 0.4f);
+        if (series.IsOver && !series.Winner.Is(w => string.Equals(w, club, StringComparison.Ordinal))) ink = Raylib.ColorAlpha(ink, 0.4f);
         art.DrawText(Num(seed), x, y, ink);
         art.DrawText(Short(clubs, club), x + 16, y, ink);
         art.DrawText(Num(wins), x + 60, y, ink);
@@ -65,10 +64,10 @@ internal static class PlayoffBracket
 
     static string Footer(PlayoffState playoffs, IReadOnlyList<ClubData> clubs)
     {
-        if (playoffs.Champion is { } champion) return Text.Format(K.ShlChampionsOf, Name(clubs, champion));
+        if (playoffs.IsOver) return Text.Format(K.ShlChampionsOf, Name(clubs, playoffs.Champion.Or("")));
         string user = Name(clubs, playoffs.UserClub);
         if (!playoffs.UserQualified) return Text.Format(K.MissedPlayoffsPlace, user, playoffs.SeedOf(playoffs.UserClub));
-        if (playoffs.UserSeries is { } s)
+        if (playoffs.UserSeries.TryGet(out var s))
         {
             string other = Name(clubs, string.Equals(s.High, playoffs.UserClub, StringComparison.Ordinal) ? s.Low : s.High);
             return Text.Format(K.NextPlayoffGameV, playoffs.CurrentTitle, s.Games.Count + 1, other);
@@ -94,7 +93,7 @@ internal static class PlayoffBracket
 
     static string Name(IReadOnlyList<ClubData> clubs, string id)
     {
-        return clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))?.Name ?? id;
+        return clubs.FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal)).Select(c => c.Name).Or(id);
     }
 
     static string Num(int n) => n.ToString(CultureInfo.InvariantCulture);

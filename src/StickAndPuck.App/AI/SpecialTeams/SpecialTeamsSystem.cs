@@ -70,9 +70,9 @@ internal sealed class SpecialTeamsSystem : ISystem
         if (!on || !Positioning.Drives(world) || world.Match.Phase is not (MatchPhase.Play or MatchPhase.Overtime)) return;
         var pk = world.Puck;
         TrackClear(world, board);
-        if (Penalties.PowerPlay(world) is not { } pp)
+        if (!Penalties.PowerPlay(world).TryGetSide(out var pp))
         {
-            board.PowerPlay = null;
+            board.PowerPlay = SideOrNone.None;
             return;
         }
         if (!pk.Live) return;
@@ -81,14 +81,14 @@ internal sealed class SpecialTeamsSystem : ISystem
         var ppTeam = Skaters(world, pp);
         var killTeam = Skaters(world, kill);
         if (ppTeam.Count <= killTeam.Count) return;
-        if (board.PowerPlay != pp) Begin(board, pp);
+        if (!board.PowerPlay.Is(pp)) Begin(board, pp);
 
         int end = PuckHandling.AttackEnd(world, pp);
         var puck = Flat(pk.Position);
-        var carrier = pk.Carrier >= 0 && pk.Carrier < world.Players.Count ? world.Players[pk.Carrier] : null;
+        var carrier = pk.Carrier >= 0 && pk.Carrier < world.Players.Count ? world.Players[pk.Carrier] : Maybe<Player>.None;
         KillPuck(world, board, carrier, killTeam, ppTeam);
 
-        bool ppPuck = carrier != null ? carrier.Side == pp : pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count && world.Players[pk.LastTouch].Side == pp;
+        bool ppPuck = carrier.TryGet(out var holder) ? holder.Side == pp : pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count && world.Players[pk.LastTouch].Side == pp;
         // only with the puck over the blue line, so nobody skates into the zone ahead of it (offside)
         bool inZone = Formations.InZone(end, puck, ZoneMargin);
         if (!inZone || !ppPuck)
@@ -110,16 +110,16 @@ internal sealed class SpecialTeamsSystem : ISystem
     }
 
     /// <summary>A killer on the puck clears it and the rest stay back; with the puck loose, the kill does not chase it into the other end.</summary>
-    void KillPuck(World world, SpecialTeamsBoard board, Player? carrier, List<Player> killTeam, List<Player> ppTeam)
+    void KillPuck(World world, SpecialTeamsBoard board, Maybe<Player> carrier, List<Player> killTeam, List<Player> ppTeam)
     {
-        if (carrier is { IsGoalie: false } && killTeam.Count > 0 && carrier.Side == killTeam[0].Side)
+        if (carrier.TryGet(out var killer) && !killer.IsGoalie && killTeam.Count > 0 && killer.Side == killTeam[0].Side)
         {
-            Clear(world, board, carrier);
-            StayBack(world, killTeam, carrier);
+            Clear(world, board, killer);
+            StayBack(world, killTeam, killer);
             return;
         }
         board.ClearCarrier = -1;
-        if (carrier == null) NoChase(world, killTeam, ppTeam);
+        if (!carrier.HasValue) NoChase(world, killTeam, ppTeam);
     }
 
     /// <summary>
@@ -166,7 +166,7 @@ internal sealed class SpecialTeamsSystem : ISystem
     /// <summary>A new power play: it picks its shape (W22d's club tactics may pick it later).</summary>
     void Begin(SpecialTeamsBoard board, Side pp)
     {
-        board.PowerPlay = pp;
+        board.PowerPlay = pp.OrNone();
         board.PpShape = rng.NextSingle() < 0.5f ? Formation.Umbrella : Formation.OneThreeOne;
         board.InZone = false;
         board.Tally[(int)pp].PowerPlays++;
@@ -188,7 +188,7 @@ internal sealed class SpecialTeamsSystem : ISystem
     {
         if (!ShowSpots && !world.Settings.MatchDebug) return;
         var board = SpecialTeams.Board(world);
-        if (board.PowerPlay is not { } pp) return;
+        if (!board.PowerPlay.TryGetSide(out var pp)) return;
         var kill = pp == Side.Home ? Side.Away : Side.Home;
         string text = $"PP {world.Setup.Club(pp).ShortName} {Name(board.PpShape)}   KILL {Name(board.KillShape)}   CLEARS {board.Tally[(int)kill].Clears}";
         DrawText(text, 6, 252, 10, new Color(0xef, 0xe0, 0xc2, 255));
@@ -218,7 +218,7 @@ internal sealed class SpecialTeamsSystem : ISystem
     }
 
     /// <summary>The power play's AI skaters take their spots; the carrier drifts toward his, leaving the play with the puck to decisions.</summary>
-    void PowerPlay(World world, SpecialTeamsBoard board, Side side, List<Player> team, int end, Vector2 puck, Player? carrier, float dt)
+    void PowerPlay(World world, SpecialTeamsBoard board, Side side, List<Player> team, int end, Vector2 puck, Maybe<Player> carrier, float dt)
     {
         var spots = Formations.Spots(board.PpShape, team.Count, end, puck);
         var pairs = Pair(world, board, side, team, spots);
@@ -231,19 +231,19 @@ internal sealed class SpecialTeamsSystem : ISystem
             if (Vector2.Distance(Flat(p.Position), spot) < OnSpot) held++;
             if (p.Slot >= 0 || Positioning.JobOf(world, p) == Job.Chase) continue;
             board.Spots[(int)side][p.Id] = spot;
-            if (p == carrier)
+            if (carrier.TryGet(out var holder) && holder == p)
             {
                 // the carrier is positioning's and decisions': he skates and passes as usual, and shoots more readily
                 Shoot(world, board, p, end);
                 continue;
             }
-            Take(world, p, carrier != null ? Open(world, board, p, carrier, spot) : Read(world, board, p, spot, 1.2f), "power play spot");
+            Take(world, p, carrier.TryGet(out var mate) ? Open(world, board, p, mate, spot) : Read(world, board, p, spot, 1.2f), "power play spot");
         }
         tally.OnSpot += dt * held / Math.Max(1, pairs.Count);
     }
 
     /// <summary>The kill holds its box or diamond; the killer on the carrier presses him while he is near his spot.</summary>
-    void Kill(World world, SpecialTeamsBoard board, Side side, List<Player> team, int end, Vector2 puck, Player? carrier, float dt)
+    void Kill(World world, SpecialTeamsBoard board, Side side, List<Player> team, int end, Vector2 puck, Maybe<Player> carrier, float dt)
     {
         var spots = Formations.Spots(board.KillShape, team.Count, end, puck);
         var pairs = Pair(world, board, side, team, spots);
@@ -254,8 +254,8 @@ internal sealed class SpecialTeamsSystem : ISystem
         foreach (var (p, spot) in pairs)
         {
             board.Spots[(int)side][p.Id] = spot;
-            bool presses = carrier != null && DefenceSystem.DutyOf(world, p) is Duty.Contain or Duty.Engage
-                && Vector2.Distance(Flat(carrier.Position), spot) < PressFrom;
+            bool presses = carrier.TryGet(out var onPuck) && DefenceSystem.DutyOf(world, p) is Duty.Contain or Duty.Engage
+                && Vector2.Distance(Flat(onPuck.Position), spot) < PressFrom;
             if (presses || Vector2.Distance(Flat(p.Position), spot) < OnSpot) held++;
             if (presses || p.Slot >= 0 || Positioning.JobOf(world, p) == Job.Chase) continue;
             Take(world, p, Read(world, board, p, spot, 1.6f), "kill spot");
@@ -309,7 +309,7 @@ internal sealed class SpecialTeamsSystem : ISystem
     {
         var plan = board.For(p.Id);
         var brain = Decisions.Board(world).For(p.Id);
-        if (p.Slot >= 0 || AiCommand.Committed(world, p) || brain.LatePass != null || world.Time < plan.ShotLook) return;
+        if (p.Slot >= 0 || AiCommand.Committed(world, p) || brain.LatePass.HasValue || world.Time < plan.ShotLook) return;
         plan.ShotLook = world.Time + Choices.ThinkEvery(p.Data.Traits.HockeyIq) * (0.8f + 0.4f * rng.NextSingle());
         if (world.Time - brain.GotAt < 0.25f) return;
         var at = Flat(world.Puck.Position);
@@ -337,13 +337,14 @@ internal sealed class SpecialTeamsSystem : ISystem
     Vector2 Open(World world, SpecialTeamsBoard board, Player p, Player carrier, Vector2 spot)
     {
         var plan = board.For(p.Id);
-        bool stale = plan.Open is not { } open || Vector2.Distance(open, spot) > OpenRadius * 1.6f;
-        if (!stale && world.Time < plan.OpenNext) return plan.Open!.Value;
+        bool stale = !plan.Open.TryGet(out var open) || Vector2.Distance(open, spot) > OpenRadius * 1.6f;
+        if (!stale && world.Time < plan.OpenNext) return open;
         int iq = Jitter.Roll(world, p, rng).Iq;
         float minA = RinkSpec.BlueLineX + 0.8f, maxA = RinkSpec.HalfLength;
-        plan.Open = GetOpen.Best(world, p, carrier, spot, OpenRadius, minA, maxA, iq, rng, plan.Open);
+        var best = GetOpen.Best(world, p, carrier, spot, OpenRadius, minA, maxA, iq, rng, plan.Open);
+        plan.Open = best;
         plan.OpenNext = world.Time + Traits.Scale(p.Data.Traits.HockeyIq, 0.7f, 0.3f) * (0.8f + 0.4f * rng.NextSingle());
-        return plan.Open.Value;
+        return best;
     }
 
     /// <summary>Takes a skater over from positioning and the defence, as the defence does, and skates him to his spot.</summary>
@@ -393,23 +394,23 @@ internal sealed class SpecialTeamsSystem : ISystem
     /// </summary>
     static void TrackClear(World world, SpecialTeamsBoard board)
     {
-        if (board.Clearing is not { } c) return;
+        if (!board.Clearing.TryGet(out var c)) return;
         var pk = world.Puck;
         var tally = board.Tally[(int)c.Side];
         if (c.Released < 0)
         {
             if (pk.Carrier == c.Player && world.Time - c.At < 1.5f) return;
-            if (pk.Carrier >= 0 || pk.LastTouch != c.Player || !pk.Live) { board.Clearing = null; return; }
+            if (pk.Carrier >= 0 || pk.LastTouch != c.Player || !pk.Live) { board.Clearing = Maybe<ClearWatch>.None; return; }
             tally.Clears++;
             if (c.Flip) tally.Flips++;
             board.Clearing = c with { Released = world.Time };
             return;
         }
-        if (world.Time - c.Released > 3f) { board.Clearing = null; return; }
+        if (world.Time - c.Released > 3f) { board.Clearing = Maybe<ClearWatch>.None; return; }
         if (PuckHandling.AttackEnd(world, c.Side) * pk.Position.X > -RinkSpec.BlueLineX)
         {
             tally.ClearedOut++;
-            board.Clearing = null;
+            board.Clearing = Maybe<ClearWatch>.None;
         }
     }
 

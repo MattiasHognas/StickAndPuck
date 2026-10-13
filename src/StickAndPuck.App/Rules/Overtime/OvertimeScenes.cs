@@ -32,7 +32,7 @@ public sealed class OvertimeScene : IScene
         Scenes.AddStarters(world);
         if (human && world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre) centre.Slot = 0;
         MatchFlow.Begin(world);
-        string? start = Environment.GetEnvironmentVariable("SAP_START");
+        string start = Environment.GetEnvironmentVariable("SAP_START") ?? "";
         bool shootout = string.Equals(start, "shootout", StringComparison.Ordinal);
         if (shootout || string.Equals(start, "overtime", StringComparison.Ordinal))
         {

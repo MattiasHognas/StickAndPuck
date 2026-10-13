@@ -144,12 +144,12 @@ public sealed class Fight
         return f == Checker ? Victim : Checker;
     }
 
-    /// <summary>Gets a skater's side of the fight, or null if he is not in it.</summary>
+    /// <summary>Gets a skater's side of the fight, or None if he is not in it.</summary>
     /// <param name="playerId">The skater.</param>
     /// <returns>The fighter.</returns>
-    public Fighter? Of(int playerId)
+    public Maybe<Fighter> Of(int playerId)
     {
-        return Checker.PlayerId == playerId ? Checker : Victim.PlayerId == playerId ? Victim : null;
+        return Checker.PlayerId == playerId ? Checker : Victim.PlayerId == playerId ? Victim : Maybe<Fighter>.None;
     }
 }
 
@@ -171,20 +171,20 @@ public static class Fighting
 {
     static readonly ConditionalWeakTable<World, FightState> States = new();
 
-    /// <summary>Gets the fight on the ice, or null.</summary>
+    /// <summary>Gets the fight on the ice, or None.</summary>
     /// <param name="world">The match.</param>
     /// <returns>The fight.</returns>
-    public static Fight? Current(World world)
+    public static Maybe<Fight> Current(World world)
     {
-        return States.TryGetValue(world, out var s) ? s.Fight : null;
+        return States.TryGetValue(world, out var s) ? s.Fight : Maybe<Fight>.None;
     }
 
-    /// <summary>Gets the fight waiting to be accepted, or null.</summary>
+    /// <summary>Gets the fight waiting to be accepted, or None.</summary>
     /// <param name="world">The match.</param>
     /// <returns>The offer.</returns>
-    public static FightOffer? Pending(World world)
+    public static Maybe<FightOffer> Pending(World world)
     {
-        return States.TryGetValue(world, out var s) ? s.Offer : null;
+        return States.TryGetValue(world, out var s) ? s.Offer : Maybe<FightOffer>.None;
     }
 
     /// <summary>Gets the fights started this match.</summary>
@@ -201,19 +201,19 @@ public static class Fighting
     /// <returns>True while he fights.</returns>
     public static bool InFight(World world, int playerId)
     {
-        return Current(world)?.Of(playerId) != null;
+        return Current(world).Is(f => f.Of(playerId).HasValue);
     }
 
     /// <summary>
     /// Gets the clip a fighter shows: "grab", "punch", "block", "fall", "celebrate" or "idle",
-    /// the seconds since it started, and whether it loops. Null for a skater not in a fight.
+    /// the seconds since it started, and whether it loops. None for a skater not in a fight.
     /// </summary>
     /// <param name="world">The match.</param>
     /// <param name="p">The skater.</param>
     /// <returns>The pose.</returns>
-    public static (string Clip, float Seconds, bool Loop)? Pose(World world, Player p)
+    public static Maybe<(string Clip, float Seconds, bool Loop)> Pose(World world, Player p)
     {
-        if (Current(world)?.Of(p.Id) is not { } f) return null;
+        if (!Current(world).TryGet(out var fight) || !fight.Of(p.Id).TryGet(out var f)) return Maybe<(string Clip, float Seconds, bool Loop)>.None;
         bool loop = f.Clip is "grab" or "celebrate" or "idle";
         return (f.Clip, Math.Max(0, world.Time - f.ClipSince), loop);
     }
@@ -230,7 +230,7 @@ public static class Fighting
     public static bool Offer(World world, int checkerId, int victimId)
     {
         var s = State(world);
-        if (s.Fight != null || s.Offer != null || !CanFight(world, checkerId, victimId)) return false;
+        if (s.Fight.HasValue || s.Offer.HasValue || !CanFight(world, checkerId, victimId)) return false;
         if (world.Time - s.LastFight < FightTuning.Cooldown) return false;
         var offer = new FightOffer(checkerId, victimId, world.Time);
         int[] ids = [checkerId, victimId];
@@ -238,7 +238,7 @@ public static class Fighting
         {
             var p = world.Players[ids[i]];
             offer.Slots[i] = HumanSlot(world, p.Side);
-            if (offer.Slots[i] < 0) offer.Accepted[i] = s.ForceAccept ?? (s.Rng.NextSingle() < FightModel.AcceptChance(world, p));
+            if (offer.Slots[i] < 0) offer.Accepted[i] = s.ForceAccept.TryGet(out bool forced) ? forced : s.Rng.NextSingle() < FightModel.AcceptChance(world, p);
         }
         s.Offer = offer;
         s.Log(world, $"gloves off: {Penalties.Name(world, world.Players[checkerId])} and {Penalties.Name(world, world.Players[victimId])}");
@@ -288,12 +288,12 @@ public static class Fighting
 /// <summary>The fight state of one match.</summary>
 internal sealed class FightState
 {
-    public Fight? Fight { get; set; }
+    public Maybe<Fight> Fight { get; set; }
 
-    public FightOffer? Offer { get; set; }
+    public Maybe<FightOffer> Offer { get; set; }
 
     /// <summary>Gets or sets the last fight that ended, kept for the result banner.</summary>
-    public Fight? Last { get; set; }
+    public Maybe<Fight> Last { get; set; }
 
     public float LastEnded { get; set; } = float.NegativeInfinity;
 
@@ -306,8 +306,8 @@ internal sealed class FightState
     /// <summary>Gets or sets the chance a hard check drops the gloves; scenes raise it.</summary>
     public float OfferChance { get; set; } = FightTuning.OfferChance;
 
-    /// <summary>Gets or sets a fixed answer for AI fighters (scenes and tests), or null to roll.</summary>
-    public bool? ForceAccept { get; set; }
+    /// <summary>Gets or sets a fixed answer for AI fighters (scenes and tests), or None to roll.</summary>
+    public Maybe<bool> ForceAccept { get; set; }
 
     /// <summary>Gets or sets whether the AI ever blocks (tests turn it off).</summary>
     public bool AiBlocks { get; set; } = true;

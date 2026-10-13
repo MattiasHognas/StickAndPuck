@@ -50,8 +50,7 @@ public static class FaceoffFormation
         var pairs = new List<(Player, int)>();
         foreach (int spot in spots)
         {
-            var match = free.Find(p => p.Data.Position == SpotPositions[spot]);
-            if (match == null) continue;
+            if (free.Find(p => p.Data.Position == SpotPositions[spot]) is not { } match) continue;
             pairs.Add((match, spot));
             free.Remove(match);
         }

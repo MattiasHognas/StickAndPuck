@@ -37,9 +37,9 @@ public sealed class AiMatchScene : IScene
         return world;
     }
 
-    static int? Env(string name)
+    static Maybe<int> Env(string name)
     {
-        return int.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Integer, CultureInfo.InvariantCulture, out int v) ? Math.Clamp(v, 0, 100) : null;
+        return int.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Integer, CultureInfo.InvariantCulture, out int v) ? Math.Clamp(v, 0, 100) : Maybe<int>.None;
     }
 }
 
@@ -52,10 +52,10 @@ internal static class DecisionScenes
     /// <summary>Gives every skater of a club the same hockey IQ.</summary>
     /// <param name="world">The match, before it starts.</param>
     /// <param name="side">The club.</param>
-    /// <param name="smart">The trait, or null to leave the roster's own.</param>
-    public static void SetHockeyIq(World world, Side side, int? smart)
+    /// <param name="smart">The trait, or None to leave the roster's own.</param>
+    public static void SetHockeyIq(World world, Side side, Maybe<int> smart)
     {
-        if (smart is not { } value) return;
+        if (!smart.TryGet(out int value)) return;
         foreach (var p in world.Players.ToList())
         {
             if (p.Side != side || p.IsGoalie) continue;

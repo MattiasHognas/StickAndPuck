@@ -21,11 +21,11 @@ internal sealed class FrameRecorder
     }
 
     /// <summary>Gets a recorder when SAP_RECORD is set to a positive number of seconds.</summary>
-    /// <returns>The recorder, or null.</returns>
-    public static FrameRecorder? FromEnvironment()
+    /// <returns>The recorder, or None.</returns>
+    public static Maybe<FrameRecorder> FromEnvironment()
     {
         if (!float.TryParse(Environment.GetEnvironmentVariable("SAP_RECORD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds) || seconds <= 0)
-            return null;
+            return Maybe<FrameRecorder>.None;
         string folder = Environment.GetEnvironmentVariable("SAP_FRAMES") is { Length: > 0 } f ? f : "frames";
         return new FrameRecorder(seconds, AssetRoot.Output(folder));
     }

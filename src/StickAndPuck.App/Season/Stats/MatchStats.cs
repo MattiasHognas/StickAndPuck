@@ -20,8 +20,8 @@ public sealed class MatchStatSheet
     /// <summary>Gets or sets every player's line, home club first.</summary>
     public List<MatchStatLine> Lines { get; set; } = [];
 
-    /// <summary>Gets or sets the player of the game, null only when nobody played.</summary>
-    public MatchStatLine? PlayerOfGame { get; set; }
+    /// <summary>Gets or sets the player of the game, None only when nobody played.</summary>
+    public Maybe<MatchStatLine> PlayerOfGame { get; set; }
 
     /// <summary>Gets a value indicating whether a side won the match.</summary>
     /// <param name="side">The side.</param>
@@ -41,10 +41,10 @@ public sealed class MatchStatSheet
 
     /// <summary>Gets the award for the player of the game, for the season's or the run's list.</summary>
     /// <param name="game">The game key.</param>
-    /// <returns>The award, or null when nobody played.</returns>
-    public PlayerOfGameAward? Award(string game)
+    /// <returns>The award, or None when nobody played.</returns>
+    public Maybe<PlayerOfGameAward> Award(string game)
     {
-        return PlayerOfGame is { } s ? new PlayerOfGameAward(game, Home, Away, HomeGoals, AwayGoals, s.Club, s.Number, s.Name, s.Goals, s.Assists, s.Saves) : null;
+        return PlayerOfGame.TryGet(out var s) ? new PlayerOfGameAward(game, Home, Away, HomeGoals, AwayGoals, s.Club, s.Number, s.Name, s.Goals, s.Assists, s.Saves) : Maybe<PlayerOfGameAward>.None;
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public sealed class MatchStatSheet
             .OrderByDescending(l => Merit(l, this))
             .ThenByDescending(l => l.Points)
             .ThenBy(l => l.Number)
-            .FirstOrDefault();
+            .FirstOrNone();
     }
 
     /// <summary>How much one line earned the award.</summary>
@@ -97,21 +97,21 @@ public sealed class MatchStatTracker
 
     readonly Dictionary<int, MatchStatLine> lines = [];
     readonly List<(int Id, Side Side, float Time)> touches = [];
-    World? world;
+    Maybe<World> world;
     int lastTouch = -1;
     bool shootout;
 
     /// <summary>Gets the sheet so far, with no player of the game until <see cref="Finish"/>.</summary>
     public MatchStatSheet Sheet { get; } = new();
 
-    /// <summary>Gets the world being followed, or null before the first step.</summary>
-    public World? World => world;
+    /// <summary>Gets the world being followed, or None before the first step.</summary>
+    public Maybe<World> World => world;
 
     /// <summary>Follows one step: call after the systems that publish the step's events have run.</summary>
     /// <param name="w">The world.</param>
     public void Observe(World w)
     {
-        if (!ReferenceEquals(w, world)) Begin(w);
+        if (!world.TryGet(out var followed) || !ReferenceEquals(w, followed)) Begin(w);
         var m = w.Match;
         if (m.Phase == MatchPhase.Shootout) shootout = true;
         foreach (var p in w.Players)
@@ -130,13 +130,13 @@ public sealed class MatchStatTracker
             switch (e)
             {
                 case ShotTaken shot when !shootout:
-                    if (Line(shot.ShooterId) is { } shooter) shooter.Shots++;
+                    if (Line(shot.ShooterId).TryGet(out var shooter)) shooter.Shots++;
                     break;
                 case CheckLanded check:
-                    if (Line(check.CheckerId) is { } checker) checker.Hits++;
+                    if (Line(check.CheckerId).TryGet(out var checker)) checker.Hits++;
                     break;
                 case ShotSaved save:
-                    if (Line(save.GoalieId) is { } goalie) goalie.Saves++;
+                    if (Line(save.GoalieId).TryGet(out var goalie)) goalie.Saves++;
                     break;
                 case GoalScored goal when !shootout:
                     Goal(w, goal.Side, goal.ScorerId, goal.Time);
@@ -154,10 +154,10 @@ public sealed class MatchStatTracker
     /// <returns>The sheet.</returns>
     public MatchStatSheet Finish()
     {
-        if (world != null)
+        if (world.TryGet(out var w))
         {
-            Sheet.HomeGoals = world.Match.Score[(int)Side.Home];
-            Sheet.AwayGoals = world.Match.Score[(int)Side.Away];
+            Sheet.HomeGoals = w.Match.Score[(int)Side.Home];
+            Sheet.AwayGoals = w.Match.Score[(int)Side.Away];
         }
         Sheet.PickPlayerOfGame();
         return Sheet;
@@ -173,7 +173,7 @@ public sealed class MatchStatTracker
         Sheet.Home = w.Setup.Home.Id;
         Sheet.Away = w.Setup.Away.Id;
         Sheet.Lines.Clear();
-        Sheet.PlayerOfGame = null;
+        Sheet.PlayerOfGame = Maybe<MatchStatLine>.None;
         foreach (var p in w.Players)
         {
             var line = MatchStatLine.For(w.Setup.Club(p.Side).Id, p.Side, p.Data);
@@ -182,9 +182,9 @@ public sealed class MatchStatTracker
         }
     }
 
-    MatchStatLine? Line(int id)
+    Maybe<MatchStatLine> Line(int id)
     {
-        return lines.TryGetValue(id, out var l) ? l : null;
+        return lines.TryGetValue(id, out var l) ? l : Maybe<MatchStatLine>.None;
     }
 
     void Goal(World w, Side side, int playerId, float time)
@@ -199,7 +199,7 @@ public sealed class MatchStatTracker
                 if (touches[i].Side == side) { scorer = touches[i].Id; break; }
             }
         }
-        if (scorer < 0 || Line(scorer) is not { } line)
+        if (scorer < 0 || !Line(scorer).TryGet(out var line))
         {
             touches.Clear();
             return;
@@ -215,7 +215,8 @@ public sealed class MatchStatTracker
             if (s != side || id == scorer || time - t > AssistWindow) break;
             if (!assists.Contains(id)) assists.Add(id);
         }
-        foreach (int id in assists) Line(id)!.Assists++;
+        foreach (int id in assists)
+            if (Line(id).TryGet(out var helper)) helper.Assists++;
         touches.Clear();
     }
 }
@@ -223,6 +224,6 @@ public sealed class MatchStatTracker
 /// <summary>The last match's sheet, for the results screen of any mode (exhibition and versus too).</summary>
 public static class MatchStats
 {
-    /// <summary>Gets the sheet of the last match that ended in this run, or null before one has.</summary>
-    public static MatchStatSheet? Last { get; internal set; }
+    /// <summary>Gets the sheet of the last match that ended in this run, or None before one has.</summary>
+    public static Maybe<MatchStatSheet> Last { get; internal set; }
 }

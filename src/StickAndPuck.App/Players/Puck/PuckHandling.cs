@@ -177,8 +177,8 @@ public static class PuckHandling
     /// </summary>
     /// <param name="world">The match.</param>
     /// <param name="passer">The passer.</param>
-    /// <returns>The receiver, or null to pass into space.</returns>
-    public static Player? PickReceiver(World world, Player passer)
+    /// <returns>The receiver, or None to pass into space.</returns>
+    public static Maybe<Player> PickReceiver(World world, Player passer)
     {
         return PickReceiver(world, passer, passer.Command.Move);
     }
@@ -191,12 +191,12 @@ public static class PuckHandling
     /// <param name="world">The match.</param>
     /// <param name="passer">The passer.</param>
     /// <param name="stick">The stick direction to judge, read like <see cref="PlayerCommand.Move"/>.</param>
-    /// <returns>The receiver, or null to pass into space.</returns>
-    public static Player? PickReceiver(World world, Player passer, Vector2 stick)
+    /// <returns>The receiver, or None to pass into space.</returns>
+    public static Maybe<Player> PickReceiver(World world, Player passer, Vector2 stick)
     {
         var dir = Intent(passer, stick);
         var from = Flat(Blade(passer));
-        Player? best = null;
+        var best = Maybe<Player>.None;
         float bestScore = float.MaxValue;
         foreach (var mate in world.OnIce(passer.Side))
         {
@@ -222,12 +222,12 @@ public static class PuckHandling
     /// </summary>
     /// <param name="world">The match.</param>
     /// <param name="passer">The passer.</param>
-    /// <returns>The receiver, or null to pass into space.</returns>
-    public static Player? PickOpen(World world, Player passer)
+    /// <returns>The receiver, or None to pass into space.</returns>
+    public static Maybe<Player> PickOpen(World world, Player passer)
     {
         var from = Flat(Blade(passer));
         var foes = world.OnIce(passer.Side == Side.Home ? Side.Away : Side.Home).Where(o => o.Action != PlayerAction.Fallen).ToList();
-        Player? best = null;
+        var best = Maybe<Player>.None;
         float bestDistance = float.MaxValue;
         foreach (var mate in world.OnIce(passer.Side))
         {

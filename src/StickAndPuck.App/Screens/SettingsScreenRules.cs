@@ -26,20 +26,20 @@ internal sealed class RulesScreen : MenuScreen
     {
         var rules = Choice.Resolve();
         var preset = RuleSet.Of(Choice.Preset);
-        var items = new List<MenuItem> { new(Text.Get(K.Preset), Value: rules.Name, Change: d => Pick(Cycle(Choice.Preset, d))) };
-        string? group = null;
+        var items = new List<MenuItem> { new(Text.Get(K.Preset), value: rules.Name, change: d => Pick(Cycle(Choice.Preset, d))) };
+        var group = Maybe<string>.None;
         foreach (var row in RuleRows.Shown)
         {
-            if (!string.Equals(row.Group, group, StringComparison.Ordinal))
+            if (!group.Is(g => string.Equals(row.Group, g, StringComparison.Ordinal)))
             {
                 group = row.Group;
-                items.Add(new MenuItem(Text.Format(K.RuleGroupHeading, Text.Get(group)), Enabled: false));
+                items.Add(new MenuItem(Text.Format(K.RuleGroupHeading, Text.Get(row.Group)), enabled: false));
             }
             string value = row.Get(rules);
             bool changed = !string.Equals(value, row.Get(preset), StringComparison.Ordinal);
-            items.Add(new MenuItem(Text.Get(row.Label), Value: RuleRow.Show(value) + (changed ? " *" : ""), Change: d => Change(row, d)));
+            items.Add(new MenuItem(Text.Get(row.Label), value: RuleRow.Show(value) + (changed ? " *" : ""), change: d => Change(row, d)));
         }
-        items.Add(new MenuItem(Text.Get(K.ResetToPreset), () => Pick(Choice.Preset), Enabled: rules.Custom));
+        items.Add(new MenuItem(Text.Get(K.ResetToPreset), () => Pick(Choice.Preset), enabled: rules.Custom));
         items.Add(new MenuItem(Text.Get(K.Back), Back));
         return items;
     }
@@ -65,7 +65,7 @@ internal sealed class RulesScreen : MenuScreen
         top += ScreenArt.Row / 2;
         art.Menu(items.Skip(first).Take(shown).ToList(), Selected - first, x, PanelW, top);
         if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
-        art.Hint(Text.Get(ScreenFlow.Playing != null ? K.HintRulesNextMatch : K.HintRules));
+        art.Hint(Text.Get(ScreenFlow.Playing.HasValue ? K.HintRulesNextMatch : K.HintRules));
     }
 
     /// <inheritdoc/>
@@ -118,22 +118,21 @@ internal static class RulePicks
     /// <returns>The resolved rules.</returns>
     public static RuleSet For(MatchPlan plan)
     {
-        if (Fixed(plan.Mode) is { } fixedRules) return fixedRules;
-        if (!plan.Season || SeasonSession.Current is not { } season) return Choice.Resolve();
-        if (season.Rules == null)
-        {
-            season.Rules = Choice.Resolve();
-            if (SeasonSession.SavePath.Length > 0) SeasonSave.Write(season, SeasonSession.SavePath);
-            Console.WriteLine($"SAP: screens: season stores {season.Rules.Name} rules");
-        }
-        return season.Rules;
+        if (plan.Mode.TryGet(out var mode) && Fixed(mode).TryGet(out var fixedRules)) return fixedRules;
+        if (!plan.Season || !SeasonSession.Current.TryGet(out var season)) return Choice.Resolve();
+        if (season.Rules.TryGet(out var stored)) return stored;
+        var rules = Choice.Resolve();
+        season.Rules = rules;
+        if (SeasonSession.SavePath.Length > 0) SeasonSave.Write(season, SeasonSession.SavePath);
+        Console.WriteLine($"SAP: screens: season stores {rules.Name} rules");
+        return rules;
     }
 
-    /// <summary>Gets the rules a mode is fixed to, or null when the player picks: the arcade entries play Arcade.</summary>
-    /// <param name="mode">The mode, or null for a season game.</param>
-    /// <returns>The fixed rules, or null.</returns>
-    public static RuleSet? Fixed(IGameMode? mode)
+    /// <summary>Gets the rules a mode is fixed to, or None when the player picks: the arcade entries play Arcade.</summary>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The fixed rules, or None.</returns>
+    public static Maybe<RuleSet> Fixed(IGameMode mode)
     {
-        return mode is ArcadeMode ? RuleSet.Arcade : null;
+        return mode is ArcadeMode ? RuleSet.Arcade : Maybe<RuleSet>.None;
     }
 }

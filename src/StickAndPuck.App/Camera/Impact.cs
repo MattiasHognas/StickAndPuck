@@ -99,7 +99,7 @@ internal sealed class Impact
         var victim = world.Players
             .Where(p => p.Side != e.Side && p.OnIce)
             .MinBy(p => Vector3.DistanceSquared(p.Position, e.Position));
-        if (victim != null) Pulse(world, victim.Slot, 0.75f + (0.25f * over), 0.8f, 0.24f + (0.12f * over));
+        if (victim is { }) Pulse(world, victim.Slot, 0.75f + (0.25f * over), 0.8f, 0.24f + (0.12f * over));
         Console.WriteLine($"SAP: impact: hard check {e.Strength.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}, hold {holdSteps} steps");
     }
 

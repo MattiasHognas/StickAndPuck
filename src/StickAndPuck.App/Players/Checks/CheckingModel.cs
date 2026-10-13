@@ -166,13 +166,13 @@ public static class CheckingModel
     /// </summary>
     /// <param name="world">The match.</param>
     /// <param name="checker">The checker.</param>
-    /// <returns>The target, or null.</returns>
-    public static Player? Target(World world, Player checker)
+    /// <returns>The target, or None.</returns>
+    public static Maybe<Player> Target(World world, Player checker)
     {
         var facing = PuckHandling.Intent(checker);
         var reach = Reach(checker, world.Settings.Difficulty);
         float cone = SimMath.Cos(reach.Cone);
-        Player? best = null;
+        var best = Maybe<Player>.None;
         float bestScore = float.MaxValue;
         foreach (var p in world.Players)
         {

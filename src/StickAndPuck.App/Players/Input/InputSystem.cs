@@ -33,7 +33,7 @@ internal sealed class InputSystem : ISystem
 
             // read every step even with no player, so a press is never carried over to the next one
             var command = readers[slot].Next(state);
-            if (device != InputDevice.None && world.Controlled(slot) is { } player) player.Command = command;
+            if (device != InputDevice.None && world.Controlled(slot).TryGet(out var player)) player.Command = command;
         }
     }
 }

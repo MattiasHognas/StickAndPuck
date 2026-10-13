@@ -26,8 +26,8 @@ public interface IGameMode
     /// <summary>Gets a value indicating whether the results screen offers the mode's next game (a run of games, like arcade).</summary>
     bool HasNextGame => false;
 
-    /// <summary>Gets a line for the results screen about where the mode stands (lives left, the next opponent), or null.</summary>
-    string? Status => null;
+    /// <summary>Gets a line for the results screen about where the mode stands (lives left, the next opponent), or None.</summary>
+    Maybe<string> Status => Maybe<string>.None;
 
     /// <summary>Gets the team select heading for the given pick (W17 names the player picking).</summary>
     /// <param name="index">0 for the first pick, 1 for the second.</param>
@@ -36,8 +36,8 @@ public interface IGameMode
 
     /// <summary>Builds the next match. Called when the mode starts, and again for each next game.</summary>
     /// <param name="start">The clubs, the player's picks and input device.</param>
-    /// <returns>The setup, or null when the mode has nothing more to play (the screens go back to the start screen).</returns>
-    MatchSetup? Setup(GameModeStart start);
+    /// <returns>The setup, or None when the mode has nothing more to play (the screens go back to the start screen).</returns>
+    Maybe<MatchSetup> Setup(GameModeStart start);
 }
 
 /// <summary>What a mode is started with.</summary>
@@ -56,7 +56,7 @@ public sealed class ExhibitionMode : IGameMode
     public int Order => 0;
 
     /// <inheritdoc/>
-    public MatchSetup? Setup(GameModeStart start)
+    public Maybe<MatchSetup> Setup(GameModeStart start)
     {
         var home = start.Picks.Count > 0 ? start.Picks[0] : start.Clubs[0];
         var away = start.Picks.Count > 1 ? start.Picks[1] : start.Clubs.FirstOrDefault(c => c != home) ?? home;
@@ -78,7 +78,7 @@ internal static class GameModes
     {
         return typeof(GameModes).Assembly.GetTypes()
             .Where(t => typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false }
-                && t.GetConstructor(Type.EmptyTypes) != null)
+                && t.GetConstructor(Type.EmptyTypes) is { })
             .Select(t => (IGameMode)Activator.CreateInstance(t)!)
             .Where(m => m.Available)
             .OrderBy(m => m.Order)
@@ -88,11 +88,11 @@ internal static class GameModes
 
     /// <summary>Gets a fresh mode by its type name, as a replay names it.</summary>
     /// <param name="typeName">The type name; "" (or an unknown name) is a season game.</param>
-    /// <returns>The mode, or null for a season game.</returns>
-    public static IGameMode? Named(string typeName)
+    /// <returns>The mode, or None for a season game.</returns>
+    public static Maybe<IGameMode> Named(string typeName)
     {
         var type = typeof(GameModes).Assembly.GetTypes().FirstOrDefault(t => string.Equals(t.Name, typeName, StringComparison.Ordinal)
-            && typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false } && t.GetConstructor(Type.EmptyTypes) != null);
-        return type == null ? null : (IGameMode)Activator.CreateInstance(type)!;
+            && typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false } && t.GetConstructor(Type.EmptyTypes) is { });
+        return type is { } found ? Maybe.Some((IGameMode)Activator.CreateInstance(found)!) : Maybe<IGameMode>.None;
     }
 }

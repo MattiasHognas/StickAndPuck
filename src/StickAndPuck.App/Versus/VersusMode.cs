@@ -31,7 +31,7 @@ public sealed class VersusMode : IGameMode
     }
 
     /// <inheritdoc/>
-    public MatchSetup? Setup(GameModeStart start)
+    public Maybe<MatchSetup> Setup(GameModeStart start)
     {
         var home = start.Picks.Count > 0 ? start.Picks[0] : start.Clubs[0];
         var away = start.Picks.Count > 1 ? start.Picks[1] : start.Clubs.FirstOrDefault(c => c != home) ?? home;
@@ -62,16 +62,15 @@ public sealed class VersusMode : IGameMode
     /// <returns>A device different from player one's.</returns>
     public static InputDevice SecondDevice(InputDevice playerOne)
     {
-        var wanted = Environment.GetEnvironmentVariable("SAP_VERSUS_P2")?.ToLowerInvariant() switch
+        var wanted = (Environment.GetEnvironmentVariable("SAP_VERSUS_P2") ?? "").ToLowerInvariant() switch
         {
             "keyboard" or "kb" or "keyboardmouse" => InputDevice.KeyboardMouse,
             "pad1" or "gamepad1" or "gamepad" => InputDevice.Gamepad1,
             "pad2" or "gamepad2" => InputDevice.Gamepad2,
-            _ => (InputDevice?)null,
+            _ => Screens.ScreenFlow.Prefs.Player2,    // W20: the settings screen's PLAYER 2 CONTROLS
         };
-        wanted ??= Screens.ScreenFlow.Prefs.Player2;    // W20: the settings screen's PLAYER 2 CONTROLS
         if (wanted == InputDevice.None) return InputDevice.None;    // player two turned off: the AI plays the visitors
-        if (wanted is { } w && w != playerOne) return w;
+        if (wanted != playerOne) return wanted;
         return playerOne == InputDevice.Gamepad1 ? InputDevice.KeyboardMouse : InputDevice.Gamepad1;
     }
 
