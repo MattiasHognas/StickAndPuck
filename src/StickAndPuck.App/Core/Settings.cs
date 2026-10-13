@@ -60,7 +60,7 @@ public enum Difficulty
 public sealed record Settings
 {
     /// <summary>Gets how control moves between players.</summary>
-    public ControlSwitching Switching { get; init; } = ControlSwitching.Auto;
+    public ControlSwitching Switching { get; init; } = ControlSwitching.PassesOnly;
 
     /// <summary>Gets how lines change.</summary>
     public LineChanges Lines { get; init; } = LineChanges.Automatic;
