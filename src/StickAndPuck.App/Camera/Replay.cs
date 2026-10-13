@@ -3,6 +3,7 @@ using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Camera;
 
@@ -171,6 +172,6 @@ public sealed class Replay
         const int w = 54, h = 13, x = Game.Width - w - 6, y = 6;
         DrawRectangle(x, y, w, h, TagBack);
         if ((int)(shown * 2) % 2 == 0) DrawRectangle(x + 4, y + 4, 5, 5, TagDot);
-        DrawText("REPLAY", x + 13, y + 2, 10, TagText);
+        DrawText(Text.Get(K.Replay), x + 13, y + 2, 10, TagText);
     }
 }

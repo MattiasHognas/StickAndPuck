@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
@@ -29,33 +30,33 @@ internal static class ArcadeSummary
         art.DrawPanel(run.Champion ? "panel_gold" : run.Lost ? "panel_red" : "panel", x, y, Width, h);
 
         int left = x + Pad + 4, top = y + Pad - 2;
-        string head = run.Champion ? "ARCADE  CHAMPIONS" : run.Lost ? "ARCADE  RUN OVER" : "ARCADE";
+        string head = Text.Get(run.Champion ? K.ArcadeHeadChampions : run.Lost ? K.ArcadeHeadRunOver : K.ArcadeHead);
         art.DrawText(head, left, top, art.Score);
         top += Line;
         art.DrawText(Name(run.UserClub), left, top, art.Score);
-        art.DrawText(run.Rule == ArcadeRule.SuddenDeath ? "SUDDEN DEATH" : "THREE LIVES", x + 190, top, art.Text);
+        art.DrawText(Text.Get(run.Rule == ArcadeRule.SuddenDeath ? K.SuddenDeath : K.ThreeLives), x + 190, top, art.Text);
         top += Line;
-        art.DrawText($"BEATEN {Num(run.Stage)} OF {Num(run.Opponents.Count)}", left, top, art.Text);
-        art.DrawText($"LIVES {Num(run.LivesLeft)} OF {Num(run.StartLives)}", x + 190, top, art.Text);
+        art.DrawText(Text.Format(K.BeatenOf, run.Stage, run.Opponents.Count), left, top, art.Text);
+        art.DrawText(Text.Format(K.LivesOf, run.LivesLeft, run.StartLives), x + 190, top, art.Text);
         top += Line + (Line / 2);
 
         for (int i = 0; i < run.Games.Count; i++)
         {
             var g = run.Games[i];
             var ink = g.Won ? art.Text : art.Score;
-            string extra = g.Result.Kind switch { ResultKind.Overtime => " OT", ResultKind.Shootout => " SO", _ => "" };
+            string extra = g.Result.Kind switch { ResultKind.Overtime => Text.Get(K.SuffixOt), ResultKind.Shootout => Text.Get(K.SuffixSo), _ => "" };
             art.DrawText(Num(i + 1), left, top, ink);
-            art.DrawText(g.Won ? "W" : "L", left + 18, top, ink);
-            art.DrawText($"{(g.Home ? "VS" : "AT")} {Name(g.Opponent)}", left + 34, top, ink);
+            art.DrawText(Text.Get(g.Won ? K.Win : K.Loss), left + 18, top, ink);
+            art.DrawText(Text.Format(g.Home ? K.VsClub : K.AtClub, Name(g.Opponent)), left + 34, top, ink);
             art.DrawText($"{Num(g.GoalsFor)}-{Num(g.GoalsAgainst)}{extra}", x + 230, top, ink);
             top += Line;
         }
 
-        if (!run.IsOver) art.DrawText($"NEXT  {(run.NextAtHome ? "VS" : "AT")} {Name(run.NextOpponent!)}", left, top, art.Score);
+        if (!run.IsOver) art.DrawText(Text.Format(run.NextAtHome ? K.NextVs : K.NextAt, Name(run.NextOpponent!)), left, top, art.Score);
         if (best.Count == 0) return;
 
         // W25: the best runs so far, this one marked
-        art.DrawText("BEST RUNS", left, top, art.Score);
+        art.DrawText(Text.Get(K.BestRunsHead), left, top, art.Score);
         top += Line;
         for (int i = 0; i < best.Count; i++)
         {
@@ -63,8 +64,8 @@ internal static class ArcadeSummary
             bool mine = i + 1 == run.Place;
             var ink = mine ? art.Score : art.Text;
             art.DrawText(Num(i + 1), left, top, ink);
-            art.DrawText($"{Name(r.Club)} {(r.Champion ? "CHAMPIONS" : $"{Num(r.Beaten)} BEATEN")}", left + 18, top, ink);
-            art.DrawText(r.Rule == ArcadeRule.SuddenDeath ? "SD" : "3L", x + 230, top, ink);
+            art.DrawText(Text.Format(K.BestRunLine, Name(r.Club), r.Champion ? Text.Get(K.Champions) : Text.Format(K.Beaten, r.Beaten)), left + 18, top, ink);
+            art.DrawText(Text.Get(r.Rule == ArcadeRule.SuddenDeath ? K.RuleSd : K.Rule3l), x + 230, top, ink);
             art.DrawText($"{Num(r.GoalsFor)}-{Num(r.GoalsAgainst)}", x + 250, top, ink);
             top += Line;
         }

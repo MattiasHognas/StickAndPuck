@@ -4,6 +4,7 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
 using StickAndPuck.App.Rules;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -110,7 +111,7 @@ internal sealed class ScreenSystem : ISystem, IDisposable
             string scorer = world.Setup.Club(side).Name;
             int touch = world.Puck.LastTouch;
             if (touch >= 0 && touch < world.Players.Count && world.Players[touch] is { } p && p.Side == side)
-                scorer = $"#{p.Data.Number} {p.Data.LastName}";
+                scorer = Text.Format(K.PlayerTag, p.Data.Number, p.Data.LastName);
             float elapsed = (m.Period > world.Setup.Periods ? OvertimeRules.PeriodLength(world) : world.Setup.PeriodSeconds) - m.Clock;
             goals.Add(new GoalLine(side, PeriodLabel(world), MatchFlow.ClockText(Math.Max(0, elapsed)), scorer));
         }
@@ -120,7 +121,7 @@ internal sealed class ScreenSystem : ISystem, IDisposable
     static string PeriodLabel(World world)
     {
         int overtime = world.Match.Period - world.Setup.Periods;
-        return overtime <= 1 ? HudSystem.PeriodText(world) : $"{overtime.ToString(System.Globalization.CultureInfo.InvariantCulture)}OT";
+        return overtime <= 1 ? HudSystem.PeriodText(world) : Text.Format(K.OvertimeNumber, overtime);
     }
 
     MatchResult Result(World world)
@@ -130,9 +131,9 @@ internal sealed class ScreenSystem : ISystem, IDisposable
         string decided = "";
         if (sawShootout)
         {
-            decided = "SHOOTOUT";
+            decided = Text.Get(K.Shootout);
             var winner = m.Score[(int)Side.Home] > m.Score[(int)Side.Away] ? Side.Home : Side.Away;
-            lines.Add(new GoalLine(winner, "SO", "", "SHOOTOUT WINNER"));
+            lines.Add(new GoalLine(winner, Text.Get(K.PeriodSo), "", Text.Get(K.ShootoutWinner)));
         }
         else if (m.Period > world.Setup.Periods)
         {

@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
@@ -34,9 +35,24 @@ public sealed class PlayoffState
     /// <summary>Gets or sets the rounds started so far; the last one is being played.</summary>
     public List<PlayoffRound> Rounds { get; set; } = [];
 
+    /// <summary>Gets a round's name in the language shown: play-in, quarter-finals, semi-finals, final.</summary>
+    /// <param name="round">The round, from 0.</param>
+    /// <returns>The name.</returns>
+    public static string RoundTitle(int round) => Text.Get(round switch
+    {
+        <= 0 => K.RoundPlayIn,
+        1 => K.RoundQuarterFinals,
+        2 => K.RoundSemiFinals,
+        _ => K.RoundFinal,
+    });
+
     /// <summary>Gets the number of rounds in the playoffs.</summary>
     [JsonIgnore]
     public static int RoundCount => Format.Length;
+
+    /// <summary>Gets the name of the round being played, in the language shown (W53; <see cref="PlayoffRound.Name"/> is the save's).</summary>
+    [JsonIgnore]
+    public string CurrentTitle => RoundTitle(Rounds.Count - 1);
 
     /// <summary>Gets the round being played.</summary>
     [JsonIgnore]

@@ -4,6 +4,7 @@ using StickAndPuck.App.Fights;
 using StickAndPuck.App.Hud;
 using StickAndPuck.App.Rules;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Momentum;
 
@@ -141,7 +142,7 @@ internal static class MomentumBar
     public static void Draw(World world, HudArt art, Side side, float level)
     {
         const int pad = 3, crest = 16, gap = 4, barH = 4;
-        const string label = "MOMENTUM";
+        string label = Text.Get(K.Momentum);
         int x = art.BugPosition.X;
         // below the penalty box rows (20 px and a 1 px gap each), which share the spot under the scorebug
         int rows = world.Match.Penalties.Count + Penalties.Waiting(world).Count + Penalties.Misconducts(world).Count + Penalties.Delayed(world).Count

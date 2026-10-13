@@ -104,6 +104,9 @@ public sealed record Settings
     /// <summary>Gets a value indicating whether the energy panel showing each unit on the ice shows (SAP_LINES_DEBUG=0|1).</summary>
     public bool LinesDebug { get; init; }
 
+    /// <summary>Gets the language the game shows (W53; SAP_LANGUAGE=english|swedish).</summary>
+    public Language Language { get; init; } = Language.English;
+
     /// <summary>Gets the sound effect volume, 0 to 1.</summary>
     public float Volume { get; init; } = 0.8f;
 
@@ -113,7 +116,7 @@ public sealed record Settings
     /// <summary>
     /// Lays the SAP_* overrides over these settings: SAP_DIFFICULTY, SAP_CAMERA_ZOOM, SAP_LIGHTING,
     /// SAP_CONTROL_MARKER, SAP_SIM_GAME, SAP_AUTO_DEKE, SAP_ONE_TIMERS, SAP_SWAP_KITS, SAP_FPS,
-    /// SAP_MATCH_DEBUG and SAP_LINES_DEBUG. A variable that is unset or empty changes nothing, so
+    /// SAP_MATCH_DEBUG, SAP_LINES_DEBUG and SAP_LANGUAGE. A variable that is unset or empty changes nothing, so
     /// the saved settings stay in charge; a bad value is an error, like SAP_LIGHTING always was.
     /// </summary>
     /// <param name="saved">The saved settings, or null for the defaults.</param>
@@ -132,6 +135,7 @@ public sealed record Settings
         if (Flag("SAP_LINES_DEBUG") is { } lines) s = s with { LinesDebug = lines };
         if (Choice<LightingMood>("SAP_LIGHTING") is { } mood) s = s with { Lighting = mood };
         if (Choice<Difficulty>("SAP_DIFFICULTY") is { } level) s = s with { Difficulty = level };
+        if (Choice<Language>("SAP_LANGUAGE") is { } language) s = s with { Language = language };
         return s;
     }
 

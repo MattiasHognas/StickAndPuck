@@ -1,5 +1,6 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -8,7 +9,7 @@ namespace StickAndPuck.App.Screens;
 /// rule, penalties and fights among them). Game: control switching, line changes, difficulty,
 /// period length, sim game, auto deke, one-timers. Controls: player one's and
 /// player two's devices, the key mapping page (W39), the control marker. Display and sound: camera zoom, lighting mood, swap
-/// kits, volume. Debug: the fps line, the match line, the lines panel. Left and right change a
+/// kits, volume, language (W53). Debug: the fps line, the match line, the lines panel. Left and right change a
 /// value; it applies to the world on show at once (so a paused match plays on with it) and every
 /// later match, and is saved on leaving. The list scrolls when it is taller than the frame. A
 /// running match stays paused while this screen is up (<see cref="ScreenSystem"/> holds every
@@ -35,32 +36,33 @@ internal sealed class SettingsScreen : MenuScreen
         var s = Prefs.Settings;
         return
         [
-            new MenuItem("RULES", () => ScreenFlow.Push(new RulesScreen()), Value: Prefs.Rules.Resolve().Name),
-            new MenuItem("CONTROL SWITCHING", Value: s.Switching switch
+            new MenuItem(Text.Get(K.Rules), () => ScreenFlow.Push(new RulesScreen()), Value: Prefs.Rules.Resolve().Name),
+            new MenuItem(Text.Get(K.ControlSwitching), Value: Text.Get(s.Switching switch
             {
-                ControlSwitching.Auto => "AUTO",
-                ControlSwitching.PassesOnly => "PASSES ONLY",
-                _ => "MANUAL",
-            }, Change: d => Set(s with { Switching = Cycle(s.Switching, d) })),
-            new MenuItem("LINE CHANGES", Value: s.Lines == LineChanges.Automatic ? "AUTOMATIC" : "MANUAL",
+                ControlSwitching.Auto => K.SwitchAuto,
+                ControlSwitching.PassesOnly => K.SwitchPassesOnly,
+                _ => K.SwitchManual,
+            }), Change: d => Set(s with { Switching = Cycle(s.Switching, d) })),
+            new MenuItem(Text.Get(K.LineChanges), Value: Text.Get(s.Lines == LineChanges.Automatic ? K.LinesAutomatic : K.LinesManual),
                 Change: d => Set(s with { Lines = Cycle(s.Lines, d) })),
-            new MenuItem("DIFFICULTY", Value: s.Difficulty.ToString().ToUpperInvariant(), Change: d => Set(s with { Difficulty = Cycle(s.Difficulty, d) })),
-            new MenuItem("PERIOD LENGTH", Value: $"{Prefs.PeriodMinutes.ToString(CultureInfo.InvariantCulture)} MIN", Change: Period),
-            new MenuItem("SIM THIS GAME", Value: OnOff(s.SimGame), Change: _ => Set(s with { SimGame = !s.SimGame })),
-            new MenuItem("AUTO DEKE", Value: OnOff(s.AutoDeke), Change: _ => Set(s with { AutoDeke = !s.AutoDeke })),
-            new MenuItem("ONE-TIMERS", Value: OnOff(s.OneTimers), Change: _ => Set(s with { OneTimers = !s.OneTimers })),
-            new MenuItem("CONTROLS", Value: Device(Prefs.Controls), Change: Controls),
-            new MenuItem("PLAYER 2 CONTROLS", Value: Device(Prefs.Player2), Change: Player2),
-            new MenuItem("KEY MAPPING", () => ScreenFlow.Push(new KeyMappingScreen())),
-            new MenuItem("CONTROL MARKER", Value: OnOff(s.ControlMarker), Change: _ => Set(s with { ControlMarker = !s.ControlMarker })),
-            new MenuItem("CAMERA ZOOM", Value: OnOff(s.CameraZoom), Change: _ => Set(s with { CameraZoom = !s.CameraZoom })),
-            new MenuItem("LIGHTING", Value: s.Lighting.ToString().ToUpperInvariant(), Change: d => Set(s with { Lighting = Cycle(s.Lighting, d) })),
-            new MenuItem("SWAP KITS", Value: OnOff(s.SwapKits), Change: _ => Set(s with { SwapKits = !s.SwapKits })),
-            new MenuItem("VOLUME", Value: ((int)MathF.Round(s.Volume * 10)).ToString(CultureInfo.InvariantCulture), Change: Volume),
-            new MenuItem("FPS LINE", Value: OnOff(s.FpsLine), Change: _ => Set(s with { FpsLine = !s.FpsLine })),
-            new MenuItem("MATCH DEBUG LINE", Value: OnOff(s.MatchDebug), Change: _ => Set(s with { MatchDebug = !s.MatchDebug })),
-            new MenuItem("LINES PANEL", Value: OnOff(s.LinesDebug), Change: _ => Set(s with { LinesDebug = !s.LinesDebug })),
-            new MenuItem("BACK", Back),
+            new MenuItem(Text.Get(K.Difficulty), Value: Text.Get(s.Difficulty switch { Difficulty.Easy => K.DifficultyEasy, Difficulty.Hard => K.DifficultyHard, _ => K.DifficultyNormal }), Change: d => Set(s with { Difficulty = Cycle(s.Difficulty, d) })),
+            new MenuItem(Text.Get(K.PeriodLength), Value: Text.Format(K.PeriodMinutes, Prefs.PeriodMinutes), Change: Period),
+            new MenuItem(Text.Get(K.SimThisGame), Value: OnOff(s.SimGame), Change: _ => Set(s with { SimGame = !s.SimGame })),
+            new MenuItem(Text.Get(K.AutoDeke), Value: OnOff(s.AutoDeke), Change: _ => Set(s with { AutoDeke = !s.AutoDeke })),
+            new MenuItem(Text.Get(K.OneTimers), Value: OnOff(s.OneTimers), Change: _ => Set(s with { OneTimers = !s.OneTimers })),
+            new MenuItem(Text.Get(K.Controls), Value: Device(Prefs.Controls), Change: Controls),
+            new MenuItem(Text.Get(K.Player2Controls), Value: Device(Prefs.Player2), Change: Player2),
+            new MenuItem(Text.Get(K.KeyMapping), () => ScreenFlow.Push(new KeyMappingScreen())),
+            new MenuItem(Text.Get(K.ControlMarker), Value: OnOff(s.ControlMarker), Change: _ => Set(s with { ControlMarker = !s.ControlMarker })),
+            new MenuItem(Text.Get(K.CameraZoom), Value: OnOff(s.CameraZoom), Change: _ => Set(s with { CameraZoom = !s.CameraZoom })),
+            new MenuItem(Text.Get(K.Lighting), Value: Text.Get(s.Lighting switch { LightingMood.Early => K.LightingEarly, LightingMood.Afternoon => K.LightingAfternoon, LightingMood.Late => K.LightingLate, _ => K.LightingRandom }), Change: d => Set(s with { Lighting = Cycle(s.Lighting, d) })),
+            new MenuItem(Text.Get(K.SwapKits), Value: OnOff(s.SwapKits), Change: _ => Set(s with { SwapKits = !s.SwapKits })),
+            new MenuItem(Text.Get(K.Volume), Value: ((int)MathF.Round(s.Volume * 10)).ToString(CultureInfo.InvariantCulture), Change: Volume),
+            new MenuItem(Text.Get(K.Language), Value: Text.NameOf(s.Language), Change: d => Set(s with { Language = Cycle(s.Language, d) })),
+            new MenuItem(Text.Get(K.FpsLine), Value: OnOff(s.FpsLine), Change: _ => Set(s with { FpsLine = !s.FpsLine })),
+            new MenuItem(Text.Get(K.MatchDebugLine), Value: OnOff(s.MatchDebug), Change: _ => Set(s with { MatchDebug = !s.MatchDebug })),
+            new MenuItem(Text.Get(K.LinesPanel), Value: OnOff(s.LinesDebug), Change: _ => Set(s with { LinesDebug = !s.LinesDebug })),
+            new MenuItem(Text.Get(K.Back), Back),
         ];
     }
 
@@ -82,12 +84,12 @@ internal sealed class SettingsScreen : MenuScreen
         first = Math.Clamp(first, 0, Math.Max(0, items.Count - shown));
 
         // a marker row above and below the list says there is more to scroll to
-        var (x, top) = art.Panel("SETTINGS", PanelW, ((shown + 1) * ScreenArt.Row) + 30, PanelTop);
-        if (first > 0) art.Centred("- MORE -", Game.Width / 2, top - 3, ScreenArt.Muted);
+        var (x, top) = art.Panel(Text.Get(K.Settings), PanelW, ((shown + 1) * ScreenArt.Row) + 30, PanelTop);
+        if (first > 0) art.Centred(Text.Get(K.More), Game.Width / 2, top - 3, ScreenArt.Muted);
         top += ScreenArt.Row / 2;
         art.Menu(items.Skip(first).Take(shown).ToList(), Selected - first, x, PanelW, top);
-        if (first + shown < items.Count) art.Centred("- MORE -", Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
-        art.Hint("LEFT RIGHT CHANGES   ESC BACK");
+        if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
+        art.Hint(Text.Get(K.HintSettings));
     }
 
     /// <inheritdoc/>
@@ -98,7 +100,7 @@ internal sealed class SettingsScreen : MenuScreen
         ScreenFlow.Pop();
     }
 
-    static string OnOff(bool on) => on ? "ON" : "OFF";
+    static string OnOff(bool on) => Text.Get(on ? K.On : K.Off);
 
     static string Device(InputDevice device) => Players.Gamepads.Label(device);    // W38: the pad by name
 

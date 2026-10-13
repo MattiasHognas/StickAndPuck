@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -14,8 +15,8 @@ namespace StickAndPuck.App.Screens;
 /// <param name="Speed">Skating.</param>
 /// <param name="Goalie">The best goalie.</param>
 /// <param name="Overall">The whole roster.</param>
-/// <param name="Plays">The club's tactics in words.</param>
-internal sealed record ClubStrengths(int Attack, int Defence, int Speed, int Goalie, int Overall, string Plays)
+/// <param name="Plays">The club's tactics, put in words by <see cref="Describe"/>.</param>
+internal sealed record ClubStrengths(int Attack, int Defence, int Speed, int Goalie, int Overall, ClubTactics Plays)
 {
     static readonly Dictionary<string, ClubStrengths> Cache = new(StringComparer.Ordinal);
 
@@ -35,7 +36,7 @@ internal sealed record ClubStrengths(int Attack, int Defence, int Speed, int Goa
         int speed = Average(skaters, t => (t.Acceleration + t.TopSpeed) / 2.0);
         int goalie = goalies.Count == 0 ? 50
             : (int)Math.Round(goalies.Max(t => (t.GoalieReflexes + t.GoalieGlove + t.GoalieBlocker + t.GoalieReboundControl + t.GoaliePuckHandling) / 5.0));
-        var strengths = new ClubStrengths(attack, def, speed, goalie, (int)Math.Round(ArcadeRun.Strength(club)), Describe(club.Tactics));
+        var strengths = new ClubStrengths(attack, def, speed, goalie, (int)Math.Round(ArcadeRun.Strength(club)), club.Tactics);
         Cache[club.Id] = strengths;
         return strengths;
     }
@@ -45,21 +46,24 @@ internal sealed record ClubStrengths(int Attack, int Defence, int Speed, int Goa
         return players.Count == 0 ? 50 : (int)Math.Round(players.Average(value));
     }
 
-    static string Describe(ClubTactics tactics)
+    /// <summary>Puts a club's tactics in words, in the language shown.</summary>
+    /// <param name="tactics">The tactics.</param>
+    /// <returns>The forecheck, the zone entry and the power play.</returns>
+    public static string Describe(ClubTactics tactics)
     {
-        string forecheck = tactics.Forecheck switch
+        string forecheck = Text.Get(tactics.Forecheck switch
         {
-            Forecheck.Aggressive => "2-1-2 FORECHECK",
-            Forecheck.Trap => "1-3-1 TRAP",
-            _ => "BALANCED FORECHECK",
-        };
-        string entry = tactics.Entry == ZoneEntry.DumpAndChase ? "DUMP IN" : "CARRY IN";
-        string pp = tactics.PowerPlay switch
+            Forecheck.Aggressive => K.Forecheck212,
+            Forecheck.Trap => K.Trap131,
+            _ => K.ForecheckBalanced,
+        });
+        string entry = Text.Get(tactics.Entry == ZoneEntry.DumpAndChase ? K.DumpIn : K.CarryIn);
+        string pp = Text.Get(tactics.PowerPlay switch
         {
-            PowerPlayShape.Umbrella => "UMBRELLA PP",
-            PowerPlayShape.OneThreeOne => "1-3-1 PP",
-            _ => "MIXED PP",
-        };
+            PowerPlayShape.Umbrella => K.PpUmbrella,
+            PowerPlayShape.OneThreeOne => K.Pp131,
+            _ => K.PpMixed,
+        });
         return $"{forecheck}  {entry}  {pp}";
     }
 }

@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Rules;
 
@@ -269,31 +270,31 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         {
             foreach (var p in m.Penalties.Where(p => p.Side == side).OrderBy(p => p.SecondsLeft))
             {
-                string text = $"#{world.Players[p.PlayerId].Data.Number} {MatchFlow.ClockText(p.SecondsLeft)}{(Penalties.Ejected(world, p.PlayerId) ? " GM" : "")}";
+                string text = Text.Format(Penalties.Ejected(world, p.PlayerId) ? K.PenaltyBoxGm : K.PenaltyBoxRow, world.Players[p.PlayerId].Data.Number, MatchFlow.ClockText(p.SecondsLeft));
                 Row(art, world.Setup.Club(side).Id, text, "panel_red", x, y, h, pad, crest, gap);
                 y += h + 1;
             }
             foreach (var p in Penalties.Waiting(world).Where(p => p.Side == side))
             {
-                string text = $"#{world.Players[p.PlayerId].Data.Number} NEXT {MatchFlow.ClockText(p.SecondsLeft)}";
+                string text = Text.Format(K.PenaltyBoxNext, world.Players[p.PlayerId].Data.Number, MatchFlow.ClockText(p.SecondsLeft));
                 Row(art, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
                 y += h + 1;
             }
             foreach (var p in Penalties.Misconducts(world).Where(p => p.Side == side))
             {
-                string text = $"#{world.Players[p.PlayerId].Data.Number} {MatchFlow.ClockText(p.SecondsLeft)} MISC";
+                string text = Text.Format(K.PenaltyBoxMisc, world.Players[p.PlayerId].Data.Number, MatchFlow.ClockText(p.SecondsLeft));
                 Row(art, world.Setup.Club(side).Id, text, "panel", x, y, h, pad, crest, gap);
                 y += h + 1;
             }
         }
         foreach (var d in Penalties.Delayed(world))
         {
-            Row(art, world.Setup.Club(d.Side).Id, "DELAYED", "panel", x, y, h, pad, crest, gap);
+            Row(art, world.Setup.Club(d.Side).Id, Text.Get(K.Delayed), "panel", x, y, h, pad, crest, gap);
             y += h + 1;
         }
         foreach (var side in BothSides.Where(side => Lines.GoaliePull.IsPulled(world, side)))
         {
-            Row(art, world.Setup.Club(side).Id, "EXTRA ATTACKER", "panel_gold", x, y, h, pad, crest, gap);
+            Row(art, world.Setup.Club(side).Id, Text.Get(K.ExtraAttacker), "panel_gold", x, y, h, pad, crest, gap);
             y += h + 1;
         }
     }

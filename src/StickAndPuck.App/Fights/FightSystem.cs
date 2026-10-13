@@ -4,6 +4,7 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Fights;
 
@@ -356,7 +357,7 @@ internal sealed class FightSystem : ISystem, IDisposable
 
     static void DrawOffer(World world, HudArt art, FightOffer offer)
     {
-        const string title = "GLOVES OFF!", hint = "F OR Y: FIGHT";
+        string title = Text.Get(K.GlovesOff), hint = Text.Get(K.FightHint);
         int w = Math.Max(art.Measure(title), art.Measure(hint)) + 16, h = 30;
         int x = (Game.Width - w) / 2, y = Game.Height - h - 8;
         art.DrawPanel("panel_red", x, y, w, h);
@@ -385,14 +386,14 @@ internal sealed class FightSystem : ISystem, IDisposable
 
         string label = fight.Stage switch
         {
-            FightStage.Grab => "FIGHT!",
-            FightStage.Exchange => $"ROUND {fight.Exchange + 1}",
-            _ => fight.Knockdown ? "DOWN!" : "BROKEN UP",
+            FightStage.Grab => Text.Get(K.Fight),
+            FightStage.Exchange => Text.Format(K.FightRound, fight.Exchange + 1),
+            _ => Text.Get(fight.Knockdown ? K.FightDown : K.FightBrokenUp),
         };
         art.DrawText(label, bx + ((barW - art.Measure(label)) / 2), by + 11, fight.Stage == FightStage.Over ? art.Score : art.Text);
         if (fight.Both.Any(f => f.Slot >= 0) && fight.Stage != FightStage.Over)
         {
-            const string keys = "SPACE/A PUNCH  CTRL/RB BLOCK";
+            string keys = Text.Get(K.FightKeys);
             art.DrawText(keys, (Game.Width - art.Measure(keys)) / 2, y - 12, art.Text);
         }
     }
@@ -400,7 +401,7 @@ internal sealed class FightSystem : ISystem, IDisposable
     static void DrawFighter(World world, HudArt art, Fighter f, int x, int y, int w, bool left)
     {
         var p = world.Players[f.PlayerId];
-        string name = $"#{p.Data.Number} {p.Data.LastName}";
+        string name = Text.Format(K.PlayerTag, p.Data.Number, p.Data.LastName);
         while (name.Length > 4 && art.Measure(name) > w - 20) name = name[..^1];
         int crestX = left ? x : x + w - 16;
         art.DrawCrest(world.Setup.Club(p.Side).Id, crestX, y);

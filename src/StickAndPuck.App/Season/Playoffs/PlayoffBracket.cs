@@ -2,6 +2,7 @@ using System.Globalization;
 using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
@@ -23,14 +24,14 @@ internal static class PlayoffBracket
     {
         int x = (Game.Width - Width) / 2, y = (Game.Height - Height) / 2;
         art.DrawPanel("panel", x, y, Width, Height);
-        art.DrawText("SHL PLAYOFFS", x + Pad + 4, y + Pad - 2, art.Score);
+        art.DrawText(Text.Get(K.ShlPlayoffs), x + Pad + 4, y + Pad - 2, art.Score);
 
         int top = y + Pad + Line + 4;
         for (int r = 0; r < PlayoffState.RoundCount; r++)
         {
             int cx = x + Pad + 4 + (r * Column);
             var round = r < playoffs.Rounds.Count ? playoffs.Rounds[r] : null;
-            art.DrawText(round?.Name ?? Waiting(r), cx, top, art.Text);
+            art.DrawText(PlayoffState.RoundTitle(r), cx, top, art.Text);
             var series = round?.Series ?? (r == 1 ? Waiting(playoffs) : []);
             int gap = r == 0 ? 3 * Line : (Height - (Pad * 2) - (Line * 6)) / Math.Max(1, series.Count);
             for (int s = 0; s < series.Count; s++)
@@ -64,15 +65,15 @@ internal static class PlayoffBracket
 
     static string Footer(PlayoffState playoffs, IReadOnlyList<ClubData> clubs)
     {
-        if (playoffs.Champion is { } champion) return $"SHL CHAMPIONS: {Name(clubs, champion)}";
+        if (playoffs.Champion is { } champion) return Text.Format(K.ShlChampionsOf, Name(clubs, champion));
         string user = Name(clubs, playoffs.UserClub);
-        if (!playoffs.UserQualified) return $"{user} MISSED THE PLAYOFFS ({Num(playoffs.SeedOf(playoffs.UserClub))}TH)";
+        if (!playoffs.UserQualified) return Text.Format(K.MissedPlayoffsPlace, user, playoffs.SeedOf(playoffs.UserClub));
         if (playoffs.UserSeries is { } s)
         {
             string other = Name(clubs, string.Equals(s.High, playoffs.UserClub, StringComparison.Ordinal) ? s.Low : s.High);
-            return $"NEXT: {playoffs.Current.Name} GAME {Num(s.Games.Count + 1)} V {other}";
+            return Text.Format(K.NextPlayoffGameV, playoffs.CurrentTitle, s.Games.Count + 1, other);
         }
-        return playoffs.UserAlive ? $"{user} WAIT FOR THE PLAY-IN" : $"{user} ARE OUT";
+        return Text.Format(playoffs.UserAlive ? K.WaitForPlayIn : K.AreOut, user);
     }
 
     /// <summary>The quarter-finals while the play-in runs: the top six seeds, the top two waiting for the play-in winners.</summary>
@@ -84,13 +85,6 @@ internal static class PlayoffBracket
         };
         return playoffs.Seeds.Count < PlayoffState.Direct ? [] : [Pair(1, 0), Pair(2, 0), Pair(3, 6), Pair(4, 5)];
     }
-
-    static string Waiting(int round) => round switch
-    {
-        1 => "QUARTER-FINALS",
-        2 => "SEMI-FINALS",
-        _ => "FINAL",
-    };
 
     static string Short(IReadOnlyList<ClubData> clubs, string id)
     {

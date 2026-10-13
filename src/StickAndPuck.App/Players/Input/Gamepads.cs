@@ -1,6 +1,7 @@
 using Raylib_cs;
 using StickAndPuck.App.Core;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Players;
 
@@ -71,10 +72,10 @@ public static class Gamepads
     {
         const int MaxName = 16;
         int index = device switch { InputDevice.Gamepad1 => 0, InputDevice.Gamepad2 => 1, _ => -1 };
-        if (index < 0) return device == InputDevice.KeyboardMouse ? "KEYBOARD" : "OFF";
-        if (Name(index) is not { } name) return $"NO GAMEPAD {index + 1}";
+        if (index < 0) return Text.Get(device == InputDevice.KeyboardMouse ? K.DeviceKeyboard : K.DeviceOff);
+        if (Name(index) is not { } name) return Text.Format(K.NoGamepad, index + 1);
         name = new string([.. name.ToUpperInvariant().Where(c => c is (>= 'A' and <= 'Z') or (>= '0' and <= '9') or ' ')]).Trim();
-        if (name.Length == 0) return $"GAMEPAD {index + 1}";
+        if (name.Length == 0) return Text.Format(K.GamepadN, index + 1);
         return name.Length <= MaxName ? name : name[..MaxName].TrimEnd();
     }
 

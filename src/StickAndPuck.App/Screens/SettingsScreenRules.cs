@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -25,21 +26,21 @@ internal sealed class RulesScreen : MenuScreen
     {
         var rules = Choice.Resolve();
         var preset = RuleSet.Of(Choice.Preset);
-        var items = new List<MenuItem> { new("PRESET", Value: rules.Name, Change: d => Pick(Cycle(Choice.Preset, d))) };
+        var items = new List<MenuItem> { new(Text.Get(K.Preset), Value: rules.Name, Change: d => Pick(Cycle(Choice.Preset, d))) };
         string? group = null;
         foreach (var row in RuleRows.Shown)
         {
             if (!string.Equals(row.Group, group, StringComparison.Ordinal))
             {
                 group = row.Group;
-                items.Add(new MenuItem($"- {group} -", Enabled: false));
+                items.Add(new MenuItem(Text.Format(K.RuleGroupHeading, Text.Get(group)), Enabled: false));
             }
             string value = row.Get(rules);
             bool changed = !string.Equals(value, row.Get(preset), StringComparison.Ordinal);
-            items.Add(new MenuItem(row.Label, Value: RuleRow.Show(value) + (changed ? " *" : ""), Change: d => Change(row, d)));
+            items.Add(new MenuItem(Text.Get(row.Label), Value: RuleRow.Show(value) + (changed ? " *" : ""), Change: d => Change(row, d)));
         }
-        items.Add(new MenuItem("RESET TO PRESET", () => Pick(Choice.Preset), Enabled: rules.Custom));
-        items.Add(new MenuItem("BACK", Back));
+        items.Add(new MenuItem(Text.Get(K.ResetToPreset), () => Pick(Choice.Preset), Enabled: rules.Custom));
+        items.Add(new MenuItem(Text.Get(K.Back), Back));
         return items;
     }
 
@@ -59,12 +60,12 @@ internal sealed class RulesScreen : MenuScreen
         if (Selected >= first + shown) first = Selected - shown + 1;
         first = Math.Clamp(first, 0, Math.Max(0, items.Count - shown));
 
-        var (x, top) = art.Panel("RULES", PanelW, ((shown + 1) * ScreenArt.Row) + 30, PanelTop);
-        if (first > 0) art.Centred("- MORE -", Game.Width / 2, top - 3, ScreenArt.Muted);
+        var (x, top) = art.Panel(Text.Get(K.Rules), PanelW, ((shown + 1) * ScreenArt.Row) + 30, PanelTop);
+        if (first > 0) art.Centred(Text.Get(K.More), Game.Width / 2, top - 3, ScreenArt.Muted);
         top += ScreenArt.Row / 2;
         art.Menu(items.Skip(first).Take(shown).ToList(), Selected - first, x, PanelW, top);
-        if (first + shown < items.Count) art.Centred("- MORE -", Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
-        art.Hint(ScreenFlow.Playing != null ? "CHANGES PLAY FROM THE NEXT MATCH   ESC BACK" : "LEFT RIGHT CHANGES   * NOT THE PRESET   ESC BACK");
+        if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
+        art.Hint(Text.Get(ScreenFlow.Playing != null ? K.HintRulesNextMatch : K.HintRules));
     }
 
     /// <inheritdoc/>

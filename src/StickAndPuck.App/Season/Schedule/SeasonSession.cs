@@ -1,4 +1,5 @@
 using StickAndPuck.App.Core;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
@@ -113,18 +114,18 @@ public static class SeasonSession
             if (!Finish(result)) return null;
             Save();
             Console.WriteLine($"SAP: simmed season game {game.Number + 1}, round {game.Round + 1}: {game.Home} {result.HomeGoals}-{result.AwayGoals} {game.Away} ({result.Kind})");
-            return new SimmedGame(game.Home, game.Away, result, Playoff: false, $"ROUND {game.Round + 1}");
+            return new SimmedGame(game.Home, game.Away, result, Playoff: false, Text.Format(K.SimRound, game.Round + 1));
         }
 
         if (PlayoffSession.Open() is not { } playoffs || PlayoffSession.NextSetup(InputDevice.None) is not { } setup || PlayoffSession.Playing is not { } series) return null;
         int round = playoffs.Rounds.Count - 1, index = playoffs.Current.Series.IndexOf(series), gameNo = series.Games.Count;
-        string stage = playoffs.Current.Name;    // read before Finish, which may draw the next round
+        string stage = playoffs.Current.Name, title = playoffs.CurrentTitle;    // read before Finish, which may draw the next round
         var r = QuickSim.Play(setup.Home, setup.Away, playoffs.GameSeed(round, index, gameNo));
         if (r.Kind == ResultKind.Shootout && !PlayoffSession.Rules.Overtime.HasShootout) r = r with { Kind = ResultKind.Overtime };    // W19: the mode's overtime rules, SHL playoffs have no shootout
         if (!PlayoffSession.Finish(r)) return null;
         Save();
         Console.WriteLine($"SAP: simmed playoff game {gameNo + 1} of {stage}: {setup.Home.Id} {r.HomeGoals}-{r.AwayGoals} {setup.Away.Id} ({r.Kind})");
-        return new SimmedGame(setup.Home.Id, setup.Away.Id, r, Playoff: true, $"{stage} GAME {gameNo + 1}");
+        return new SimmedGame(setup.Home.Id, setup.Away.Id, r, Playoff: true, Text.Format(K.SimStage, title, gameNo + 1));
     }
 
     /// <summary>Writes the save when the season changed, as <see cref="AutosaveSystem"/> does after a played match.</summary>

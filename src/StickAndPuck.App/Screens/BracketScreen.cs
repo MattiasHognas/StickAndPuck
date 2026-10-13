@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -13,17 +14,15 @@ internal sealed class BracketScreen : MenuScreen
 {
     const int PanelW = 468, Line = 11, Column = 114;
 
-    static readonly string[] RoundNames = ["PLAY-IN", "QUARTER-FINALS", "SEMI-FINALS", "FINAL"];
-
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        List<MenuItem> items = [new MenuItem("PLAY NEXT GAME", ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame())];
-        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem("SIM THIS GAME", ScreenFlow.SimSeasonGame, Enabled: ScreenFlow.CanSimGame()));
-        if (PlayoffSession.Current?.Champion != null) items.Add(new MenuItem("TROPHY", () => ScreenFlow.Push(TrophyScreen.Season())));
-        items.Add(new MenuItem("TABLE", () => ScreenFlow.Replace(new StandingsScreen())));
-        items.Add(new MenuItem("SEASON STATS", () => ScreenFlow.Replace(new SeasonStatsScreen())));
-        items.Add(new MenuItem("MAIN MENU", Back));
+        List<MenuItem> items = [new MenuItem(Text.Get(K.PlayNextGame), ScreenFlow.PlaySeasonGame, Enabled: ScreenFlow.SeasonHasNextGame())];
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimThisGame), ScreenFlow.SimSeasonGame, Enabled: ScreenFlow.CanSimGame()));
+        if (PlayoffSession.Current?.Champion != null) items.Add(new MenuItem(Text.Get(K.Trophy), () => ScreenFlow.Push(TrophyScreen.Season())));
+        items.Add(new MenuItem(Text.Get(K.TableItem), () => ScreenFlow.Replace(new StandingsScreen())));
+        items.Add(new MenuItem(Text.Get(K.SeasonStats), () => ScreenFlow.Replace(new SeasonStatsScreen())));
+        items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
         return items;
     }
 
@@ -35,13 +34,13 @@ internal sealed class BracketScreen : MenuScreen
         int rows = 4 * 3;
         var items = Items();
         int h = 5 + ScreenArt.Row + 2 + Line + 4 + (rows * Line) + 6 + Line + 4 + (items.Count * ScreenArt.Row) + 4;
-        var (x, top) = art.Panel("SHL PLAYOFFS", PanelW, h, Math.Max(2, (Game.Height - h - 15) / 2));
+        var (x, top) = art.Panel(Text.Get(K.ShlPlayoffs), PanelW, h, Math.Max(2, (Game.Height - h - 15) / 2));
 
         for (int r = 0; r < PlayoffState.RoundCount; r++)
         {
             int cx = x + 10 + (r * Column);
             var round = r < playoffs.Rounds.Count ? playoffs.Rounds[r] : null;
-            art.Left(round?.Name ?? RoundNames[Math.Min(r, RoundNames.Length - 1)], cx, top, round == null ? ScreenArt.Muted : art.Text);
+            art.Left(PlayoffState.RoundTitle(r), cx, top, round == null ? ScreenArt.Muted : art.Text);
             if (round == null) continue;
             int gap = round.Series.Count <= 1 ? 0 : (rows * Line - (2 * Line)) / (round.Series.Count - 1);
             gap = Math.Min(gap, 3 * Line);
@@ -72,15 +71,15 @@ internal sealed class BracketScreen : MenuScreen
 
     static string Footer(PlayoffState playoffs, IReadOnlyList<ClubData> clubs)
     {
-        if (playoffs.Champion is { } champion) return $"SHL CHAMPIONS: {Name(clubs, champion)}";
+        if (playoffs.Champion is { } champion) return Text.Format(K.ShlChampionsOf, Name(clubs, champion));
         string user = Name(clubs, playoffs.UserClub);
-        if (!playoffs.UserQualified) return $"{user} MISSED THE PLAYOFFS";
+        if (!playoffs.UserQualified) return Text.Format(K.MissedPlayoffs, user);
         if (playoffs.UserSeries is { } s)
         {
             string other = Name(clubs, string.Equals(s.High, playoffs.UserClub, StringComparison.Ordinal) ? s.Low : s.High);
-            return $"NEXT: {playoffs.Current.Name} GAME {N(s.Games.Count + 1)} - {other}";
+            return Text.Format(K.NextPlayoffGame, playoffs.CurrentTitle, s.Games.Count + 1, other);
         }
-        return playoffs.UserAlive ? $"{user} WAIT FOR THE NEXT ROUND" : $"{user} ARE OUT";
+        return Text.Format(playoffs.UserAlive ? K.WaitForNextRound : K.AreOut, user);
     }
 
     static string Short(IReadOnlyList<ClubData> clubs, string id)

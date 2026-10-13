@@ -1,5 +1,6 @@
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -30,8 +31,8 @@ internal sealed class KeyMappingScreen : MenuScreen
         var items = new List<MenuItem>();
         foreach (var action in KeyBindings.All)
             items.Add(new MenuItem(Label(action), () => Listen(action)));
-        items.Add(new MenuItem("RESET TO DEFAULTS", Reset, Enabled: Saved.Keys.Count > 0));
-        items.Add(new MenuItem("BACK", Back));
+        items.Add(new MenuItem(Text.Get(K.ResetDefaults), Reset, Enabled: Saved.Keys.Count > 0));
+        items.Add(new MenuItem(Text.Get(K.Back), Back));
         return items;
     }
 
@@ -53,12 +54,12 @@ internal sealed class KeyMappingScreen : MenuScreen
         if (Selected >= first + shown) first = Selected - shown + 1;
         first = Math.Clamp(first, 0, Math.Max(0, items.Count - shown));
 
-        var (x, top) = art.Panel("KEY MAPPING", PanelW, ((shown + 2) * ScreenArt.Row) + 30, PanelTop);
+        var (x, top) = art.Panel(Text.Get(K.KeyMapping), PanelW, ((shown + 2) * ScreenArt.Row) + 30, PanelTop);
         int keysX = x + 150, right = x + PanelW - 12;
-        art.Left("KEYBOARD", keysX, top, ScreenArt.Muted);
-        art.Right("GAMEPAD", right, top, ScreenArt.Muted);
+        art.Left(Text.Get(K.Keyboard), keysX, top, ScreenArt.Muted);
+        art.Right(Text.Get(K.Gamepad), right, top, ScreenArt.Muted);
         top += ScreenArt.Row;
-        if (first > 0) art.Centred("- MORE -", Game.Width / 2, top - 3, ScreenArt.Muted);
+        if (first > 0) art.Centred(Text.Get(K.More), Game.Width / 2, top - 3, ScreenArt.Muted);
         top += ScreenArt.Row / 2;
         var settings = Saved;
         for (int i = first; i < first + shown; i++)
@@ -73,15 +74,15 @@ internal sealed class KeyMappingScreen : MenuScreen
             var binding = KeyBindings.Of(settings, KeyBindings.All[i]);
             if (on && listening != null)
             {
-                art.Left("PRESS A KEY", keysX, y, art.Gold);
-                art.Right("OR BUTTON", right, y, art.Gold);
+                art.Left(Text.Get(K.PressAKey), keysX, y, art.Gold);
+                art.Right(Text.Get(K.OrButton), right, y, art.Gold);
                 continue;
             }
             art.Left(KeyBindings.KeysName(binding), keysX, y, ink);
             art.Right(KeyBindings.ButtonName(binding.Button), right, y, ink);
         }
-        if (first + shown < items.Count) art.Centred("- MORE -", Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
-        art.Hint(listening != null ? "PRESS A KEY OR PAD BUTTON   ESC CANCELS" : "ENTER REBINDS   ESC BACK");
+        if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
+        art.Hint(Text.Get(listening != null ? K.HintListening : K.HintKeys));
     }
 
     /// <inheritdoc/>
@@ -92,18 +93,25 @@ internal sealed class KeyMappingScreen : MenuScreen
         ScreenFlow.Pop();
     }
 
-    static string Label(GameAction action) => action switch
+    static string Label(GameAction action) => Text.Get(action switch
     {
-        GameAction.SkateUp => "SKATE UP",
-        GameAction.SkateDown => "SKATE DOWN",
-        GameAction.SkateLeft => "SKATE LEFT",
-        GameAction.SkateRight => "SKATE RIGHT",
-        GameAction.LineChange => "LINE CHANGE",
-        GameAction.AcceptFight => "ACCEPT FIGHT",
-        GameAction.Kit => "SWAP KITS",
-        GameAction.Zoom => "CAMERA ZOOM",
-        _ => action.ToString().ToUpperInvariant(),
-    };
+        GameAction.SkateUp => K.ActionSkateUp,
+        GameAction.SkateDown => K.ActionSkateDown,
+        GameAction.SkateLeft => K.ActionSkateLeft,
+        GameAction.SkateRight => K.ActionSkateRight,
+        GameAction.Sprint => K.ActionSprint,
+        GameAction.Shoot => K.ActionShoot,
+        GameAction.Pass => K.ActionPass,
+        GameAction.Check => K.ActionCheck,
+        GameAction.Deke => K.ActionDeke,
+        GameAction.Switch => K.ActionSwitch,
+        GameAction.LineChange => K.ActionLineChange,
+        GameAction.Block => K.ActionBlock,
+        GameAction.AcceptFight => K.ActionAcceptFight,
+        GameAction.Kit => K.ActionKit,
+        GameAction.Zoom => K.ActionZoom,
+        _ => K.ActionPause,
+    });
 
     /// <summary>Starts waiting for a key, ignoring what is already held (the enter that picked the row).</summary>
     void Listen(GameAction action)

@@ -6,6 +6,7 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
 using StickAndPuck.App.Rules;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Intermission;
 
@@ -164,7 +165,7 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
     public void DrawHud(World world, RenderContext render)
     {
         if (Current is not { Finished: false } drive || drive.Shown < SkipAfterSeconds) return;
-        const string text = "ENTER  SKIP";
+        string text = Text.Get(K.Skip);
         int w = MeasureText(text, 10) + 10;
         const int h = 13, y = Game.Height - h - 6;
         int x = Game.Width - w - 6;

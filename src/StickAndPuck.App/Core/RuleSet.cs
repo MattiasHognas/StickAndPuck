@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Core;
 
@@ -229,7 +230,7 @@ public sealed record RuleSet
 
     /// <summary>Gets the name shown for this set: the preset's, or CUSTOM once a rule was changed.</summary>
     [JsonIgnore]
-    public string Name => Custom ? "CUSTOM" : NameOf(Preset);
+    public string Name => Custom ? Text.Get(K.RulesCustom) : NameOf(Preset);
 
     /// <summary>Gets a preset's rules.</summary>
     /// <param name="preset">The preset.</param>

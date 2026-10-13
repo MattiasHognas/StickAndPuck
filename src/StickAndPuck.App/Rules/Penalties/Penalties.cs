@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Rules;
 
@@ -37,6 +38,25 @@ public static class Infraction
 
     /// <summary>W47: a hard hit from behind in open ice, a minor and misconduct or a major; called only with <see cref="PenaltySeverity.Full"/>.</summary>
     public const string CheckingFromBehind = "checking from behind";
+
+    /// <summary>Gets an infraction's name as the penalty banner shows it, in the language shown (W53).</summary>
+    /// <param name="infraction">One of these infractions, fighting, or null.</param>
+    /// <returns>The name.</returns>
+    public static string Label(string? infraction) => Text.Get(infraction switch
+    {
+        Tripping => K.InfTripping,
+        Hooking => K.InfHooking,
+        Slashing => K.InfSlashing,
+        Interference => K.InfInterference,
+        Holding => K.InfHolding,
+        HighSticking => K.InfHighSticking,
+        CrossChecking => K.InfCrossChecking,
+        Boarding => K.InfBoarding,
+        Roughing => K.InfRoughing,
+        CheckingFromBehind => K.InfCheckingFromBehind,
+        Fights.FightTuning.Infraction => K.InfFighting,
+        _ => K.InfPenalty,
+    });
 
     /// <summary>Gets whether the rules let the referee call an infraction: W47's six each have a switch, the rest are always called.</summary>
     /// <param name="rules">The match rules.</param>
