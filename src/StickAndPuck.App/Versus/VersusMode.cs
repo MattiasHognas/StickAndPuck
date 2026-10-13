@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Screens;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Versus;
 
@@ -13,7 +14,7 @@ namespace StickAndPuck.App.Versus;
 public sealed class VersusMode : IGameMode
 {
     /// <inheritdoc/>
-    public string Title => "PLAYER VS PLAYER";
+    public string Title => Text.Get(K.PlayerVsPlayer);
 
     /// <inheritdoc/>
     public int Order => 10;
@@ -26,7 +27,7 @@ public sealed class VersusMode : IGameMode
     {
         // W38: each player sees the device they play with, the pad by name
         var device = index == 0 ? Screens.ScreenFlow.Prefs.Controls : SecondDevice(Screens.ScreenFlow.Prefs.Controls);
-        return $"PLAYER {index + 1} ({Players.Gamepads.Label(device)}): PICK YOUR CLUB";
+        return Text.Format(K.VersusPick, index + 1, Players.Gamepads.Label(device));
     }
 
     /// <inheritdoc/>

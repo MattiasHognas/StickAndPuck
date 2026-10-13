@@ -1,6 +1,7 @@
 using Raylib_cs;
 using StickAndPuck.App.Core;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -16,7 +17,7 @@ internal sealed class ModeScreen : MenuScreen
     public override IReadOnlyList<MenuItem> Items()
     {
         var items = modes.Select(m => new MenuItem(m.Title, () => Choose(m))).ToList();
-        if (board) items.Add(new MenuItem("ARCADE - BEST RUNS", () => ScreenFlow.Push(new ArcadeBoardScreen())));    // W33
+        if (board) items.Add(new MenuItem(Text.Get(K.ArcadeBestRunsItem), () => ScreenFlow.Push(new ArcadeBoardScreen())));    // W33
         return items;
     }
 
@@ -24,9 +25,9 @@ internal sealed class ModeScreen : MenuScreen
     public override void Draw(ScreenArt art, World world)
     {
         var items = Items();
-        var (x, top) = art.Panel("NEW GAME", PanelW, (items.Count * ScreenArt.Row) + 30, 70);
+        var (x, top) = art.Panel(Text.Get(K.NewGame), PanelW, (items.Count * ScreenArt.Row) + 30, 70);
         art.Menu(items, Selected, x, PanelW, top);
-        art.Hint("ENTER PICKS   ESC BACK");
+        art.Hint(Text.Get(K.HintPick));
     }
 
     /// <summary>Asks for the mode's clubs one at a time, then starts it.</summary>
@@ -129,8 +130,8 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
         }
         DrawRules(art, x, top + (Rows * RowH) + 4);
         DrawStrengths(art, Clubs[selected], x, top + (Rows * RowH) + 4 + RowH);
-        string hint = !onRules ? "ARROWS MOVE   ENTER PICKS   ESC BACK"
-            : fixedRules != null ? "THIS MODE PLAYS ITS OWN RULES   UP BACK" : "LEFT RIGHT PICKS THE RULES   UP BACK";
+        string hint = Text.Get(!onRules ? K.HintMenu
+            : fixedRules != null ? K.HintOwnRules : K.HintPickRules);
         art.Hint(hint);
     }
 
@@ -166,7 +167,7 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
             DrawRectangle(x + 10, y - 2, PanelW - 20, RowH - 4, new Color(0x42, 0x32, 0x36, 0xff));
             art.Hud.DrawIcon("arrow_right", x + 12, y + 2);
         }
-        art.Left("RULES", x + 24, y, ink);
+        art.Left(Text.Get(K.Rules), x + 24, y, ink);
         art.Right(onRules && fixedRules == null ? $"< {Rules.Name} >" : Rules.Name, x + PanelW - 14, y, ink);
     }
 
@@ -175,15 +176,15 @@ internal sealed class TeamSelectScreen(string heading, ClubData? taken, Action<C
     {
         var s = ClubStrengths.Of(club);
         DrawRectangle(x + 10, y - 1, PanelW - 20, 1, new Color(0x42, 0x32, 0x36, 0xff));
-        (string Label, int Value)[] bars = [("ATTACK", s.Attack), ("DEFENCE", s.Defence), ("SPEED", s.Speed), ("GOALIE", s.Goalie)];
+        (string Label, int Value)[] bars = [(K.Attack, s.Attack), (K.Defence, s.Defence), (K.Speed, s.Speed), (K.Goalie, s.Goalie)];
         for (int i = 0; i < bars.Length; i++)
         {
             int bx = x + 24 + ((i % 2) * ColW), by = y + 3 + ((i / 2) * 11);
-            art.Left(bars[i].Label, bx, by, ScreenArt.Muted);
+            art.Left(Text.Get(bars[i].Label), bx, by, ScreenArt.Muted);
             art.Bar(bars[i].Value, bx + 52, by, 60, art.Gold);
         }
-        art.Left($"OVERALL {s.Overall.ToString(System.Globalization.CultureInfo.InvariantCulture)}", x + 24, y + 26, art.Text);
-        art.Right(art.Clip(s.Plays, PanelW - 110), x + PanelW - 14, y + 26, ScreenArt.Muted);
+        art.Left(Text.Format(K.Overall, s.Overall), x + 24, y + 26, art.Text);
+        art.Right(art.Clip(ClubStrengths.Describe(s.Plays), PanelW - 110), x + PanelW - 14, y + 26, ScreenArt.Muted);
     }
 
     int Start()
@@ -209,7 +210,7 @@ internal sealed class ConfirmScreen(string question, Action yes) : MenuScreen
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        return [new MenuItem("NO", ScreenFlow.Pop), new MenuItem("YES", yes)];
+        return [new MenuItem(Text.Get(K.No), ScreenFlow.Pop), new MenuItem(Text.Get(K.Yes), yes)];
     }
 
     /// <inheritdoc/>

@@ -3,6 +3,7 @@ using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Render;
 using StickAndPuck.App.Rules;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Hud;
 
@@ -59,7 +60,7 @@ internal sealed class HudSystem : ISystem
         if (world.Match.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final) return null;
         if (Penalties.PowerPlay(world) is not { } pp) return null;
         var other = pp == Side.Home ? Side.Away : Side.Home;
-        return $"PP {Skaters(world, pp)}V{Skaters(world, other)}";
+        return Text.Get(K.PowerPlay) + Text.Format(K.PowerPlayStrength, Skaters(world, pp), Skaters(world, other));
     }
 
     /// <summary>Skaters a club has on the ice by the rules: five less the penalties it serves, never under three.</summary>
@@ -75,8 +76,8 @@ internal sealed class HudSystem : ISystem
     public static string PeriodText(World world)
     {
         var m = world.Match;
-        if (m.Phase == MatchPhase.Shootout) return "SO";
-        return m.Period > world.Setup.Periods ? "OT" : m.Period.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (m.Phase == MatchPhase.Shootout) return Text.Get(K.PeriodSo);
+        return m.Period > world.Setup.Periods ? Text.Get(K.PeriodOt) : m.Period.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
     /// <summary>Gets the club colour for the stripe under a short name: the kit that side wears, on the nearest palette colour.</summary>
@@ -122,8 +123,9 @@ internal sealed class HudSystem : ISystem
         art.DrawPanel("panel_gold", x, y, w, h);
         art.DrawCrest(world.Setup.Club(side).Id, x + pad, y + ((h - crest) / 2));
         int tx = x + pad + crest + gap, ty = y + ((h - 7) / 2) - 2;
-        art.DrawText("PP", tx, ty, art.Score);
-        art.DrawText(text[2..], tx + art.Measure("PP"), ty, art.Text);
+        string pp = Text.Get(K.PowerPlay);
+        art.DrawText(pp, tx, ty, art.Score);
+        art.DrawText(text[pp.Length..], tx + art.Measure(pp), ty, art.Text);
     }
 
     /// <summary>
@@ -164,11 +166,11 @@ internal sealed class HudSystem : ISystem
     /// <summary>The shootout panel's last line: the shooter up now, or the winner.</summary>
     static string Footer(World world, ShootoutState so)
     {
-        if (so.Winner is { } w) return $"{world.Setup.Club(w).ShortName} WIN {so.Goals(w)}-{so.Goals(w == Side.Home ? Side.Away : Side.Home)}";
+        if (so.Winner is { } w) return Text.Format(K.ShootoutWin, world.Setup.Club(w).ShortName, so.Goals(w), so.Goals(w == Side.Home ? Side.Away : Side.Home));
         if (so.ShooterId >= 0 && so.ShooterId < world.Players.Count)
         {
             var p = world.Players[so.ShooterId];
-            return $"ROUND {so.Taken(p.Side) + 1}  #{p.Data.Number} {p.Data.LastName}";
+            return Text.Format(K.ShootoutRound, so.Taken(p.Side) + 1, p.Data.Number, p.Data.LastName);
         }
         return "";
     }
@@ -178,7 +180,8 @@ internal sealed class HudSystem : ISystem
     {
         string home = world.Setup.Home.Name.ToUpperInvariant(), away = world.Setup.Away.Name.ToUpperInvariant();
         const int gap = 8, crest = 16;
-        int vs = art.Measure("VS");
+        string versus = Text.Get(K.Vs);
+        int vs = art.Measure(versus);
         int textW = art.Measure(home) + gap + vs + gap + art.Measure(away);
         int w = textW + (2 * (crest + gap)) + 12, h = crest + 12;
         int x = (Game.Width - w) / 2, y = BannerTop;
@@ -189,7 +192,7 @@ internal sealed class HudSystem : ISystem
         int ty = y + 6 + 2;      // a capital is 7 px; text y is 2 px above it, so this centres caps on the crest
         art.DrawText(home, cx, ty, art.Text);
         cx += art.Measure(home) + gap;
-        art.DrawText("VS", cx, ty, art.Score);
+        art.DrawText(versus, cx, ty, art.Score);
         cx += vs + gap;
         art.DrawText(away, cx, ty, art.Text);
         cx += art.Measure(away) + gap;

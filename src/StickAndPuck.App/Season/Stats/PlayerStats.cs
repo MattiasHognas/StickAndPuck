@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
 
@@ -152,7 +153,7 @@ public sealed record PlayerOfGameAward(string Game, string Home, string Away, in
 
     /// <summary>Gets "2G 1A" or "31 SV", what earned the award.</summary>
     [JsonIgnore]
-    public string Summary => Saves > 0 && Goals + Assists == 0 ? $"{Saves} SV" : $"{Goals}G {Assists}A";
+    public string Summary => Saves > 0 && Goals + Assists == 0 ? Text.Format(K.SummarySaves, Saves) : Text.Format(K.SummaryPoints, Goals, Assists);
 }
 
 /// <summary>

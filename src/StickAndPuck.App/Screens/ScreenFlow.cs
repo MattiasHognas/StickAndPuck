@@ -243,6 +243,7 @@ internal static class ScreenFlow
     public static void Apply(World world, Settings settings)
     {
         world.Settings = settings with { Penalties = world.Setup.Rules.Penalties, Fights = world.Setup.Rules.Fights };    // W44: the match's rules switch W14 and W15
+        Text.Use(settings.Language);    // W53: a language change shows at once
         MatchRules.ShowLine = settings.MatchDebug;
         Lines.LinesSystem.ShowPanel = settings.LinesDebug;
     }

@@ -3,6 +3,7 @@ using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -16,7 +17,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
 {
     const int PanelW = 440, Line = 11, Rows = 10;
 
-    static readonly string[] Views = ["POINTS", "GOALS", "ASSISTS", "HITS", "GOALIES", "STARS", "YOUR CLUB"];
+    static readonly string[] Views = [K.ViewPoints, K.ViewGoals, K.ViewAssists, K.ViewHits, K.ViewGoalies, K.ViewStars, K.ViewYourClub];
 
     int view;
     bool playoffs = SeasonSession.Current?.Playoffs != null;
@@ -24,10 +25,10 @@ internal sealed class SeasonStatsScreen : MenuScreen
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        List<MenuItem> items = [new MenuItem("SHOW", Value: Views[view], Change: d => view = ((view + d) % Views.Length + Views.Length) % Views.Length)];
-        if (SeasonSession.Current?.Playoffs != null) items.Add(new MenuItem("GAMES", Value: playoffs ? "PLAYOFFS" : "SEASON", Change: _ => playoffs = !playoffs));
-        items.Add(new MenuItem(SeasonSession.Current?.Playoffs != null ? "PLAYOFFS" : "TABLE", () => ScreenFlow.Replace(ScreenFlow.Overview())));
-        items.Add(new MenuItem("MAIN MENU", Back));
+        List<MenuItem> items = [new MenuItem(Text.Get(K.Show), Value: Text.Get(Views[view]), Change: d => view = ((view + d) % Views.Length + Views.Length) % Views.Length)];
+        if (SeasonSession.Current?.Playoffs != null) items.Add(new MenuItem(Text.Get(K.Games), Value: Text.Get(playoffs ? K.Playoffs : K.SeasonWord), Change: _ => playoffs = !playoffs));
+        items.Add(new MenuItem(Text.Get(SeasonSession.Current?.Playoffs != null ? K.Playoffs : K.TableItem), () => ScreenFlow.Replace(ScreenFlow.Overview())));
+        items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
         return items;
     }
 
@@ -36,7 +37,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
     /// <returns>This screen.</returns>
     public SeasonStatsScreen Showing(string name)
     {
-        int i = Array.FindIndex(Views, v => string.Equals(v, name, StringComparison.OrdinalIgnoreCase));
+        int i = Array.FindIndex(Views, v => string.Equals(v, name, StringComparison.OrdinalIgnoreCase) || string.Equals(Text.Get(v), name, StringComparison.OrdinalIgnoreCase));
         if (i >= 0) view = i;
         return this;
     }
@@ -48,8 +49,8 @@ internal sealed class SeasonStatsScreen : MenuScreen
         int h = 5 + ScreenArt.Row + 2 + Line + (Rows * Line) + 4 + Line + 4 + (items.Count * ScreenArt.Row) + 4;
         if (SeasonSession.Current is not { } season)
         {
-            var (px, ptop) = art.Panel("SEASON STATS", PanelW, 60, 100);
-            art.Centred("NO SEASON PLAYED YET", Game.Width / 2, ptop, ScreenArt.Muted);
+            var (px, ptop) = art.Panel(Text.Get(K.SeasonStats), PanelW, 60, 100);
+            art.Centred(Text.Get(K.NoSeasonYet), Game.Width / 2, ptop, ScreenArt.Muted);
             art.Menu(items, Selected, px + 120, PanelW - 240, ptop + 14);
             return;
         }
@@ -61,33 +62,33 @@ internal sealed class SeasonStatsScreen : MenuScreen
         var lines = Lines(table, season.UserClub);
 
         string heading = view == 6
-            ? $"{Name(clubs, season.UserClub)}  -  {(post ? "PLAYOFFS" : "SEASON")}"
-            : $"SHL  {(post ? "PLAYOFF" : "SEASON")} LEADERS  -  {Views[view]}";
+            ? Text.Format(K.ClubViewHeading, Name(clubs, season.UserClub), Text.Get(post ? K.Playoffs : K.SeasonWord))
+            : Text.Format(post ? K.LeadersHeadingPlayoff : K.LeadersHeadingSeason, Text.Get(Views[view]));
         var (x, top) = art.Panel(heading, PanelW, h, Math.Max(2, (Game.Height - h - 14) / 2));
 
         (string Head, int X)[] columns = goalies
-            ? [("GP", 250), ("SV", 290), ("SV/GP", 330), ("STARS", 384)]
-            : [("GP", 226), ("G", 256), ("A", 280), ("PTS", 304), ("SH", 336), ("HITS", 362), ("STARS", 398)];
-        art.Left("PLAYER", x + 30, top, ScreenArt.Muted);
-        art.Left(view == 6 ? "POS" : "CLUB", x + 180, top, ScreenArt.Muted);
-        foreach (var (head, cx) in columns) art.Left(head, x + cx, top, Highlight(head) ? art.Gold : ScreenArt.Muted);
+            ? [(K.ColGp, 250), (K.ColSv, 290), (K.ColSvGp, 330), (K.ColStars, 384)]
+            : [(K.ColGp, 226), (K.ColG, 256), (K.ColA, 280), (K.ColPts, 304), (K.ColSh, 336), (K.ColHits, 362), (K.ColStars, 398)];
+        art.Left(Text.Get(K.ColPlayer), x + 30, top, ScreenArt.Muted);
+        art.Left(Text.Get(view == 6 ? K.ColPos : K.ColClub), x + 180, top, ScreenArt.Muted);
+        foreach (var (head, cx) in columns) art.Left(Text.Get(head), x + cx, top, Highlight(head) ? art.Gold : ScreenArt.Muted);
         top += Line;
 
         for (int i = 0; i < Rows; i++)
         {
             if (i < lines.Count) DrawLine(art, lines[i], i, x, top, columns, season.UserClub);
-            else if (i == 0) art.Left(post ? "NO PLAYOFF GAMES PLAYED YET" : "NO GAMES PLAYED YET", x + 30, top, ScreenArt.Muted);
+            else if (i == 0) art.Left(Text.Get(post ? K.NoPlayoffGamesYet : K.NoGamesYet), x + 30, top, ScreenArt.Muted);
             top += Line;
         }
 
         top += 4;
         string star = season.Stats.LastAward is { } a
-            ? $"PLAYER OF THE GAME: {a.Label} ({Short(clubs, a.Club)}) {a.Summary}  IN {Short(clubs, a.Home)} {N(a.HomeGoals)}-{N(a.AwayGoals)} {Short(clubs, a.Away)}"
-            : "PLAYER OF THE GAME: NOBODY YET";
+            ? Text.Format(K.StarLine, a.Label, Short(clubs, a.Club), a.Summary, Short(clubs, a.Home), a.HomeGoals, a.AwayGoals, Short(clubs, a.Away))
+            : Text.Get(K.StarNobody);
         art.Centred(art.Clip(star, PanelW - 16), Game.Width / 2, top, art.Gold);
         top += Line + 4;
         art.Menu(items, Selected, x + 120, PanelW - 240, top);
-        art.Hint("LEFT RIGHT CHANGES THE LIST   ENTER PICKS   ESC BACK");
+        art.Hint(Text.Get(K.HintStats));
     }
 
     /// <summary>One player's line: place, name, club (or position on the club view) and the view's columns.</summary>
@@ -123,7 +124,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
 
     bool Highlight(string head) => (view, head) switch
     {
-        (0, "PTS") or (1, "G") or (2, "A") or (3, "HITS") or (4, "SV") or (5, "STARS") => true,
+        (0, K.ColPts) or (1, K.ColG) or (2, K.ColA) or (3, K.ColHits) or (4, K.ColSv) or (5, K.ColStars) => true,
         _ => false,
     };
 
@@ -154,10 +155,10 @@ internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScree
     public override IReadOnlyList<MenuItem> Items()
     {
         List<MenuItem> items = [];
-        if (crowned) items.Add(new MenuItem("CHAMPIONS", () => ScreenFlow.Replace(TrophyScreen.Season())));
-        items.Add(new MenuItem("CONTINUE", Back));
-        if (ScreenFlow.CanSimGame()) items.Add(new MenuItem("SIM NEXT GAME", ScreenFlow.SimSeasonGame));
-        if (ScreenFlow.SeasonHasNextGame()) items.Add(new MenuItem("PLAY NEXT GAME", ScreenFlow.PlaySeasonGame));
+        if (crowned) items.Add(new MenuItem(Text.Get(K.Champions), () => ScreenFlow.Replace(TrophyScreen.Season())));
+        items.Add(new MenuItem(Text.Get(K.Continue), Back));
+        if (ScreenFlow.CanSimGame()) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame));
+        if (ScreenFlow.SeasonHasNextGame()) items.Add(new MenuItem(Text.Get(K.PlayNextGame), ScreenFlow.PlaySeasonGame));
         return items;
     }
 
@@ -167,8 +168,8 @@ internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScree
         var items = Items();
         var clubs = ScreenFlow.Clubs;
         int h = 5 + ScreenArt.Row + 2 + 24 + 14 + 6 + (items.Count * ScreenArt.Row) + 6;
-        string kind = game.Result.Kind switch { ResultKind.Overtime => " - OT", ResultKind.Shootout => " - SHOOTOUT", _ => "" };
-        var (x, top) = art.Panel($"SIMMED  {game.Stage}{kind}", PanelW, h, Math.Max(4, (Game.Height - h - 16) / 2));
+        string kind = game.Result.Kind switch { ResultKind.Overtime => Text.Get(K.KindOt), ResultKind.Shootout => Text.Get(K.KindShootout), _ => "" };
+        var (x, top) = art.Panel(Text.Format(K.SimmedHeading, game.Stage, kind), PanelW, h, Math.Max(4, (Game.Height - h - 16) / 2));
         int cx = Game.Width / 2;
         bool homeWon = game.Result.HomeGoals > game.Result.AwayGoals;
         art.Hud.DrawCrest(game.Home, cx - 30 - 16, top);
@@ -177,7 +178,7 @@ internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScree
         art.Right(art.Clip(Name(clubs, game.Home), cx - 52 - x - 8), cx - 30 - 22, top + 3, homeWon ? art.Gold : art.Text);
         art.Left(art.Clip(Name(clubs, game.Away), x + PanelW - 8 - (cx + 52)), cx + 30 + 22, top + 3, homeWon ? art.Text : art.Gold);
         top += 24;
-        art.Centred("SETTLED ON PAPER", cx, top, ScreenArt.Muted);
+        art.Centred(Text.Get(K.SettledOnPaper), cx, top, ScreenArt.Muted);
         top += 14 + 6;
         art.Menu(items, Selected, x + 60, PanelW - 120, top);
     }
@@ -226,23 +227,23 @@ internal sealed class TrophyScreen : MenuScreen
             var final = playoffs.Current.Series[0];
             string other = string.Equals(final.High, champion, StringComparison.Ordinal) ? final.Low : final.High;
             int won = Math.Max(final.HighWins, final.LowWins), lost = Math.Min(final.HighWins, final.LowWins);
-            lines.Add(("FINAL", $"WON {N(won)}-{N(lost)} V {Name(clubs, other)}"));
+            lines.Add((Text.Get(K.TrophyFinal), Text.Format(K.TrophyFinalLine, won, lost, Name(clubs, other))));
         }
         if (season != null)
         {
             season.Stats.CatchUp(season, clubs);    // games settled on paper are credited from their score
             var stats = season.Stats;
-            if (stats.Regular.Leaders(1).FirstOrDefault() is { } top) lines.Add(("TOP SCORER", $"{top.Label} {Short(clubs, top.Club)} {N(top.Points)} PTS"));
-            if (stats.Regular.Scorers(1).FirstOrDefault() is { } sniper) lines.Add(("MOST GOALS", $"{sniper.Label} {Short(clubs, sniper.Club)} {N(sniper.Goals)}"));
-            if (stats.Regular.Goalies(1).FirstOrDefault() is { } goalie) lines.Add(("BEST GOALIE", $"{goalie.Label} {Short(clubs, goalie.Club)} {N(goalie.Saves)} SV"));
-            if (stats.Playoffs.Leaders(1).FirstOrDefault() is { } hero) lines.Add(("PLAYOFF STAR", $"{hero.Label} {Short(clubs, hero.Club)} {N(hero.Points)} PTS"));
+            if (stats.Regular.Leaders(1).FirstOrDefault() is { } top) lines.Add((Text.Get(K.TopScorer), Text.Format(K.TopScorerLine, top.Label, Short(clubs, top.Club), top.Points)));
+            if (stats.Regular.Scorers(1).FirstOrDefault() is { } sniper) lines.Add((Text.Get(K.MostGoals), Text.Format(K.MostGoalsLine, sniper.Label, Short(clubs, sniper.Club), sniper.Goals)));
+            if (stats.Regular.Goalies(1).FirstOrDefault() is { } goalie) lines.Add((Text.Get(K.BestGoalie), Text.Format(K.BestGoalieLine, goalie.Label, Short(clubs, goalie.Club), goalie.Saves)));
+            if (stats.Playoffs.Leaders(1).FirstOrDefault() is { } hero) lines.Add((Text.Get(K.PlayoffStar), Text.Format(K.TopScorerLine, hero.Label, Short(clubs, hero.Club), hero.Points)));
             string user = Name(clubs, season.UserClub);
-            lines.Add(("YOUR CLUB", string.Equals(season.UserClub, champion, StringComparison.Ordinal) ? "CHAMPIONS!" : playoffs is { UserQualified: false } ? $"{user} MISSED THE PLAYOFFS" : $"{user} WENT OUT"));
+            lines.Add((Text.Get(K.YourClub), string.Equals(season.UserClub, champion, StringComparison.Ordinal) ? Text.Get(K.ChampionsShout) : Text.Format(playoffs is { UserQualified: false } ? K.MissedPlayoffs : K.WentOut, user)));
         }
-        return new TrophyScreen("SHL CHAMPIONS", champion, Name(clubs, champion), lines,
+        return new TrophyScreen(Text.Get(K.ShlChampions), champion, Name(clubs, champion), lines,
         [
-            new MenuItem("CONTINUE", ScreenFlow.Pop),
-            new MenuItem("SEASON STATS", () => ScreenFlow.Replace(new SeasonStatsScreen())),
+            new MenuItem(Text.Get(K.Continue), ScreenFlow.Pop),
+            new MenuItem(Text.Get(K.SeasonStats), () => ScreenFlow.Replace(new SeasonStatsScreen())),
         ]);
     }
 
@@ -254,16 +255,16 @@ internal sealed class TrophyScreen : MenuScreen
         var clubs = ScreenFlow.Clubs;
         List<(string, string)> lines =
         [
-            ("RULE", run.Rule == ArcadeRule.SuddenDeath ? "SUDDEN DEATH" : "THREE LIVES"),
-            ("RECORD", $"{N(run.Stage)} BEATEN, {N(run.Losses)} {(run.Losses == 1 ? "LOSS" : "LOSSES")}"),
-            ("GOALS", $"{N(run.Games.Sum(g => g.GoalsFor))}-{N(run.Games.Sum(g => g.GoalsAgainst))}"),
+            (Text.Get(K.Rule), Text.Get(run.Rule == ArcadeRule.SuddenDeath ? K.SuddenDeath : K.ThreeLives)),
+            (Text.Get(K.Record), Text.Format(run.Losses == 1 ? K.RecordLineOne : K.RecordLineMany, run.Stage, run.Losses)),
+            (Text.Get(K.GoalsLabel), $"{N(run.Games.Sum(g => g.GoalsFor))}-{N(run.Games.Sum(g => g.GoalsAgainst))}"),
         ];
-        if (run.Stats.Leaders(1, run.UserClub).FirstOrDefault() is { } top) lines.Add(("TOP SCORER", $"{top.Label} {N(top.Points)} PTS"));
-        if (run.Place > 0) lines.Add(("BEST RUNS", $"PLACE {N(run.Place)} OF {N(run.Records.Count)}"));
-        return new TrophyScreen("ARCADE CHAMPIONS", run.UserClub, Name(clubs, run.UserClub), lines,
+        if (run.Stats.Leaders(1, run.UserClub).FirstOrDefault() is { } top) lines.Add((Text.Get(K.TopScorer), Text.Format(K.TopScorerArcade, top.Label, top.Points)));
+        if (run.Place > 0) lines.Add((Text.Get(K.BestRuns), Text.Format(K.PlaceOf, run.Place, run.Records.Count)));
+        return new TrophyScreen(Text.Get(K.ArcadeChampions), run.UserClub, Name(clubs, run.UserClub), lines,
         [
-            new MenuItem("BEST RUNS", () => ScreenFlow.Replace(new ArcadeBoardScreen())),
-            new MenuItem("CONTINUE", ScreenFlow.Pop),
+            new MenuItem(Text.Get(K.BestRuns), () => ScreenFlow.Replace(new ArcadeBoardScreen())),
+            new MenuItem(Text.Get(K.Continue), ScreenFlow.Pop),
         ]);
     }
 
@@ -343,7 +344,7 @@ internal sealed class ArcadeBoardScreen : MenuScreen
     readonly (IReadOnlyList<ArcadeRecord> Records, int Place) board = Board();
 
     /// <inheritdoc/>
-    public override IReadOnlyList<MenuItem> Items() => [new MenuItem("BACK", Back)];
+    public override IReadOnlyList<MenuItem> Items() => [new MenuItem(Text.Get(K.Back), Back)];
 
     /// <summary>Gets a value indicating whether there is a board to show (any run ever finished). Reads the save.</summary>
     /// <returns>True when a run is on the board.</returns>
@@ -356,11 +357,11 @@ internal sealed class ArcadeBoardScreen : MenuScreen
         var clubs = ScreenFlow.Clubs;
         int rows = Math.Max(1, records.Count);
         int h = 5 + ScreenArt.Row + 2 + Line + (rows * Line) + 8 + ScreenArt.Row + 6;
-        var (x, top) = art.Panel("ARCADE  BEST RUNS", PanelW, h, Math.Max(4, (Game.Height - h - 16) / 2));
-        (string Head, int X)[] columns = [("CLUB", 24), ("RULE", 146), ("RUN", 198), ("L", 262), ("GOALS", 278), ("TOP SCORER", 322)];
-        foreach (var (head, cx) in columns) art.Left(head, x + cx, top, ScreenArt.Muted);
+        var (x, top) = art.Panel(Text.Get(K.ArcadeBestRuns), PanelW, h, Math.Max(4, (Game.Height - h - 16) / 2));
+        (string Head, int X)[] columns = [(K.ColClub, 24), (K.ColRule, 146), (K.ColRun, 198), (K.ColL, 262), (K.ColGoals, 278), (K.ColTopScorer, 322)];
+        foreach (var (head, cx) in columns) art.Left(Text.Get(head), x + cx, top, ScreenArt.Muted);
         top += Line;
-        if (records.Count == 0) art.Left("NO RUNS FINISHED YET", x + 24, top, ScreenArt.Muted);
+        if (records.Count == 0) art.Left(Text.Get(K.NoRunsYet), x + 24, top, ScreenArt.Muted);
         for (int i = 0; i < records.Count; i++)
         {
             var r = records[i];
@@ -369,8 +370,8 @@ internal sealed class ArcadeBoardScreen : MenuScreen
             art.Right(N(i + 1), x + 18, top, ink);
             if (r.Champion) art.Hud.DrawIcon("star", x + 251, top + 2);
             art.Left(art.Clip(name, 118), x + 24, top, ink);
-            art.Left(r.Rule == ArcadeRule.SuddenDeath ? "SUDDEN" : "3 LIVES", x + 146, top, ink);
-            art.Left(r.Champion ? "CHAMPIONS" : $"{N(r.Beaten)} BEATEN", x + 198, top, ink);
+            art.Left(Text.Get(r.Rule == ArcadeRule.SuddenDeath ? K.RuleSudden : K.RuleLives), x + 146, top, ink);
+            art.Left(r.Champion ? Text.Get(K.Champions) : Text.Format(K.Beaten, r.Beaten), x + 198, top, ink);
             art.Left(N(r.Losses), x + 262, top, ink);
             art.Left($"{N(r.GoalsFor)}-{N(r.GoalsAgainst)}", x + 278, top, ink);
             string scorer = r.TopScorer.Length > 0 ? $"{r.TopScorer} {N(r.TopPoints)}" : "-";

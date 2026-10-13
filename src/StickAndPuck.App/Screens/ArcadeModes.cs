@@ -1,6 +1,6 @@
-using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -35,11 +35,11 @@ internal abstract class ArcadeMode : IGameMode
         get
         {
             if (ArcadeSession.Current is not { } run) return null;
-            string wins = $"{N(run.Stage)} OF {N(run.Opponents.Count)} BEATEN";
-            if (run.Champion) return $"ARCADE CHAMPIONS - {wins}";
-            if (run.Lost) return $"RUN OVER - {wins}";
+            string wins = Text.Format(K.ArcadeStatusWins, run.Stage, run.Opponents.Count);
+            if (run.Champion) return Text.Format(K.ArcadeStatusChampions, wins);
+            if (run.Lost) return Text.Format(K.ArcadeStatusOver, wins);
             string next = ScreenFlow.Clubs.FirstOrDefault(c => string.Equals(c.Id, run.NextOpponent, StringComparison.Ordinal))?.Name ?? run.NextOpponent ?? "";
-            return $"{wins} - LIVES {N(run.LivesLeft)} - NEXT {next}";
+            return Text.Format(K.ArcadeStatusNext, wins, run.LivesLeft, next);
         }
     }
 
@@ -55,15 +55,13 @@ internal abstract class ArcadeMode : IGameMode
         begun = true;
         return ArcadeSession.NextSetup(start.Device);
     }
-
-    static string N(int n) => n.ToString(CultureInfo.InvariantCulture);
 }
 
 /// <summary>A new arcade run with three lives.</summary>
 internal sealed class ArcadeLivesMode : ArcadeMode
 {
     /// <inheritdoc/>
-    public override string Title => "ARCADE - THREE LIVES";
+    public override string Title => Text.Get(K.ArcadeThreeLives);
 
     /// <inheritdoc/>
     protected override ArcadeRule? Rule => ArcadeRule.ThreeLives;
@@ -73,7 +71,7 @@ internal sealed class ArcadeLivesMode : ArcadeMode
 internal sealed class ArcadeSuddenDeathMode : ArcadeMode
 {
     /// <inheritdoc/>
-    public override string Title => "ARCADE - SUDDEN DEATH";
+    public override string Title => Text.Get(K.ArcadeSuddenDeath);
 
     /// <inheritdoc/>
     public override int Order => 21;
@@ -86,7 +84,7 @@ internal sealed class ArcadeSuddenDeathMode : ArcadeMode
 internal sealed class ArcadeContinueMode : ArcadeMode
 {
     /// <inheritdoc/>
-    public override string Title => "ARCADE - CONTINUE RUN";
+    public override string Title => Text.Get(K.ArcadeContinue);
 
     /// <inheritdoc/>
     public override int Order => 19;

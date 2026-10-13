@@ -28,6 +28,7 @@ public static class Game
     public static void Run()
     {
         var clubs = Clubs.LoadAll();
+        Text.Use(Settings.FromEnvironment().Language);
         Console.WriteLine($"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}");
         var replay = ReplayPlayer.FromEnvironment(clubs);
         var world = replay?.World ?? Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());

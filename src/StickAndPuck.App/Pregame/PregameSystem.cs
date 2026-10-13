@@ -3,6 +3,7 @@ using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Pregame;
 
@@ -58,7 +59,7 @@ internal sealed class PregameSystem : ISystem
         if (!Pregame.IsWarmingUp(world)) return;
         // a blinking prompt under the intro card
         if ((int)(world.Time * 2) % 2 == 0) return;
-        const string text = "WARM-UP   PRESS START";
+        string text = Text.Get(K.WarmUp);
         int w = MeasureText(text, 10);
         DrawRectangle((Game.Width - w) / 2 - 4, 48, w + 8, 14, new Color(24, 19, 31, 255));
         DrawText(text, (Game.Width - w) / 2, 50, 10, new Color(239, 224, 194, 255));

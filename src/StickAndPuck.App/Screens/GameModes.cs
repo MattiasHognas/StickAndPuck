@@ -1,4 +1,5 @@
 using StickAndPuck.App.Core;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -31,7 +32,7 @@ public interface IGameMode
     /// <summary>Gets the team select heading for the given pick (W17 names the player picking).</summary>
     /// <param name="index">0 for the first pick, 1 for the second.</param>
     /// <returns>The heading, in capitals.</returns>
-    string PickHeading(int index) => index == 0 ? "PICK YOUR CLUB" : "PICK THE OPPONENT";
+    string PickHeading(int index) => Text.Get(index == 0 ? K.PickYourClub : K.PickOpponent);
 
     /// <summary>Builds the next match. Called when the mode starts, and again for each next game.</summary>
     /// <param name="start">The clubs, the player's picks and input device.</param>
@@ -49,7 +50,7 @@ public sealed record GameModeStart(IReadOnlyList<ClubData> Clubs, IReadOnlyList<
 public sealed class ExhibitionMode : IGameMode
 {
     /// <inheritdoc/>
-    public string Title => "EXHIBITION";
+    public string Title => Text.Get(K.Exhibition);
 
     /// <inheritdoc/>
     public int Order => 0;

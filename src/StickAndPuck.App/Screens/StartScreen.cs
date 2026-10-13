@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
 
@@ -23,13 +24,13 @@ internal sealed class StartScreen : MenuScreen
             read = true;
         }
         bool saved = save != null;
-        List<MenuItem> items = [new MenuItem("CONTINUE SEASON", ScreenFlow.PlaySeasonGame, Enabled: saved)];
-        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem("SIM NEXT GAME", ScreenFlow.SimSeasonGame, Enabled: Season is { } s && HasNextGame(s)));    // W33, off with the SimGame setting
-        items.Add(new MenuItem("NEW SEASON", NewSeason));
-        items.Add(new MenuItem("NEW GAME", () => ScreenFlow.Push(new ModeScreen())));
-        items.Add(new MenuItem("STANDINGS", Standings, Enabled: saved));
-        items.Add(new MenuItem("SETTINGS", () => ScreenFlow.Push(new SettingsScreen())));
-        items.Add(new MenuItem("QUIT", ScreenFlow.Quit));
+        List<MenuItem> items = [new MenuItem(Text.Get(K.ContinueSeason), ScreenFlow.PlaySeasonGame, Enabled: saved)];
+        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame, Enabled: Season is { } s && HasNextGame(s)));    // W33, off with the SimGame setting
+        items.Add(new MenuItem(Text.Get(K.NewSeason), NewSeason));
+        items.Add(new MenuItem(Text.Get(K.NewGame), () => ScreenFlow.Push(new ModeScreen())));
+        items.Add(new MenuItem(Text.Get(K.Standings), Standings, Enabled: saved));
+        items.Add(new MenuItem(Text.Get(K.Settings), () => ScreenFlow.Push(new SettingsScreen())));
+        items.Add(new MenuItem(Text.Get(K.Quit), ScreenFlow.Quit));
         return items;
     }
 
@@ -63,17 +64,17 @@ internal sealed class StartScreen : MenuScreen
             string club = ScreenFlow.Clubs.FirstOrDefault(c => string.Equals(c.Id, season.UserClub, StringComparison.Ordinal))?.Name ?? season.UserClub;
             int played = season.Games.Count(g => g.Played && g.Involves(season.UserClub));
             int total = season.Games.Count(g => g.Involves(season.UserClub));
-            string line = !season.IsOver ? $"{club} - GAME {played + 1} OF {total}"
-                : season.Playoffs is { Champion: not null } || season.Playoffs is { UserSeries: null } ? $"{club} - SEASON OVER"
-                : $"{club} - PLAYOFFS";
+            string line = !season.IsOver ? Text.Format(K.StartGameOf, club, played + 1, total)
+                : season.Playoffs is { Champion: not null } || season.Playoffs is { UserSeries: null } ? Text.Format(K.StartSeasonOver, club)
+                : Text.Format(K.StartPlayoffs, club);
             art.Centred(line, Game.Width / 2, 80 + h + 6, art.Text);
         }
-        art.Hint("ARROWS MOVE   ENTER PICKS   ESC BACK");
+        art.Hint(Text.Get(K.HintMenu));
     }
 
     void NewSeason()
     {
-        ScreenFlow.Push(new TeamSelectScreen("PICK YOUR CLUB", null, club =>
+        ScreenFlow.Push(new TeamSelectScreen(Text.Get(K.PickYourClub), null, club =>
         {
             void Begin()
             {
@@ -83,7 +84,7 @@ internal sealed class StartScreen : MenuScreen
             }
 
             if (save == null) Begin();
-            else ScreenFlow.Push(new ConfirmScreen("REPLACE THE SAVED SEASON?", Begin));
+            else ScreenFlow.Push(new ConfirmScreen(Text.Get(K.ReplaceSave), Begin));
         }));
     }
 

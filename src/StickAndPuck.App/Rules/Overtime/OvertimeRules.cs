@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
 using static Raylib_cs.Raylib;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Rules;
 
@@ -88,7 +89,7 @@ internal sealed class OvertimeRules : ISystem
     /// <summary>W45: the home human's choice, blinking at the top until they pick.</summary>
     static void DrawChoice(World world)
     {
-        string text = $"{world.Setup.Home.ShortName} SHOOTS   {Key(world, GameAction.Shoot)} FIRST   {Key(world, GameAction.Pass)} SECOND";
+        string text = Text.Format(K.ShootoutChoice, world.Setup.Home.ShortName, Key(world, GameAction.Shoot), Key(world, GameAction.Pass));
         int w = MeasureText(text, 10);
         DrawRectangle((Game.Width - w) / 2 - 4, 48, w + 8, 14, new Raylib_cs.Color(24, 19, 31, 255));
         if ((int)(world.Time * 2) % 2 == 0) DrawText(text, (Game.Width - w) / 2, 50, 10, new Raylib_cs.Color(239, 224, 194, 255));
@@ -96,7 +97,7 @@ internal sealed class OvertimeRules : ISystem
 
     static string Key(World world, GameAction action)
     {
-        return ShootoutOrder.HomeHuman(world.Setup) is InputDevice.KeyboardMouse ? KeyBindings.Of(world.Settings, action).Key.ToString().ToUpperInvariant() : action == GameAction.Shoot ? "SHOOT" : "PASS";
+        return ShootoutOrder.HomeHuman(world.Setup) is InputDevice.KeyboardMouse ? KeyBindings.Of(world.Settings, action).Key.ToString().ToUpperInvariant() : Text.Get(action == GameAction.Shoot ? K.ChoiceShoot : K.ChoicePass);
     }
 
     /// <summary>The break after a tied period: the format's skaters each, then the overtime faceoff of the next period.</summary>

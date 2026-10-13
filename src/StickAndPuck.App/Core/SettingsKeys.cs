@@ -1,4 +1,5 @@
 using Raylib_cs;
+using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Core;
 
@@ -140,20 +141,20 @@ public static class KeyBindings
     public static string KeyName(KeyboardKey key) => key switch
     {
         KeyboardKey.Null => "-",
-        KeyboardKey.LeftShift => "L SHIFT",
-        KeyboardKey.RightShift => "R SHIFT",
-        KeyboardKey.LeftControl => "L CTRL",
-        KeyboardKey.RightControl => "R CTRL",
-        KeyboardKey.LeftAlt => "L ALT",
-        KeyboardKey.RightAlt => "R ALT",
-        KeyboardKey.LeftSuper => "L SUPER",
-        KeyboardKey.RightSuper => "R SUPER",
-        KeyboardKey.PageUp => "PG UP",
-        KeyboardKey.PageDown => "PG DOWN",
-        KeyboardKey.CapsLock => "CAPS",
-        KeyboardKey.Backspace => "BKSP",
+        KeyboardKey.LeftShift => Text.Get(K.KeyLShift),
+        KeyboardKey.RightShift => Text.Get(K.KeyRShift),
+        KeyboardKey.LeftControl => Text.Get(K.KeyLCtrl),
+        KeyboardKey.RightControl => Text.Get(K.KeyRCtrl),
+        KeyboardKey.LeftAlt => Text.Get(K.KeyLAlt),
+        KeyboardKey.RightAlt => Text.Get(K.KeyRAlt),
+        KeyboardKey.LeftSuper => Text.Get(K.KeyLSuper),
+        KeyboardKey.RightSuper => Text.Get(K.KeyRSuper),
+        KeyboardKey.PageUp => Text.Get(K.KeyPgUp),
+        KeyboardKey.PageDown => Text.Get(K.KeyPgDown),
+        KeyboardKey.CapsLock => Text.Get(K.KeyCaps),
+        KeyboardKey.Backspace => Text.Get(K.KeyBksp),
         >= KeyboardKey.Zero and <= KeyboardKey.Nine => ((int)key - (int)KeyboardKey.Zero).ToString(System.Globalization.CultureInfo.InvariantCulture),
-        >= KeyboardKey.Kp0 and <= KeyboardKey.Kp9 => $"KP {(int)key - (int)KeyboardKey.Kp0}",
+        >= KeyboardKey.Kp0 and <= KeyboardKey.Kp9 => Text.Format(K.KeyKp, (int)key - (int)KeyboardKey.Kp0),
         _ => key.ToString().ToUpperInvariant(),
     };
 
@@ -162,23 +163,23 @@ public static class KeyBindings
     /// <returns>The name, or "-" for none.</returns>
     public static string ButtonName(GamepadButton button) => button switch
     {
-        GamepadButton.LeftFaceUp => "D-UP",
-        GamepadButton.LeftFaceDown => "D-DOWN",
-        GamepadButton.LeftFaceLeft => "D-LEFT",
-        GamepadButton.LeftFaceRight => "D-RIGHT",
-        GamepadButton.RightFaceDown => "A",
-        GamepadButton.RightFaceRight => "B",
-        GamepadButton.RightFaceLeft => "X",
-        GamepadButton.RightFaceUp => "Y",
-        GamepadButton.LeftTrigger1 => "LB",
-        GamepadButton.LeftTrigger2 => "LT",
-        GamepadButton.RightTrigger1 => "RB",
-        GamepadButton.RightTrigger2 => "RT",
-        GamepadButton.MiddleLeft => "BACK",
-        GamepadButton.Middle => "GUIDE",
-        GamepadButton.MiddleRight => "START",
-        GamepadButton.LeftThumb => "LS",
-        GamepadButton.RightThumb => "RS",
+        GamepadButton.LeftFaceUp => Text.Get(K.PadUp),
+        GamepadButton.LeftFaceDown => Text.Get(K.PadDown),
+        GamepadButton.LeftFaceLeft => Text.Get(K.PadLeft),
+        GamepadButton.LeftFaceRight => Text.Get(K.PadRight),
+        GamepadButton.RightFaceDown => Text.Get(K.PadA),
+        GamepadButton.RightFaceRight => Text.Get(K.PadB),
+        GamepadButton.RightFaceLeft => Text.Get(K.PadX),
+        GamepadButton.RightFaceUp => Text.Get(K.PadY),
+        GamepadButton.LeftTrigger1 => Text.Get(K.PadLb),
+        GamepadButton.LeftTrigger2 => Text.Get(K.PadLt),
+        GamepadButton.RightTrigger1 => Text.Get(K.PadRb),
+        GamepadButton.RightTrigger2 => Text.Get(K.PadRt),
+        GamepadButton.MiddleLeft => Text.Get(K.PadBack),
+        GamepadButton.Middle => Text.Get(K.PadGuide),
+        GamepadButton.MiddleRight => Text.Get(K.PadStart),
+        GamepadButton.LeftThumb => Text.Get(K.PadLs),
+        GamepadButton.RightThumb => Text.Get(K.PadRs),
         _ => "-",
     };
 
