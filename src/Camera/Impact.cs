@@ -102,7 +102,8 @@ internal sealed class Impact
             var closePos = fightSpot - (forward * CloseDistance);
             var pos = Vector3.Lerp(camera.Position, closePos, t);
             camera.Position = pos;
-            camera.Target = pos + (forward * 10f);
+            // the target sits at the fighters' depth, so the render scale and pixel snap are measured there (W59)
+            camera.Target = pos + (forward * Math.Max(1f, Vector3.Dot(fightSpot - pos, forward)));
         }
 
         var offset = ShakeOffset;
