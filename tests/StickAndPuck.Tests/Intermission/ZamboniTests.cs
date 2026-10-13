@@ -58,7 +58,7 @@ public sealed class ZamboniTests : CheckedTest
         var system = new IntermissionSystem(() => false);
         float firstOut = -1, firstGone = -1, secondPeriod = -1;
         int drives = 0;
-        IntermissionSystem.Drive? last = null;
+        var last = Maybe<IntermissionSystem.Drive>.None;
         Run(world, system, w => w.Match.Phase == MatchPhase.Final, 200f, w =>
         {
             if (system.Current.TryGet(out var d) && d != last) { drives++; last = d; }
@@ -91,14 +91,16 @@ public sealed class ZamboniTests : CheckedTest
         Check(world.Match.Period == 2 && world.Time - skipped < 3f, $"after a skip period 2 starts {world.Time - skipped:F1} s later");
     }
 
-    static void Run(World world, IntermissionSystem system, Func<World, bool> until, float limit, Action<World>? each = null)
+    static void Run(World world, IntermissionSystem system, Func<World, bool> until, float limit) => Run(world, system, until, limit, _ => { });
+
+    static void Run(World world, IntermissionSystem system, Func<World, bool> until, float limit, Action<World> each)
     {
         var systems = new ISystem[] { new MatchRules(), system };
         for (int i = 0; i < limit / Game.Step && !until(world); i++)
         {
             world.Events.Clear();
             foreach (var s in systems) s.Update(world, Game.Step);
-            each?.Invoke(world);
+            each(world);
             world.Time += Game.Step; world.Tick++;
         }
     }

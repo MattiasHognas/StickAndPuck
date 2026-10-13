@@ -29,7 +29,7 @@ public static class GameSession
     {
         Directory.SetCurrentDirectory(AppContext.BaseDirectory);
         foreach (string name in Environment.GetEnvironmentVariables().Keys.Cast<string>().Where(n => n.StartsWith("SAP_", StringComparison.Ordinal) && !string.Equals(n, PrintGoldens, StringComparison.Ordinal)).ToList())
-            Environment.SetEnvironmentVariable(name, null);
+            Environment.SetEnvironmentVariable(name, "");
 
         Keep(() => Penalties.Strictness, v => Penalties.Strictness = v);
         Keep(() => OvertimeRules.PeriodSeconds, v => OvertimeRules.PeriodSeconds = v);

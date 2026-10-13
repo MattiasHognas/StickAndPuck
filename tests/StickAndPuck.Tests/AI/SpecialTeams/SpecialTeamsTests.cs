@@ -83,7 +83,7 @@ public sealed class SpecialTeamsTests : CheckedTest
     {
         var on = new Result();
         var off = new Result();
-        World? last = null;
+        var last = Maybe<World>.None;
         foreach (var pp in new[] { Side.Away, Side.Home })
         {
             last = Run(clubs, settings, pp, seed, true, on);
@@ -99,7 +99,7 @@ public sealed class SpecialTeamsTests : CheckedTest
         check(on.Box > 10f && on.KillHeld > 0.6f && on.KillHeld > off.KillHeld + 0.15f, "the kill holds its box, clearly more than without special teams");
         check(on.Clears >= 8 && on.ClearedOut >= on.Clears * 0.6f, "the kill clears the puck down the ice, most clears leaving the zone");
         check(on.PpShots > on.KillShots * 1.5f, "the power play clearly outshoots the kill");
-        return last!;
+        return last.TryGet(out var played) ? played : throw new InvalidOperationException("expected a match to have been played");
     }
 
     sealed class Result
@@ -169,8 +169,8 @@ public sealed class SpecialTeamsTests : CheckedTest
     {
         var team = world.OnIce(side).Where(o => !o.IsGoalie).ToList();
         if (team.Count == 0) return 0;
-        var presser = carrier >= 0 ? team.MinBy(o => Vector3.Distance(o.Position, world.Players[carrier].Position)) : null;
-        if (presser != null && Vector3.Distance(presser.Position, world.Players[carrier].Position) > 3f) presser = null;
+        var presser = Maybe<Player>.None;
+        if (carrier >= 0 && team.MinBy(o => Vector3.Distance(o.Position, world.Players[carrier].Position)) is { } nearest && Vector3.Distance(nearest.Position, world.Players[carrier].Position) <= 3f) presser = nearest;
         float best = 0;
         foreach (var f in shapes)
         {
@@ -179,7 +179,7 @@ public sealed class SpecialTeamsTests : CheckedTest
             var (pair, _) = Formations.Assign(who, spots);
             int held = 0;
             for (int i = 0; i < team.Count; i++)
-                if (team[i] == presser || (pair[i] >= 0 && Vector2.Distance(who[i].Item1, spots[pair[i]]) < 2.5f)) held++;
+                if (presser.Is(x => x == team[i]) || (pair[i] >= 0 && Vector2.Distance(who[i].Item1, spots[pair[i]]) < 2.5f)) held++;
             best = Math.Max(best, (float)held / team.Count);
         }
         return best;

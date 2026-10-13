@@ -28,7 +28,7 @@ public sealed class MomentumTests : CheckedTest
     static World Make()
     {
         var w = new WorldBuilder().Setup(s => s with { PeriodSeconds = 600 }).Settings(s => s with { Difficulty = Difficulty.Normal }).Build();
-        Run(w, x => x.Match.Phase == MatchPhase.Play, null, 15);
+        Run(w, x => x.Match.Phase == MatchPhase.Play, 15);
         return w;
     }
 
@@ -45,13 +45,15 @@ public sealed class MomentumTests : CheckedTest
         return w;
     }
 
-    static void Run(World world, Func<World, bool> until, Action<World>? each = null, float limit = 10)
+    static void Run(World world, Func<World, bool> until, float limit = 10) => Run(world, until, _ => { }, limit);
+
+    static void Run(World world, Func<World, bool> until, Action<World> each, float limit = 10)
     {
         var systems = Systems(world);
         for (int i = 0; i < limit / Game.Step && !until(world); i++)
         {
             world.Events.Clear();
-            each?.Invoke(world);
+            each(world);
             foreach (var s in systems) s.Update(world, Game.Step);
             world.Time += Game.Step; world.Tick++;
         }
@@ -153,9 +155,9 @@ public sealed class MomentumTests : CheckedTest
         var checker = w.OnIce(Side.Away).First(p => p.Data.Position == PlayingPosition.C);
         var victim = w.OnIce(Side.Home).First(p => p.Data.Position == PlayingPosition.C);
         Fighting.Offer(w, checker.Id, victim.Id);
-        Fight? fight = null;
-        Run(w, x => fight is { LoserId: >= 0 }, x => { if (fight == null && Fighting.Current(x).TryGet(out var f)) fight = f; }, 40);
-        if (fight is not { LoserId: >= 0 })
+        var found = Maybe<Fight>.None;
+        Run(w, x => found.Is(f => f.LoserId >= 0), x => { if (!found.HasValue && Fighting.Current(x).TryGet(out var f)) found = f; }, 40);
+        if (!found.TryGet(out var fight) || fight.LoserId < 0)
         {
             Check(false, "a fight is won");
             return;

@@ -29,11 +29,14 @@ public sealed class HandlingTests : CheckedTest
         public int Take() => next++;
     }
 
+    /// <summary>Runs skating, handling and physics for some seconds, with no commands set.</summary>
+    static List<MatchEvent> Run(SeedCount seeds, World world, float seconds) => Run(seeds, world, seconds, (_, _) => { });
+
     /// <summary>Runs skating, handling and physics for some seconds; <paramref name="each"/> sets commands before each step.</summary>
-    static List<MatchEvent> Run(SeedCount seeds, World world, float seconds, Action<World, int>? each = null, PuckHandlingSystem? handling = null)
+    static List<MatchEvent> Run(SeedCount seeds, World world, float seconds, Action<World, int> each)
     {
 #pragma warning disable S2245 // a fixed seed per run so the checks repeat
-        ISystem[] systems = [new SkatingSystem(), handling ?? new PuckHandlingSystem(new Random(seeds.Take())), new PuckPhysics()];
+        ISystem[] systems = [new SkatingSystem(), new PuckHandlingSystem(new Random(seeds.Take())), new PuckPhysics()];
 #pragma warning restore S2245
         foreach (var s in systems) if (s is not PuckPhysics) s.Start(world);
         var events = new List<MatchEvent>();
@@ -41,7 +44,7 @@ public sealed class HandlingTests : CheckedTest
         for (int i = 0; i < steps; i++)
         {
             world.Events.Clear();
-            each?.Invoke(world, i);
+            each(world, i);
             foreach (var s in systems) s.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
             world.Time += Game.Step; world.Tick++;
@@ -49,15 +52,15 @@ public sealed class HandlingTests : CheckedTest
         return events;
     }
 
-    static Player Add(World w, Side side, Vector3 at, float heading = Right, Traits? traits = null)
+    static Player Add(World w, Side side, Vector3 at, float heading = Right, Maybe<Traits> traits = default)
     {
-        var p = w.AddPlayer(side, new PlayerData { Position = PlayingPosition.C, Traits = traits ?? new Traits() }, at);
+        var p = w.AddPlayer(side, new PlayerData { Position = PlayingPosition.C, Traits = traits.Or(new Traits()) }, at);
         p.Heading = heading;
         return p;
     }
 
     /// <summary>Adds a skater placed so that their blade is at a point.</summary>
-    static Player AddBladeAt(World w, Side side, Vector3 blade, float heading = Right, Traits? traits = null)
+    static Player AddBladeAt(World w, Side side, Vector3 blade, float heading = Right, Maybe<Traits> traits = default)
     {
         return Add(w, side, blade - PuckHandling.Blade(Vector3.Zero, heading), heading, traits);
     }
@@ -98,8 +101,8 @@ public sealed class HandlingTests : CheckedTest
         Check(events.Any(e => e is PassMade pass && pass.PasserId == a.Id), "the carrier skates up ice and passes");
         Check(b.Slot == 0 && a.Slot == -1, "control follows the pass to the receiver");
         Check(events.Any(e => e is ShotTaken shot && shot.ShooterId == b.Id), "the receiver takes the pass and shoots");
-        var goal = events.OfType<GoalScored>().FirstOrDefault();
-        Check(goal != null && goal.ScorerId == b.Id && goal.Side == Side.Home, "and scores, credited to the shooter");
+        var goal = events.OfType<GoalScored>().FirstOrNone();
+        Check(goal.Is(g => g.ScorerId == b.Id && g.Side == Side.Home), "and scores, credited to the shooter");
     }
 
     [Test]

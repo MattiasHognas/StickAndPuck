@@ -55,7 +55,7 @@ public sealed partial class TextTests : CheckedTest
             var table = Table(language);
             foreach (var (key, text) in table)
             {
-                if (!english.TryGetValue(key, out string? en)) continue;
+                if (english.GetValueOrDefault(key) is not { } en) continue;
                 Check(string.Equals(Holes(text), Holes(en), StringComparison.Ordinal), $"{language} {key} has English's placeholders {Holes(en)}, not {Holes(text)}");
             }
         }
@@ -85,9 +85,9 @@ public sealed partial class TextTests : CheckedTest
     [Test]
     public void NoLiteralReachesATextDrawCall()
     {
-        string? root = RepoRoot();
-        Check(root != null, "the repository root (src.slnx) is found above the test output");
-        if (root == null) return;
+        var found = RepoRoot();
+        Check(found.HasValue, "the repository root (src.slnx) is found above the test output");
+        if (!found.TryGet(out string root)) return;
         var offenders = new List<string>();
         foreach (string file in Directory.EnumerateFiles(Path.Combine(root, "src", "StickAndPuck.App"), "*.cs", SearchOption.AllDirectories))
         {
@@ -118,10 +118,10 @@ public sealed partial class TextTests : CheckedTest
     [GeneratedRegex(@"\{\d+\}")]
     private static partial Regex PlaceholderPattern();
 
-    static string? RepoRoot()
+    static Maybe<string> RepoRoot()
     {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is { }; dir = dir.Parent)
             if (File.Exists(Path.Combine(dir.FullName, "src.slnx"))) return dir.FullName;
-        return null;
+        return Maybe<string>.None;
     }
 }

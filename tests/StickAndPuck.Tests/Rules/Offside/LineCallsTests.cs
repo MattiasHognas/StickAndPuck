@@ -21,21 +21,23 @@ public sealed class LineCallsTests : CheckedTest
             .Then(w =>
             {
                 if (period > 1) MatchFlow.StartPeriod(w, period, 600);
-                Run(w, x => x.Match.Phase == MatchPhase.Play, null, 10);
+                Run(w, x => x.Match.Phase == MatchPhase.Play, 10);
                 Park(w);
             })
             .Build();
     }
 
+    static List<MatchEvent> Run(World world, Func<World, bool> until, float limit = 10) => Run(world, until, _ => { }, limit);
+
     /// <summary>Runs physics and rules step by step, calling <paramref name="each"/> before each step, and returns every event.</summary>
-    static List<MatchEvent> Run(World world, Func<World, bool> until, Action<World>? each = null, float limit = 10)
+    static List<MatchEvent> Run(World world, Func<World, bool> until, Action<World> each, float limit = 10)
     {
         var systems = Systems(world);
         var events = new List<MatchEvent>();
         for (int i = 0; i < limit / Game.Step && !until(world); i++)
         {
             world.Events.Clear();
-            each?.Invoke(world);
+            each(world);
             foreach (var s in systems) s.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
             world.Time += Game.Step; world.Tick++;
@@ -51,7 +53,9 @@ public sealed class LineCallsTests : CheckedTest
         return Sets.GetValue(world, _ => [new PuckPhysics(), new MatchRules(), new OffsideRule(), new IcingRule()]);
     }
 
-    static List<MatchEvent> RunFor(World world, float seconds, Action<World>? each = null)
+    static List<MatchEvent> RunFor(World world, float seconds) => RunFor(world, seconds, _ => { });
+
+    static List<MatchEvent> RunFor(World world, float seconds, Action<World> each)
     {
         float end = world.Time + seconds;
         return Run(world, w => w.Time >= end - Game.Step / 2, each);
@@ -99,7 +103,7 @@ public sealed class LineCallsTests : CheckedTest
     void FaceoffAt(World w, Vector3 dot, string what)
     {
         Check(w.Match.Phase == MatchPhase.Stopped && MatchFlow.FaceoffDot(w) == dot, $"{what}: play stops for a faceoff at ({dot.X}, {dot.Z})");
-        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, null, 5);
+        Run(w, x => x.Match.Phase == MatchPhase.Faceoff, 5);
         Check(w.Match.Phase == MatchPhase.Faceoff && w.Puck.Position == dot, $"{what}: the puck is placed on that dot");
     }
 
@@ -147,7 +151,7 @@ public sealed class LineCallsTests : CheckedTest
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(13, 0, -8);
         Send(w, c, new Vector3(2, 0, 4), new Vector3(12, 0, 0));
-        Run(w, x => OffsideRule.Pending(x) != SideOrNone.None, null, 2);
+        Run(w, x => OffsideRule.Pending(x) != SideOrNone.None, 2);
         Check(OffsideRule.Pending(w) == SideOrNone.Home, "a dump-in past an offside winger is pending");
         w.Puck.Velocity = Vector3.Zero;
         rw.Position = new Vector3(RinkSpec.BlueLineX + 0.2f, 0, -8);   // a skate on the line
@@ -168,9 +172,9 @@ public sealed class LineCallsTests : CheckedTest
         var d = Skater(w, Side.Away, PlayingPosition.D);
         rw.Position = new Vector3(13, 0, -8);
         Send(w, c, new Vector3(2, 0, 4), new Vector3(12, 0, 0));
-        Run(w, x => OffsideRule.Pending(x) != SideOrNone.None, null, 2);
+        Run(w, x => OffsideRule.Pending(x) != SideOrNone.None, 2);
         Send(w, d, w.Puck.Position, new Vector3(-15, 0, 0));
-        Run(w, x => x.Puck.Position.X < 3, null, 2);
+        Run(w, x => x.Puck.Position.X < 3, 2);
         Check(OffsideRule.Pending(w) == SideOrNone.None, "the defence clearing the zone waves the offside off");
         w.Puck.Velocity = Vector3.Zero;
         var ev = RunFor(w, 0.3f, x => x.Puck.Carrier = rw.Id);
@@ -186,7 +190,7 @@ public sealed class LineCallsTests : CheckedTest
         var d = Skater(w, Side.Away, PlayingPosition.D);
         rw.Position = new Vector3(13, 0, -8);
         Send(w, d, new Vector3(2, 0, 4), new Vector3(12, 0, 0));
-        var ev = Run(w, x => x.Puck.Position.X > 10, null, 2);
+        var ev = Run(w, x => x.Puck.Position.X > 10, 2);
         Check(OffsideRule.Pending(w) == SideOrNone.None, "a puck the defence sends in is not offside");
         w.Puck.Velocity = Vector3.Zero;
         rw.Position = w.Puck.Position;
@@ -239,7 +243,7 @@ public sealed class LineCallsTests : CheckedTest
         var rw = Skater(w, Side.Home, PlayingPosition.RW);
         rw.Position = new Vector3(-13, 0, -4);
         Send(w, c, new Vector3(-2, 0, -4), new Vector3(-14, 0, 0));
-        var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 3);
+        var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, 3);
         Check(ev.Any(e => e is OffsideCalled { Attacker: Side.Home }), "period 2: home offside in the -x zone");
         Check(MatchFlow.FaceoffDot(w) == new Vector3(-6.1f, 0, -6.7f), "faceoff at the -x neutral dot");
     }
@@ -253,7 +257,7 @@ public sealed class LineCallsTests : CheckedTest
         var ad = Skater(w, Side.Away, PlayingPosition.D);
         ad.Position = new Vector3(22, 0, 10);
         Send(w, d, new Vector3(-10, 0, 5), new Vector3(30, 0, 0));
-        var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 3);
+        var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, 3);
         var icing = ev.OfType<IcingCalled>().ToList();
         Check(icing.Count == 1 && icing[0].Offender == Side.Home && icing[0].PlayerId == d.Id, "home ices the puck");
         Check(icing.Count == 1 && icing[0].Position.X > RinkSpec.GoalLineX, "called as it crosses the goal line");
@@ -317,7 +321,7 @@ public sealed class LineCallsTests : CheckedTest
         Check(Count<IcingCalled>(ev) == 0, "a short-handed club may ice the puck");
         w.Match.Penalties.Add(new PenaltyState(ad.Id, Side.Away, "slashing", 120));
         Send(w, d, new Vector3(-10, 0, 5), new Vector3(30, 0, 0));
-        ev = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 3);
+        ev = Run(w, x => x.Match.Phase != MatchPhase.Play, 3);
         Check(Count<IcingCalled>(ev) == 1, "at even strength again it is icing");
     }
 
@@ -344,7 +348,7 @@ public sealed class LineCallsTests : CheckedTest
         var ad = Skater(w, Side.Away, PlayingPosition.D);
         ad.Position = new Vector3(-22, 0, -10);
         Send(w, d, new Vector3(10, 0, -5), new Vector3(-30, 0, 0));
-        var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, null, 3);
+        var ev = Run(w, x => x.Match.Phase != MatchPhase.Play, 3);
         Check(ev.Any(e => e is IcingCalled { Offender: Side.Home }), "period 2: home ices toward -x");
         Check(MatchFlow.FaceoffDot(w) == new Vector3(20.7f, 0, -6.7f), "faceoff at home's own end-zone dot at +x");
     }

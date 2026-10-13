@@ -26,19 +26,26 @@ public sealed class OvertimeTests : CheckedTest
     [Before(Test)]
     public void ShortOvertime() => OvertimeRules.PeriodSeconds = Period;
 
-    static World Make(OvertimeRule rule = OvertimeRule.Shl, IReadOnlyList<InputSlot>? inputs = null, OvertimeFormat? format = null, RuleSet? rules = null)
+    static World Make(OvertimeRule rule = OvertimeRule.Shl, Maybe<OvertimeFormat> format = default, Maybe<RuleSet> rules = default) => Make(NoHumans, rule, format, rules);
+
+    static World Make(IReadOnlyList<InputSlot> inputs, OvertimeRule rule = OvertimeRule.Shl, Maybe<OvertimeFormat> format = default, Maybe<RuleSet> rules = default)
     {
         return new WorldBuilder()
-            .Setup(BaseSetup with { Overtime = rule, Inputs = inputs ?? NoHumans, OvertimeFormat = format is { } f ? f : Maybe<OvertimeFormat>.None, Rules = rules ?? RuleSet.Shl })
+            .Setup(BaseSetup with { Overtime = rule, Inputs = inputs, OvertimeFormat = format, Rules = rules.Or(RuleSet.Shl) })
             .Build();
     }
 
-    /// <summary>Gets the match's shootout, or null before it starts.</summary>
-    static ShootoutState? So(World w) => OvertimeRules.Shootout(w).TryGet(out var so) ? so : null;
+    /// <summary>Gets the match's shootout, none before it starts.</summary>
+    static Maybe<ShootoutState> So(World w) => OvertimeRules.Shootout(w);
 
-    /// <summary>Runs the systems a shootout needs, step by step, calling <paramref name="each"/> before each step, and returns every event.</summary>
+    static T Must<T>(Maybe<T> m)
+        where T : notnull => m.TryGet(out var v) ? v : throw new InvalidOperationException("expected a value");
+
+    /// <summary>Runs the systems a shootout needs, step by step, and returns every event.</summary>
 #pragma warning disable S2245 // seeded randomness so the checks repeat
-    static List<MatchEvent> Run(World world, Func<World, bool> until, int seed = 1, Action<World>? each = null, float limit = 900)
+    static List<MatchEvent> Run(World world, Func<World, bool> until, int seed = 1, float limit = 900) => Run(world, until, seed, _ => { }, limit);
+
+    static List<MatchEvent> Run(World world, Func<World, bool> until, int seed, Action<World> each, float limit = 900)
     {
         using var goalie = new GoalieSystem { Dice = new Random(seed) };
         var systems = new ISystem[]
@@ -50,7 +57,7 @@ public sealed class OvertimeTests : CheckedTest
         for (int i = 0; i < limit / Game.Step && !until(world); i++)
         {
             world.Events.Clear();
-            each?.Invoke(world);
+            each(world);
             foreach (var s in systems) s.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
             world.Time += Game.Step; world.Tick++;
@@ -63,7 +70,7 @@ public sealed class OvertimeTests : CheckedTest
     [Test]
     public void ThreeOnThree()
     {
-        var w = Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]);
+        var w = Make([new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]);
         // the human is on the left wing, who goes to the bench
         w.Players.First(p => p.Side == Side.Home && p.Data.Position == PlayingPosition.LW).Slot = 0;
         Run(w, x => x.Match.Phase == MatchPhase.Overtime);
@@ -99,7 +106,7 @@ public sealed class OvertimeTests : CheckedTest
         bool wonHere = final.Count == 1 && final[0] is MatchWon { Winner: Side.Home } && w.Match.Score[0] == 1 && w.Match.Score[1] == 0;
         // the goalie may stop it; then the overtime runs out into the shootout, still a valid ending
         Check(wonHere || (ev.Any(e => e is ShotSaved) && w.Match.Phase != MatchPhase.Final), $"an overtime goal ends it 1-0 (score {w.Match.Score[0]}-{w.Match.Score[1]})");
-        Check(So(w) == null, "no shootout after an overtime goal");
+        Check(!So(w).HasValue, "no shootout after an overtime goal");
     }
 
     /// <summary>The tally decides the shootout within the rounds, and in sudden death only after both clubs shot.</summary>
@@ -141,12 +148,11 @@ public sealed class OvertimeTests : CheckedTest
             if (seed == 1) Check(w.Match.Period == 4 && w.Match.Phase == MatchPhase.Shootout, "a scoreless overtime goes to the shootout");
             var ev = Run(w, x => x.Match.Phase == MatchPhase.Final, seed, x =>
             {
-                if (So(x) is not { ShooterId: >= 0 }) return;
+                if (!So(x).Is(t => t.ShooterId >= 0)) return;
                 // only the shooter and the two goalies on the ice
                 alone &= x.Players.Count(p => p.OnIce && !p.IsGoalie) <= 1 && x.Players.Count(p => p.OnIce && p.IsGoalie) == 2;
             });
-            var so = So(w);
-            if (so == null || w.Match.Phase != MatchPhase.Final) { Check(false, $"seed {seed}: the shootout reaches the final"); continue; }
+            if (!So(w).TryGet(out var so) || w.Match.Phase != MatchPhase.Final) { Check(false, $"seed {seed}: the shootout reaches the final"); continue; }
             decided++;
             goals += so.Shots.Count(s => s.Scored);
             misses += so.Shots.Count(s => !s.Scored);
@@ -178,7 +184,7 @@ public sealed class OvertimeTests : CheckedTest
     {
         var w = Make(OvertimeRule.ShootoutOnly);
         var ev = Run(w, x => x.Match.Phase == MatchPhase.Final);
-        Check(w.Match.Period == 3 && So(w) is { Winner: not SideOrNone.None }, "shootout only: no overtime period, the shootout decides it");
+        Check(w.Match.Period == 3 && So(w).Is(t => t.Winner != SideOrNone.None), "shootout only: no overtime period, the shootout decides it");
         Check(ev.Count(e => e is MatchEnded) == 1, "one MatchEnd");
     }
 
@@ -203,7 +209,7 @@ public sealed class OvertimeTests : CheckedTest
     [Test]
     public void PlayoffOvertime()
     {
-        var w = Make(format: Playoffs, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]]);
+        var w = Make([new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], format: Playoffs);
         w.Players.First(p => p.Side == Side.Home && p.Data.Position == PlayingPosition.LW).Slot = 0;
         Run(w, x => x.Match.Phase == MatchPhase.Overtime);
         Run(w, _ => false, limit: Game.Step);
@@ -219,7 +225,7 @@ public sealed class OvertimeTests : CheckedTest
         Check(w.Match.Phase == MatchPhase.Overtime && w.Match.Period == 4, "a scoreless overtime goes to another overtime, not a shootout");
         Run(w, x => x.Match.Phase == MatchPhase.Play, limit: 10);
         Check(w.Match.Period == 5 && Skaters(Side.Home) == 5 && Skaters(Side.Away) == 5, "period 5 drops 5 on 5 as well");
-        Check(So(w) == null && w.Match.Score[0] == 0 && w.Match.Score[1] == 0, "no shootout and no score");
+        Check(!So(w).HasValue && w.Match.Score[0] == 0 && w.Match.Score[1] == 0, "no shootout and no score");
     }
 
     /// <summary>The first goal in a playoff overtime ends it.</summary>
@@ -239,16 +245,16 @@ public sealed class OvertimeTests : CheckedTest
         var final = ev.OfType<MatchEnded>().ToList();
         Check(final.Count == 1 && final[0] is MatchWon { Winner: Side.Away } && w.Match.Score[0] == 0 && w.Match.Score[1] == 1, $"the first goal in the second overtime ends it 0-1 (score {w.Match.Score[0]}-{w.Match.Score[1]})");
         Check(w.Match.Phase == MatchPhase.Final && w.Match.Period == 5, "the match is final in period 5");
-        Check(So(w) == null, "no shootout in the playoffs");
+        Check(!So(w).HasValue, "no shootout in the playoffs");
     }
 
     /// <summary>A human slot takes its club's shots; a human who does nothing runs out of time.</summary>
     [Test]
     public void HumanShooter()
     {
-        var w = Make(inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home });
-        Run(w, x => So(x) is { ShooterId: >= 0 });
-        var so = So(w)!;
+        var w = Make([new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home });
+        Run(w, x => So(x).Is(t => t.ShooterId >= 0));
+        var so = Must(So(w));
         var shooter = w.Players[so.ShooterId];
         Check(shooter.Side == Side.Home && shooter.Slot == 0 && w.Controlled(0) == shooter, "the human shoots for the home club");
         float start = w.Time;
@@ -271,28 +277,28 @@ public sealed class OvertimeTests : CheckedTest
 
         var five = Make(OvertimeRule.ShootoutOnly, rules: RuleSet.Shl with { ShootoutShooters = 5 });
         Run(five, x => x.Match.Phase == MatchPhase.Final, 3);
-        Check(So(five) is { Rounds: 5, Winner: not SideOrNone.None } so5 && so5.Shots[0].Side == Side.Away && so5.Decided(5) == so5.Winner, "five shooters when set: decided over five rounds");
+        Check(So(five).TryGet(out var so5) && so5 is { Rounds: 5, Winner: not SideOrNone.None } && so5.Shots[0].Side == Side.Away && so5.Decided(5) == so5.Winner, "five shooters when set: decided over five rounds");
 
         var home = Make(OvertimeRule.ShootoutOnly, rules: RuleSet.Shl with { ShootoutFirst = ShootoutFirst.Home });
         Run(home, x => x.Match.Phase == MatchPhase.Final, 2);
-        bool turns = So(home) is { } soh && soh.Shots.Select((s, i) => s.Side == (i % 2 == 0 ? Side.Home : Side.Away)).All(b => b);
-        Check(turns && So(home)!.Shots.Count > 0, "home first when set: home opens every round");
+        bool turns = So(home).TryGet(out var soh) && soh.Shots.Select((s, i) => s.Side == (i % 2 == 0 ? Side.Home : Side.Away)).All(b => b);
+        Check(turns && Must(So(home)).Shots.Count > 0, "home first when set: home opens every round");
 
         var nhl = Make(OvertimeRule.ShootoutOnly, rules: RuleSet.Nhl);
         Run(nhl, x => x.Match.Phase == MatchPhase.Final, 4);
-        Check(So(nhl) is { Winner: not SideOrNone.None } son && son.Shots[0].Side == Side.Home, "NHL preset with an AI home club: home shoots first");
+        Check(So(nhl).TryGet(out var son) && son is { Winner: not SideOrNone.None } && son.Shots[0].Side == Side.Home, "NHL preset with an AI home club: home shoots first");
     }
 
     /// <summary>W45: a human home club under NHL rules picks the order; nobody shoots until it does, and a home club that never picks shoots first.</summary>
     [Test]
     public void HomeChooses()
     {
-        var w = Make(OvertimeRule.ShootoutOnly, inputs: [new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], rules: RuleSet.Nhl);
-        Run(w, x => So(x) != null);
+        var w = Make([new InputSlot(InputDevice.KeyboardMouse, Side.Home), NoHumans[1]], OvertimeRule.ShootoutOnly, rules: RuleSet.Nhl);
+        Run(w, x => So(x).HasValue);
         Run(w, _ => false, limit: OvertimeTuning.BreakSeconds + 2);
         var so = So(w);
-        Check(so is { ShooterId: -1 } && so.Shots.Count == 0, "NHL: the shootout waits while the human home club chooses");
-        Run(w, x => So(x) is { ShooterId: >= 0 }, limit: ShootoutOrder.ChooseSeconds + 2);
-        Check(so is { ShooterId: >= 0 } && w.Players[so.ShooterId].Side == Side.Home, "a home club that does not pick in time shoots first");
+        Check(so.Is(t => t.ShooterId == -1 && t.Shots.Count == 0), "NHL: the shootout waits while the human home club chooses");
+        Run(w, x => So(x).Is(t => t.ShooterId >= 0), limit: ShootoutOrder.ChooseSeconds + 2);
+        Check(so.Is(t => t.ShooterId >= 0 && w.Players[t.ShooterId].Side == Side.Home), "a home club that does not pick in time shoots first");
     }
 }

@@ -41,7 +41,7 @@ internal static class CommandFixtures
     }
 
     /// <summary>Plays steps, calling back with the step's writes once decisions have run and before anything acts on the commands.</summary>
-    static void Play(World world, ISystem[] systems, float seconds, Action<StepWrites> afterDecisions, Action? beforeStep = null)
+    static void Play(World world, ISystem[] systems, float seconds, Action<StepWrites> afterDecisions, Maybe<Action> beforeStep = default)
     {
         var step = new StepWrites();
         AiCommand.Watch = step.Add;
@@ -52,7 +52,7 @@ internal static class CommandFixtures
             {
                 world.Events.Clear();
                 step.Clear();
-                beforeStep?.Invoke();
+                if (beforeStep.TryGet(out var before)) before();
                 foreach (var s in systems)
                 {
                     s.Update(world, Game.Step);
@@ -212,7 +212,7 @@ internal static class CommandFixtures
             steps++;
             if (!string.Equals(Fields(human.Command), given, StringComparison.Ordinal)) overwritten++;
             if (step.All.Any(w => w.Id == human.Id && w.Writes.Count > 0)) written++;
-        }, () => human.Command = input);
+        }, Maybe.Some<Action>(() => human.Command = input));
         human.Command = input;
         StandInPlay.Faceoff(world, Vector3.Zero);
         bool faceoff = string.Equals(Fields(human.Command), given, StringComparison.Ordinal);

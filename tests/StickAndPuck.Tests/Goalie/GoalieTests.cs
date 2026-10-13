@@ -71,7 +71,10 @@ public sealed class GoalieTests : CheckedTest
     }
 
     /// <summary>Runs the goalie and the puck physics together, in game order, for some seconds.</summary>
-    static List<MatchEvent> Run(World world, GoalieSystem goalie, PuckPhysics physics, float seconds, Action<World>? each = null)
+    static List<MatchEvent> Run(World world, GoalieSystem goalie, PuckPhysics physics, float seconds) => Run(world, goalie, physics, seconds, _ => { });
+
+    /// <summary>Runs the goalie and the puck physics together, in game order, for some seconds, calling back after each step.</summary>
+    static List<MatchEvent> Run(World world, GoalieSystem goalie, PuckPhysics physics, float seconds, Action<World> each)
     {
         var events = new List<MatchEvent>();
         int steps = (int)MathF.Round(seconds / Game.Step);
@@ -81,7 +84,7 @@ public sealed class GoalieTests : CheckedTest
             goalie.Update(world, Game.Step);
             physics.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
-            each?.Invoke(world);
+            each(world);
             world.Time += Game.Step; world.Tick++;
         }
         return events;

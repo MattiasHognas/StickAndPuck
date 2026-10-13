@@ -20,15 +20,19 @@ public sealed class RefereeTests : CheckedTest
     /// <summary>A 25-second match with no overtime, the starters on and the match flow begun.</summary>
     static World Make() => new WorldBuilder().Setup(s => s with { PeriodSeconds = 25, Overtime = OvertimeRule.None }).Build();
 
-    /// <summary>Runs physics, rules and the referee step by step until <paramref name="until"/> or the limit; <paramref name="each"/> sees every step after it ran.</summary>
-    static void Run(World world, Func<World, bool> until, float limit, Action<World>? each = null, RefereeSystem? referee = null)
+    /// <summary>Runs physics, rules and the referee step by step until <paramref name="until"/> or the limit.</summary>
+    static void Run(World world, Func<World, bool> until, float limit) => Run(world, until, limit, _ => { });
+
+    static void Run(World world, Func<World, bool> until, float limit, Action<World> each) => Run(world, until, limit, each, new RefereeSystem());
+
+    static void Run(World world, Func<World, bool> until, float limit, Action<World> each, RefereeSystem referee)
     {
-        var systems = new ISystem[] { new PuckPhysics(), new MatchRules(), referee ?? new RefereeSystem() };
+        var systems = new ISystem[] { new PuckPhysics(), new MatchRules(), referee };
         for (int i = 0; i < limit / Game.Step && !until(world); i++)
         {
             world.Events.Clear();
             foreach (var s in systems) s.Update(world, Game.Step);
-            each?.Invoke(world);
+            each(world);
             world.Time += Game.Step; world.Tick++;
         }
     }

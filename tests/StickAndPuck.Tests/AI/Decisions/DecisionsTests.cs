@@ -120,7 +120,7 @@ public sealed class DecisionsTests : CheckedTest
 
     void FullMatch(IReadOnlyList<ClubData> clubs, Settings settings)
     {
-        var world = Make(clubs, settings, 20 * 60, null, null);
+        var world = Make(clubs, settings, 20 * 60, Maybe<int>.None, Maybe<int>.None);
         var systems = Systems(world, 1);
         float still = Play(world, systems, 2 * 60 * 60);
         var h = AiDecisions.Tally(world, Side.Home);
@@ -205,7 +205,7 @@ public sealed class DecisionsTests : CheckedTest
     {
         const int Seeds = 4;
         int icings = 0, offsides = 0, fewest = int.MaxValue, most = 0, clears = 0, holds = 0;
-        var shl = Matches.Play(Seeds, i => Calls(clubs, settings, RuleSet.Shl, 31 + i, null, null));
+        var shl = Matches.Play(Seeds, i => Calls(clubs, settings, RuleSet.Shl, 31 + i, Maybe<int>.None, Maybe<int>.None));
         for (int seed = 31; seed < 31 + Seeds; seed++)
         {
             var (ice, off, world) = shl[seed - 31];
@@ -224,7 +224,7 @@ public sealed class DecisionsTests : CheckedTest
         Check(fewest >= 1 && most <= 18, $"every match has some of each and none is full of them ({fewest} to {most})");
         Check(clears > 0 && holds > 0, "the AI clears its own zone under pressure and holds up at the blue line for a teammate offside");
 
-        var (aIce, aOff, arcade) = Calls(clubs, settings, RuleSet.Arcade, 41, null, null);
+        var (aIce, aOff, arcade) = Calls(clubs, settings, RuleSet.Arcade, 41, Maybe<int>.None, Maybe<int>.None);
         int arcadeClears = AiDecisions.Tally(arcade, Side.Home).Clears + AiDecisions.Tally(arcade, Side.Away).Clears;
         Console.WriteLine($"      Arcade: {aIce[0] + aIce[1]} icings, {aOff[0] + aOff[1]} offsides, {arcadeClears} clears");
         Check(aIce[0] + aIce[1] == 0 && aOff[0] + aOff[1] == 0 && arcade.Match.Phase == MatchPhase.Final, "under Arcade, rules off, a full match has no icing and no offside");
@@ -276,7 +276,7 @@ public sealed class DecisionsTests : CheckedTest
     }
 
     /// <summary>Plays a full match with the offside and icing rules on; returns each side's icings and offsides.</summary>
-    static (int[] Icings, int[] Offsides, World World) Calls(IReadOnlyList<ClubData> clubs, Settings settings, RuleSet rules, int seed, int? smartHome, int? smartAway)
+    static (int[] Icings, int[] Offsides, World World) Calls(IReadOnlyList<ClubData> clubs, Settings settings, RuleSet rules, int seed, Maybe<int> smartHome, Maybe<int> smartAway)
     {
         var world = Make(clubs, settings, 20 * 60, smartHome, smartAway, rules);
         ISystem[] systems = [.. Systems(world, seed), new OffsideRule(), new IcingRule()];
@@ -296,13 +296,13 @@ public sealed class DecisionsTests : CheckedTest
         return (icings, offsides, world);
     }
 
-    static World Make(IReadOnlyList<ClubData> clubs, Settings settings, float period, int? smartHome, int? smartAway, RuleSet? rules = null)
+    static World Make(IReadOnlyList<ClubData> clubs, Settings settings, float period, Maybe<int> smartHome, Maybe<int> smartAway, Maybe<RuleSet> rules = default)
     {
-        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Rules = rules ?? RuleSet.Shl, Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
+        var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = period, Rules = rules.Or(RuleSet.Shl), Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
         var world = new World(setup, settings);
         Scenes.AddStarters(world);
-        DecisionScenes.SetHockeyIq(world, Side.Home, smartHome is { } home ? home : Maybe<int>.None);
-        DecisionScenes.SetHockeyIq(world, Side.Away, smartAway is { } away ? away : Maybe<int>.None);
+        DecisionScenes.SetHockeyIq(world, Side.Home, smartHome);
+        DecisionScenes.SetHockeyIq(world, Side.Away, smartAway);
         MatchFlow.Begin(world, log: false);
         return world;
     }

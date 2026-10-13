@@ -51,7 +51,7 @@ public sealed class AimedPassTests : CheckedTest
     /// stick and buttons <paramref name="input"/> gives for that step, the way the input system
     /// writes them; <paramref name="seen"/> sees each step's commands once decisions have run.
     /// </summary>
-    static List<MatchEvent> Run(World w, float seconds, Func<int, PlayerCommand> input, Action<int>? seen = null)
+    static List<MatchEvent> Run(World w, float seconds, Func<int, PlayerCommand> input, Action<int> seen)
     {
 #pragma warning disable S2245 // fixed seeds so the checks repeat
         ISystem[] systems = [new DecisionSystem(new Random(1)), new SkatingSystem(), new PuckHandlingSystem(new Random(1)), new PuckPhysics()];
@@ -62,11 +62,11 @@ public sealed class AimedPassTests : CheckedTest
         for (int i = 0; i < steps; i++)
         {
             w.Events.Clear();
-            if (w.Controlled(0).OrNull() is { } human) human.Command = input(i);
+            if (w.Controlled(0).TryGet(out var human)) human.Command = input(i);
             foreach (var s in systems)
             {
                 s.Update(w, Game.Step);
-                if (s is DecisionSystem) seen?.Invoke(i);
+                if (s is DecisionSystem) seen(i);
             }
             events.AddRange(w.Events.Current);
             w.Time += Game.Step; w.Tick++;

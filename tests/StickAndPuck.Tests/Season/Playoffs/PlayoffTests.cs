@@ -24,7 +24,14 @@ public sealed class PlayoffTests : CheckedTest
         if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
     }
 
-    static bool Same(string? a, string? b) => string.Equals(a, b, StringComparison.Ordinal);
+    static bool Same(string a, string b) => string.Equals(a, b, StringComparison.Ordinal);
+
+    /// <summary>Gets a value the test needs, failing loudly when it is absent.</summary>
+    static T Must<T>(Maybe<T> maybe)
+        where T : notnull => maybe.TryGet(out var value) ? value : throw new InvalidOperationException("expected a value");
+
+    /// <summary>Gets the next match's setup, failing loudly when the run is over.</summary>
+    static MatchSetup Must(NextMatch next) => next is NextMatch.Play play ? play.Setup : throw new InvalidOperationException("expected a match to play");
 
     static FixtureResult Win(bool home) => home ? new FixtureResult(3, 1, ResultKind.Regulation) : new FixtureResult(1, 3, ResultKind.Regulation);
 
@@ -33,7 +40,7 @@ public sealed class PlayoffTests : CheckedTest
     {
         SeasonSession.StartNew(clubs, clubs[0].Id, seed, path);
         PlayoffScenes.SettleSeason();
-        return SeasonSession.Current.OrNull()!;
+        return Must(SeasonSession.Current);
     }
 
     [Test]
@@ -72,16 +79,16 @@ public sealed class PlayoffTests : CheckedTest
         p.SimulateUntilUser(clubs);
         var qf = p.Rounds[1];
         var direct = Enumerable.Range(1, PlayoffState.Direct).ToList();
-        var survivors = p.Rounds[0].Series.Select(s => p.SeedOf(s.Winner.OrNull()!)).Order().ToList();
+        var survivors = p.Rounds[0].Series.Select(s => p.SeedOf(Must(s.Winner))).Order().ToList();
         Check(qf.Series.Select(s => s.HighSeed).SequenceEqual([1, 2, 3, 4]), "the quarter-finals hold seeds 1 to 4 at home");
         Check(qf.Series[0].LowSeed == survivors[1] && qf.Series[1].LowSeed == survivors[0] && qf.Series[2].LowSeed == 6 && qf.Series[3].LowSeed == 5,
             $"reseeded: 1 meets the worst play-in winner, 2 the other, 3 v 6, 4 v 5 ({string.Join(",", qf.Series.Select(s => $"{s.HighSeed}v{s.LowSeed}"))})");
         Check(qf.Series.SelectMany(s => new[] { s.HighSeed, s.LowSeed }).Order().SequenceEqual(direct.Concat(survivors)), "the top six and both play-in winners make the quarter-finals");
         Check(p.Rounds.Count == 4 && p.Rounds[2].Series.Count == 2 && p.Rounds[3].Series.Count == 1, "quarter-finals, semi-finals and a final follow");
         var semis = p.Rounds[2].Series;
-        var semiSeeds = p.Rounds[1].Series.Select(s => p.SeedOf(s.Winner.OrNull()!)).Order().ToList();
+        var semiSeeds = p.Rounds[1].Series.Select(s => p.SeedOf(Must(s.Winner))).Order().ToList();
         Check(semis[0].HighSeed == semiSeeds[0] && semis[0].LowSeed == semiSeeds[3] && semis[1].HighSeed == semiSeeds[1] && semis[1].LowSeed == semiSeeds[2], "the semi-finals are reseeded: best left v worst left");
-        Check(p.IsOver && p.Champion.HasValue && p.Champion == p.Rounds[3].Series[0].Winner, $"the final's winner is champion ({p.Champion.OrNull()})");
+        Check(p.IsOver && p.Champion.HasValue && p.Champion == p.Rounds[3].Series[0].Winner, $"the final's winner is champion ({p.Champion.Or("none")})");
         var all = p.Rounds.SelectMany(r => r.Series).ToList();
         Check(all.TrueForAll(s => s.IsOver && s.Games.Count <= s.BestOf && Math.Max(s.HighWins, s.LowWins) == s.WinsNeeded), "every series ends on its deciding win");
         Check(all.SelectMany(s => s.Games).All(g => g.Result.Kind != ResultKind.Shootout && g.Result.HomeGoals != g.Result.AwayGoals), "no playoff game is a tie or a shootout");
@@ -97,15 +104,15 @@ public sealed class PlayoffTests : CheckedTest
         var season = FinishedSeason(WorldBuilder.Clubs, SavePath, 77);
         var table = season.Table.Select(r => r.ClubId).ToList();
         season.UserClub = table[0];
-        Check(PlayoffSession.NextSetup().OrNull() is { } setup && Same(setup.Home.Id, table[0]), "the top seed skips the play-in and opens the quarter-finals at home");
-        var p = PlayoffSession.Current.OrNull()!;
+        Check(PlayoffSession.NextSetup() is NextMatch.Play first && Same(first.Setup.Home.Id, table[0]), "the top seed skips the play-in and opens the quarter-finals at home");
+        var p = Must(PlayoffSession.Current);
         Check(p.Rounds.Count == 2 && p.Rounds[0].IsOver && p.Rounds[1].Series.All(s => s.Games.Count == 0), "the play-in is settled before the human's first game");
 
         // the human wins the quarter-final in five, the other series keep pace
         bool pace = true;
         foreach (bool userWins in new[] { true, false, true, true, true })
         {
-            var s = PlayoffSession.Playing.OrNull()!;
+            var s = Must(PlayoffSession.Playing);
             bool userHome = Same(s.NextHome, p.UserClub);
             PlayoffSession.Finish(Win(userWins == userHome));
             pace &= p.Rounds[1].Series.TrueForAll(o => o.IsOver || o.Games.Count == s.Games.Count) || p.Rounds.Count > 2;
@@ -113,16 +120,16 @@ public sealed class PlayoffTests : CheckedTest
         }
         Check(pace, "the other quarter-finals are played level with the human's series");
         Check(p.Rounds.Count == 3 && p.Rounds[1].IsOver && p.Rounds[1].Series[0].Winner == p.UserClub, "after the human wins 4-1 the round is finished and the semi-finals drawn");
-        Check(PlayoffSession.Playing.OrNull() is { } semi && semi.HighSeed == 1, "the human's semi-final is next, at home as the top seed");
+        Check(PlayoffSession.Playing.Is(semi => semi.HighSeed == 1), "the human's semi-final is next, at home as the top seed");
 
         // the human is swept in the semi-final; the rest is played to a champion
-        for (int i = 0; i < 4 && PlayoffSession.Playing.OrNull() is { } s; i++)
+        for (int i = 0; i < 4 && PlayoffSession.Playing.TryGet(out var s); i++)
         {
             PlayoffSession.Finish(Win(!Same(s.NextHome, p.UserClub)));
             PlayoffSession.NextSetup();
         }
-        Check(p.IsOver && !p.UserAlive && PlayoffSession.Playing.OrNull() == null, $"once the human is out the playoffs play to a champion ({p.Champion.OrNull()})");
-        Check(!PlayoffSession.Finish(Win(true)) && PlayoffSession.NextSetup().OrNull() == null, "nothing is left to play after the final");
+        Check(p.IsOver && !p.UserAlive && !PlayoffSession.Playing.HasValue, $"once the human is out the playoffs play to a champion ({p.Champion.Or("none")})");
+        Check(!PlayoffSession.Finish(Win(true)) && PlayoffSession.NextSetup() is not NextMatch.Play, "nothing is left to play after the final");
     }
 
     [Test]
@@ -132,15 +139,15 @@ public sealed class PlayoffTests : CheckedTest
         string path = SavePath;
         var season = FinishedSeason(clubs, path, 5);
         season.UserClub = season.Table[7].ClubId;
-        var setup = PlayoffSession.NextSetup().OrNull()!;
-        var series = PlayoffSession.Playing.OrNull()!;
+        var setup = Must(PlayoffSession.NextSetup());
+        var series = Must(PlayoffSession.Playing);
         Check(series is { HighSeed: 8, LowSeed: 9 } && Same(setup.Away.Id, season.UserClub), "the 8th seed opens the play-in away at the 9th");
         Check(setup.Inputs[0].Device == InputDevice.KeyboardMouse, "keyboard and mouse play the human's club");
         Check(setup.OvertimeFormat == OvertimeFormat.ShlPlayoffs && OvertimeFormat.Of(setup) is { Skaters: 5, UntilGoal: true, HasShootout: false }, "a playoff game carries the SHL playoff overtime: 5 on 5 until a goal, no shootout");
         var seasonGame = season.SetupFor(new Fixture(0, 0, setup.Home.Id, setup.Away.Id), clubs);
         Check(!seasonGame.OvertimeFormat.HasValue && OvertimeFormat.Of(seasonGame) == OvertimeFormat.Shl, "a season game keeps 3 on 3 and the shootout");
         PlayoffSession.Rules = PlayoffSession.Rules with { Name = "test league", Overtime = OvertimeFormat.Shl with { Skaters = 4 } };
-        Check(PlayoffSession.NextSetup().OrNull()!.OvertimeFormat.Is(o => o.Skaters == 4), "a mode with its own playoff rules puts them on the game");
+        Check(Must(PlayoffSession.NextSetup()).OvertimeFormat.Is(o => o.Skaters == 4), "a mode with its own playoff rules puts them on the game");
         PlayoffSession.Rules = PlayoffRules.Shl;
         PlayoffSession.NextSetup();
         Check(!PlayoffSession.Finish(new FixtureResult(2, 2, ResultKind.Regulation)), "a tie is not a playoff result");
@@ -159,17 +166,17 @@ public sealed class PlayoffTests : CheckedTest
         system.Update(world, Game.Step);
         autosave.Update(world, Game.Step);
         Check(series.Games.Count == 1 && series.Games[0].Result == new FixtureResult(3, 2, ResultKind.Overtime), "MatchEnd records 3-2 in overtime");
-        Check(season.Playoffs.OrNull()!.Rounds[0].Series[0].Games.Count == 1, "the other play-in series has played its game 1 too");
+        Check(Must(season.Playoffs).Rounds[0].Series[0].Games.Count == 1, "the other play-in series has played its game 1 too");
         Check(!SeasonSession.Unsaved, "the autosave ran after the playoff game");
 
         string before = File.ReadAllText(path);
         SeasonSession.End();
         PlayoffSession.End();
-        var resumed = SeasonSession.Continue(clubs, path).OrNull()!;
-        var p = resumed.Playoffs.OrNull();
-        Check(p != null && p.Rounds.Count == 1 && p.Rounds[0].Series.Sum(s => s.Games.Count) == 2 && p.Seeds.SequenceEqual(season.Playoffs.OrNull()!.Seeds), "continuing after a restart reads the playoffs back");
-        var next = PlayoffSession.NextSetup().OrNull();
-        Check(next != null && PlayoffSession.Playing.OrNull() is { Games.Count: 1, HighSeed: 8 } && Same(next.Home.Id, resumed.UserClub), "after the restart game 2 of the play-in is next, at the human's rink");
+        var resumed = Must(SeasonSession.Continue(clubs, path));
+        var seeds = Must(season.Playoffs).Seeds;
+        Check(resumed.Playoffs.Is(p => p.Rounds.Count == 1 && p.Rounds[0].Series.Sum(s => s.Games.Count) == 2 && p.Seeds.SequenceEqual(seeds)), "continuing after a restart reads the playoffs back");
+        var next = PlayoffSession.NextSetup();
+        Check(next is NextMatch.Play n && PlayoffSession.Playing.Is(x => x.Games.Count == 1 && x.HighSeed == 8) && Same(n.Setup.Home.Id, resumed.UserClub), "after the restart game 2 of the play-in is next, at the human's rink");
         Check(Same(File.ReadAllText(path), before), "continuing does not rewrite the save");
     }
 
@@ -178,8 +185,8 @@ public sealed class PlayoffTests : CheckedTest
     {
         var season = FinishedSeason(WorldBuilder.Clubs, SavePath, 11);
         season.UserClub = season.Table[11].ClubId;
-        Check(PlayoffSession.NextSetup().OrNull() == null && PlayoffSession.Current.OrNull() is { IsOver: true, UserQualified: false }, "a club placed 12th has no playoff game and the playoffs play out at once");
+        Check(PlayoffSession.NextSetup() is not NextMatch.Play && PlayoffSession.Current.Is(x => x.IsOver && !x.UserQualified), "a club placed 12th has no playoff game and the playoffs play out at once");
         SeasonSession.End();
-        Check(PlayoffSession.Open().OrNull() == null, "outside season mode there are no playoffs");
+        Check(!PlayoffSession.Open().HasValue, "outside season mode there are no playoffs");
     }
 }

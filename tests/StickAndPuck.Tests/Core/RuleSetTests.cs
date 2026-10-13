@@ -44,7 +44,7 @@ public sealed class RuleSetTests : CheckedTest
             "NHL: SHL rules with home choosing, a fight major and 4 on 4 coincidentals");
         Check(string.Equals(RuleSet.Shl.Name + RuleSet.Arcade.Name + RuleSet.Nhl.Name, "SHLARCADENHL", StringComparison.Ordinal), "the presets show their names");
         Check(RuleRows.All.Select(r => r.Key).Distinct(StringComparer.Ordinal).Count() == RuleRows.All.Count
-            && RuleRows.All.All(r => typeof(RuleSet).GetProperty(r.Key) != null), "every rule key is a RuleSet property, once");
+            && RuleRows.All.All(r => typeof(RuleSet).GetProperty(r.Key) is { }), "every rule key is a RuleSet property, once");
         Check(RuleRows.All.All(r => r.Values.All(v => string.Equals(r.Get(r.Set(RuleSet.Shl, v)), v, StringComparison.Ordinal))), "every value of every rule reads back as set");
     }
 
@@ -100,24 +100,24 @@ public sealed class RuleSetTests : CheckedTest
     [Test]
     public void Icing()
     {
-        Check(Iced(RuleSet.Shl, toucher: null) == 1, "SHL: hybrid icing is called on the race");
-        Check(Iced(RuleSet.Nhl, toucher: null) == 1, "NHL: hybrid icing is called on the race");
-        Check(Iced(RuleSet.Arcade, toucher: null) == 0, "Arcade: no icing");
+        Check(Iced(RuleSet.Shl, toucher: SideOrNone.None) == 1, "SHL: hybrid icing is called on the race");
+        Check(Iced(RuleSet.Nhl, toucher: SideOrNone.None) == 1, "NHL: hybrid icing is called on the race");
+        Check(Iced(RuleSet.Arcade, toucher: SideOrNone.None) == 0, "Arcade: no icing");
         var touch = RuleSet.Shl with { Icing = IcingCall.Touch };
-        Check(Iced(touch, toucher: null) == 0, "touch icing waits on the next touch");
-        Check(Iced(touch, toucher: Side.Away) == 1, "touch icing: a defender touching first calls it");
-        Check(Iced(touch, toucher: Side.Home) == 0, "touch icing: an attacker touching first waves it off");
+        Check(Iced(touch, toucher: SideOrNone.None) == 0, "touch icing waits on the next touch");
+        Check(Iced(touch, toucher: SideOrNone.Away) == 1, "touch icing: a defender touching first calls it");
+        Check(Iced(touch, toucher: SideOrNone.Home) == 0, "touch icing: an attacker touching first waves it off");
     }
 
     /// <summary>A dump from the home half over the away goal line, the away defender nearer the dot; returns the icing calls.</summary>
-    static int Iced(RuleSet rules, Side? toucher)
+    static int Iced(RuleSet rules, SideOrNone toucher)
     {
         var w = Make(new Settings(), rules);
         var d = Skater(w, Side.Home, PlayingPosition.D);
         Skater(w, Side.Away, PlayingPosition.D).Position = new Vector3(22, 0, 10);
         Send(w, d, new Vector3(-10, 0, 5), new Vector3(30, 0, 0));
         var ev = Run(w, 1.5f, [new PuckPhysics(), new MatchRules(), new IcingRule()]);
-        if (toucher is { } side) ev.AddRange(Run(w, 0.5f, [new IcingRule()], x => x.Puck.LastTouch = Skater(x, side, side == Side.Home ? PlayingPosition.RW : PlayingPosition.D).Id));
+        if (toucher.TryGetSide(out var side)) ev.AddRange(Run(w, 0.5f, [new IcingRule()], Maybe.Some<Action<World>>(x => x.Puck.LastTouch = Skater(x, side, side == Side.Home ? PlayingPosition.RW : PlayingPosition.D).Id)));
         return ev.Count(e => e is IcingCalled);
     }
 
@@ -190,18 +190,18 @@ public sealed class RuleSetTests : CheckedTest
     static World Make(Settings settings, RuleSet rules)
     {
         var w = new WorldBuilder().Setup(Setup).Rules(rules).Settings(settings).Build();
-        Run(w, 10f, [new PuckPhysics(), new MatchRules()], until: x => x.Match.Phase == MatchPhase.Play);
+        Run(w, 10f, [new PuckPhysics(), new MatchRules()], until: Maybe.Some<Func<World, bool>>(x => x.Match.Phase == MatchPhase.Play));
         Park(w);
         return w;
     }
 
-    static List<MatchEvent> Run(World world, float seconds, ISystem[] systems, Action<World>? each = null, Func<World, bool>? until = null)
+    static List<MatchEvent> Run(World world, float seconds, ISystem[] systems, Maybe<Action<World>> each = default, Maybe<Func<World, bool>> until = default)
     {
         var events = new List<MatchEvent>();
-        for (int i = 0; i < seconds / Game.Step && until?.Invoke(world) != true && (until != null || world.Match.Phase is MatchPhase.Play); i++)
+        for (int i = 0; i < seconds / Game.Step && !until.Is(u => u(world)) && (until.HasValue || world.Match.Phase is MatchPhase.Play); i++)
         {
             world.Events.Clear();
-            each?.Invoke(world);
+            if (each.TryGet(out var act)) act(world);
             foreach (var s in systems) s.Update(world, Game.Step);
             events.AddRange(world.Events.Current);
             world.Time += Game.Step;
