@@ -5,6 +5,12 @@
 // apart by the red channel (Render/MaskIds.cs); green and blue hold the depth (shaders/mask.fs),
 // and on close shots a line is also drawn on a player's pixel just behind a part of the same
 // player that is clearly nearer (an arm or stick across the body).
+// W60: a colour that falls between two close palette colours is not snapped hard to the nearer
+// one: near the midpoint the two are mixed with a 4x4 ordered Bayer pattern on the scene's pixel
+// grid, so gradients (a dimmed rink, light falling off) step through checker rows, not a seam.
+// The pattern starts at ditherOrigin, as in toon.fs. Only player pixels are mixed: the arena keeps
+// hard snaps, because its boards and crowd sit at depths where a camera step is not a whole pixel
+// and a pattern there would crawl.
 in vec2 fragTexCoord;
 uniform sampler2D texture0;
 uniform sampler2D maskTex;
@@ -14,6 +20,9 @@ uniform int kitStart;       // palette[kitStart..] are kit colours, used only on
 uniform vec3 outline;
 uniform vec2 texel;
 uniform float innerDepth;   // metres; 0 turns the inner lines off
+uniform float ditherSpread; // how far either side of the midpoint the mix runs, 0-0.5; 0 turns it off
+uniform vec2 ditherOrigin;  // scene pixels, see Render/DitherGrid.cs
+uniform float ditherGap;    // only palette pairs closer than this (rgb distance) are mixed
 out vec4 finalColor;
 
 // 0 for no player, otherwise the player's mask id
@@ -25,6 +34,13 @@ float id(vec4 m) {
 // distance from the camera in metres
 float depth(vec4 m) {
     return (floor(m.g * 255.0 + 0.5) * 256.0 + floor(m.b * 255.0 + 0.5)) / 65535.0 * 128.0;
+}
+
+// the 4x4 Bayer threshold of a scene pixel, in (0, 1)
+float bayer(vec2 p) {
+    const float m[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
+    ivec2 i = ivec2(mod(floor(p), 4.0));
+    return (m[i.y * 4 + i.x] + 0.5) / 16.0;
 }
 
 void main() {
@@ -44,11 +60,19 @@ void main() {
     }
     if (edge) { finalColor = vec4(outline, 1.0); return; }
     vec3 c = texture(texture0, uv).rgb;
-    vec3 best = palette[0]; float bd = 1e9;
+    vec3 best = palette[0], next = palette[0]; float bd = 1e9, nd = 1e9;
     int n = here > 0.0 ? paletteSize : kitStart;
     for (int i = 0; i < n; i++) {
         vec3 e = c - palette[i]; float dd = dot(e, e);
-        if (dd < bd) { bd = dd; best = palette[i]; }
+        if (dd < bd) { nd = bd; next = best; bd = dd; best = palette[i]; }
+        else if (dd < nd) { nd = dd; next = palette[i]; }
+    }
+    vec3 gap = next - best; float g = dot(gap, gap);
+    if (ditherSpread > 0.0 && here > 0.0 && g > 0.0 && g < ditherGap * ditherGap) {
+        // where c sits from best (0) to next (1); the nearer colour is best, so this is at most about 0.5
+        float along = clamp(dot(c - best, gap) / g, 0.0, 1.0);
+        float mix = clamp((along - 0.5) / (2.0 * ditherSpread) + 0.5, 0.0, 1.0);
+        if (mix > bayer(uv / texel - ditherOrigin)) best = next;
     }
     finalColor = vec4(best, 1.0);
 }

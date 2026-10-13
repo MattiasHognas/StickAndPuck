@@ -76,6 +76,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 ### Visuals and sound
 
 - `SAP_LIGHTING`: `early`, `afternoon` or `late` fixes the arena lighting mood. Default: the settings screen's lighting (random each match).
+- `SAP_DITHER`: `0` turns off the ordered dithering at toon band edges and palette snaps (W60), for before and after comparisons. Default: on.
 - `SAP_DIFFICULTY`: `easy`, `normal` or `hard`. Default: the settings screen's difficulty (normal).
 - `SAP_CONTROL_MARKER`, `SAP_SIM_GAME`, `SAP_AUTO_DEKE`, `SAP_ONE_TIMERS`: `0` or `1`, override the matching settings screen switches (defaults on, on, off, on).
 - `SAP_SWAP_KITS=1`: the clubs wear each other's kits. Default: the settings screen's swap kits (off). Tab toggles it while playing.
