@@ -6,8 +6,11 @@ namespace StickAndPuck.App.Players;
 /// <summary>
 /// W4c: body checks from the checking trait (see <see cref="CheckingModel"/> for the numbers).
 /// <list type="bullet">
-/// <item>Check (Q, or gamepad B) from a skater without the puck lunges forward; the first opponent in
-/// reach in front of them during the lunge is hit, once.</item>
+/// <item>Check (Q, or gamepad B) from a skater without the puck lunges at the opponent in reach
+/// (<see cref="CheckingModel.Target"/>), or forward when there is none; the first opponent in reach
+/// during the lunge is hit, once: right away, or when the bodies meet if they are closing fast
+/// (<see cref="CheckingModel.Waits"/>). A press in the last <see cref="CheckingModel.Buffer"/> seconds of a
+/// check starts the next one when it ends.</item>
 /// <item>The target is shoved along the hit. A hard enough hit, against their resistance, knocks
 /// them down: they drop the puck, slide to a stop and lie for a moment, ignoring their stick.
 /// A carrier who stays up keeps the puck.</item>
@@ -26,6 +29,8 @@ internal sealed class CheckingSystem : ISystem
 
     readonly Random rng;
     readonly HashSet<int> landed = [];
+    readonly HashSet<int> buffered = [];
+    readonly HashSet<int> waiting = [];
     readonly Dictionary<int, float> downFor = [];
     readonly Dictionary<int, (Vector3 Position, Vector3 Velocity, float Heading)> sliding = [];
 
@@ -47,17 +52,23 @@ internal sealed class CheckingSystem : ISystem
         {
             if (!p.OnIce || p.IsGoalie) continue;
             if (p.Action == PlayerAction.Fallen) { Slide(p, dt); continue; }
+            bool press = p.Command.Check;
             if (p.Action == PlayerAction.Check)
             {
-                if (p.ActionTime >= CheckingModel.Recover) { p.Begin(PlayerAction.None); landed.Remove(p.Id); }
-                else if (p.ActionTime <= CheckingModel.Window && !landed.Contains(p.Id))
+                if (press && p.ActionTime >= CheckingModel.Recover - CheckingModel.Buffer) buffered.Add(p.Id);
+                if (p.ActionTime >= CheckingModel.Recover) { p.Begin(PlayerAction.None); landed.Remove(p.Id); press |= buffered.Remove(p.Id); }
+                else
                 {
-                    TryHit(world, p);
+                    if (p.ActionTime <= CheckingModel.Window && !landed.Contains(p.Id)) TryHit(world, p);
+                    continue;
                 }
-
-                continue;
             }
-            if (p.Command.Check && p.Action == PlayerAction.None && world.Puck.Carrier != p.Id) Begin(world, p);
+            else
+            {
+                buffered.Remove(p.Id);
+            }
+
+            if (press && p.Action == PlayerAction.None && world.Puck.Carrier != p.Id) Begin(world, p);
         }
 
         foreach (var p in world.Players)
@@ -66,12 +77,21 @@ internal sealed class CheckingSystem : ISystem
         }
     }
 
-    /// <summary>Starts a check: a burst forward, and a first try at contact.</summary>
+    /// <summary>Starts a check: a burst at the opponent in reach (else forward), and a first try at contact.</summary>
     void Begin(World world, Player p)
     {
         p.Begin(PlayerAction.Check);
         landed.Remove(p.Id);
+        waiting.Remove(p.Id);
         var dir = PuckHandling.Intent(p);
+        if (CheckingModel.Target(world, p) is { } target)
+        {
+            var off = new Vector2(target.Position.X - p.Position.X, target.Position.Z - p.Position.Z);
+            if (off.LengthSquared() > 1e-6f) dir = Vector2.Normalize(off);
+            var dv = p.Velocity - target.Velocity;
+            if (CheckingModel.Waits(off.Length(), Vector2.Dot(new Vector2(dv.X, dv.Z), dir))) waiting.Add(p.Id);
+        }
+
         p.Velocity += new Vector3(dir.X, 0, dir.Y) * CheckingModel.Lunge;
         TryHit(world, p);
     }
@@ -79,15 +99,16 @@ internal sealed class CheckingSystem : ISystem
     void TryHit(World world, Player checker)
     {
         if (CheckingModel.Target(world, checker) is not { } target) return;
+        var off = new Vector2(target.Position.X - checker.Position.X, target.Position.Z - checker.Position.Z);
+        if (waiting.Contains(checker.Id) && off.Length() > CheckingModel.Meet) return;   // coming together: hit when they meet
         landed.Add(checker.Id);
 
-        var off = new Vector2(target.Position.X - checker.Position.X, target.Position.Z - checker.Position.Z);
         var dir2 = off.LengthSquared() > 1e-6f ? Vector2.Normalize(off) : PuckHandling.Intent(checker);
         var dir = new Vector3(dir2.X, 0, dir2.Y);
         float closing = Vector3.Dot(checker.Velocity - target.Velocity, dir);
         var pk = world.Puck;
         bool carrying = pk.Carrier == target.Id;
-        float strength = CheckingModel.Strength(checker, target, closing, carrying);
+        float strength = CheckingModel.Strength(checker, target, closing, carrying) * CheckingModel.StrengthScale(checker, world.Settings.Difficulty);
 
         // the target takes the checker's push; the checker gives up some of their speed into the hit
         target.Velocity += dir * CheckingModel.Shove(strength);
