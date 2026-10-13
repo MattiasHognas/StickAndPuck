@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../StickAndPuck.App/StickAndPuck.App.csproj" />
+    <ProjectReference Include="../../src/StickAndPuck.App/StickAndPuck.App.csproj" />
   </ItemGroup>
 
 </Project>

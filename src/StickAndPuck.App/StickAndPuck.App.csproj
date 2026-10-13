@@ -32,17 +32,17 @@
 
   <!-- the game reads its assets next to the executable: shaders, models, kit atlases, ad strips, palette, club data -->
   <ItemGroup>
-    <None Include="../../shaders/**" LinkBase="shaders" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/player/*.glb;../../art/player/*_64.png" LinkBase="art/player" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/ads/*.png" LinkBase="art/ads" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/kits/*.png" LinkBase="art/kits" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/kits/numbers/*.png" LinkBase="art/kits/numbers" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/scene/ice_scratches.png;../../art/scene/*.glb;../../art/scene/arena_meshes.json" LinkBase="art/scene" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/zamboni/*.glb" LinkBase="art/zamboni" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/palette/*.gpl" LinkBase="art/palette" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/ui/*.png;../../art/ui/font.fnt;../../art/ui/ui.json" LinkBase="art/ui" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../art/audio/*.wav" LinkBase="art/audio" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../data/**/*.json" LinkBase="data" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)shaders/**" LinkBase="shaders" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/player/*.glb;$(RepoRoot)art/player/*_64.png" LinkBase="art/player" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/ads/*.png" LinkBase="art/ads" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/kits/*.png" LinkBase="art/kits" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/kits/numbers/*.png" LinkBase="art/kits/numbers" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json" LinkBase="art/scene" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/zamboni/*.glb" LinkBase="art/zamboni" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/palette/*.gpl" LinkBase="art/palette" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json" LinkBase="art/ui" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/audio/*.wav" LinkBase="art/audio" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)data/**/*.json" LinkBase="data" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
