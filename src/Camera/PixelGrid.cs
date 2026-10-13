@@ -34,8 +34,9 @@ public static class PixelGrid
     /// by whole pixels.
     /// </summary>
     /// <param name="camera">The camera to snap.</param>
+    /// <param name="divisor">The render scale (W59): 2 or 3 snaps to the pixels of the 240x135 or 160x90 frame.</param>
     /// <returns>The snapped camera.</returns>
-    public static Camera3D Snap(Camera3D camera)
+    public static Camera3D Snap(Camera3D camera, int divisor = 1)
     {
         var view = camera.Target - camera.Position;
         float distance = view.Length();
@@ -47,7 +48,7 @@ public static class PixelGrid
         var right = new Vector3(-ahead.Z, 0, ahead.X);
         float sinDown = Math.Max(MathF.Abs(view.Y) / distance, MinSin);
         float cosDown = run / distance;
-        float pixel = PixelAt(distance, camera.FovY);
+        float pixel = PixelAt(distance, camera.FovY) * divisor;
 
         var pos = camera.Position;
         var snapped = (right * Round(Vector3.Dot(pos, right), pixel))
@@ -57,6 +58,20 @@ public static class PixelGrid
         camera.Position += move;
         camera.Target += move;
         return camera;
+    }
+
+    /// <summary>
+    /// W59: the render scale that keeps a kit texel about one pixel at the camera's target, and the
+    /// camera snapped to the pixels of that scale. The target must sit at the players' depth.
+    /// </summary>
+    /// <param name="camera">The close camera.</param>
+    /// <param name="current">The scale used now, so an easing camera does not flicker between two.</param>
+    /// <returns>The snapped camera and its scale.</returns>
+    public static (Camera3D Camera, int Divisor) SnapScaled(Camera3D camera, int current)
+    {
+        float distance = Vector3.Distance(camera.Position, camera.Target);
+        int divisor = Render.RenderScale.ForPixel(PixelAt(distance, camera.FovY), current);
+        return (Snap(camera, divisor), divisor);
     }
 
     static float Round(float v, float step)

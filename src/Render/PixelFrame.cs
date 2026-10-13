@@ -9,7 +9,10 @@ namespace StickAndPuck.Render;
 /// the players' flat ids into another; the post shader then snaps every pixel to the palette
 /// from the .gpl file and draws a one-pixel outline around each player. The HUD has its own 480x270 target
 /// that is laid on top untouched, and the result is scaled up by the largest whole number that
-/// fits the window.
+/// fits the window. W59: close shots draw the scene and mask at 240x135 or 160x90 instead
+/// (<see cref="RenderScale"/>), so the post pass and its outline run on the coarser grid, and the
+/// mask carries each pixel's depth so the post pass can also draw lines inside a player where an
+/// arm or stick passes in front of the body.
 /// </summary>
 public sealed class PixelFrame : IDisposable
 {
@@ -28,8 +31,14 @@ public sealed class PixelFrame : IDisposable
     /// </summary>
     public readonly Shader Post;
 
-    readonly RenderTexture2D scene, mask, hud;
+    /// <summary>Lines inside a player are drawn where the depth jumps by more than this many metres; only on the close scales.</summary>
+    const float InnerDepth = 0.25f;
+
+    readonly RenderTexture2D[] scenes, masks;
+    readonly RenderTexture2D hud;
     readonly int width, height;
+    readonly int texelLoc, innerLoc;
+    int divisor = 1;
 
     /// <summary>
     /// Creates a pixel frame with the specified internal resolution.
@@ -39,27 +48,44 @@ public sealed class PixelFrame : IDisposable
     public PixelFrame(int width, int height)
     {
         this.width = width; this.height = height;
-        scene = LoadRenderTexture(width, height);
-        mask = LoadRenderTexture(width, height);
-        hud = LoadRenderTexture(width, height);
-        SetTextureFilter(scene.Texture, TextureFilter.Point);
-        SetTextureFilter(mask.Texture, TextureFilter.Point);
-        SetTextureFilter(hud.Texture, TextureFilter.Point);
+        scenes = new RenderTexture2D[RenderScale.MaxDivisor];
+        masks = new RenderTexture2D[RenderScale.MaxDivisor];
+        for (int i = 0; i < RenderScale.MaxDivisor; i++)
+        {
+            scenes[i] = Target(width / (i + 1), height / (i + 1));
+            masks[i] = Target(width / (i + 1), height / (i + 1));
+        }
+        hud = Target(width, height);
 
         Toon = LoadShader("shaders/toon.vs", "shaders/toon.fs");
         SetShaderValue(Toon, GetShaderLocation(Toon, "lightDir"), new Vector3(-0.45f, 0.75f, 0.5f), ShaderUniformDataType.Vec3);
         Mask = LoadShader(null, "shaders/mask.fs");
+        SetShaderValue(Mask, GetShaderLocation(Mask, "nearPlane"), (float)Rlgl.GetCullDistanceNear(), ShaderUniformDataType.Float);
+        SetShaderValue(Mask, GetShaderLocation(Mask, "farPlane"), (float)Rlgl.GetCullDistanceFar(), ShaderUniformDataType.Float);
         Post = LoadShader(null, "shaders/post.fs");
         var palette = Palette.Current;
         SetShaderValueV(Post, GetShaderLocation(Post, "palette"), palette.ToArray(), ShaderUniformDataType.Vec3, palette.Count);
         SetShaderValue(Post, GetShaderLocation(Post, "paletteSize"), palette.Count, ShaderUniformDataType.Int);
         SetShaderValue(Post, GetShaderLocation(Post, "kitStart"), Palette.KitStart, ShaderUniformDataType.Int);
         SetShaderValue(Post, GetShaderLocation(Post, "outline"), Palette.Outline, ShaderUniformDataType.Vec3);
-        SetShaderValue(Post, GetShaderLocation(Post, "texel"), new Vector2(1f / width, 1f / height), ShaderUniformDataType.Vec2);
+        texelLoc = GetShaderLocation(Post, "texel");
+        innerLoc = GetShaderLocation(Post, "innerDepth");
     }
 
-    /// <summary>Begins drawing into the scene texture.</summary>
-    public void BeginScene() { BeginTextureMode(scene); ClearBackground(new Color(0x2a, 0x22, 0x30, 255)); }
+    static RenderTexture2D Target(int w, int h)
+    {
+        var t = LoadRenderTexture(w, h);
+        SetTextureFilter(t.Texture, TextureFilter.Point);
+        return t;
+    }
+
+    /// <summary>Begins drawing into the scene texture, at the scale the camera asked for; the mask and post pass of this frame use the same one.</summary>
+    public void BeginScene()
+    {
+        divisor = RenderScale.Divisor;
+        BeginTextureMode(scenes[divisor - 1]);
+        ClearBackground(new Color(0x2a, 0x22, 0x30, 255));
+    }
 
     /// <summary>Ends drawing into the scene texture.</summary>
     public static void EndScene()
@@ -68,7 +94,7 @@ public sealed class PixelFrame : IDisposable
     }
 
     /// <summary>Begins drawing into the player mask texture.</summary>
-    public void BeginMask() { BeginTextureMode(mask); ClearBackground(new Color(0, 0, 0, 0)); }
+    public void BeginMask() { BeginTextureMode(masks[divisor - 1]); ClearBackground(new Color(0, 0, 0, 0)); }
 
     /// <summary>Ends drawing into the player mask texture.</summary>
     public static void EndMask()
@@ -91,18 +117,23 @@ public sealed class PixelFrame : IDisposable
         int scale = Math.Max(1, Math.Min(GetScreenWidth() / width, GetScreenHeight() / height));
         int w = width * scale, h = height * scale;
         var dest = new Rectangle((GetScreenWidth() - w) / 2, (GetScreenHeight() - h) / 2, w, h);
-        var src = new Rectangle(0, 0, width, -height);     // render textures are stored upside down
+        int sw = width / divisor, sh = height / divisor;
+        var src = new Rectangle(0, 0, sw, -sh);     // render textures are stored upside down
         BeginShaderMode(Post);
-        SetShaderValueTexture(Post, GetShaderLocation(Post, "maskTex"), mask.Texture);
-        DrawTexturePro(scene.Texture, src, dest, Vector2.Zero, 0, Color.White);
+        SetShaderValue(Post, texelLoc, new Vector2(1f / sw, 1f / sh), ShaderUniformDataType.Vec2);
+        SetShaderValue(Post, innerLoc, divisor > 1 ? InnerDepth : 0f, ShaderUniformDataType.Float);
+        SetShaderValueTexture(Post, GetShaderLocation(Post, "maskTex"), masks[divisor - 1].Texture);
+        DrawTexturePro(scenes[divisor - 1].Texture, src, dest, Vector2.Zero, 0, Color.White);
         EndShaderMode();
-        DrawTexturePro(hud.Texture, src, dest, Vector2.Zero, 0, Color.White);
+        DrawTexturePro(hud.Texture, new Rectangle(0, 0, width, -height), dest, Vector2.Zero, 0, Color.White);
     }
 
     /// <summary>Releases the render textures and shaders used by the frame.</summary>
     public void Dispose()
     {
         UnloadShader(Toon); UnloadShader(Mask); UnloadShader(Post);
-        UnloadRenderTexture(scene); UnloadRenderTexture(mask); UnloadRenderTexture(hud);
+        foreach (var t in scenes) UnloadRenderTexture(t);
+        foreach (var t in masks) UnloadRenderTexture(t);
+        UnloadRenderTexture(hud);
     }
 }

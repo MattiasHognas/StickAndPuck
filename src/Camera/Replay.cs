@@ -57,10 +57,11 @@ public sealed class Replay
     public static bool Playing { get; private set; }
 
     /// <summary>
-    /// Gets the replay camera while <see cref="Playing"/>. It follows the puck at a fixed angle and
-    /// moves in whole pixels at the puck (W58), so the pan steps cleanly instead of swimming.
+    /// Gets the replay camera while <see cref="Playing"/>. It follows the puck at a fixed angle; the
+    /// camera system snaps it to whole pixels at the puck (W58) at the close render scale (W59), so
+    /// the pan steps cleanly instead of swimming.
     /// </summary>
-    public Camera3D Camera => PixelGrid.Snap(BroadcastCamera.IceLevel(ChasePosition(camTarget), camTarget));
+    public Camera3D Camera => BroadcastCamera.IceLevel(ChasePosition(camTarget), camTarget);
 
     /// <summary>Records or plays back one step. Runs after every gameplay system.</summary>
     /// <param name="world">The match state.</param>
