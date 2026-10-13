@@ -13,6 +13,13 @@ public enum ShotKind
     Slap,
 }
 
+/// <summary>W96: a human's pass to a teammate: who threw it, who it is for, the stick held as it went, and when.</summary>
+/// <param name="Passer">The passer.</param>
+/// <param name="Receiver">The teammate it is meant for.</param>
+/// <param name="Stick">The passer's stick as the pass left; control follows the pass with it still held.</param>
+/// <param name="At">When it left the stick.</param>
+public readonly record struct HumanPass(int Passer, int Receiver, Vector2 Stick, float At);
+
 /// <summary>
 /// W4b: the numbers and aiming maths of puck handling, with no Raylib and no state, so AI (W6)
 /// and tests can ask what a pass or shot would do. Traits read here: puck control (reach, how
@@ -41,6 +48,12 @@ public static class PuckHandling
 
     /// <summary>Passes look for teammates within this angle of the stick, in radians.</summary>
     public const float PassCone = 70f * MathF.PI / 180f;
+
+    /// <summary>An open teammate has no opponent this close to his blade or body, in metres (W96).</summary>
+    public const float OpenRoom = 2f;
+
+    /// <summary>Nor an opponent this close to the pass lane, past the first metre off the passer's blade, in metres (W96).</summary>
+    public const float LaneRoom = 1.5f;
 
     const float LongestPass = 40f;
     const float NetAimCone = 80f * MathF.PI / 180f;
@@ -197,6 +210,56 @@ public static class PuckHandling
             if (score < bestScore) { bestScore = score; best = mate; }
         }
         return best;
+    }
+
+    /// <summary>
+    /// W96: who a human's pass goes to when nobody is in <see cref="PassCone"/>: the nearest open
+    /// teammate 2 to 40 metres off, by blade. Open means no opponent (standing) has his blade or
+    /// body within <see cref="OpenRoom"/> of the teammate's blade, nor within <see cref="LaneRoom"/>
+    /// of the lane between the blades past its first metre (a forechecker on the passer's own stick
+    /// does not close every lane). Goalies and fallen teammates are not picked; nearest wins, the
+    /// first in player order on a tie. No randomness.
+    /// </summary>
+    /// <param name="world">The match.</param>
+    /// <param name="passer">The passer.</param>
+    /// <returns>The receiver, or null to pass into space.</returns>
+    public static Player? PickOpen(World world, Player passer)
+    {
+        var from = Flat(Blade(passer));
+        var foes = world.OnIce(passer.Side == Side.Home ? Side.Away : Side.Home).Where(o => o.Action != PlayerAction.Fallen).ToList();
+        Player? best = null;
+        float bestDistance = float.MaxValue;
+        foreach (var mate in world.OnIce(passer.Side))
+        {
+            if (mate.Id == passer.Id || mate.IsGoalie || mate.Action == PlayerAction.Fallen) continue;
+            var to = Flat(Blade(mate));
+            float d = Vector2.Distance(from, to);
+            if (d is < 2f or > LongestPass || d >= bestDistance || !Open(from, to, foes)) continue;
+            best = mate;
+            bestDistance = d;
+        }
+        return best;
+    }
+
+    static bool Open(Vector2 from, Vector2 to, List<Player> foes)
+    {
+        var start = from + Vector2.Normalize(to - from);
+        foreach (var o in foes)
+        {
+            foreach (var at in new[] { Flat(o.Position), Flat(Blade(o)) })
+            {
+                if (Vector2.Distance(at, to) < OpenRoom || SegmentDistance(start, to, at) < LaneRoom) return false;
+            }
+        }
+        return true;
+    }
+
+    static float SegmentDistance(Vector2 a, Vector2 b, Vector2 p)
+    {
+        var ab = b - a;
+        float len = ab.LengthSquared();
+        float t = len > 1e-8f ? Math.Clamp(Vector2.Dot(p - a, ab) / len, 0f, 1f) : 0f;
+        return Vector2.Distance(p, a + ab * t);
     }
 
     /// <summary>

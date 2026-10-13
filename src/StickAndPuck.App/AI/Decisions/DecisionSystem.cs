@@ -37,6 +37,13 @@ namespace StickAndPuck.App.AI;
 /// delayed pass goes; a carrier holds up at the line (unless special teams or tactics claimed him
 /// this step) and looks at the play; a receiver meets the pass; the chaser pounces; the crasher
 /// goes to the net; a presser hits. Candidate passes are weighed without touching anyone.</item>
+/// <item>W96: after a human's pass, control follows the puck to a receiver who would otherwise
+/// skate off on the stick still held for the pass. Until he or anyone touches the puck, or the
+/// pass dies, his Move and Sprint are replaced with a skate to where his blade meets the puck's
+/// slide (see Receive; once the puck has slowed, a skate onto it), until the player gives fresh stick input: the stick let go
+/// to rest and pushed again, or turned more than <see cref="FreshTurn"/> from where it was held.
+/// His buttons stay his, so a held shoot still arms a one-timer. This is the one write the AI
+/// makes to a human's command, done here rather than through <see cref="AiCommand"/>.</item>
 /// </list>
 /// </summary>
 internal sealed class DecisionSystem : ISystem
@@ -46,6 +53,10 @@ internal sealed class DecisionSystem : ISystem
     const float SafePass = 0.55f;   // a pass the carrier gives at least this chance is a way out of his zone; with none he may clear it
     const float HoldFrom = 4f;      // metres short of the attacking blue line at which a carrier looks for teammates already over it
     const float HoldFor = 1.6f;     // longest a carrier holds up at the line before carrying on in
+    const float Pushed = 0.3f;      // a stick pushed less than this is at rest, as puck handling reads it
+
+    /// <summary>The stick turned this far from where it was held for a human's pass, in radians, steers the receiver (W96).</summary>
+    const float FreshTurn = 45f * MathF.PI / 180f;
 
     /// <summary>The dice seed without a match seed (W67).</summary>
     internal const int Fallback = 5;
@@ -76,6 +87,7 @@ internal sealed class DecisionSystem : ISystem
             return;
         }
 
+        MeetForHuman(world, board);
         int crasher = Crasher(world, board);
         foreach (var p in world.Players)
         {
@@ -122,7 +134,15 @@ internal sealed class DecisionSystem : ISystem
                 tally.Passes++;
                 var passer = board.For(p.Id);
                 if (passer.PassTo >= 0 && passer.PassTo < world.Players.Count) Aimed(world, tally, world.Players[passer.PassTo]);
-                board.Pass = new InFlight(p.Id, passer.PassTo, p.Side, world.Time);
+                int to = passer.PassTo;
+                board.Meet = null;
+                if (to < 0 && PuckHandlingSystem.LastHumanPass(world) is { } human && human.Passer == p.Id && world.Time - human.At < 0.1f)
+                {
+                    // W96: a human's pass has its receiver from puck handling
+                    to = human.Receiver;
+                    board.Meet = new HumanMeet(to, human.Stick) { Released = human.Stick.Length() < Pushed };
+                }
+                board.Pass = new InFlight(p.Id, to, p.Side, world.Time);
                 passer.PassTo = -1;   // a human's pass later has no receiver in mind
             }
             else if (p.Action == PlayerAction.Shoot)
@@ -133,17 +153,19 @@ internal sealed class DecisionSystem : ISystem
         }
         board.LastCarrier = pk.Carrier;
 
-        if (board.Pass is not { } pass) return;
+        if (board.Pass is not { } pass) { board.Meet = null; return; }
         if (pk.Carrier >= 0 && pk.Carrier < world.Players.Count)
         {
             var tally = board.Tally[(int)pass.Side];
             if (world.Players[pk.Carrier].Side == pass.Side) tally.Completed++;
             else tally.Intercepted++;
             board.Pass = null;
+            board.Meet = null;
         }
         else if (!pk.Live || world.Time - pass.At > 3f || world.Match.Phase is not (MatchPhase.Play or MatchPhase.Overtime))
         {
             board.Pass = null;
+            board.Meet = null;
         }
     }
 
@@ -392,6 +414,65 @@ internal sealed class DecisionSystem : ISystem
         var meet = TeamShape.Inside(from + dir * along, 0.6f);
         AiCommand.Steer(world, p, AiLayer.Decisions, Steering.Toward(p, Steering.BodyForBlade(p, meet), 0.6f), "meet the pass");
         return true;
+    }
+
+    /// <summary>
+    /// W96: skates the human receiver of a human's pass to meet it, over the stick still held from
+    /// the pass, until the player steers him with fresh input (see the class remarks).
+    /// </summary>
+    static void MeetForHuman(World world, DecisionBoard board)
+    {
+        var pk = world.Puck;
+        if (board.Meet is not { HandedBack: false } meet || board.Pass is not { } pass || pass.Receiver != meet.Receiver || pk.Carrier >= 0) return;
+        var p = world.Players[meet.Receiver];
+        if (p.Slot < 0 || !p.OnIce || p.Action is PlayerAction.Fallen or PlayerAction.Fight) return;   // an AI receiver meets it in the loop
+        if (pk.LastTouch != pass.Passer) { meet.HandedBack = true; return; }   // one-timed, tipped or saved: the pass is over
+
+        var stick = p.Command.Move;
+        if (stick.Length() < Pushed)
+        {
+            meet.Released = true;
+        }
+        else if (meet.Released || Vector2.Dot(Vector2.Normalize(stick), Vector2.Normalize(meet.Held)) < SimMath.Cos(FreshTurn))
+        {
+            meet.HandedBack = true;
+            return;
+        }
+
+        var move = Receive(p, pk) ?? Steering.Toward(p, Steering.BodyForBlade(p, TeamShape.Inside(Flat(pk.Position), 0.6f)), 0.6f);
+        p.Command = p.Command with { Move = move.Move, Sprint = move.Sprint };
+    }
+
+    /// <summary>
+    /// W96: where the human receiver goes to take the pass: the point on the puck's slide nearest
+    /// where his blade drifts on his current skating, among those he can reach in time, and his
+    /// body shifted so the blade, at the heading he has, sits on it. A receiver on the line stays
+    /// put; one led by the pass skates on into it. Chasing the earliest point instead (as an AI
+    /// receiver does) turns him toward the puck and swings his blade off its line. Null when the
+    /// puck has all but stopped.
+    /// </summary>
+    static PlayerCommand? Receive(Player p, Puck pk)
+    {
+        const float step = 1 / 60f;
+        var v = Flat(pk.Velocity);
+        float speed = v.Length();
+        if (speed < 1.5f) return null;
+        var dir = v / speed;
+        var puck = Flat(pk.Position);
+        var blade = Flat(PuckHandling.Blade(p));
+        var drift = Flat(p.Velocity);
+        float top = SkatingModel.TopSpeed(p.Data.Traits, p.Energy) * 0.6f;   // from a glide, turning: well short of top speed
+        float best = float.MaxValue;
+        var meet = puck;
+        for (float t = step; speed > 0.1f && t < 3f; t += step)
+        {
+            puck += dir * speed * step;
+            speed -= (Physics.PuckTuning.IceFriction + Physics.PuckTuning.Drag * speed) * step;
+            float gap = Vector2.Distance(puck, blade + drift * t);
+            float score = gap + 10f * Math.Max(0f, gap - top * t);
+            if (score < best) { best = score; meet = puck; }
+        }
+        return Steering.Toward(p, TeamShape.Inside(Flat(p.Position) + meet - blade, 0.6f), 0.6f);
     }
 
     /// <summary>

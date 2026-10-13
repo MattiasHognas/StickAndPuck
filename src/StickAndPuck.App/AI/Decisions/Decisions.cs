@@ -92,6 +92,9 @@ internal sealed class DecisionBoard
     /// <summary>Gets or sets the pass in flight, until someone takes it or it dies.</summary>
     public InFlight? Pass { get; set; }
 
+    /// <summary>Gets or sets the human receiver the AI skates to meet the pass in flight, until the player steers him (W96).</summary>
+    public HumanMeet? Meet { get; set; }
+
     /// <summary>Gets or sets the side whose shot is in flight and when it left the stick, for the rebound chase.</summary>
     public (Side Side, float At)? Shot { get; set; }
 
@@ -116,6 +119,25 @@ internal sealed class DecisionBoard
 /// <param name="Side">The passer's club.</param>
 /// <param name="At">When it left the stick.</param>
 internal sealed record InFlight(int Passer, int Receiver, Side Side, float At);
+
+/// <summary>
+/// W96: a human's pass in flight to a teammate the human now controls. The AI skates him to meet
+/// it until the player gives fresh stick input: the stick held as the pass left does not count.
+/// </summary>
+internal sealed class HumanMeet(int receiver, Vector2 held)
+{
+    /// <summary>Gets the receiver.</summary>
+    public int Receiver { get; } = receiver;
+
+    /// <summary>Gets the stick held as the pass left.</summary>
+    public Vector2 Held { get; } = held;
+
+    /// <summary>Gets or sets a value indicating whether the stick has been at rest since the pass.</summary>
+    public bool Released { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the player has steered, handing the receiver back.</summary>
+    public bool HandedBack { get; set; }
+}
 
 /// <summary>One AI skater's short memory.</summary>
 internal sealed class Brain

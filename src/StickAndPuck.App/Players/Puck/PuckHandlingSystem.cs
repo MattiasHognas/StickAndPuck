@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
@@ -13,7 +14,9 @@ namespace StickAndPuck.App.Players;
 /// with better puck control, and never leaves the rink.</item>
 /// <item>Passing: pass sends the puck along the ice to the teammate nearest the way the stick
 /// points, leading a moving receiver by smart passes. A human's control follows the pass to the
-/// receiver straight away, unless <see cref="Settings.Switching"/> is Manual.</item>
+/// receiver straight away, unless <see cref="Settings.Switching"/> is Manual. W96: a human's pass
+/// with nobody in the cone goes to the nearest open teammate (<see cref="PuckHandling.PickOpen"/>),
+/// and is recorded (<see cref="LastHumanPass"/>) so the AI skates the receiver to meet it.</item>
 /// <item>Shooting: a tap of shoot is a wrist shot, a hold past <see cref="PuckHandling.SlapAfter"/> a
 /// slap shot that grows with the wind-up (it fires by itself at full wind-up plus a moment).
 /// The hold also sets the height: a tap stays low, a full wind-up goes high (<see cref="ShotHeight"/>).
@@ -41,6 +44,8 @@ internal sealed class PuckHandlingSystem : ISystem
 
     /// <summary>The dice seed without a match seed (W67).</summary>
     internal const int Fallback = 7;
+
+    static readonly ConditionalWeakTable<World, StrongBox<HumanPass?>> HumanPasses = [];
 
     readonly Random rng;
     readonly HashSet<int> shootHeld = [];
@@ -147,7 +152,8 @@ internal sealed class PuckHandlingSystem : ISystem
     {
         var pk = world.Puck;
         var from = pk.Position;
-        var receiver = PuckHandling.PickReceiver(world, passer);
+        bool human = passer.Slot >= 0;
+        var receiver = PuckHandling.PickReceiver(world, passer) ?? (human ? PuckHandling.PickOpen(world, passer) : null);
         int smart = passer.Data.Traits.HockeyIq;
         Vector3 velocity;
         if (receiver != null)
@@ -166,6 +172,7 @@ internal sealed class PuckHandlingSystem : ISystem
         lastPass = (passer.Side, passer.Id, world.Time);
         armed.Clear();
         world.Events.Publish(new MatchEvent(MatchEventKind.Pass, world.Time, passer.Side, passer.Id, from, velocity.Length()));
+        if (human && receiver != null) HumanPasses.AddOrUpdate(world, new StrongBox<HumanPass?>(new HumanPass(passer.Id, receiver.Id, passer.Command.Move, world.Time)));
 
         if (receiver != null && passer.Slot >= 0 && world.Settings.Switching != ControlSwitching.Manual)
         {
@@ -173,6 +180,14 @@ internal sealed class PuckHandlingSystem : ISystem
             passer.Slot = -1;
             passer.Command = default;   // glide on rather than keep the human's last stick
         }
+    }
+
+    /// <summary>Gets a human's last pass to a teammate in this match (W96), or null before the first.</summary>
+    /// <param name="world">The match.</param>
+    /// <returns>The pass.</returns>
+    internal static HumanPass? LastHumanPass(World world)
+    {
+        return HumanPasses.TryGetValue(world, out var box) ? box.Value : null;
     }
 
     /// <summary>Fires a wound-up shot once the clip reaches the sweep.</summary>
