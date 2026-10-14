@@ -14,7 +14,7 @@ public sealed class TacticsScene : IScene
     public string Name => "tactics";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         ClubData Pick(string variable, string fallback, ClubData other)
         {

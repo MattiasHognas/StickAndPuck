@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
+using System.Collections.Immutable;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
@@ -9,22 +10,22 @@ namespace StickAndPuck.App.Screens;
 /// PRESET. Left and right change a value; picking a preset clears the changed rules. Changes are
 /// saved with the settings on leaving and play from the next match: a running match keeps the rules
 /// it started with, and a season keeps the rules in its save.</summary>
-internal sealed class RulesScreen : MenuScreen
+internal sealed class RulesScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 300, PanelTop = 8, Visible = 14;
 
-    static readonly RulePreset[] Presets = Enum.GetValues<RulePreset>();
+    static readonly ImmutableArray<RulePreset> Presets = [.. Enum.GetValues<RulePreset>()];
 
     int first;
 
-    static RuleChoice Choice => ScreenFlow.Prefs.Rules;
+    RuleChoice Choice => Flow.Prefs.Rules;
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
         var rules = Choice.Resolve();
         var preset = RuleSet.Of(Choice.Preset);
-        var items = new List<MenuItem> { new(Text.Get(K.Preset), value: rules.Name, change: d => Pick(Cycle(Choice.Preset, d))) };
+        var items = new List<MenuItem> { new(Text.Get(K.Preset), value: rules.Name, change: d => Pick(Flow, Cycle(Choice.Preset, d))) };
         var group = Maybe<string>.None;
         foreach (var row in RuleRows.Shown)
         {
@@ -37,7 +38,7 @@ internal sealed class RulesScreen : MenuScreen
             bool changed = !string.Equals(value, row.Get(preset), StringComparison.Ordinal);
             items.Add(new MenuItem(Text.Get(row.Label), value: RuleRow.Show(value) + (changed ? " *" : ""), change: d => Change(row, d)));
         }
-        items.Add(new MenuItem(Text.Get(K.ResetToPreset), () => Pick(Choice.Preset), enabled: rules.Custom));
+        items.Add(new MenuItem(Text.Get(K.ResetToPreset), () => Pick(Flow, Choice.Preset), enabled: rules.Custom));
         items.Add(new MenuItem(Text.Get(K.Back), Back));
         return items;
     }
@@ -63,33 +64,33 @@ internal sealed class RulesScreen : MenuScreen
         top += ScreenArt.Row / 2;
         art.Menu(items.Skip(first).Take(shown).ToList(), Selected - first, x, PanelW, top);
         if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
-        art.Hint(Text.Get(ScreenFlow.Playing.HasValue ? K.HintRulesNextMatch : K.HintRules));
+        art.Hint(Text.Get(Flow.Playing.HasValue ? K.HintRulesNextMatch : K.HintRules));
     }
 
     /// <inheritdoc/>
     protected override void Back()
     {
-        ScreenPrefsFile.Write(ScreenFlow.Prefs);
+        ScreenPrefsFile.Write(Flow.Prefs);
         Console.WriteLine($"SAP: screens: rules saved, {Choice.Resolve()}");
-        ScreenFlow.Pop();
+        Flow.Pop();
     }
 
     /// <summary>The preset one step along, wrapping.</summary>
     public static RulePreset Cycle(RulePreset preset, int dir)
     {
-        int i = Array.IndexOf(Presets, preset);
+        int i = Presets.IndexOf(preset);
         return Presets[(((i + dir) % Presets.Length) + Presets.Length) % Presets.Length];
     }
 
     /// <summary>Chooses a preset as it stands, clearing every changed rule.</summary>
-    public static void Pick(RulePreset preset)
+    public static void Pick(ScreenFlow flow, RulePreset preset)
     {
-        ScreenFlow.Prefs = ScreenFlow.Prefs with { Rules = RuleChoice.Of(preset) };
+        flow.Prefs = flow.Prefs with { Rules = RuleChoice.Of(preset) };
     }
 
-    static void Change(RuleRow row, int dir)
+    void Change(RuleRow row, int dir)
     {
-        ScreenFlow.Prefs = ScreenFlow.Prefs with { Rules = Choice.With(row, row.Next(Choice.Resolve(), dir)) };
+        Flow.Prefs = Flow.Prefs with { Rules = Choice.With(row, row.Next(Choice.Resolve(), dir)) };
     }
 }
 
@@ -100,20 +101,20 @@ internal sealed class RulesScreen : MenuScreen
 internal static class RulePicks
 {
     /// <summary>Gets the player's rule choice, under SAP_RULES.</summary>
-    public static RuleChoice Choice =>
+    public static RuleChoice Choice(AppState app) =>
         Env.Get("SAP_RULES") is { Length: > 0 } name
             ? RuleChoice.Of(Enum.TryParse<RulePreset>(name.Trim(), ignoreCase: true, out var p) ? p : throw new InvalidOperationException($"SAP_RULES={name}: use shl, arcade or nhl"))
-            : ScreenFlow.Prefs.Rules;
+            : app.Screens.Prefs.Rules;
 
     /// <summary>Gets the rules a match of this plan plays.</summary>
-    public static RuleSet For(MatchPlan plan)
+    public static RuleSet For(AppState app, MatchPlan plan)
     {
         if (plan.Mode.TryGet(out var mode) && Fixed(mode).TryGet(out var fixedRules)) return fixedRules;
-        if (!plan.Season || !SeasonSession.Current.TryGet(out var season)) return Choice.Resolve();
+        if (!plan.Season || !app.Season.Current.TryGet(out var season)) return Choice(app).Resolve();
         if (season.Rules.TryGet(out var stored)) return stored;
-        var rules = Choice.Resolve();
+        var rules = Choice(app).Resolve();
         season.Rules = rules;
-        if (SeasonSession.SavePath.Length > 0) SeasonSave.Write(season, SeasonSession.SavePath);
+        if (app.Season.SavePath.Length > 0) SeasonSave.Write(season, app.Season.SavePath);
         Console.WriteLine($"SAP: screens: season stores {rules.Name} rules");
         return rules;
     }

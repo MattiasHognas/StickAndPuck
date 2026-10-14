@@ -1,5 +1,6 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 
 namespace StickAndPuck.App.Players.Dev;
 
@@ -12,7 +13,7 @@ public sealed class ShotDemoScene : IScene
     public string Name => "shotdemo";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         ShotDemo.Setup(world);
@@ -24,7 +25,7 @@ public sealed class ShotDemoScene : IScene
 internal sealed class ShotDemo
 {
     /// <summary>Steps shoot is held in each round: a tap, a half hold, a full wind-up.</summary>
-    static readonly int[] Holds = [2, 30, 66];
+    static readonly ImmutableArray<int> Holds = [2, 30, 66];
 
     Maybe<Player> shooter;
     float start;

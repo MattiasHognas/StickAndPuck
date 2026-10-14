@@ -1,5 +1,6 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 
 namespace StickAndPuck.App.Physics.Dev;
 
@@ -11,7 +12,7 @@ public sealed class PuckScene : IScene
     public string Name => "puck";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         // one skater per club on the bench, clear of the puck, so the goal has someone to credit
@@ -25,7 +26,7 @@ public sealed class PuckScene : IScene
 /// <summary>The shot loop behind <see cref="PuckScene"/>: a new shot whenever the puck settles or a few seconds pass.</summary>
 internal sealed class PuckDemo
 {
-    static readonly (Vector3 From, Vector3 Velocity)[] Shots =
+    static readonly ImmutableArray<(Vector3 From, Vector3 Velocity)> Shots =
     [
         (new Vector3(-6, 0, 5), new Vector3(8, 0, -18)),           // off the far side boards, in view of today's fixed camera
         (new Vector3(10, 0, -4), new Vector3(22, 0, 14)),          // rim round the +x corner

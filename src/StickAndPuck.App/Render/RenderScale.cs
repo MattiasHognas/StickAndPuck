@@ -7,7 +7,7 @@ namespace StickAndPuck.App.Render;
 /// the outline, drawn on that smaller frame, stays one of its pixels wide. The camera asks for a
 /// scale each step; the pixel frame picks it up when the next frame starts, and the HUD always stays
 /// at the full 480x270.</summary>
-public static class RenderScale
+public sealed class RenderScale
 {
     /// <summary>The coarsest scale: 160x90.</summary>
     public const int MaxDivisor = 3;
@@ -19,10 +19,10 @@ public static class RenderScale
     const float Hold = 0.15f;
 
     /// <summary>Gets the scale the camera asked for: 1 draws 480x270, 2 draws 240x135, 3 draws 160x90.</summary>
-    public static int Divisor { get; private set; } = 1;
+    public int Divisor { get; private set; } = 1;
 
     /// <summary>Asks for a scale from the next frame on.</summary>
-    public static void Request(int divisor)
+    public void Request(int divisor)
     {
         Divisor = Math.Clamp(divisor, 1, MaxDivisor);
     }

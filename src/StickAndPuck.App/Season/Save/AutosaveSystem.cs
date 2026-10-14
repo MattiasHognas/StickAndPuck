@@ -9,9 +9,9 @@ internal sealed class AutosaveSystem : ISystem
 
     public void Update(World world, float dt)
     {
-        if (!SeasonSession.Unsaved || !SeasonSession.Current.TryGet(out var season)) return;
-        SeasonSave.Write(season, SeasonSession.SavePath);
-        SeasonSession.Unsaved = false;
-        Console.WriteLine($"SAP: season saved to {SeasonSession.SavePath}, round {Math.Min(season.CurrentRound + 1, season.Rounds)} of {season.Rounds} next");
+        if (!world.App.Season.Unsaved || !world.App.Season.Current.TryGet(out var season)) return;
+        SeasonSave.Write(season, world.App.Season.SavePath);
+        world.App.Season.Unsaved = false;
+        Console.WriteLine($"SAP: season saved to {world.App.Season.SavePath}, round {Math.Min(season.CurrentRound + 1, season.Rounds)} of {season.Rounds} next");
     }
 }

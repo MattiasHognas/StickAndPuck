@@ -12,7 +12,7 @@ public sealed class CameraScene : IScene
     public string Name => "camera";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         Scenes.AddStarters(world);

@@ -3,6 +3,7 @@ using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
+using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Lines;
@@ -34,8 +35,8 @@ namespace StickAndPuck.App.Lines;
 internal sealed partial class LinesSystem : ISystem
 {
 
-    static readonly Side[] BothSides = [Side.Home, Side.Away];
-    static readonly Group[] BothGroups = [Group.Forwards, Group.Defence];
+    static readonly ImmutableArray<Side> BothSides = [Side.Home, Side.Away];
+    static readonly ImmutableArray<Group> BothGroups = [Group.Forwards, Group.Defence];
 
     public void Start(World world)
     {
@@ -232,7 +233,7 @@ internal sealed partial class LinesSystem : ISystem
     static Maybe<Unit> Best(LinesBoard b, Side side, Group group)
     {
         if (!b.Squads[(int)side].TryGet(out var squad)) return Maybe<Unit>.None;
-        float[] bias = group == Group.Forwards ? LinesTuning.ForwardBias : LinesTuning.PairBias;
+        var bias = group == Group.Forwards ? LinesTuning.ForwardBias : LinesTuning.PairBias;
         return Maybe.From<Unit>(squad.Units(group)
             .Where(u => u.Members.All(p => !p.OnIce))
             .MaxBy(u => u.Energy - bias[Math.Min(u.Number - 1, bias.Length - 1)]));

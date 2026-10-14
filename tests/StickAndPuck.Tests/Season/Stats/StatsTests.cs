@@ -12,6 +12,9 @@ namespace StickAndPuck.Tests;
 /// </summary>
 public sealed class StatsTests : CheckedTest
 {
+    /// <summary>The game state the test plays in, fresh for each test.</summary>
+    readonly AppState app = new();
+
     static readonly string Folder = Path.Combine(Path.GetTempPath(), $"sap-statstest-{Environment.ProcessId}");
     static readonly string SeasonPath = Path.Combine(Folder, "season.json");
     static readonly string ArcadePath = Path.Combine(Folder, "arcade.json");
@@ -19,8 +22,8 @@ public sealed class StatsTests : CheckedTest
     [After(Test)]
     public void EndSessions()
     {
-        SeasonSession.End();
-        ArcadeSession.End();
+        app.Season.End();
+        app.Arcade.End();
         if (Directory.Exists(Folder)) Directory.Delete(Folder, recursive: true);
     }
 
@@ -34,9 +37,9 @@ public sealed class StatsTests : CheckedTest
     static MatchSetup Must(NextMatch next) => next is NextMatch.Play play ? play.Setup : throw new InvalidOperationException("expected a match to play");
 
     /// <summary>A world with the starters on, and a way to play one step with some events.</summary>
-    static (World World, Action<Action<World>> Step) Rink(MatchSetup setup, Settings settings, params ISystem[] systems)
+    (World World, Action<Action<World>> Step) Rink(MatchSetup setup, Settings settings, params ISystem[] systems)
     {
-        var world = new WorldBuilder().Setup(setup).Settings(settings).NotBegun().Build();
+        var world = new WorldBuilder().Setup(setup).Settings(settings).App(app).NotBegun().Build();
         void Step(Action<World> act)
         {
             world.Events.Clear();
@@ -185,9 +188,9 @@ public sealed class StatsTests : CheckedTest
     void SaveAndReload(IReadOnlyList<ClubData> clubs, Settings settings, string path)
     {
         string user = clubs[2].Id;
-        var season = SeasonSession.StartNew(clubs, user, seed: 11, path: path);
-        var setup = Must(SeasonSession.NextSetup());
-        var game = Must(SeasonSession.Playing);
+        var season = app.Season.StartNew(clubs, user, seed: 11, path: path);
+        var setup = Must(app.Season.NextSetup());
+        var game = Must(app.Season.Playing);
         var (w, step) = Rink(setup, settings, new StatsSystem(), new ScheduleSystem(), new AutosaveSystem());
         var side = Same(game.Home, user) ? Side.Home : Side.Away;
         var a = Skater(w, side, 0);
@@ -205,12 +208,12 @@ public sealed class StatsTests : CheckedTest
         Check(season.Games.Count(g => g.Played) == 7 && season.Stats.Regular.GamesCredited == 1, "the round's other games are settled but not yet credited in the same step");
         step(_ => { });    // the step after: catch-up credits the six paper games and asks for another save
         Check(season.Stats.Regular.GamesCredited == 7 && season.Stats.Awards.Count == 7, "the next step credits the six games settled on paper");
-        Check(!SeasonSession.Unsaved, "the autosave ran again after the catch-up");
+        Check(!app.Season.Unsaved, "the autosave ran again after the catch-up");
         Check(season.Stats.Regular.Players.Count(p => p.Games > 0) >= 7 * 19, "every club in the round has players with a game");
 
         // restart: the lines come back from the save
-        SeasonSession.End();
-        var reread = SeasonSession.Continue(clubs, path);
+        app.Season.End();
+        var reread = app.Season.Continue(clubs, path);
         Check(reread.Is(x => x.Stats.Regular.GamesCredited == 7 && x.Stats.Credited.Count == 7), "the stats read back after a restart");
         var resumed = Must(reread);
         var back = resumed.Stats.Regular.Find(user, a.Data.Number);
@@ -223,18 +226,18 @@ public sealed class StatsTests : CheckedTest
     void OldSave(IReadOnlyList<ClubData> clubs, string path)
     {
         // a save from before stats existed: the played games fill in from their scores on the next step
-        SeasonSession.End();
+        app.Season.End();
         string json = File.ReadAllText(path);
         int at = json.IndexOf("\"stats\"", StringComparison.Ordinal);
         Check(at > 0, "the save carries the stats");
         var season = Must(SeasonSave.Read(path));
         season.Stats = new SeasonStats();
         SeasonSave.Write(season, path);
-        var resumed = Must(SeasonSession.Continue(clubs, path));
+        var resumed = Must(app.Season.Continue(clubs, path));
         Check(resumed.Stats.Regular.GamesCredited == 0, "an old save reads with empty stats");
-        var w = new World(WorldBuilder.DefaultSetup, new Settings());
+        var w = new World(WorldBuilder.DefaultSetup, new Settings()) { App = app };
         new StatsSystem().Update(w, Game.Step);
-        Check(resumed.Stats.Regular.GamesCredited == 7 && resumed.Stats.Awards.Count == 7 && SeasonSession.Unsaved, "the first step credits every played game from its score and asks for a save");
+        Check(resumed.Stats.Regular.GamesCredited == 7 && resumed.Stats.Awards.Count == 7 && app.Season.Unsaved, "the first step credits every played game from its score and asks for a save");
     }
 
     [Test]
@@ -243,8 +246,8 @@ public sealed class StatsTests : CheckedTest
     void Arcade(IReadOnlyList<ClubData> clubs, Settings settings, string path)
     {
         string user = clubs[4].Id;
-        var run = ArcadeSession.StartNew(clubs, user, ArcadeRule.SuddenDeath, 3, path);
-        var setup = Must(ArcadeSession.NextSetup());
+        var run = app.Arcade.StartNew(clubs, user, ArcadeRule.SuddenDeath, 3, path);
+        var setup = Must(app.Arcade.NextSetup());
         var (w, step) = Rink(setup, settings, new StatsSystem(), new ArcadeSystem());
         var a = Skater(w, Side.Home, 0);
         step(x => { x.Puck.LastTouch = a.Id; x.Match.Score[0]++; x.Events.Publish(new GoalScored(x.Time, Side.Home, a.Id, default, 0)); });
@@ -254,7 +257,7 @@ public sealed class StatsTests : CheckedTest
         Check(run.Games.Count == 1 && run.Records.Count == 0, "a run still going is not on the board");
 
         // lose the next game: sudden death ends the run, which goes on the board and is saved
-        setup = Must(ArcadeSession.NextSetup());
+        setup = Must(app.Arcade.NextSetup());
         (w, step) = Rink(setup, settings, new StatsSystem(), new ArcadeSystem());
         w.Match.Score[(int)setup.Inputs[0].Side == 0 ? 1 : 0] = 2;
         w.Match.Phase = MatchPhase.Final;
@@ -262,22 +265,22 @@ public sealed class StatsTests : CheckedTest
         Check(run.IsOver && run.Records.Count == 1 && run.Records[0] is { Beaten: 1, Losses: 1, Champion: false } && run.Place == 1, "the finished run is first on the board");
         Check(run.Records[0].TopPoints == 1 && run.Records[0].TopScorer.Contains(a.Data.LastName, StringComparison.Ordinal), $"the record names the run's top scorer ({run.Records[0].TopScorer})");
 
-        ArcadeSession.End();
-        var reloaded = Must(ArcadeSession.Continue(clubs, path));
+        app.Arcade.End();
+        var reloaded = Must(app.Arcade.Continue(clubs, path));
         Check(reloaded.Records.Count == 1 && reloaded.Stats.Find(user, a.Data.Number).Is(x => x.Goals == 1) && reloaded.Awards.Count == 2, "the board, the lines and the two games' awards read back from arcade.json");
 
         // a new run keeps the board; a better run ranks above
-        var next = ArcadeSession.StartNew(clubs, user, ArcadeRule.ThreeLives, 4, path);
+        var next = app.Arcade.StartNew(clubs, user, ArcadeRule.ThreeLives, 4, path);
         Check(next.Records.Count == 1 && next.Stats.Players.Count == 0, "a new run starts with the board and empty lines");
         for (int i = 0; i < 3; i++)
         {
-            ArcadeSession.NextSetup();
-            ArcadeSession.Finish(next.NextAtHome ? new FixtureResult(2, 0, ResultKind.Regulation) : new FixtureResult(0, 2, ResultKind.Regulation));
+            app.Arcade.NextSetup();
+            app.Arcade.Finish(next.NextAtHome ? new FixtureResult(2, 0, ResultKind.Regulation) : new FixtureResult(0, 2, ResultKind.Regulation));
         }
         for (int i = 0; i < 3; i++)
         {
-            ArcadeSession.NextSetup();
-            ArcadeSession.Finish(next.NextAtHome ? new FixtureResult(0, 1, ResultKind.Regulation) : new FixtureResult(1, 0, ResultKind.Regulation));
+            app.Arcade.NextSetup();
+            app.Arcade.Finish(next.NextAtHome ? new FixtureResult(0, 1, ResultKind.Regulation) : new FixtureResult(1, 0, ResultKind.Regulation));
         }
         Check(next.IsOver && next.Records.Count == 2 && next.Records[0].Beaten == 3 && next.Place == 1, "three wins then three losses ranks above the one-win run");
         var champion = new ArcadeRecord(user, ArcadeRule.SuddenDeath, 13, true, 0, 40, 10, DateTime.UtcNow, "", 0);

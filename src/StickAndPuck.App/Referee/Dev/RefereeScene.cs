@@ -13,9 +13,9 @@ public sealed class RefereeScene : IScene
     public string Name => "referee";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        var world = new MatchDemoScene().Create(clubs, settings);
+        var world = new MatchDemoScene().Create(clubs, settings, app);
         MatchFlow.State(world).Timer = 0.7f;
         Referee.Of(world).Position = Referee.DropSpot(RinkSpec.CentreDot);
         return world;

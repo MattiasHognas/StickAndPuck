@@ -9,7 +9,7 @@ public sealed class PracticeScene : IScene
     public string Name => "practice";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         var skater = world.Setup.Home.Roster.FirstOrDefault(p => p.Position != PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.C };
@@ -27,7 +27,7 @@ public sealed class LineupScene : IScene
     public string Name => "lineup";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         Scenes.AddStarters(world);

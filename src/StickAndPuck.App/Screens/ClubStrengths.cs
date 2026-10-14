@@ -10,12 +10,9 @@ namespace StickAndPuck.App.Screens;
 /// traits) and overall (<see cref="ArcadeRun.Strength"/>), plus how it plays (its tactics).</summary>
 internal sealed record ClubStrengths(int Attack, int Defence, int Speed, int Goalie, int Overall, ClubTactics Plays)
 {
-    static readonly Dictionary<string, ClubStrengths> Cache = new(StringComparer.Ordinal);
-
-    /// <summary>Gets a club's strengths (worked out once per club).</summary>
+    /// <summary>Works out a club's strengths.</summary>
     public static ClubStrengths Of(ClubData club)
     {
-        if (Cache.TryGetValue(club.Id, out var known)) return known;
         var roster = club.Roster;
         var forwards = roster.Where(p => p.Position is PlayingPosition.C or PlayingPosition.LW or PlayingPosition.RW).Select(p => p.Traits).ToList();
         var defence = roster.Where(p => p.Position == PlayingPosition.D).Select(p => p.Traits).ToList();
@@ -26,9 +23,7 @@ internal sealed record ClubStrengths(int Attack, int Defence, int Speed, int Goa
         int speed = Average(skaters, t => (t.Acceleration + t.TopSpeed) / 2.0);
         int goalie = goalies.Count == 0 ? 50
             : (int)Math.Round(goalies.Max(t => (t.GoalieReflexes + t.GoalieGlove + t.GoalieBlocker + t.GoalieReboundControl + t.GoaliePuckHandling) / 5.0));
-        var strengths = new ClubStrengths(attack, def, speed, goalie, (int)Math.Round(ArcadeRun.Strength(club)), club.Tactics);
-        Cache[club.Id] = strengths;
-        return strengths;
+        return new ClubStrengths(attack, def, speed, goalie, (int)Math.Round(ArcadeRun.Strength(club)), club.Tactics);
     }
 
     static int Average(List<Traits> players, Func<Traits, double> value)

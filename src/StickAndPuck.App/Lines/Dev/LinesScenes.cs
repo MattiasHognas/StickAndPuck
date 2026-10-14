@@ -17,7 +17,7 @@ public sealed class LinesScene : IScene
     public string Name => "lines";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = Period(20 * 60) }, settings);
         Scenes.AddStarters(world);
@@ -50,7 +50,7 @@ public sealed class GoalieSwapScene : IScene
     public string Name => "goalieswap";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = MatchScenes.Exhibition(clubs, settings, LinesScene.Period(120));
         world.Dev.Match.Set(new MatchDemo());
@@ -70,7 +70,7 @@ public sealed class GoaliePullScene : IScene
     public string Name => "goaliepull";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = LinesScene.Period(300) }, settings);
         Scenes.AddStarters(world);

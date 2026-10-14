@@ -22,7 +22,7 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
 
     public void Start(World world)
     {
-        if (SeasonSession.Current.HasValue) art = HudArt.Load();
+        if (world.App.Season.Current.HasValue) art = HudArt.Load();
     }
 
     public void Update(World world, float dt)
@@ -35,21 +35,21 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
         }
         if (world.Match.Phase == MatchPhase.Shootout) sawShootout = true;
 
-        if (!SeasonSession.Playing.TryGet(out var game) || !string.Equals(game.Home, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(game.Away, world.Setup.Away.Id, StringComparison.Ordinal)) return;
+        if (!world.App.Season.Playing.TryGet(out var game) || !string.Equals(game.Home, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(game.Away, world.Setup.Away.Id, StringComparison.Ordinal)) return;
         if (!world.Events.Of<MatchEnded>().Any()) return;
 
         var m = world.Match;
         var kind = sawShootout ? ResultKind.Shootout : m.Period > world.Setup.Periods ? ResultKind.Overtime : ResultKind.Regulation;
         var result = new FixtureResult(m.Score[(int)Side.Home], m.Score[(int)Side.Away], kind);
-        if (!SeasonSession.Finish(result)) return;
+        if (!world.App.Season.Finish(result)) return;
         finishedAt = world.Time;
         Console.WriteLine($"SAP: season game {game.Number + 1}, round {game.Round + 1}: {game.Home} {result.HomeGoals}-{result.AwayGoals} {game.Away} ({kind})");
     }
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (!art.TryGet(out var hud) || !SeasonSession.Current.TryGet(out var season)) return;
-        if (world.Switches.ScheduleTable || world.Time - finishedAt >= TableDelay) SeasonTable.Draw(hud, season, SeasonSession.Clubs);
+        if (!art.TryGet(out var hud) || !world.App.Season.Current.TryGet(out var season)) return;
+        if (world.Switches.ScheduleTable || world.Time - finishedAt >= TableDelay) SeasonTable.Draw(hud, season, world.App.Season.Clubs);
     }
 
     public void Dispose()

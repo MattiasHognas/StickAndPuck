@@ -14,7 +14,7 @@ internal sealed class InputSystem : ISystem
 
     public void Update(World world, float dt)
     {
-        Gamepads.Log();
+        world.App.Pads.Log();
         var inputs = world.Setup.Inputs;
         bool padFree = !inputs.Any(s => s.Device == InputDevice.Gamepad1);
         for (int slot = 0; slot < MatchSetup.Slots && slot < inputs.Count; slot++)
@@ -22,10 +22,10 @@ internal sealed class InputSystem : ISystem
             var device = inputs[slot].Device;
             var state = device switch
             {
-                InputDevice.KeyboardMouse when padFree => InputDevices.Merge(InputDevices.KeyboardMouse(world.Settings), InputDevices.Gamepad(0, world.Settings)),
+                InputDevice.KeyboardMouse when padFree => InputDevices.Merge(InputDevices.KeyboardMouse(world.Settings), InputDevices.Gamepad(world.App.Pads.Slot(0), world.Settings)),
                 InputDevice.KeyboardMouse => InputDevices.KeyboardMouse(world.Settings),
-                InputDevice.Gamepad1 => InputDevices.Gamepad(0, world.Settings),
-                InputDevice.Gamepad2 => InputDevices.Gamepad(1, world.Settings),
+                InputDevice.Gamepad1 => InputDevices.Gamepad(world.App.Pads.Slot(0), world.Settings),
+                InputDevice.Gamepad2 => InputDevices.Gamepad(world.App.Pads.Slot(1), world.Settings),
                 _ => default,
             };
 

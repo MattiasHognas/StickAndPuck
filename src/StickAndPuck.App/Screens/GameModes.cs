@@ -19,16 +19,16 @@ public interface IGameMode
     int ClubPicks => 2;
 
     /// <summary>Gets a value indicating whether the mode shows on the list now (a "continue" entry hides without a save).</summary>
-    bool Available => true;
+    bool Available(AppState app) => true;
 
     /// <summary>Gets a value indicating whether the results screen offers the mode's next game (a run of games, like arcade).</summary>
-    bool HasNextGame => false;
+    bool HasNextGame(AppState app) => false;
 
     /// <summary>Gets a line for the results screen about where the mode stands (lives left, the next opponent), or None.</summary>
-    Maybe<string> Status => Maybe<string>.None;
+    Maybe<string> Status(AppState app) => Maybe<string>.None;
 
     /// <summary>Gets the team select heading for the given pick (it names the player picking).</summary>
-    string PickHeading(int index) => Text.Get(index == 0 ? K.PickYourClub : K.PickOpponent);
+    string PickHeading(AppState app, int index) => Text.Get(index == 0 ? K.PickYourClub : K.PickOpponent);
 
     /// <summary>Builds the next match. Called when the mode starts, and again for each next game.</summary>
     /// <returns>The setup, or None when the mode has nothing more to play (the screens go back to the start screen).</returns>
@@ -39,7 +39,8 @@ public interface IGameMode
 /// <param name="Clubs">Every club from data/clubs/.</param>
 /// <param name="Picks">The clubs the player picked, theirs first.</param>
 /// <param name="Device">The player's input device (<see cref="InputDevice.None"/> lets the AI play).</param>
-public sealed record GameModeStart(IReadOnlyList<ClubData> Clubs, IReadOnlyList<ClubData> Picks, InputDevice Device);
+/// <param name="App">The game's state: the sessions a mode plays in, the player's settings.</param>
+public sealed record GameModeStart(IReadOnlyList<ClubData> Clubs, IReadOnlyList<ClubData> Picks, InputDevice Device, AppState App);
 
 /// <summary>A single match between two picked clubs, the player on the home club, SHL overtime.</summary>
 public sealed class ExhibitionMode : IGameMode
@@ -69,13 +70,13 @@ public sealed class ExhibitionMode : IGameMode
 internal static class GameModes
 {
     /// <summary>Gets every mode available now, in list order.</summary>
-    public static IReadOnlyList<IGameMode> All()
+    public static IReadOnlyList<IGameMode> All(AppState app)
     {
         return typeof(GameModes).Assembly.GetTypes()
             .Where(t => typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false }
                 && t.GetConstructor(Type.EmptyTypes) is { })
             .Select(t => (IGameMode)Activator.CreateInstance(t)!)
-            .Where(m => m.Available)
+            .Where(m => m.Available(app))
             .OrderBy(m => m.Order)
             .ThenBy(m => m.Title, StringComparer.Ordinal)
             .ToList();

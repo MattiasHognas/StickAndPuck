@@ -57,8 +57,15 @@ internal sealed record MenuItem
 }
 
 /// <summary>One screen on <see cref="ScreenFlow"/>'s stack. Only the top screen gets the presses and draws.</summary>
-internal abstract class Screen
+/// <param name="app">The game's state the screen shows and changes.</param>
+internal abstract class Screen(AppState app)
 {
+    /// <summary>Gets the game's state: the sessions, the pads.</summary>
+    protected AppState App => app;
+
+    /// <summary>Gets the screens this screen is one of.</summary>
+    protected ScreenFlow Flow => app.Screens;
+
     /// <summary>Gets a value indicating whether the rink behind is darkened.</summary>
     public virtual bool Dims => true;
 
@@ -70,7 +77,8 @@ internal abstract class Screen
 }
 
 /// <summary>A screen that is a list of rows: up and down move, enter picks, left and right change a value, back leaves.</summary>
-internal abstract class MenuScreen : Screen
+/// <param name="app">The game's state the screen shows and changes.</param>
+internal abstract class MenuScreen(AppState app) : Screen(app)
 {
     /// <summary>Gets the index of the selected row.</summary>
     protected int Selected { get; private set; }
@@ -81,7 +89,7 @@ internal abstract class MenuScreen : Screen
     /// <summary>What back does; by default leaves the screen.</summary>
     protected virtual void Back()
     {
-        ScreenFlow.Pop();
+        Flow.Pop();
     }
 
     /// <inheritdoc/>

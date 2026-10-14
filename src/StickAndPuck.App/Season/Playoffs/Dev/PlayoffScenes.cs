@@ -16,10 +16,10 @@ public sealed class PlayoffScene : IScene
     public string Name => "playoffs";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        PlayoffScenes.OpenTestSeason(clubs);
-        return PlayoffScenes.Play(clubs, settings, PlayoffScenes.Human);
+        PlayoffScenes.OpenTestSeason(app, clubs);
+        return PlayoffScenes.Play(app, clubs, settings, PlayoffScenes.Human);
     }
 }
 
@@ -30,11 +30,11 @@ public sealed class PlayoffBracketScene : IScene
     public string Name => "playoffbracket";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        PlayoffScenes.OpenTestSeason(clubs);
-        PlayoffSession.Open();
-        if (PlayoffSession.Current.TryGet(out var playoffs)) PlayoffSystem.Log(playoffs);
+        PlayoffScenes.OpenTestSeason(app, clubs);
+        app.Playoffs.Open();
+        if (app.Playoffs.Current.TryGet(out var playoffs)) PlayoffSystem.Log(playoffs);
         return PlayoffScenes.BracketWorld(clubs, settings);
     }
 }
@@ -47,19 +47,19 @@ internal static class PlayoffScenes
 
     /// <summary>Plays the human's next playoff game of the season in <see cref="SeasonSession"/>, starting the
     /// playoffs if they have not started; shows the bracket when the human's club has no game left.</summary>
-    public static World Play(IReadOnlyList<ClubData> clubs, Settings settings, bool human)
+    public static World Play(AppState app, IReadOnlyList<ClubData> clubs, Settings settings, bool human)
     {
         // SAP_OT shortens the playoff overtime periods too, for watching one; the setup below carries it
         if (SeasonScenes.Seconds("SAP_OT").TryGet(out float overtime))
-            PlayoffSession.Rules = PlayoffSession.Rules with { Overtime = PlayoffSession.Rules.Overtime with { PeriodSeconds = overtime } };
-        var opened = PlayoffSession.Open();
-        var next = PlayoffSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None);
+            app.Playoffs.Rules = app.Playoffs.Rules with { Overtime = app.Playoffs.Rules.Overtime with { PeriodSeconds = overtime } };
+        var opened = app.Playoffs.Open();
+        var next = app.Playoffs.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None);
         if (!opened.TryGet(out var playoffs))
         {
             Console.WriteLine("SAP: the regular season is not over yet");
             return BracketWorld(clubs, settings);
         }
-        if (next is not NextMatch.Play { Setup: var setup } || !PlayoffSession.Playing.TryGet(out var series))
+        if (next is not NextMatch.Play { Setup: var setup } || !app.Playoffs.Playing.TryGet(out var series))
         {
             Console.WriteLine("SAP: the human's club has no playoff game left; showing the bracket");
             PlayoffSystem.Log(playoffs);
@@ -87,37 +87,37 @@ internal static class PlayoffScenes
     }
 
     /// <summary>Opens (or starts) the playoff test season and settles whatever is left of its regular season.</summary>
-    public static void OpenTestSeason(IReadOnlyList<ClubData> clubs)
+    public static void OpenTestSeason(AppState app, IReadOnlyList<ClubData> clubs)
     {
         string path = Env.Get("SAP_SAVE") is { Length: > 0 }
             ? SeasonSave.DefaultPath
             : Path.Combine(Path.GetDirectoryName(SeasonSave.DefaultPath) ?? "", "playoffs-test.json");
         bool fresh = string.Equals(Env.Get("SAP_SEASON"), "new", StringComparison.OrdinalIgnoreCase);
-        var season = !fresh && SeasonSession.Continue(clubs, path).TryGet(out var saved) ? saved : StartTestSeason(clubs, path);
-        int settled = SettleSeason();
+        var season = !fresh && app.Season.Continue(clubs, path).TryGet(out var saved) ? saved : StartTestSeason(app, clubs, path);
+        int settled = SettleSeason(app);
         if (settled > 0) SeasonSave.Write(season, path);
         int place = season.Table.ToList().FindIndex(r => string.Equals(r.ClubId, season.UserClub, StringComparison.Ordinal)) + 1;
         Console.WriteLine($"SAP: playoff test season in {path}: {season.UserClub} finished {place} of {season.Clubs.Count}{(settled > 0 ? $", {settled} of the human's games settled on paper" : "")}");
     }
 
     /// <summary>Starts the playoff test season at its own save (SAP_CLUB, SAP_SEED as in the season scene).</summary>
-    static SeasonState StartTestSeason(IReadOnlyList<ClubData> clubs, string path)
+    static SeasonState StartTestSeason(AppState app, IReadOnlyList<ClubData> clubs, string path)
     {
         string club = Env.Get("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
         var seed = int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
-        return SeasonSession.StartNew(clubs, club, seed, path);
+        return app.Season.StartNew(clubs, club, seed, path);
     }
 
     /// <summary>Settles the human's remaining regular season games on paper, and with them the rest of the season.</summary>
-    public static int SettleSeason()
+    public static int SettleSeason(AppState app)
     {
         int count = 0;
-        while (SeasonSession.NextSetup(InputDevice.None) is NextMatch.Play { Setup: var setup } && SeasonSession.Playing.TryGet(out var game) && SeasonSession.Current.TryGet(out var season))
+        while (app.Season.NextSetup(InputDevice.None) is NextMatch.Play { Setup: var setup } && app.Season.Playing.TryGet(out var game) && app.Season.Current.TryGet(out var season))
         {
-            SeasonSession.Finish(QuickSim.Play(setup.Home, setup.Away, season.GameSeed(game.Number)));
+            app.Season.Finish(QuickSim.Play(setup.Home, setup.Away, season.GameSeed(game.Number)));
             count++;
         }
-        SeasonSession.Unsaved = false;
+        app.Season.Unsaved = false;
         return count;
     }
 }

@@ -1,12 +1,12 @@
 using Raylib_cs;
 using StickAndPuck.App.Render;
 using StickAndPuck.App.Replays;
-using StickAndPuck.App.Screens;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Core;
 
-/// <summary>Window, fixed-step loop and the order things are drawn in. Systems do the work.</summary>
+/// <summary>Window, fixed-step loop and the order things are drawn in. Systems do the work. The state that
+/// outlives a match (<see cref="AppState"/>) is made here, once per run, and handed to every world.</summary>
 public static class Game
 {
     /// <summary>The native frame width in pixels.</summary>
@@ -28,8 +28,9 @@ public static class Game
         var clubs = Clubs.LoadAll();
         Text.Use(Settings.FromEnvironment().Language);
         Console.WriteLine($"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}");
-        var replay = ReplayPlayer.FromEnvironment(clubs);
-        var world = replay.TryGet(out var played) ? played.World : Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
+        var app = new AppState();
+        var replay = ReplayPlayer.FromEnvironment(clubs, app);
+        var world = replay.TryGet(out var played) ? played.World : Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment(), app);
         var loop = new Loop
         {
             Headless = Env.Is("SAP_SCREENSHOT", "1"),
@@ -37,24 +38,24 @@ public static class Game
             Replay = replay,
             Limit = long.TryParse(Env.Get("SAP_STEPS"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
             Recorder = replay.TryGet(out var r) ? (r.TakeOverAtTarget ? r.TakeOverRecorder() : Maybe<ReplayRecorder>.None) : ReplayRecorder.Begin(world, RecordedScene()),
+            Sums = ChecksumLog.FromEnvironment(),
         };
-        ReplayRecorder.OpenChecksums();
 
         SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint);
         InitWindow(Width * 3, Height * 3, "Stick & Puck");
         SetTargetFPS(60);
 
-        var pixel = new PixelFrame(Width, Height);
+        var pixel = new PixelFrame(Width, Height, app.Scale, app.Dither);
         var render = new RenderContext { Toon = pixel.Toon, Mask = pixel.Mask };
         var systems = Restart(world, []);
         Console.WriteLine($"SAP: {systems.Count} systems: {string.Join(", ", systems.Select(s => s.GetType().Name))}");
 
-        while (!WindowShouldClose() && !ScreenFlow.QuitRequested)
+        while (!WindowShouldClose() && !app.Screens.QuitRequested)
         {
             loop.Frame(world, systems);
 
             // A screen started a match or went back to the menus; the new world gets fresh systems
-            if (ScreenFlow.TakeNextWorld().TryGet(out var next))
+            if (app.Screens.TakeNextWorld().TryGet(out var next))
             {
                 if (replay.Is(p => !p.Live)) break;    // the replayed match is over
                 if (loop.Recorder.TryGet(out var recorder)) recorder.Finish(world);
@@ -69,7 +70,7 @@ public static class Game
 
         loop.ReportOnce(world);    // a recording that went on to the menus or a quit ends the loop before its last step
         if (loop.Recorder.TryGet(out var last)) last.Finish(world);
-        ReplayRecorder.CloseChecksums();
+        loop.Sums.Dispose();
         foreach (var s in systems.OfType<IDisposable>()) s.Dispose();
         pixel.Dispose();
         // GPU resources go before the window, or the context is already gone
@@ -112,6 +113,9 @@ public static class Game
 
         public Maybe<ReplayRecorder> Recorder { get; set; }
 
+        /// <summary>Gets the SAP_CHECKSUMS log of every step's checksum.</summary>
+        public required ChecksumLog Sums { get; init; }
+
         public int ExitCode { get; private set; }
 
         /// <summary>Runs this frame's steps.</summary>
@@ -126,7 +130,7 @@ public static class Game
             {
                 StepWorld(world, systems);
                 ulong sum = WorldChecksum.Of(world);
-                if (Recorder.HasValue || Replay.HasValue) ReplayRecorder.LogChecksum(world.Tick - 1, sum);    // the recorded or replayed match only
+                if (Recorder.HasValue || Replay.HasValue) Sums.Write(world.Tick - 1, sum);    // the recorded or replayed match only
                 if (Recorder.TryGet(out var recorder)) recorder.AfterStep(world, sum);
                 var step = Replay.TryGet(out var replay) ? replay.AfterStep(world, sum) : ReplayStep.Next;
                 if (step == ReplayStep.Target)

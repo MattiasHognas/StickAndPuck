@@ -19,14 +19,20 @@ namespace StickAndPuck.Tests;
 /// </summary>
 public sealed class VersusTests : CheckedTest
 {
+    /// <summary>The game state the test plays in, fresh for each test.</summary>
+    readonly AppState app = new();
+
+    /// <summary>Gets the settings screen's PLAYER 2 CONTROLS pick, as saved by default.</summary>
+    static InputDevice Player2 => new ScreenPrefs().Player2;
+
     [Test]
     public void ModeOnList()
     {
-        var modes = GameModes.All();
+        var modes = GameModes.All(app);
         int versus = modes.ToList().FindIndex(m => m is VersusMode);
         Check(versus > 0, $"player vs player is on the new game list, after exhibition (place {versus + 1} of {modes.Count})");
         var mode = new VersusMode();
-        Check(mode.ClubPicks == 2 && mode.PickHeading(0).Contains("PLAYER 1", StringComparison.Ordinal) && mode.PickHeading(1).Contains("PLAYER 2", StringComparison.Ordinal),
+        Check(mode.ClubPicks == 2 && mode.PickHeading(app, 0).Contains("PLAYER 1", StringComparison.Ordinal) && mode.PickHeading(app, 1).Contains("PLAYER 2", StringComparison.Ordinal),
             "each player picks a club under their own heading");
     }
 
@@ -34,17 +40,17 @@ public sealed class VersusTests : CheckedTest
     public void Devices()
     {
         Env.Set("SAP_VERSUS_P2", "");
-        var inputs = VersusMode.Inputs(InputDevice.KeyboardMouse);
+        var inputs = VersusMode.Inputs(InputDevice.KeyboardMouse, Player2);
         Check(inputs.Count == 2 && inputs[0] == new InputSlot(InputDevice.KeyboardMouse, Side.Home) && inputs[1] == new InputSlot(InputDevice.Gamepad1, Side.Away),
             "by default player one is keyboard and mouse on the home club, player two the first gamepad on the visitors");
-        Check(VersusMode.SecondDevice(InputDevice.Gamepad1) == InputDevice.KeyboardMouse, "when player one holds the first gamepad, player two gets the keyboard");
-        Check(VersusMode.SecondDevice(InputDevice.Gamepad2) == InputDevice.Gamepad1, "when player one holds the second gamepad, player two gets the first");
+        Check(VersusMode.SecondDevice(InputDevice.Gamepad1, Player2) == InputDevice.KeyboardMouse, "when player one holds the first gamepad, player two gets the keyboard");
+        Check(VersusMode.SecondDevice(InputDevice.Gamepad2, Player2) == InputDevice.Gamepad1, "when player one holds the second gamepad, player two gets the first");
         Env.Set("SAP_VERSUS_P2", "pad2");
-        Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse) == InputDevice.Gamepad2, "SAP_VERSUS_P2=pad2 puts player two on the second gamepad");
+        Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse, Player2) == InputDevice.Gamepad2, "SAP_VERSUS_P2=pad2 puts player two on the second gamepad");
         Env.Set("SAP_VERSUS_P2", "keyboard");
-        Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse) == InputDevice.Gamepad1, "SAP_VERSUS_P2 never gives both players the same device");
+        Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse, Player2) == InputDevice.Gamepad1, "SAP_VERSUS_P2 never gives both players the same device");
         Env.Set("SAP_VERSUS_P2", "");
-        var ai = VersusMode.Inputs(InputDevice.None);
+        var ai = VersusMode.Inputs(InputDevice.None, Player2);
         Check(ai.All(s => s.Device == InputDevice.None), "with no human (SAP_HUMAN=0) both clubs go to the AI");
     }
 
@@ -53,7 +59,7 @@ public sealed class VersusTests : CheckedTest
     {
         var clubs = WorldBuilder.Clubs;
         var picks = clubs.Count > 1 ? new[] { clubs[1], clubs[0] } : new[] { clubs[0], clubs[0] };
-        var setup = new VersusMode().Setup(new GameModeStart(clubs, picks, InputDevice.KeyboardMouse));
+        var setup = new VersusMode().Setup(new GameModeStart(clubs, picks, InputDevice.KeyboardMouse, app));
         Check(setup.Is(x => x.Home == picks[0] && x.Away == picks[1]), "player one's pick is the home club, player two's the visitors");
         Check(setup.Is(x => x.Inputs.Count(s => s.Device != InputDevice.None) == 2 && x.Inputs[0].Side != x.Inputs[1].Side),
             "the setup has two human slots on opposite clubs");
@@ -64,8 +70,8 @@ public sealed class VersusTests : CheckedTest
     [Test]
     public void ScriptedMatch()
     {
-        var setup = WorldBuilder.DefaultSetup with { PeriodSeconds = 60, Periods = 1, Overtime = OvertimeRule.None, Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse) };
-        var world = new World(setup, new Settings());
+        var setup = WorldBuilder.DefaultSetup with { PeriodSeconds = 60, Periods = 1, Overtime = OvertimeRule.None, Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse, Player2) };
+        var world = new World(setup, new Settings()) { App = app };
         Scenes.AddStarters(world);
         VersusMode.AssignSlots(world);
         var first = (Held(world, 0), Held(world, 1));
@@ -154,7 +160,7 @@ public sealed class VersusTests : CheckedTest
     [Test]
     public void InputSlots()
     {
-        var world = new WorldBuilder().Setup(s => s with { Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse) }).NotBegun().Build();
+        var world = new WorldBuilder().Setup(s => s with { Inputs = VersusMode.Inputs(InputDevice.KeyboardMouse, Player2) }).NotBegun().Build();
         VersusMode.AssignSlots(world);
         var input = new InputSystem();
         var one = Must(Held(world, 0));

@@ -7,13 +7,13 @@ namespace StickAndPuck.App.Players;
 /// warning there), so this talks to the system directly: on Linux a force-feedback rumble effect on
 /// the pad's /dev/input event device, on Windows XInput. A pad or driver with no rumble is noted
 /// once in the log and left quiet. SAP_RUMBLE=0 turns it off.</summary>
-internal static partial class Rumble
+internal sealed partial class Rumble(Gamepads pads)
 {
     const int Pads = 2;
 
     static readonly bool Off = Env.Is("SAP_RUMBLE", "0");
-    static readonly Maybe<IRumbler>[] Rumblers = new Maybe<IRumbler>[Pads];
-    static readonly string[] Opened = [.. Enumerable.Repeat(string.Empty, Pads)];   // "" for none: a pad's name is never empty
+    readonly Maybe<IRumbler>[] rumblers = new Maybe<IRumbler>[Pads];
+    readonly string[] opened = [.. Enumerable.Repeat(string.Empty, Pads)];   // "" for none: a pad's name is never empty
 
     interface IRumbler : IDisposable
     {
@@ -23,7 +23,7 @@ internal static partial class Rumble
     }
 
     /// <summary>Rumbles the pad a device names; keyboard and none do nothing.</summary>
-    public static void Pulse(InputDevice device, float strong, float weak, float seconds)
+    public void Pulse(InputDevice device, float strong, float weak, float seconds)
     {
         int index = device switch { InputDevice.Gamepad1 => 0, InputDevice.Gamepad2 => 1, _ => -1 };
         if (index < 0 || Off) return;
@@ -31,24 +31,24 @@ internal static partial class Rumble
     }
 
     /// <summary>Stops rumbles whose time is up, where the system does not time them itself. Call every step.</summary>
-    public static void Update(float dt)
+    public void Update(float dt)
     {
-        foreach (var r in Rumblers)
+        foreach (var r in rumblers)
             if (r.TryGet(out var rumbler)) rumbler.Tick(dt);
     }
 
     /// <summary>Finds or reopens the rumble for the n-th pad; a different pad in that place gets a fresh one.</summary>
-    static Maybe<IRumbler> Rumbler(int index)
+    Maybe<IRumbler> Rumbler(int index)
     {
-        if (!Gamepads.Name(index).TryGet(out string name)) return Maybe<IRumbler>.None;
-        if (string.Equals(Opened[index], name, StringComparison.Ordinal)) return Rumblers[index];
-        if (Rumblers[index].TryGet(out var old)) old.Dispose();
-        Opened[index] = name;
-        Rumblers[index] = OperatingSystem.IsLinux() ? Evdev.Open(index, name)
+        if (!pads.Name(index).TryGet(out string name)) return Maybe<IRumbler>.None;
+        if (string.Equals(opened[index], name, StringComparison.Ordinal)) return rumblers[index];
+        if (rumblers[index].TryGet(out var old)) old.Dispose();
+        opened[index] = name;
+        rumblers[index] = OperatingSystem.IsLinux() ? Evdev.Open(index, name)
             : OperatingSystem.IsWindows() ? Maybe.Some<IRumbler>(new XInput(index))
             : Maybe<IRumbler>.None;
-        if (!Rumblers[index].HasValue) Console.WriteLine($"SAP: rumble: {name} has no rumble here");
-        return Rumblers[index];
+        if (!rumblers[index].HasValue) Console.WriteLine($"SAP: rumble: {name} has no rumble here");
+        return rumblers[index];
     }
 
     /// <summary>Linux: a rumble effect uploaded to the pad's event device and played; the kernel stops it after its length.</summary>

@@ -9,13 +9,13 @@ namespace StickAndPuck.App.Arena;
 /// so they stay a palette colour and follow the lighting; the tone's alpha fades them towards
 /// the ice. Drawn flat on the ice with the bands, with the depth test but no depth write,
 /// so players drawn earlier stay in front.</summary>
-internal static class IceScratches
+internal sealed class IceScratches
 {
     const float Y = 0f;          // on the ice plane, after the bands; the sheet writes no depth while they go down
-    static Texture2D texture;
+    Texture2D texture;
 
     /// <summary>Loads the scratch mask once; a missing file just leaves the ice clean.</summary>
-    public static void Load()
+    public void Load()
     {
         if (!File.Exists(Assets.IceScratches)) return;
         texture = LoadTexture(Assets.IceScratches);
@@ -23,7 +23,7 @@ internal static class IceScratches
     }
 
     /// <summary>Draws the scratches in the given tone whether or not the bands show. The caller has turned depth writes off.</summary>
-    public static void Draw(Color tone)
+    public void Draw(Color tone)
     {
         if (texture.Id == 0) return;
         float x = RinkSpec.HalfLength, z = RinkSpec.HalfWidth;
@@ -43,7 +43,7 @@ internal static class IceScratches
     }
 
     /// <summary>Frees the texture.</summary>
-    public static void Unload()
+    public void Unload()
     {
         if (texture.Id != 0) UnloadTexture(texture);
         texture = default;

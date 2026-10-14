@@ -28,7 +28,7 @@ internal sealed class CameraSystem : ISystem
         follow.Cut(world);
         world.Camera = follow.Camera;
         scale = 1;
-        Render.RenderScale.Request(scale);
+        world.App.Scale.Request(scale);
     }
 
     public void Update(World world, float dt)
@@ -42,7 +42,7 @@ internal sealed class CameraSystem : ISystem
         if (world.ReplayPlaying)
         {
             (world.Camera, scale) = PixelGrid.SnapScaled(replay.Camera, scale);
-            Render.RenderScale.Request(scale);
+            world.App.Scale.Request(scale);
             return;
         }
 
@@ -50,7 +50,7 @@ internal sealed class CameraSystem : ISystem
         world.Camera = impact.Apply(closeUp.Apply(follow.Camera), follow.PixelStep);
         if (closeUp.Weight > 0) (world.Camera, scale) = PixelGrid.SnapScaled(world.Camera, scale);
         else scale = 1;
-        Render.RenderScale.Request(scale);
+        world.App.Scale.Request(scale);
     }
 
     public void DrawScene(World world, RenderContext render)

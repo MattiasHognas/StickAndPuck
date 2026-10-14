@@ -17,11 +17,11 @@ public sealed class ArcadeScene : IScene
     public string Name => "arcade";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        var run = ArcadeScenes.Open(clubs);
+        var run = ArcadeScenes.Open(app, clubs);
         bool human = !Env.Is("SAP_HUMAN", "0");
-        if (ArcadeSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup })
+        if (app.Arcade.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup })
         {
             Console.WriteLine($"SAP: the arcade run is over ({(run.Champion ? "champions" : $"{run.Stage} club(s) beaten")}); SAP_ARCADE=new starts another");
             return ArcadeScenes.SummaryWorld(clubs, settings);
@@ -46,9 +46,9 @@ public sealed class ArcadeSummaryScene : IScene
     public string Name => "arcadesummary";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        ArcadeScenes.Open(clubs);
+        ArcadeScenes.Open(app, clubs);
         return ArcadeScenes.SummaryWorld(clubs, settings);
     }
 }
@@ -57,12 +57,12 @@ public sealed class ArcadeSummaryScene : IScene
 internal static class ArcadeScenes
 {
     /// <summary>Continues the save, or starts a new run when there is none or SAP_ARCADE=new.</summary>
-    public static ArcadeRun Open(IReadOnlyList<ClubData> clubs)
+    public static ArcadeRun Open(AppState app, IReadOnlyList<ClubData> clubs)
     {
         bool fresh = string.Equals(Env.Get("SAP_ARCADE"), "new", StringComparison.OrdinalIgnoreCase);
-        if (!fresh && ArcadeSession.Continue(clubs).TryGet(out var saved))
+        if (!fresh && app.Arcade.Continue(clubs).TryGet(out var saved))
         {
-            Console.WriteLine($"SAP: arcade run continued from {ArcadeSession.SavePath}, {saved.Games.Count} game(s) played");
+            Console.WriteLine($"SAP: arcade run continued from {app.Arcade.SavePath}, {saved.Games.Count} game(s) played");
             return saved;
         }
 
@@ -74,8 +74,8 @@ internal static class ArcadeScenes
             var other => throw new InvalidOperationException($"SAP_ARCADE_RULE={other}: use suddendeath or lives"),
         };
         var seed = int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
-        var run = ArcadeSession.StartNew(clubs, club, rule, seed);
-        Console.WriteLine($"SAP: new arcade run for {club} ({rule}), {run.Opponents.Count} clubs to beat, saved to {ArcadeSession.SavePath}");
+        var run = app.Arcade.StartNew(clubs, club, rule, seed);
+        Console.WriteLine($"SAP: new arcade run for {club} ({rule}), {run.Opponents.Count} clubs to beat, saved to {app.Arcade.SavePath}");
         return run;
     }
 

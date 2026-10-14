@@ -69,8 +69,8 @@ public sealed class ReplayPlayer
     /// <summary>Gets the devices before the first step.</summary>
     public InputFrame Start => file.Start;
 
-    /// <summary>Reads SAP_REPLAY and builds its match, or returns None when it is not set.</summary>
-    public static Maybe<ReplayPlayer> FromEnvironment(IReadOnlyList<ClubData> clubs)
+    /// <summary>Reads SAP_REPLAY and builds its match on the game's state, or returns None when it is not set.</summary>
+    public static Maybe<ReplayPlayer> FromEnvironment(IReadOnlyList<ClubData> clubs, AppState app)
     {
         if (Env.Get("SAP_REPLAY") is not { Length: > 0 } name) return Maybe<ReplayPlayer>.None;
         string path = AssetRoot.Output(name);
@@ -90,12 +90,12 @@ public sealed class ReplayPlayer
         if (string.Equals(h.Kind, "match", StringComparison.Ordinal))
         {
             var setup = (h.Setup.TryGet(out var stored) ? stored : throw new InvalidDataException("a match replay without its setup")).ToSetup(clubs);
-            world = ScreenFlow.BeginReplay(clubs, ScreenPrefsFile.FromJson(h.Prefs), setup, h.Seed, h.Mode);
+            world = app.Screens.BeginReplay(clubs, ScreenPrefsFile.FromJson(h.Prefs), setup, h.Seed, h.Mode);
         }
         else
         {
             Env.Set("SAP_SCENE", h.Scene);
-            world = Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment());
+            world = Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment(), app);
             world.Seed = h.Seed;
         }
         if (!string.Equals(ReplayRecorder.ClubsHash(world.Setup.Home, world.Setup.Away), h.Clubs, StringComparison.Ordinal))

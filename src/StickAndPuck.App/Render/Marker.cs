@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Render;
@@ -27,7 +28,7 @@ public static class Marker
     const int Segments = 28;
 
     /// <summary>Player one's colour then player two's, from the dusk palette.</summary>
-    static readonly Color[] SlotColours = [new(0xf2, 0xc1, 0x4e, 255), new(0x7f, 0x9c, 0xae, 255)];
+    static readonly ImmutableArray<Color> SlotColours = [new(0xf2, 0xc1, 0x4e, 255), new(0x7f, 0x9c, 0xae, 255)];
 
     /// <summary>Draws a marker under every skater a person controls. Call inside the 3D camera.</summary>
     public static void Draw(World world)

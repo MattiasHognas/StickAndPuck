@@ -13,7 +13,7 @@ public sealed class WarmupScene : IScene
     public string Name => "warmup";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = MatchScenesPeriod() };
         var world = new World(setup, settings);

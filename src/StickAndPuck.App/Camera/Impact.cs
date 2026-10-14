@@ -43,7 +43,7 @@ internal sealed class Impact
     /// <summary>Runs one step: holds the ice still during a hit-stop, starts new ones, and moves shake and close-up along.</summary>
     public void Update(World world, float dt)
     {
-        Rumble.Update(dt);
+        world.App.Rumble.Update(dt);
         if (world.ReplayPlaying)
         {
             holdSteps = 0;
@@ -103,7 +103,7 @@ internal sealed class Impact
         for (int slot = 0; slot < MatchSetup.Slots && slot < world.Setup.Inputs.Count; slot++)
         {
             bool scored = world.Setup.Inputs[slot].Side == e.Side;
-            Rumble.Pulse(world.Setup.Inputs[slot].Device, scored ? 0.6f : 0.3f, scored ? 1f : 0.3f, scored ? 0.5f : 0.2f);
+            world.App.Rumble.Pulse(world.Setup.Inputs[slot].Device, scored ? 0.6f : 0.3f, scored ? 1f : 0.3f, scored ? 0.5f : 0.2f);
         }
         Console.WriteLine("SAP: impact: goal");
     }
@@ -140,6 +140,6 @@ internal sealed class Impact
     static void Pulse(World world, int slot, float strong, float weak, float seconds)
     {
         if (slot < 0 || slot >= world.Setup.Inputs.Count) return;
-        Rumble.Pulse(world.Setup.Inputs[slot].Device, strong, weak, seconds);
+        world.App.Rumble.Pulse(world.Setup.Inputs[slot].Device, strong, weak, seconds);
     }
 }

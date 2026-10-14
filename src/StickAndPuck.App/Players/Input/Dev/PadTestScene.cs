@@ -12,9 +12,9 @@ public sealed class PadTestScene : IScene
     public string Name => "padtest";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        Gamepads.Logging = true;
+        app.Pads.Logging = true;
         var world = MatchScenes.Exhibition(clubs, settings, 20 * 60);
         if (world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre) centre.Slot = 0;
         return world;

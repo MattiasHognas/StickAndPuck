@@ -208,10 +208,3 @@ public sealed class MatchStatTracker
         touches.Clear();
     }
 }
-
-/// <summary>The last match's sheet, for the results screen of any mode (exhibition and versus too).</summary>
-public static class MatchStats
-{
-    /// <summary>Gets the sheet of the last match that ended in this run, or None before one has.</summary>
-    public static Maybe<MatchStatSheet> Last { get; internal set; }
-}

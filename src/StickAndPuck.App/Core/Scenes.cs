@@ -10,8 +10,8 @@ public interface IScene
     /// <summary>Gets the name used in SAP_SCENE.</summary>
     string Name { get; }
 
-    /// <summary>Builds the world: the match setup, the players and the puck.</summary>
-    World Create(IReadOnlyList<ClubData> clubs, Settings settings);
+    /// <summary>Builds the world: the match setup, the players and the puck. The world runs with <paramref name="app"/>, the game's screens and sessions.</summary>
+    World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app);
 }
 
 /// <summary>Finds scenes and builds the default match setup.</summary>
@@ -30,15 +30,17 @@ public static class Scenes
             .ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
     }
 
-    /// <summary>Builds the world for the scene named by SAP_SCENE, or the default scene.</summary>
-    public static World CreateFromEnvironment(IReadOnlyList<ClubData> clubs, Settings settings)
+    /// <summary>Builds the world for the scene named by SAP_SCENE, or the default scene, running with the game's state.</summary>
+    public static World CreateFromEnvironment(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         string name = Env.Get("SAP_SCENE") is { Length: > 0 } s ? s : Default;
         var all = All();
         if (!all.TryGetValue(name, out var scene))
             throw new InvalidOperationException($"SAP_SCENE={name} is not a scene. Scenes: {string.Join(", ", all.Keys.Order(StringComparer.Ordinal))}");
         Console.WriteLine($"SAP: scene {scene.Name}");
-        return scene.Create(clubs, settings);
+        var world = scene.Create(clubs, settings, app);
+        world.App = app;
+        return world;
     }
 
     /// <summary>The default exhibition: SAP_HOME and SAP_AWAY pick clubs by id, otherwise the first two

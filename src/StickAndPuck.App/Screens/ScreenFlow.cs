@@ -27,51 +27,51 @@ internal sealed record MatchResult(MatchSetup Setup, int HomeGoals, int AwayGoal
 /// after every frame's steps; when a screen starts a match or goes back to the menus, the loop
 /// swaps in the new world with fresh systems. Inactive (and so out of the way) in every
 /// SAP_SCENE except the start screen's.</summary>
-internal static class ScreenFlow
+internal sealed class ScreenFlow(AppState app)
 {
-    static readonly List<Screen> Stack = [];
-    static Maybe<World> next;
+    readonly List<Screen> stack = [];
+    Maybe<World> next;
 
     /// <summary>Gets a value indicating whether the screens run (the start scene was picked).</summary>
-    public static bool Active { get; private set; }
+    public bool Active { get; private set; }
 
     /// <summary>Gets a value indicating whether the player chose Quit.</summary>
-    public static bool QuitRequested { get; private set; }
+    public bool QuitRequested { get; private set; }
 
-    public static IReadOnlyList<ClubData> Clubs { get; private set; } = [];
+    public IReadOnlyList<ClubData> Clubs { get; private set; } = [];
 
     /// <summary>Gets or sets the player's settings as saved; <see cref="Settings"/> is what runs.</summary>
-    public static ScreenPrefs Prefs { get; set; } = new();
+    public ScreenPrefs Prefs { get; set; } = new();
 
     /// <summary>Gets the settings to run with: the saved ones under the SAP_* overrides, which never get saved.</summary>
-    public static Settings Settings => Core.Settings.FromEnvironment(Prefs.Settings);
+    public Settings Settings => Core.Settings.FromEnvironment(Prefs.Settings);
 
     /// <summary>Gets the match being played, or None on the menus.</summary>
-    public static Maybe<MatchPlan> Playing { get; private set; }
+    public Maybe<MatchPlan> Playing { get; private set; }
 
     /// <summary>Gets the clubs on the rink behind the menus.</summary>
-    static Maybe<MatchSetup> Backdrop { get; set; }
+    Maybe<MatchSetup> Backdrop { get; set; }
 
     /// <summary>Gets the top screen, or None while a match runs.</summary>
-    public static Maybe<Screen> Top => Stack.Count > 0 ? Stack[^1] : Maybe<Screen>.None;
+    public Maybe<Screen> Top => stack.Count > 0 ? stack[^1] : Maybe<Screen>.None;
 
     /// <summary>Gets the screens, bottom first.</summary>
-    public static IReadOnlyList<Screen> Screens => Stack;
+    public IReadOnlyList<Screen> Screens => stack;
 
     /// <summary>Turns the screens on and builds the start screen's world.</summary>
-    public static World Begin(IReadOnlyList<ClubData> clubs, Screen first)
+    public World Begin(IReadOnlyList<ClubData> clubs, Screen first)
     {
         Active = true;
         Clubs = clubs;
         Prefs = ScreenPrefsFile.Read();
-        MenuInput.LoadScript();
-        Stack.Clear();
-        Stack.Add(first);
+        app.MenuScript.Load();
+        stack.Clear();
+        stack.Add(first);
         return MenuWorld();
     }
 
     /// <summary>Takes the world a screen asked for, if any. Game.cs swaps it in.</summary>
-    public static Maybe<World> TakeNextWorld()
+    public Maybe<World> TakeNextWorld()
     {
         var w = next;
         next = Maybe<World>.None;
@@ -79,81 +79,81 @@ internal static class ScreenFlow
     }
 
     /// <summary>Ends the game after this frame.</summary>
-    public static void Quit()
+    public void Quit()
     {
         Console.WriteLine("SAP: screens: quit");
         QuitRequested = true;
     }
 
     /// <summary>Opens a screen over the current one.</summary>
-    public static void Push(Screen screen)
+    public void Push(Screen screen)
     {
-        Stack.Add(screen);
+        stack.Add(screen);
     }
 
     /// <summary>Closes the top screen.</summary>
-    public static void Pop()
+    public void Pop()
     {
-        if (Stack.Count > 0) Stack.RemoveAt(Stack.Count - 1);
+        if (stack.Count > 0) stack.RemoveAt(stack.Count - 1);
     }
 
     /// <summary>Replaces the top screen.</summary>
-    public static void Replace(Screen screen)
+    public void Replace(Screen screen)
     {
         Pop();
         Push(screen);
     }
 
     /// <summary>Closes every screen (resuming a paused match).</summary>
-    public static void Clear()
+    public void Clear()
     {
-        Stack.Clear();
+        stack.Clear();
     }
 
     /// <summary>Leaves a match (or the results) for the menus, with the start screen alone.</summary>
-    public static void ToMenus()
+    public void ToMenus()
     {
         ToMenus(Maybe<Screen>.None);
     }
 
     /// <summary>Leaves a match (or the results) for the menus, with the given screen on top of the start screen.</summary>
-    public static void ToMenus(Screen screen)
+    public void ToMenus(Screen screen)
     {
         ToMenus(Maybe.Some(screen));
     }
 
-    static void ToMenus(Maybe<Screen> screen)
+    void ToMenus(Maybe<Screen> screen)
     {
         if (Playing.HasValue) EndSessions();    // a game left early is not recorded; continuing reads the save again
         Playing = Maybe<MatchPlan>.None;
-        Stack.Clear();
-        Stack.Add(new StartScreen());
-        if (screen.TryGet(out var shown)) Stack.Add(shown);
+        stack.Clear();
+        stack.Add(new StartScreen(app));
+        if (screen.TryGet(out var shown)) stack.Add(shown);
         next = MenuWorld();
         Console.WriteLine($"SAP: screens: menus, {Describe()}");
     }
 
     /// <summary>Shows the results of the match that just ended, on the menu rink.</summary>
-    public static void ShowResults(MatchResult result)
+    public void ShowResults(MatchResult result)
     {
         var plan = Playing;
         Playing = Maybe<MatchPlan>.None;
         Backdrop = result.Setup;
-        Stack.Clear();
-        Stack.Add(new StartScreen());
-        Stack.Add(new ResultsScreen(result));
+        stack.Clear();
+        stack.Add(new StartScreen(app));
+        stack.Add(new ResultsScreen(app, result));
         next = MenuWorld();
         Console.WriteLine($"SAP: screens: results {result.Setup.Home.Id} {result.HomeGoals}-{result.AwayGoals} {result.Setup.Away.Id}{(result.Decided.Length > 0 ? " " + result.Decided : "")}, {(plan.TryGet(out var ended) ? ended.Mode.TryGet(out var m) ? m.Title : "season" : "")}");
     }
 
     /// <summary>Plays the human's next season game; once the regular season is over, their next playoff game
     /// (the playoffs start from the final table). With nothing left to play, shows the table or bracket.</summary>
-    public static void PlaySeasonGame()
+    public void PlaySeasonGame()
     {
-        ArcadeSession.End();
-        if (!SeasonSession.Current.HasValue) SeasonSession.Continue(Clubs);
-        var match = SeasonSession.NextSetup(Device());
-        if (match is not NextMatch.Play) match = PlayoffSession.NextSetup(Device());
+        app.Arcade.End();
+        if (!app.Season.Current.HasValue) app.Season.Continue(Clubs);
+        var match = app.Season.NextSetup(Device());
+        if (match is not NextMatch.Play) match = app.Playoffs.NextSetup(Device());
         if (match is not NextMatch.Play play)
         {
             ToMenus(Overview());
@@ -165,13 +165,13 @@ internal static class ScreenFlow
     /// <summary>Settles the human's next season or playoff game on paper instead of playing it
     /// (<see cref="SeasonSession.SimCurrentGame"/>). The table or bracket comes back with the
     /// simmed score on top, which offers the trophy when the sim decided the final.</summary>
-    public static void SimSeasonGame()
+    public void SimSeasonGame()
     {
-        ArcadeSession.End();
-        if (!SeasonSession.Current.HasValue) SeasonSession.Continue(Clubs);
-        bool crowned = PlayoffSession.Current.Is(p => p.Champion.HasValue);
-        var simmed = SeasonSession.SimCurrentGame();
-        crowned = !crowned && PlayoffSession.Current.Is(p => p.Champion.HasValue);
+        app.Arcade.End();
+        if (!app.Season.Current.HasValue) app.Season.Continue(Clubs);
+        bool crowned = app.Playoffs.Current.Is(p => p.Champion.HasValue);
+        var simmed = app.Season.SimCurrentGame();
+        crowned = !crowned && app.Playoffs.Current.Is(p => p.Champion.HasValue);
         if (simmed.TryGet(out var game)) Console.WriteLine($"SAP: screens: simmed {game.Home} {game.Result.HomeGoals}-{game.Result.AwayGoals} {game.Away} ({game.Stage}){(crowned ? ", champions crowned" : "")}");
         while (Top.Is(t => t is SimResultScreen or ResultsScreen)) Pop();
         var overview = Overview();
@@ -183,34 +183,34 @@ internal static class ScreenFlow
         {
             Push(overview);
         }
-        if (simmed.TryGet(out var settled)) Push(new SimResultScreen(settled, crowned));
+        if (simmed.TryGet(out var settled)) Push(new SimResultScreen(app, settled, crowned));
     }
 
     /// <summary>Gets a value indicating whether the season screens offer "Sim this game" (the SimGame setting, on by default).</summary>
-    public static bool CanSimGame()
+    public bool CanSimGame()
     {
         return Settings.SimGame && SeasonHasNextGame();
     }
 
     /// <summary>Gets a value indicating whether the human's club has a season or playoff game left.</summary>
-    public static bool SeasonHasNextGame()
+    public bool SeasonHasNextGame()
     {
-        if (!SeasonSession.Current.TryGet(out var season)) return false;
+        if (!app.Season.Current.TryGet(out var season)) return false;
         if (!season.IsOver) return season.NextGame.HasValue;
         return !season.Playoffs.TryGet(out var playoffs) || playoffs.UserSeries.HasValue;
     }
 
     /// <summary>The season screen that fits: the bracket once the playoffs have started, the table before.</summary>
-    public static Screen Overview()
+    public Screen Overview()
     {
-        return SeasonSession.Current.Is(s => s.Playoffs.HasValue) ? new BracketScreen() : new StandingsScreen();
+        return app.Season.Current.Is(s => s.Playoffs.HasValue) ? new BracketScreen(app) : new StandingsScreen(app);
     }
 
     /// <summary>Starts a game mode with the player's picks.</summary>
-    public static void PlayMode(IGameMode mode, IReadOnlyList<ClubData> picks)
+    public void PlayMode(IGameMode mode, IReadOnlyList<ClubData> picks)
     {
         EndSessions();    // only the mode's own games are recorded; a mode with a save opens it again
-        if (!mode.Setup(new GameModeStart(Clubs, picks, Device())).TryGet(out var setup))
+        if (!mode.Setup(new GameModeStart(Clubs, picks, Device(), app)).TryGet(out var setup))
         {
             ToMenus();
             return;
@@ -219,14 +219,14 @@ internal static class ScreenFlow
     }
 
     /// <summary>Applies the settings to the world on show and saves them.</summary>
-    public static void ApplySettings(World world)
+    public void ApplySettings(World world)
     {
         Apply(world, Settings);
         ScreenPrefsFile.Write(Prefs);
     }
 
-    /// <summary>Gives the world its settings and points the debug switches that live as statics in their
-    /// systems (the match line, the energy panel) at them, so a change on the settings screen
+    /// <summary>Gives the world its settings and points its debug switches (the match line, the energy
+    /// panel) at them, so a change on the settings screen
     /// shows at once, in the paused match too.</summary>
     public static void Apply(World world, Settings settings)
     {
@@ -237,38 +237,38 @@ internal static class ScreenFlow
     }
 
     /// <summary>The menu backdrop: both starting lineups standing at centre ice, paused.</summary>
-    static World MenuWorld()
+    World MenuWorld()
     {
-        var world = new World(Backdrop.TryGet(out var backdrop) ? backdrop : Scenes.DefaultSetup(Clubs), Settings);
+        var world = new World(Backdrop.TryGet(out var backdrop) ? backdrop : Scenes.DefaultSetup(Clubs), Settings) { App = app };
         Apply(world, world.Settings);
         Scenes.AddStarters(world);
         world.Match.Paused = true;
         return world;
     }
 
-    static void Start(MatchSetup setup, MatchPlan plan)
+    void Start(MatchSetup setup, MatchPlan plan)
     {
-        setup = (setup with { PeriodSeconds = PeriodSeconds() }).WithRules(RulePicks.For(plan));
+        setup = (setup with { PeriodSeconds = PeriodSeconds() }).WithRules(RulePicks.For(app, plan));
         var world = Build(setup, Seeds.NewMatch());    // every match has a seed, written to its replay
         Playing = plan;
         Backdrop = setup;
         Started = setup;
-        Stack.Clear();
+        stack.Clear();
         next = world;
         Console.WriteLine($"SAP: screens: match {setup.Home.Id} vs {setup.Away.Id}, {(plan.Mode.TryGet(out var mode) ? mode.Title : "season")}, {setup.PeriodSeconds:0} s periods, seed {world.Seed}, {world.Settings}, {setup.Rules}");
     }
 
     /// <summary>Gets the setup the last match started from, before the difficulty scaled it: what its replay rebuilds it from, or None before the first.</summary>
-    public static Maybe<MatchSetup> Started { get; private set; }
+    public Maybe<MatchSetup> Started { get; private set; }
 
     /// <summary>Rebuilds a match from its replay, as <see cref="Start"/> built it: the screens run with the
     /// replay's settings (nothing is saved) and no menus, and the match starts at once.</summary>
-    public static World BeginReplay(IReadOnlyList<ClubData> clubs, ScreenPrefs prefs, MatchSetup setup, int seed, string mode)
+    public World BeginReplay(IReadOnlyList<ClubData> clubs, ScreenPrefs prefs, MatchSetup setup, int seed, string mode)
     {
         Active = true;
         Clubs = clubs;
         Prefs = prefs;
-        Stack.Clear();
+        stack.Clear();
         var world = Build(setup, seed);
         Playing = new MatchPlan(GameModes.Named(mode), [setup.Home, setup.Away]);    // the results screen offers what it offered in the match
         Backdrop = setup;
@@ -276,9 +276,9 @@ internal static class ScreenFlow
         return world;
     }
 
-    static World Build(MatchSetup setup, int seed)
+    World Build(MatchSetup setup, int seed)
     {
-        var world = new World(setup, Settings) { Seed = seed };
+        var world = new World(setup, Settings) { Seed = seed, App = app };
         Apply(world, world.Settings);
         Scenes.AddStarters(world);
         for (int slot = 0; slot < setup.Inputs.Count; slot++)
@@ -293,7 +293,7 @@ internal static class ScreenFlow
     }
 
     /// <summary>The period length from the settings; SAP_PERIOD=seconds overrides it for quick checks.</summary>
-    static float PeriodSeconds()
+    float PeriodSeconds()
     {
         return float.TryParse(Env.Get("SAP_PERIOD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float s) && s > 0
             ? s
@@ -301,21 +301,21 @@ internal static class ScreenFlow
     }
 
     /// <summary>The human's device; SAP_HUMAN=0 lets the AI play both clubs.</summary>
-    static InputDevice Device()
+    InputDevice Device()
     {
         return Env.Is("SAP_HUMAN", "0") ? InputDevice.None : Prefs.Controls;
     }
 
     /// <summary>Leaves season, playoff and arcade mode, so their systems record nothing until a mode opens its save again.</summary>
-    static void EndSessions()
+    void EndSessions()
     {
-        SeasonSession.End();
-        PlayoffSession.End();
-        ArcadeSession.End();
+        app.Season.End();
+        app.Playoffs.End();
+        app.Arcade.End();
     }
 
-    static string Describe()
+    string Describe()
     {
-        return string.Join(" > ", Stack.Select(s => s.GetType().Name));
+        return string.Join(" > ", stack.Select(s => s.GetType().Name));
     }
 }

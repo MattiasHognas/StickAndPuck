@@ -16,7 +16,7 @@ public sealed class OvertimeScene : IScene
     public string Name => "overtime";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         float period = Seconds("SAP_PERIOD", 5);
         float overtime = Seconds("SAP_OT", 15);

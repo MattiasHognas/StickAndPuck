@@ -17,12 +17,12 @@ public sealed class SeasonScene : IScene
     public string Name => "season";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        var season = SeasonScenes.Open(clubs);
+        var season = SeasonScenes.Open(app, clubs);
         bool human = !Env.Is("SAP_HUMAN", "0");
-        if (SeasonSession.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup } || !SeasonSession.Playing.TryGet(out var game))
-            return PlayoffScenes.Play(clubs, settings, human);
+        if (app.Season.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup } || !app.Season.Playing.TryGet(out var game))
+            return PlayoffScenes.Play(app, clubs, settings, human);
 
         Console.WriteLine($"SAP: season game {game.Number + 1} of {season.Games.Count}, round {game.Round + 1} of {season.Rounds}: {setup.Home.Name} vs {setup.Away.Name}");
         if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
@@ -43,9 +43,9 @@ public sealed class SeasonTableScene : IScene
     public string Name => "seasontable";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        SeasonScenes.Open(clubs);
+        SeasonScenes.Open(app, clubs);
         return SeasonScenes.TableWorld(clubs, settings);
     }
 }
@@ -54,19 +54,19 @@ public sealed class SeasonTableScene : IScene
 internal static class SeasonScenes
 {
     /// <summary>Continues the save, or starts a new season when there is none or SAP_SEASON=new.</summary>
-    public static SeasonState Open(IReadOnlyList<ClubData> clubs)
+    public static SeasonState Open(AppState app, IReadOnlyList<ClubData> clubs)
     {
         bool fresh = string.Equals(Env.Get("SAP_SEASON"), "new", StringComparison.OrdinalIgnoreCase);
-        if (!fresh && SeasonSession.Continue(clubs).TryGet(out var saved))
+        if (!fresh && app.Season.Continue(clubs).TryGet(out var saved))
         {
-            Console.WriteLine($"SAP: season continued from {SeasonSession.SavePath}, {saved.Games.Count(g => g.Played)} of {saved.Games.Count} games played");
+            Console.WriteLine($"SAP: season continued from {app.Season.SavePath}, {saved.Games.Count(g => g.Played)} of {saved.Games.Count} games played");
             return saved;
         }
 
         string club = Env.Get("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
         var seed = int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
-        var season = SeasonSession.StartNew(clubs, club, seed);
-        Console.WriteLine($"SAP: new season for {club}, {season.Games.Count} games in {season.Rounds} rounds, saved to {SeasonSession.SavePath}");
+        var season = app.Season.StartNew(clubs, club, seed);
+        Console.WriteLine($"SAP: new season for {club}, {season.Games.Count} games in {season.Rounds} rounds, saved to {app.Season.SavePath}");
         return season;
     }
 

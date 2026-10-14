@@ -15,7 +15,7 @@ public sealed class FightScene : IScene
     public string Name => "fight";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         float period = Env.Float("SAP_PERIOD").TryGet(out float p) && p > 0 ? p : 20 * 60;
         var world = new World(Scenes.DefaultSetup(clubs) with { PeriodSeconds = period }, settings with { Fights = true });

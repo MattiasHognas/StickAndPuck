@@ -13,7 +13,7 @@ public sealed class ChecksScene : IScene
     public string Name => "checks";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         ChecksDemo.Setup(world, script: false);
@@ -28,7 +28,7 @@ public sealed class ChecksDemoScene : IScene
     public string Name => "checksdemo";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         ChecksDemo.Setup(world, script: true);

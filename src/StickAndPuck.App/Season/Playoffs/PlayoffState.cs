@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
@@ -18,7 +19,7 @@ public sealed class PlayoffState
     /// <summary>The last place that reaches the play-in.</summary>
     public const int LastPlayIn = 10;
 
-    static readonly (string Name, int BestOf)[] Format =
+    static readonly ImmutableArray<(string Name, int BestOf)> Format =
         [("PLAY-IN", 3), ("QUARTER-FINALS", 7), ("SEMI-FINALS", 7), ("FINAL", 7)];
 
     /// <summary>Gets or sets the seed the simulated games come from.</summary>
@@ -103,8 +104,8 @@ public sealed class PlayoffState
 
     /// <summary>Settles every game up to the human's next one: the other series of the round are played to
     /// as many games as the human's series has, and when the human has no open series the round is
-    /// finished and the next one drawn, until the human plays again or there is a champion.</summary>
-    public int SimulateUntilUser(IReadOnlyList<ClubData> clubs)
+    /// finished and the next one drawn, until the human plays again or there is a champion. The games follow the mode's overtime rules.</summary>
+    public int SimulateUntilUser(IReadOnlyList<ClubData> clubs, PlayoffRules rules)
     {
         var byId = clubs.ToDictionary(c => c.Id, StringComparer.Ordinal);
         int count = 0;
@@ -117,7 +118,7 @@ public sealed class PlayoffState
                 var s = Current.Series[i];
                 while (!user.Is(u => u == s) && !s.IsOver && s.Games.Count < upTo)
                 {
-                    Record(s, Simulate(byId, s, i));
+                    Record(s, Simulate(byId, s, i, rules));
                     count++;
                 }
             }
@@ -142,7 +143,7 @@ public sealed class PlayoffState
         return unchecked((Seed * 1_000_003) + (((round * 64) + (series * 8) + game) * 7_919));
     }
 
-    FixtureResult Simulate(Dictionary<string, ClubData> byId, PlayoffSeries s, int index)
+    FixtureResult Simulate(Dictionary<string, ClubData> byId, PlayoffSeries s, int index, PlayoffRules rules)
     {
         var home = byId.TryGetValue(s.NextHome, out var h) ? h : throw new InvalidOperationException($"club {s.NextHome} from the save has no data file");
         var away = byId.TryGetValue(s.NextAway, out var a) ? a : throw new InvalidOperationException($"club {s.NextAway} from the save has no data file");
@@ -150,7 +151,7 @@ public sealed class PlayoffState
 
         // a simulated game follows the mode's overtime rules like a played one: with no shootout in
         // the format, a tie is settled in sudden death overtime instead
-        return r.Kind == ResultKind.Shootout && !PlayoffSession.Rules.Overtime.HasShootout ? r with { Kind = ResultKind.Overtime } : r;
+        return r.Kind == ResultKind.Shootout && !rules.Overtime.HasShootout ? r with { Kind = ResultKind.Overtime } : r;
     }
 
     PlayoffRound Pair(int round, IEnumerable<int> seeds)

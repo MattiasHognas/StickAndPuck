@@ -12,7 +12,7 @@ public sealed class HandlingDemoScene : IScene
     public string Name => "handlingdemo";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         HandlingDemo.Setup(world);

@@ -1,6 +1,5 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
-using StickAndPuck.App.Season;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Hud;
@@ -160,7 +159,7 @@ internal sealed class HudMessages
     /// <summary>Goals a club scored in the season's earlier games, or None when this match is not a season game.</summary>
     internal static Maybe<int> SeasonGoalsBefore(World world, Side side)
     {
-        if (!SeasonSession.Current.TryGet(out var season) || !SeasonSession.Playing.HasValue) return Maybe<int>.None;
+        if (!world.App.Season.Current.TryGet(out var season) || !world.App.Season.Playing.HasValue) return Maybe<int>.None;
         string club = world.Setup.Club(side).Id;
         return season.PlayedBy(club).Sum(g => g.Result.Select(r => string.Equals(g.Home, club, StringComparison.Ordinal) ? r.HomeGoals : r.AwayGoals).Or(0));
     }

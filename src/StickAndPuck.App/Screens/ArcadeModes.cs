@@ -19,27 +19,24 @@ internal abstract class ArcadeMode : IGameMode
     public virtual int Order => 20;
 
     /// <inheritdoc/>
-    public bool HasNextGame => ArcadeSession.Current.Is(r => !r.IsOver);
+    public bool HasNextGame(AppState app) => app.Arcade.Current.Is(r => !r.IsOver);
 
     /// <inheritdoc/>
     public virtual int ClubPicks => 1;
 
     /// <inheritdoc/>
-    public virtual bool Available => true;
+    public virtual bool Available(AppState app) => true;
 
     /// <inheritdoc/>
-    public Maybe<string> Status
+    public Maybe<string> Status(AppState app)
     {
-        get
-        {
-            if (!ArcadeSession.Current.TryGet(out var run)) return Maybe<string>.None;
-            string wins = Text.Format(K.ArcadeStatusWins, run.Stage, run.Opponents.Count);
-            if (run.Champion) return Text.Format(K.ArcadeStatusChampions, wins);
-            if (run.Lost) return Text.Format(K.ArcadeStatusOver, wins);
-            string opponent = run.NextOpponent.Or("");
-            string next = ScreenFlow.Clubs.FirstOrDefault(c => string.Equals(c.Id, opponent, StringComparison.Ordinal)) is { } club ? club.Name : opponent;
-            return Text.Format(K.ArcadeStatusNext, wins, run.LivesLeft, next);
-        }
+        if (!app.Arcade.Current.TryGet(out var run)) return Maybe<string>.None;
+        string wins = Text.Format(K.ArcadeStatusWins, run.Stage, run.Opponents.Count);
+        if (run.Champion) return Text.Format(K.ArcadeStatusChampions, wins);
+        if (run.Lost) return Text.Format(K.ArcadeStatusOver, wins);
+        string opponent = run.NextOpponent.Or("");
+        string next = app.Screens.Clubs.FirstOrDefault(c => string.Equals(c.Id, opponent, StringComparison.Ordinal)) is { } club ? club.Name : opponent;
+        return Text.Format(K.ArcadeStatusNext, wins, run.LivesLeft, next);
     }
 
     /// <summary>Gets the rule of a new run, or None to continue the saved one.</summary>
@@ -49,10 +46,10 @@ internal abstract class ArcadeMode : IGameMode
     public Maybe<MatchSetup> Setup(GameModeStart start)
     {
         // the first game of a new run starts it; every other game continues the save the last result went into
-        if (Rule.TryGet(out var rule) && !begun) ArcadeSession.StartNew(start.Clubs, start.Picks[0].Id, rule);
-        else ArcadeSession.Continue(start.Clubs);
+        if (Rule.TryGet(out var rule) && !begun) start.App.Arcade.StartNew(start.Clubs, start.Picks[0].Id, rule);
+        else start.App.Arcade.Continue(start.Clubs);
         begun = true;
-        return ArcadeSession.NextSetup(start.Device) is NextMatch.Play play ? play.Setup : Maybe<MatchSetup>.None;
+        return start.App.Arcade.NextSetup(start.Device) is NextMatch.Play play ? play.Setup : Maybe<MatchSetup>.None;
     }
 }
 
@@ -92,7 +89,7 @@ internal sealed class ArcadeContinueMode : ArcadeMode
     public override int ClubPicks => 0;
 
     /// <inheritdoc/>
-    public override bool Available => ArcadeSession.CanContinue();
+    public override bool Available(AppState app) => app.Arcade.CanContinue();
 
     /// <inheritdoc/>
     protected override Maybe<ArcadeRule> Rule => Maybe<ArcadeRule>.None;

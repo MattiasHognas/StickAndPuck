@@ -1,5 +1,6 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 
 namespace StickAndPuck.App.Pregame;
 
@@ -15,7 +16,7 @@ public sealed record WarmupRoute(Vector2 Centre, Vector2 Radius, float Speed, fl
 {
     // the loops for the squad defending -x, in order of the skaters as they stand: two zone laps,
     // two circles round the faceoff dots and one set of crossovers inside the blue line
-    static readonly WarmupRoute[] Shapes =
+    static readonly ImmutableArray<WarmupRoute> Shapes =
     [
         new(new(-17f, 0), new(8f, 9f), 5.5f, 0f, true),
         new(new(-17f, 0), new(8f, 9f), 5.5f, MathF.PI, true),

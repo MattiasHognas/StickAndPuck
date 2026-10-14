@@ -1,5 +1,6 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 
 namespace StickAndPuck.App.Rules;
 
@@ -7,11 +8,11 @@ namespace StickAndPuck.App.Rules;
 public static class FaceoffFormation
 {
     // spots for the club defending -x, relative to the dot: centre, left wing, right wing, two defence
-    static readonly Vector3[] Spots = [new(-0.8f, 0, 0), new(-1.2f, 0, -4.8f), new(-1.2f, 0, 4.8f), new(-6f, 0, -3.5f), new(-6f, 0, 3.5f)];
-    static readonly PlayingPosition[] SpotPositions = [PlayingPosition.C, PlayingPosition.LW, PlayingPosition.RW, PlayingPosition.D, PlayingPosition.D];
+    static readonly ImmutableArray<Vector3> Spots = [new(-0.8f, 0, 0), new(-1.2f, 0, -4.8f), new(-1.2f, 0, 4.8f), new(-6f, 0, -3.5f), new(-6f, 0, 3.5f)];
+    static readonly ImmutableArray<PlayingPosition> SpotPositions = [PlayingPosition.C, PlayingPosition.LW, PlayingPosition.RW, PlayingPosition.D, PlayingPosition.D];
 
     // which spots are used when a club has fewer than five skaters (3 on 3: centre and two defence)
-    static readonly int[] FillOrder = [0, 3, 4, 1, 2];
+    static readonly ImmutableArray<int> FillOrder = [0, 3, 4, 1, 2];
 
     /// <summary>Gets the end a club defends this period: -1 for -x, +1 for +x.</summary>
     public static int DefendedEnd(MatchState match, Side side)

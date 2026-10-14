@@ -18,6 +18,9 @@ namespace StickAndPuck.Tests;
 /// </summary>
 public sealed class RuleSetTests : CheckedTest
 {
+    /// <summary>The game state the test plays in, fresh for each test.</summary>
+    readonly AppState app = new();
+
     static readonly MatchSetup Setup = WorldBuilder.DefaultSetup with { PeriodSeconds = 600 };
 
     readonly string dir = Path.Combine(Path.GetTempPath(), $"sap_rulestest_{Environment.ProcessId}_{Guid.NewGuid():N}");
@@ -28,7 +31,7 @@ public sealed class RuleSetTests : CheckedTest
     [After(Test)]
     public void CleanUp()
     {
-        SeasonSession.End();
+        app.Season.End();
         Directory.Delete(dir, recursive: true);
     }
 
@@ -61,9 +64,9 @@ public sealed class RuleSetTests : CheckedTest
         Check(new RuleChoice { Preset = RulePreset.Nhl, Overrides = new Dictionary<string, string>(StringComparer.Ordinal) { ["Nonsense"] = "x", ["Icing"] = "Sideways" } }.Resolve() == RuleSet.Nhl,
             "unknown keys and values in settings.json are ignored");
 
-        ScreenFlow.Prefs = new ScreenPrefs { Rules = choice };
-        RulesScreen.Pick(RulePreset.Nhl);
-        Check(ScreenFlow.Prefs.Rules.Overrides.Count == 0 && ScreenFlow.Prefs.Rules.Resolve() == RuleSet.Nhl, "picking a preset clears the changes");
+        app.Screens.Prefs = new ScreenPrefs { Rules = choice };
+        RulesScreen.Pick(app.Screens, RulePreset.Nhl);
+        Check(app.Screens.Prefs.Rules.Overrides.Count == 0 && app.Screens.Prefs.Rules.Resolve() == RuleSet.Nhl, "picking a preset clears the changes");
         Check(RulesScreen.Cycle(RulePreset.Nhl, 1) == RulePreset.Shl && RulesScreen.Cycle(RulePreset.Shl, -1) == RulePreset.Nhl, "the preset row wraps");
     }
 
@@ -163,11 +166,11 @@ public sealed class RuleSetTests : CheckedTest
     public void ArcadeFixed()
     {
         var clubs = WorldBuilder.Clubs;
-        ScreenFlow.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Nhl).With(RuleRows.All[0], "Off") };
-        Check(RulePicks.For(new MatchPlan(new ArcadeLivesMode(), [clubs[0]])) == RuleSet.Arcade
-            && RulePicks.For(new MatchPlan(new ArcadeSuddenDeathMode(), [clubs[0]])) == RuleSet.Arcade
-            && RulePicks.For(new MatchPlan(new ArcadeContinueMode(), [])) == RuleSet.Arcade, "every arcade entry plays the Arcade preset, whatever the player picked");
-        Check(RulePicks.For(new MatchPlan(new ExhibitionMode(), clubs.Take(2).ToList())) is { Preset: RulePreset.Nhl, Offside: false, Custom: true }, "an exhibition plays the player's choice");
+        app.Screens.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Nhl).With(RuleRows.All[0], "Off") };
+        Check(RulePicks.For(app, new MatchPlan(new ArcadeLivesMode(), [clubs[0]])) == RuleSet.Arcade
+            && RulePicks.For(app, new MatchPlan(new ArcadeSuddenDeathMode(), [clubs[0]])) == RuleSet.Arcade
+            && RulePicks.For(app, new MatchPlan(new ArcadeContinueMode(), [])) == RuleSet.Arcade, "every arcade entry plays the Arcade preset, whatever the player picked");
+        Check(RulePicks.For(app, new MatchPlan(new ExhibitionMode(), clubs.Take(2).ToList())) is { Preset: RulePreset.Nhl, Offside: false, Custom: true }, "an exhibition plays the player's choice");
         Check(!RulePicks.Fixed(new ExhibitionMode()).HasValue && RulePicks.Fixed(new ArcadeLivesMode()) == RuleSet.Arcade, "team select fixes the rules row for arcade only");
     }
 
@@ -176,15 +179,15 @@ public sealed class RuleSetTests : CheckedTest
     {
         var clubs = WorldBuilder.Clubs;
         string path = Path.Combine(dir, "season.json");
-        ScreenFlow.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Nhl) };
-        SeasonSession.StartNew(clubs, clubs[0].Id, 7, path);
+        app.Screens.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Nhl) };
+        app.Season.StartNew(clubs, clubs[0].Id, 7, path);
         var plan = MatchPlan.SeasonGame();
-        Check(RulePicks.For(plan) == RuleSet.Nhl, "a new season plays the rules picked when it starts");
-        ScreenFlow.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Arcade) };
-        Check(RulePicks.For(plan) == RuleSet.Nhl, "a later change in the settings leaves the running season alone");
+        Check(RulePicks.For(app, plan) == RuleSet.Nhl, "a new season plays the rules picked when it starts");
+        app.Screens.Prefs = new ScreenPrefs { Rules = RuleChoice.Of(RulePreset.Arcade) };
+        Check(RulePicks.For(app, plan) == RuleSet.Nhl, "a later change in the settings leaves the running season alone");
         Check(SeasonSave.Read(path).Is(s => s.Rules == RuleSet.Nhl), "the season save stores the resolved rules");
-        SeasonSession.Continue(clubs, path);
-        Check(RulePicks.For(plan) == RuleSet.Nhl, "a continued season plays the rules from its save");
+        app.Season.Continue(clubs, path);
+        Check(RulePicks.For(app, plan) == RuleSet.Nhl, "a continued season plays the rules from its save");
     }
 
     static World Make(Settings settings, RuleSet rules)
