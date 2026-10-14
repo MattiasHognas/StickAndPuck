@@ -63,6 +63,7 @@ public static class Systems
             new MomentumSystem(),        // boost after a goal, a fight won or a big hit; crowd swell, HUD bar
             new ArenaSystem(),           // ice, boards, glass, nets, ads, crowd
             new SkaterRenderer(),        // skater models and clips
+            new Benches.BenchRenderer(), // both benches' players behind the far boards
             new HudSystem(),             // scorebug, clock, messages
         ];
     }

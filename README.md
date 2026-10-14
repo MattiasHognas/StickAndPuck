@@ -32,7 +32,7 @@ In one-player scenes the keyboard and the first gamepad both control your player
 - `dotnet run --project src/StickAndPuck.App` from the repo root (needs the .NET 11 SDK; global.json pins the version) builds and starts the game on the start screen.
 - Settings are environment variables in front of the command, for example `SAP_SCENE=match SAP_HOME=frolunda SAP_AWAY=djurgarden dotnet run --project src/StickAndPuck.App`. On Windows PowerShell: `$env:SAP_SCENE="match"; dotnet run --project src/StickAndPuck.App`.
 - Release builds: download from the GitHub Releases page. `StickAndPuck-vX.Y.Z-linux-x64` needs `chmod +x` before it runs; `StickAndPuck-vX.Y.Z-win-x64.exe` runs as is. Neither needs .NET installed, and both read the same `SAP_*` variables.
-- The settings screen holds every switch: control switching, line changes, difficulty (easy, normal, hard), period length (2, 3, 5, 10 or 20 minutes, default 5), sim this game, auto deke, one-timers, penalties, fights, controls (keyboard or gamepad), player 2 controls (off, keyboard, gamepad 1 or 2), control marker, camera zoom, lighting mood, swap kits, volume, and the debug overlays (fps line, match debug line, lines panel; all off by default). Opening it from the pause menu keeps the match paused. They are saved as `settings.json` in `~/.config/StickAndPuck/` on Linux or `%APPDATA%\StickAndPuck\` on Windows, next to the season save; `SAP_SETTINGS=path` moves the file.
+- The settings screen holds every switch: control switching, line changes, difficulty (easy, normal, hard), period length (2, 3, 5, 10 or 20 minutes, default 5), sim this game, auto deke, one-timers, penalties, fights, controls (keyboard or gamepad), player 2 controls (off, keyboard, gamepad 1 or 2), control marker, camera zoom, lighting mood, swap kits, benches, volume, and the debug overlays (fps line, match debug line, lines panel; all off by default). Opening it from the pause menu keeps the match paused. They are saved as `settings.json` in `~/.config/StickAndPuck/` on Linux or `%APPDATA%\StickAndPuck\` on Windows, next to the season save; `SAP_SETTINGS=path` moves the file.
 - Screenshots (F12, `SAP_SCREENSHOT`) and recordings are saved in the folder the game was started from.
 
 ### Scenes (`SAP_SCENE`)
@@ -103,6 +103,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `SAP_DIFFICULTY`: `easy`, `normal` or `hard`. Default: the settings screen's difficulty (normal).
 - `SAP_CONTROL_MARKER`, `SAP_SIM_GAME`, `SAP_AUTO_DEKE`, `SAP_ONE_TIMERS`: `0` or `1`, override the matching settings screen switches (defaults on, on, off, on).
 - `SAP_SWAP_KITS=1`: the clubs wear each other's kits. Default: the settings screen's swap kits (off). Tab toggles it while playing.
+- `SAP_BENCHES=0`: empty benches; `1` shows both clubs' players off the ice on their benches, watching the puck and standing up for changes. Default: the settings screen's benches (on).
 - `SAP_FPS=1`: fps and key help line top left. Default: the settings screen's fps line (off).
 - `SAP_CAMERA_ZOOM`: `1` camera zooms with speed, `0` fixed zoom. Default: the settings screen's value (off). F6 toggles it while playing.
 - `SAP_MATCH_DEBUG=1`: plain score and clock line at the top. Default: the settings screen's match debug line (off; on in the demo scenes).

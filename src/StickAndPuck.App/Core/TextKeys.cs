@@ -93,6 +93,9 @@ public static partial class Text
         /// <summary>SWAP KITS</summary>
         public const string SwapKits = nameof(SwapKits);
 
+        /// <summary>BENCHES</summary>
+        public const string Benches = nameof(Benches);
+
         /// <summary>VOLUME</summary>
         public const string Volume = nameof(Volume);
 
