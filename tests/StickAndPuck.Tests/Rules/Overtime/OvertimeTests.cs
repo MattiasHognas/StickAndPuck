@@ -6,6 +6,7 @@ using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 
 namespace StickAndPuck.Tests;
 
@@ -135,6 +136,7 @@ public sealed class OvertimeTests : CheckedTest
 
     /// <summary>Scoreless overtimes go to shootouts that the AI shooters and goalies settle.</summary>
     [Test]
+    [ExecutionPriority(Priority.AboveNormal)]
     public void Shootouts()
     {
         int goals = 0, misses = 0, decided = 0, games = 6;

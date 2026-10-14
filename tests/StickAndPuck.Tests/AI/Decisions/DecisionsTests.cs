@@ -6,6 +6,7 @@ using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
 using StickAndPuck.App.AI.Dev;
 
@@ -24,8 +25,7 @@ namespace StickAndPuck.Tests;
 /// so each side throws 15 to 30 checks; defencetest checks its reads in detail.
 /// Adds a power play, a man in the box throughout: the power play holds its umbrella or 1-3-1, the kill its box or
 /// diamond, and the kill clears the puck (specialteamstest runs the same with other seeds). Plays each club's tactics from
-/// its file, and adds a 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in: they must play visibly differently
-/// (tacticstest also checks the club files). The full match plays seed 1.
+/// its file; the 2-1-2 dump-and-chase club against the 1-3-1 trap club, seed 1, is tacticstest's. The full match plays seed 1.
 /// Plays full matches with the offside and icing rules on: under SHL over several seeds the AI ices the puck and
 /// goes offside at a hockey-like rate, a hockey IQ 30 club clears blind more and holds up at the blue line less than an 85 one
 /// (per time it comes up to the line with a teammate offside, over two matches each way round),
@@ -117,6 +117,7 @@ public sealed class DecisionsTests : CheckedTest
 
     /// <summary>A whole regulation match, every skater AI.</summary>
     [Test]
+    [ExecutionPriority(Priority.Critical)]
     public void FullMatch() => FullMatch(WorldBuilder.Clubs, new Settings());
 
     void FullMatch(IReadOnlyList<ClubData> clubs, Settings settings)
@@ -148,24 +149,37 @@ public sealed class DecisionsTests : CheckedTest
         Check(hc.BehindNet > 5f && ac.BehindNet > 5f, "the cycle takes the puck behind the net");
     }
 
+    static readonly Side[] SmartSides = [Side.Home, Side.Away];
+
+    /// <summary>Gets the hockey IQ matches, shared by the class's tests.</summary>
+    [ClassDataSource<Played<World>>(Shared = SharedType.PerClass)]
+    public required Played<World> IqPlayed { get; init; }
+
+    /// <summary>Gets the hockey IQ matches: the smart club at home, then away.</summary>
+    public static IEnumerable<int> IqMatchNumbers() => Enumerable.Range(0, SmartSides.Length);
+
+    /// <summary>One match of hockey IQ 90 against 20 over two periods; <see cref="HockeyIq"/> judges them.</summary>
+    [Test]
+    [ExecutionPriority(Priority.High)]
+    [MethodDataSource(nameof(IqMatchNumbers))]
+    public void PlayIqMatch(int i)
+    {
+        bool home = SmartSides[i] == Side.Home;
+        var world = Make(WorldBuilder.Clubs, new Settings(), 15 * 60, home ? 90 : 20, home ? 20 : 90);
+        Play(world, Systems(world, home ? 21 : 22), 2 * 15 * 60 + 300, stopAfter: 3);
+        IqPlayed.Add(i, world);
+    }
+
     /// <summary>The same clubs with hockey IQ 90 against 20, both ways round, over two periods each.</summary>
     [Test]
-    public void HockeyIq() => HockeyIq(WorldBuilder.Clubs, new Settings());
-
-    void HockeyIq(IReadOnlyList<ClubData> clubs, Settings settings)
+    [DependsOn(nameof(PlayIqMatch), [typeof(int)])]
+    public void HockeyIq()
     {
         int smartTotal = 0, smartDone = 0, poorPasses = 0, poorDone = 0, smartLost = 0, poorLost = 0;
-        Side[] smartSides = [Side.Home, Side.Away];
-        var played = Matches.Play(smartSides.Length, i =>
+        var played = IqPlayed.All(SmartSides.Length);
+        for (int i = 0; i < SmartSides.Length; i++)
         {
-            bool home = smartSides[i] == Side.Home;
-            var world = Make(clubs, settings, 15 * 60, home ? 90 : 20, home ? 20 : 90);
-            Play(world, Systems(world, home ? 21 : 22), 2 * 15 * 60 + 300, stopAfter: 3);
-            return world;
-        });
-        for (int i = 0; i < smartSides.Length; i++)
-        {
-            var smartSide = smartSides[i];
+            var smartSide = SmartSides[i];
             var poorSide = smartSide == Side.Home ? Side.Away : Side.Home;
             var world = played[i];
             var s = AiDecisions.Tally(world, smartSide);
@@ -182,6 +196,7 @@ public sealed class DecisionsTests : CheckedTest
 
     /// <summary>Hockey IQ 100 against 20 for two periods; the stars still fumble and miss now and then, the weak side gets lucky.</summary>
     [Test]
+    [ExecutionPriority(Priority.High)]
     public void Stars() => Stars(WorldBuilder.Clubs, new Settings());
 
     void Stars(IReadOnlyList<ClubData> clubs, Settings settings)
@@ -200,26 +215,50 @@ public sealed class DecisionsTests : CheckedTest
 
     /// <summary>A power play with a man in the box throughout, seed 1 (specialteamstest runs other seeds).</summary>
     [Test]
+    [ExecutionPriority(Priority.High)]
     public void PowerPlay() => SpecialTeamsTests.PowerPlay(WorldBuilder.Clubs, new Settings(), 1, Check);
 
-    /// <summary>A 2-1-2 dump-and-chase club against a 1-3-1 trap club that carries the puck in, seed 1.</summary>
+    /// <summary>How many SHL seeds LineCalls plays, from 31 on.</summary>
+    const int LineSeeds = 4;
+
+    static readonly int[] IqSeeds = [51, 53];
+
+    /// <summary>Gets the LineCalls matches, shared by the class's tests.</summary>
+    [ClassDataSource<Played<LineCallMatch>>(Shared = SharedType.PerClass)]
+    public required Played<LineCallMatch> LineCallsPlayed { get; init; }
+
+    /// <summary>Gets the LineCalls matches: the SHL seeds 31 on, the Arcade match, then hockey IQ 85 against 30 both ways round per IQ seed.</summary>
+    public static IEnumerable<int> LineCallNumbers() => Enumerable.Range(0, LineSeeds + 1 + (IqSeeds.Length * 2));
+
+    /// <summary>One full match with the offside and icing rules on; <see cref="LineCalls"/> judges them.</summary>
     [Test]
-    public void TacticsCompare() => TacticsTests.Compare(WorldBuilder.Clubs, new Settings(), 1, Check);
+    [ExecutionPriority(Priority.Critical)]
+    [MethodDataSource(nameof(LineCallNumbers))]
+    public void PlayLineCallMatch(int i) => LineCallsPlayed.Add(i, LineCallMatchOf(i));
+
+    /// <summary>Plays LineCalls match <paramref name="i"/>.</summary>
+    static LineCallMatch LineCallMatchOf(int i)
+    {
+        var clubs = WorldBuilder.Clubs;
+        var settings = new Settings();
+        if (i < LineSeeds) return Calls(clubs, settings, RuleSet.Shl, 31 + i, Maybe<int>.None, Maybe<int>.None);
+        if (i == LineSeeds) return Calls(clubs, settings, RuleSet.Arcade, 41, Maybe<int>.None, Maybe<int>.None);
+        int j = i - LineSeeds - 1;
+        var smart = (Side)(j % 2);
+        return Calls(clubs, settings, RuleSet.Shl, IqSeeds[j / 2] + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
+    }
 
     /// <summary>Icings and offsides over full matches, per preset and per hockey IQ.</summary>
     [Test]
-    public void LineCalls() => LineCalls(WorldBuilder.Clubs, new Settings());
-
-    void LineCalls(IReadOnlyList<ClubData> clubs, Settings settings)
+    [DependsOn(nameof(PlayLineCallMatch), [typeof(int)])]
+    public void LineCalls()
     {
-        const int Seeds = 4;
         int icings = 0, offsides = 0, fewest = int.MaxValue, most = 0, clears = 0, holds = 0;
-        int[] iqSeeds = [51, 53];
 
-        var played = LineCallMatches(clubs, settings, Seeds, iqSeeds);
-        var shl = played[..Seeds];
-        var iq = played[(Seeds + 1)..];
-        for (int seed = 31; seed < 31 + Seeds; seed++)
+        var played = LineCallsPlayed.All(LineSeeds + 1 + (IqSeeds.Length * 2));
+        var shl = played[..LineSeeds];
+        var iq = played[(LineSeeds + 1)..];
+        for (int seed = 31; seed < 31 + LineSeeds; seed++)
         {
             var (ice, off, world) = shl[seed - 31];
             int i = ice[0] + ice[1], o = off[0] + off[1];
@@ -230,14 +269,14 @@ public sealed class DecisionsTests : CheckedTest
             fewest = Math.Min(fewest, Math.Min(i, o));
             most = Math.Max(most, Math.Max(i, o));
         }
-        float iceRate = (float)icings / Seeds, offRate = (float)offsides / Seeds;
+        float iceRate = (float)icings / LineSeeds, offRate = (float)offsides / LineSeeds;
         Console.WriteLine($"      SHL per match: {iceRate:F1} icings, {offRate:F1} offsides (a real match has about 4 to 10 of each)");
         Check(iceRate is >= 3f and <= 12f, $"under SHL the AI ices the puck at a hockey-like rate ({iceRate:F1} a match)");
         Check(offRate is >= 3f and <= 12f, $"under SHL the AI goes offside at a hockey-like rate ({offRate:F1} a match)");
         Check(fewest >= 1 && most <= 18, $"every match has some of each and none is full of them ({fewest} to {most})");
         Check(clears > 0 && holds > 0, "the AI clears its own zone under pressure and holds up at the blue line for a teammate offside");
 
-        var (aIce, aOff, arcade) = played[Seeds];
+        var (aIce, aOff, arcade) = played[LineSeeds];
         int arcadeClears = AiDecisions.Tally(arcade, Side.Home).Clears + AiDecisions.Tally(arcade, Side.Away).Clears;
         Console.WriteLine($"      Arcade: {aIce[0] + aIce[1]} icings, {aOff[0] + aOff[1]} offsides, {arcadeClears} clears");
         Check(aIce[0] + aIce[1] == 0 && aOff[0] + aOff[1] == 0 && arcade.Match.Phase == MatchPhase.Final, "under Arcade, rules off, a full match has no icing and no offside");
@@ -245,7 +284,7 @@ public sealed class DecisionsTests : CheckedTest
         // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round, twice (a 30 club
         // comes up to the line with a teammate offside only a handful of times a match)
         int[] smartTotals = new int[5], poorTotals = new int[5];
-        for (int s = 0; s < iqSeeds.Length; s++)
+        for (int s = 0; s < IqSeeds.Length; s++)
         {
             foreach (var smart in new[] { Side.Home, Side.Away })
             {
@@ -262,27 +301,20 @@ public sealed class DecisionsTests : CheckedTest
     }
 
     [Test]
+    [ExecutionPriority(Priority.AboveNormal)]
     public void PureReceiver() => CommandFixtures.PureReceiver(WorldBuilder.Clubs, new Settings(), Check);
 
     [Test]
+    [ExecutionPriority(Priority.High)]
     public void DumpAndShot() => CommandFixtures.DumpAndShot(WorldBuilder.Clubs, new Settings(), Check);
 
     [Test]
+    [ExecutionPriority(Priority.High)]
     public void KillClear() => CommandFixtures.KillClear(WorldBuilder.Clubs, new Settings(), Check);
 
     [Test]
+    [ExecutionPriority(Priority.AboveNormal)]
     public void HumanUntouched() => CommandFixtures.HumanUntouched(WorldBuilder.Clubs, new Settings(), Check);
-
-    /// <summary>Plays every LineCalls match at once: the SHL seeds 31 on, the Arcade match, then hockey IQ 85 against 30 both ways round per IQ seed.</summary>
-    static (int[] Icings, int[] Offsides, World World)[] LineCallMatches(IReadOnlyList<ClubData> clubs, Settings settings, int seeds, int[] iqSeeds) =>
-        Matches.Play(seeds + 1 + (iqSeeds.Length * 2), i =>
-        {
-            if (i < seeds) return Calls(clubs, settings, RuleSet.Shl, 31 + i, Maybe<int>.None, Maybe<int>.None);
-            if (i == seeds) return Calls(clubs, settings, RuleSet.Arcade, 41, Maybe<int>.None, Maybe<int>.None);
-            int j = i - seeds - 1;
-            var smart = (Side)(j % 2);
-            return Calls(clubs, settings, RuleSet.Shl, iqSeeds[j / 2] + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
-        });
 
     static void Add(int[] totals, int icings, int offsides, DecisionTally tally)
     {
@@ -294,7 +326,7 @@ public sealed class DecisionsTests : CheckedTest
     }
 
     /// <summary>Plays a full match with the offside and icing rules on; returns each side's icings and offsides.</summary>
-    static (int[] Icings, int[] Offsides, World World) Calls(IReadOnlyList<ClubData> clubs, Settings settings, RuleSet rules, int seed, Maybe<int> smartHome, Maybe<int> smartAway)
+    static LineCallMatch Calls(IReadOnlyList<ClubData> clubs, Settings settings, RuleSet rules, int seed, Maybe<int> smartHome, Maybe<int> smartAway)
     {
         var world = Make(clubs, settings, 20 * 60, smartHome, smartAway, rules);
         ISystem[] systems = [.. Systems(world, seed), new OffsideRule(), new IcingRule()];
@@ -311,8 +343,11 @@ public sealed class DecisionsTests : CheckedTest
                 else if (e is OffsideCalled offside) offsides[(int)offside.Attacker]++;
             }
         }
-        return (icings, offsides, world);
+        return new LineCallMatch(icings, offsides, world);
     }
+
+    /// <summary>What one LineCalls match came to: each side's icings and offsides, and the world.</summary>
+    public sealed record LineCallMatch(int[] Icings, int[] Offsides, World World);
 
     static World Make(IReadOnlyList<ClubData> clubs, Settings settings, float period, Maybe<int> smartHome, Maybe<int> smartAway, Maybe<RuleSet> rules = default)
     {

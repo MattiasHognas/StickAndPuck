@@ -6,6 +6,7 @@ using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
 
 namespace StickAndPuck.Tests;
@@ -55,13 +56,27 @@ public sealed class DefenceTests : CheckedTest
         Check(Vector2.Distance(Coverage.Room(new Vector2(1f, 0), Vector2.Zero), Vector2.Zero) >= Coverage.CarrierRoom - 0.01f, "markers leave the carrier to the man on him");
     }
 
-    /// <summary>The matches with the defence on and off feed one verdict, so they stay one test.</summary>
+    /// <summary>Gets the matches with the defence on and off, shared by the class's tests.</summary>
+    [ClassDataSource<Played<Stats>>(Shared = SharedType.PerClass)]
+    public required Played<Stats> DefencePlayed { get; init; }
+
+    /// <summary>Gets the matches: seed by seed, the defence on then off.</summary>
+    public static IEnumerable<int> MatchNumbers() => Enumerable.Range(0, Matches * 2);
+
+    /// <summary>One match, the defence on (even) or off (odd); <see cref="DefenceOnAndOff"/> judges them.</summary>
     [Test]
+    [ExecutionPriority(Priority.Critical)]
+    [MethodDataSource(nameof(MatchNumbers))]
+    public void PlayMatch(int j) => DefencePlayed.Add(j, Match(Seed + j / 2, defence: j % 2 == 0));
+
+    /// <summary>The matches with the defence on and off feed one verdict.</summary>
+    [Test]
+    [DependsOn(nameof(PlayMatch), [typeof(int)])]
     public void DefenceOnAndOff()
     {
         var on = new List<Stats>();
         var off = new List<Stats>();
-        var played = Support.Matches.Play(Matches * 2, j => Match(Seed + j / 2, defence: j % 2 == 0));
+        var played = DefencePlayed.All(Matches * 2);
         for (int i = 0; i < Matches; i++)
         {
             var s = played[i * 2];
@@ -91,7 +106,7 @@ public sealed class DefenceTests : CheckedTest
     }
 
     /// <summary>What one match came to.</summary>
-    sealed class Stats
+    public sealed class Stats
     {
         public bool Final { get; set; }
 

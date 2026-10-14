@@ -15,16 +15,16 @@ public sealed class StatsTests : CheckedTest
     /// <summary>The game state the test plays in, fresh for each test.</summary>
     readonly AppState app = new();
 
-    static readonly string Folder = Path.Combine(Path.GetTempPath(), $"sap-statstest-{Environment.ProcessId}");
-    static readonly string SeasonPath = Path.Combine(Folder, "season.json");
-    static readonly string ArcadePath = Path.Combine(Folder, "arcade.json");
+    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-statstest-{Environment.ProcessId}-{Guid.NewGuid():N}");
+    string SeasonPath => Path.Combine(folder, "season.json");
+    string ArcadePath => Path.Combine(folder, "arcade.json");
 
     [After(Test)]
     public void EndSessions()
     {
         app.Season.End();
         app.Arcade.End();
-        if (Directory.Exists(Folder)) Directory.Delete(Folder, recursive: true);
+        if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
     }
 
     static bool Same(string a, string b) => string.Equals(a, b, StringComparison.Ordinal);

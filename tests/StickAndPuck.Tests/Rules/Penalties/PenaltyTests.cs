@@ -7,6 +7,7 @@ using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 
 namespace StickAndPuck.Tests;
 
@@ -742,16 +743,36 @@ public sealed class PenaltyTests : CheckedTest
         target.Velocity = Vector3.Zero;
     }
 
-    /// <summary>Full AI matches: a strict referee for the rules, then a normal one for how often he calls.</summary>
+    /// <summary>A full AI match with a strict referee, for the rules.</summary>
     [Test]
+    [ExecutionPriority(Priority.High)]
     public void FullMatch()
     {
         var setup = WorldBuilder.DefaultSetup with { PeriodSeconds = Period };
         var (calls, broken, served) = Match(setup with { PeriodSeconds = 240 }, 8f, 1);
         Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step in play");
-        // the strict match ran alone, as it sets the shared strictness; the normal ones all play at 1, so they play at once
+    }
+
+    /// <summary>Gets the normal referee's matches, shared by the class's tests.</summary>
+    [ClassDataSource<Played<RefereeCalls>>(Shared = SharedType.PerClass)]
+    public required Played<RefereeCalls> NormalPlayed { get; init; }
+
+    /// <summary>Gets the normal referee's matches, one a seed.</summary>
+    public static IEnumerable<int> NormalMatchNumbers() => Enumerable.Range(0, Seeds.Length);
+
+    /// <summary>One full AI match with a normal referee; <see cref="NormalReferee"/> judges them.</summary>
+    [Test]
+    [ExecutionPriority(Priority.High)]
+    [MethodDataSource(nameof(NormalMatchNumbers))]
+    public void PlayNormalMatch(int i) => NormalPlayed.Add(i, Match(WorldBuilder.DefaultSetup with { PeriodSeconds = 600 }, 1f, Seeds[i]));
+
+    /// <summary>Full AI matches with a normal referee, for how often he calls.</summary>
+    [Test]
+    [DependsOn(nameof(PlayNormalMatch), [typeof(int)])]
+    public void NormalReferee()
+    {
         int normal = 0, broken2 = 0;
-        foreach (var (n, b, _) in Matches.Play(Seeds.Length, i => Match(setup with { PeriodSeconds = 600 }, 1f, Seeds[i])))
+        foreach (var (n, b, _) in NormalPlayed.All(Seeds.Length))
         {
             normal += n;
             broken2 += b;
@@ -760,9 +781,12 @@ public sealed class PenaltyTests : CheckedTest
         Check(per60 is >= 4 and <= 16 && broken2 == 0, $"AI match of 3 x 10:00 with a normal referee: {normal / (float)Seeds.Length:0.0} calls a match ({per60:0.0} per 60 minutes, 4 to 16 wanted)");
     }
 
+    /// <summary>What one full match came to: the calls, steps a club was not at its strength, and whether every penalty was served.</summary>
+    public sealed record RefereeCalls(int Calls, int Broken, bool Served);
+
     static readonly int[] Seeds = [2, 3, 4, 5];
 
-    static (int Calls, int Broken, bool Served) Match(MatchSetup setup, float strictness, int seed)
+    static RefereeCalls Match(MatchSetup setup, float strictness, int seed)
     {
         var w = new WorldBuilder()
             .Setup(setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] })
@@ -803,6 +827,6 @@ public sealed class PenaltyTests : CheckedTest
             served &= w.Match.Penalties.TrueForAll(p => p.SecondsLeft <= Penalties.ClubSeconds(w, Severity.Major) + 0.01f);
         }
         Console.WriteLine($"      {string.Join(", ", kinds.Select(k => $"{k.Value} {k.Key}"))}");
-        return (calls, broken, served);
+        return new RefereeCalls(calls, broken, served);
     }
 }

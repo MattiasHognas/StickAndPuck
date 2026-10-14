@@ -8,6 +8,7 @@ using StickAndPuck.App.Players;
 using StickAndPuck.App.Replays;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 
 namespace StickAndPuck.Tests;
 
@@ -93,6 +94,7 @@ public sealed class ReplayTests : CheckedTest
     }
 
     [Test]
+    [ExecutionPriority(Priority.High)]
     public void SameSeedSameMatch()
     {
         const int Steps = 15000;

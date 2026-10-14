@@ -5,6 +5,7 @@ using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 using Level = StickAndPuck.App.Core.Difficulty;
 using PassTally = StickAndPuck.App.AI.Decisions;
 
@@ -46,27 +47,42 @@ public sealed class DifficultyTests : CheckedTest
             && ReferenceEquals(new World(allAi, new Settings { Difficulty = Level.Easy }).Setup, allAi), "versus and all-AI matches are never scaled");
     }
 
-    /// <summary>Ten full matches, hard against easy, ends swapped each game.</summary>
+    const int Games = 10;
+
+    /// <summary>Gets the ten games' results, shared by the class's tests.</summary>
+    [ClassDataSource<Played<DifficultyGame>>(Shared = SharedType.PerClass)]
+    public required Played<DifficultyGame> TenGamesPlayed { get; init; }
+
+    /// <summary>Gets the games, 0 to 9.</summary>
+    public static IEnumerable<int> GameNumbers() => Enumerable.Range(0, Games);
+
+    /// <summary>One full match, hard against easy, ends swapped each game; <see cref="TenGames"/> judges them.</summary>
     [Test]
-    public void TenGames()
+    [ExecutionPriority(Priority.Critical)]
+    [MethodDataSource(nameof(GameNumbers))]
+    public void PlayGame(int g)
     {
-        const int games = 10;
         const int seed = 1;
         var settings = new Settings() with { Difficulty = Level.Normal };
+        var hardSide = g % 2 == 0 ? Side.Home : Side.Away;
+        var easySide = hardSide == Side.Home ? Side.Away : Side.Home;
+        var setup = WorldBuilder.DefaultSetup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
+        setup = DifficultyScale.Apply(setup, easySide, Level.Easy);
+        setup = DifficultyScale.Apply(setup, hardSide, Level.Hard);
+        var world = new WorldBuilder().Setup(setup).Settings(settings).Build();
+        Play(world, Systems(world, seed + g), 3 * 60 * 60);
+        TenGamesPlayed.Add(g, new DifficultyGame(hardSide, easySide, world));
+    }
+
+    /// <summary>Ten full matches, hard against easy, ends swapped each game.</summary>
+    [Test]
+    [DependsOn(nameof(PlayGame), [typeof(int)])]
+    public void TenGames()
+    {
         int hardWins = 0, hardGoals = 0, easyGoals = 0, hardShots = 0, easyShots = 0;
         float hardPass = 0, easyPass = 0;
-        var played = Matches.Play(games, g =>
-        {
-            var hardSide = g % 2 == 0 ? Side.Home : Side.Away;
-            var easySide = hardSide == Side.Home ? Side.Away : Side.Home;
-            var setup = WorldBuilder.DefaultSetup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
-            setup = DifficultyScale.Apply(setup, easySide, Level.Easy);
-            setup = DifficultyScale.Apply(setup, hardSide, Level.Hard);
-            var world = new WorldBuilder().Setup(setup).Settings(settings).Build();
-            Play(world, Systems(world, seed + g), 3 * 60 * 60);
-            return (hardSide, easySide, world);
-        });
-        for (int g = 0; g < games; g++)
+        var played = TenGamesPlayed.All(Games);
+        for (int g = 0; g < Games; g++)
         {
             var (hardSide, easySide, world) = played[g];
             int h = world.Match.Score[(int)hardSide], e = world.Match.Score[(int)easySide];
@@ -76,11 +92,14 @@ public sealed class DifficultyTests : CheckedTest
             hardPass += PassTally.Tally(world, hardSide).Completion; easyPass += PassTally.Tally(world, easySide).Completion;
             Console.WriteLine($"      game {g + 1}: hard ({hardSide.ToString().ToLowerInvariant()}) {h}-{e} easy, shots on goal {world.Match.Shots[(int)hardSide]}-{world.Match.Shots[(int)easySide]}{(world.Match.Phase == MatchPhase.Final ? "" : " (not finished)")}");
         }
-        Console.WriteLine($"      hard won {hardWins} of {games}, goals {hardGoals}-{easyGoals}, shots on goal {hardShots}-{easyShots}, passes completed {hardPass / games:P0} against {easyPass / games:P0}");
-        Check(hardWins >= games * 0.8f, $"hard beats easy clearly: {hardWins} wins in {games} games");
+        Console.WriteLine($"      hard won {hardWins} of {Games}, goals {hardGoals}-{easyGoals}, shots on goal {hardShots}-{easyShots}, passes completed {hardPass / Games:P0} against {easyPass / Games:P0}");
+        Check(hardWins >= Games * 0.8f, $"hard beats easy clearly: {hardWins} wins in {Games} games");
         Check(hardGoals >= easyGoals * 2, $"hard scores at least twice as many goals as easy ({hardGoals} against {easyGoals})");
         Check(hardShots > easyShots * 1.3f, $"hard outshoots easy ({hardShots} against {easyShots})");
     }
+
+    /// <summary>What one of the ten games came to.</summary>
+    public sealed record DifficultyGame(Side Hard, Side Easy, World World);
 
     static void Play(World world, ISystem[] systems, float seconds)
     {

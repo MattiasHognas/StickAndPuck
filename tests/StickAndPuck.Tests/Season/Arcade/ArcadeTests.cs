@@ -17,17 +17,17 @@ public sealed class ArcadeTests : CheckedTest
     static readonly FixtureResult HomeWin = new(3, 1, ResultKind.Regulation);
     static readonly FixtureResult AwayWin = new(1, 3, ResultKind.Regulation);
 
-    static readonly string Folder = Path.Combine(Path.GetTempPath(), $"sap-arcadetest-{Environment.ProcessId}");
-    static readonly string SavePath = Path.Combine(Folder, "arcade.json");
+    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-arcadetest-{Environment.ProcessId}-{Guid.NewGuid():N}");
+    string SavePath => Path.Combine(folder, "arcade.json");
 
     [Before(Test)]
-    public void SaveFolder() => Directory.CreateDirectory(Folder);
+    public void SaveFolder() => Directory.CreateDirectory(folder);
 
     [After(Test)]
     public void EndRun()
     {
         app.Arcade.End();
-        if (Directory.Exists(Folder)) Directory.Delete(Folder, recursive: true);
+        if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
     }
 
     static bool Same(string a, string b) => string.Equals(a, b, StringComparison.Ordinal);
