@@ -43,8 +43,35 @@ public sealed class BenchFigure(Player player, float x, float phase)
     /// <summary>Gets a value indicating whether the figure is walking along the bench this step.</summary>
     public bool Walking { get; internal set; }
 
-    /// <summary>Gets a value indicating whether the figure stands (up for a change or walking).</summary>
-    public bool Standing => Pose != BenchPose.Watch || Walking;
+    /// <summary>Gets a value indicating whether the figure stands (up for a change, walking or up for a reaction).</summary>
+    public bool Standing => Pose != BenchPose.Watch || Walking || Up;
+
+    /// <summary>Gets the reaction he has over his pose (see <see cref="BenchReactions"/>), shown from <see cref="ReactFrom"/> to <see cref="ReactUntil"/>.</summary>
+    public BenchReaction Reaction { get; internal set; }
+
+    /// <summary>Gets the game time the reaction shows from, a moment after its cause so the bench does not move as one.</summary>
+    public float ReactFrom { get; internal set; }
+
+    /// <summary>Gets the game time the reaction ends.</summary>
+    public float ReactUntil { get; internal set; }
+
+    /// <summary>Gets the heading a reaction turns him to (NaN: he keeps following the puck).</summary>
+    public float Look { get; internal set; } = float.NaN;
+
+    /// <summary>Gets a value indicating whether his helmet is off, until he next goes on.</summary>
+    public bool Bare { get; internal set; }
+
+    /// <summary>Gets the energy he came off the ice with (1 for a figure seated from the start).</summary>
+    public float Spent { get; internal set; } = 1f;
+
+    /// <summary>Gets a value indicating whether he sat down from a shift this step.</summary>
+    public bool SatDown { get; internal set; }
+
+    /// <summary>Gets a value indicating whether a reaction stands him up this step.</summary>
+    internal bool Up { get; set; }
+
+    /// <summary>Gets the reaction showing at a game time.</summary>
+    public BenchReaction Showing(float time) => time >= ReactFrom && time < ReactUntil ? Reaction : BenchReaction.None;
 }
 
 /// <summary>Both benches' figures, made from the squads and moved along by what the match does: the
@@ -125,8 +152,10 @@ public sealed class BenchCrowd
                 // new on the bench: back from the ice at the door, or seated from the start
                 f = new BenchFigure(p, before ? BenchLayout.DoorX(side) : seat, Phase(p)) { TurnRate = 2f + 3f * Hash01(p, 7) };
                 f.Pose = before ? BenchPose.Return : BenchPose.Watch;
+                f.Spent = before ? p.Energy : 1f;
                 figures[p.Id] = f;
             }
+            f.SatDown = false;
             float target = seat;
             if (incoming.Contains(p))
             {
@@ -158,6 +187,7 @@ public sealed class BenchCrowd
         if (f.Pose == BenchPose.Return)
         {
             f.Pose = BenchPose.Watch;
+            f.SatDown = true;
             f.TiredUntil = world.Time + 4f + 2f * Hash01(f.Player, 11);   // sits tired for 4 to 6 s first
         }
 

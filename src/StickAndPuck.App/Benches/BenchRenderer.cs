@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Raylib_cs;
@@ -7,63 +8,50 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Benches;
 
-/// <summary>The clips the bench figures play, all in one place (bench reactions add theirs here).</summary>
-internal static class BenchClips
-{
-    /// <summary>The skater clip a seated figure plays.</summary>
-    public const string Sit = "sit";
-
-    /// <summary>The skater clip a figure plays for a while after sitting down from a shift.</summary>
-    public const string SitTired = "sit_tired";
-
-    /// <summary>The skater clip a figure waiting at the door plays.</summary>
-    public const string Stand = "stand_boards";
-
-    /// <summary>The skater clip a figure walking along the bench plays.</summary>
-    public const string Walk = "idle";
-
-    /// <summary>The goalie clip a goalie on the bench plays.</summary>
-    public const string Goalie = "ready";
-
-    /// <summary>The seat top over the deck (arena.glb: a 0.2 m riser and the seat), less the clips' 0.45 m from soles to seat (m).</summary>
-    public const float SeatLift = 0.62f - 0.45f;
-
-    /// <summary>How far a seated goalie sinks into his seat, his ready clip crouching rather than sitting (m).</summary>
-    public const float GoalieLift = 0.1f;
-}
-
 /// <summary>Draws both clubs' benches: everyone dressed and off the ice in his club's kit and number,
 /// in the seats <see cref="BenchLayout"/> gives, moved by <see cref="BenchCrowd"/>. Render only:
 /// the match runs the same with <see cref="Settings.Benches"/> on or off. Every clip frame is skinned
 /// once at load into static meshes, and a bench out of the camera's view is not drawn.</summary>
 internal sealed unsafe class BenchRenderer : ISystem, IDisposable
 {
-    const float ClipFps = 24f;
+    /// <summary>The mask ids of the staff (home coach, home trainer, away coach, away trainer), clear of the players', the Zamboni's and the referee's.</summary>
+    const int StaffMask = MaskIds.Max - 5;
 
     readonly Dictionary<string, Texture2D> kits = new(StringComparer.Ordinal);
-    readonly List<(BenchFigure Figure, int Model, int Clip, int Frame)> draws = [];
-    readonly Model[] models = new Model[2];
-    readonly ModelAnimation[][] clips = [[], []];
-    readonly int[] clip = new int[5];
+    readonly List<Draw> draws = [];
+    readonly Model[] models = new Model[3];
+    readonly ModelAnimation[][] clips = [[], [], []];
+    readonly Dictionary<(int Model, string Clip), int> named = [];
     readonly Dictionary<(int Model, int Clip, int Frame), nint> baked = [];
     Maybe<BenchCrowd> crowd;
+    Maybe<BenchReactions> reactions;
     bool loaded;
+    long drawTicks;
 
     /// <summary>Gets the figures on the benches this step (none with the setting off).</summary>
     internal IReadOnlyList<BenchFigure> Figures => crowd.TryGet(out var c) ? c.Shown : [];
 
+    /// <summary>Gets the benches' reactions and staff, once the setting has been on.</summary>
+    internal Maybe<BenchReactions> Reactions => reactions;
+
+    /// <summary>Gets the time the last frame's two bench passes took (ms).</summary>
+    internal double DrawMs { get; private set; }
+
     public void Start(World world)
     {
-        models[0] = LoadModel(Assets.Skater);
-        clips[0] = LoadModelAnimations(Assets.Skater).ToArray();
-        models[1] = LoadModel(Assets.Goalie);
-        clips[1] = LoadModelAnimations(Assets.Goalie).ToArray();
-        clip[0] = Find(0, "skater", BenchClips.Sit);
-        clip[1] = Find(0, "skater", BenchClips.Stand);
-        clip[2] = Find(0, "skater", BenchClips.Walk);
-        clip[3] = Find(1, "goalie", BenchClips.Goalie);
-        clip[4] = Find(0, "skater", BenchClips.SitTired);
-        foreach (int c in (ReadOnlySpan<int>)[clip[0], clip[1], clip[2], clip[4]]) Unarm(0, c, "stick");
+        string[] paths = [Assets.Skater, Assets.Goalie, BenchStaffArt.Model];
+        for (int m = 0; m < models.Length; m++)
+        {
+            models[m] = LoadModel(paths[m]);
+            clips[m] = LoadModelAnimations(paths[m]).ToArray();
+        }
+        foreach (var (m, name, stick) in BenchClips.All)
+        {
+            int c = Find(m, BenchClips.Prefix(m), name);
+            if (c < 0) continue;
+            named[(m, name)] = c;
+            if (!stick) Unarm(m, c, "stick");
+        }
         BakeAll();
         loaded = true;
     }
@@ -76,7 +64,7 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         int b = -1;
         for (int i = 0; i < skeleton.BoneCount; i++)
             if (string.Equals(Marshal.PtrToStringUTF8((IntPtr)skeleton.Bones[i].Name), bone, StringComparison.Ordinal)) b = i;
-        if (c < 0 || b < 0) return;
+        if (b < 0) return;
         var anim = clips[model][c];
         for (int k = 0; k < anim.KeyFrameCount; k++) anim.KeyframePoses[k][b].Scale = new Vector3(0.001f);
     }
@@ -98,27 +86,61 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
             c = new BenchCrowd(Seeds.For(world.Seed, "bench", 104));
             crowd = c;
         }
+        if (!reactions.TryGet(out var r))
+        {
+            r = new BenchReactions(Seeds.Dice(world.Seed, "bench", 105));
+            reactions = r;
+        }
+        var events = world.Events.Current;
+        bool fight = world.Fight.HasValue;
+        if (Dev.BenchDemo.Of(world).TryGet(out var demo))
+        {
+            // the bench scene's own script: its events in place of the match's
+            demo.Run(world, DrawMs);
+            events = demo.Events;
+            fight = demo.FightOn;
+        }
         c.Update(world, dt);
+        r.Update(world, c, events, fight, dt);
     }
 
-    /// <summary>Picks each visible figure's model, clip and whole frame, sorted so figures in the same pose draw together.</summary>
+    /// <summary>Picks each visible figure's and staff member's model, clip and whole frame, sorted so the same poses draw together.</summary>
     void Plan(World world)
     {
         draws.Clear();
         if (!loaded || !world.Settings.Benches) return;
         var camera = world.Camera;
         bool home = InView(camera, Side.Home), away = InView(camera, Side.Away);
+        float time = world.Time;
         foreach (var f in Figures)
         {
             if (!(f.Player.Side == Side.Home ? home : away)) continue;
-            int model = f.Player.IsGoalie ? 1 : 0;
-            int c = model == 1 ? clip[3] : f.Walking ? clip[2] : f.Pose != BenchPose.Watch ? clip[1] : world.Time < f.TiredUntil && clip[4] >= 0 ? clip[4] : clip[0];
-            if (c < 0) continue;
-            int count = clips[model][c].KeyFrameCount;
-            int frame = (int)((world.Time + f.Phase) * ClipFps) % count;
-            draws.Add((f, model, c, frame));
+            var look = BenchClips.Of(f, time);
+            if (!Frame(look, out int c, out int frame)) continue;
+            draws.Add(new Draw(look.Model, c, frame, Spot(f), f.Heading, Kit(world, f.Player, BenchClips.BareAt(f, time)), MaskIds.For(f.Player.MaskId)));
+        }
+        if (reactions.TryGet(out var r))
+        {
+            for (int i = 0; i < r.Staff.Count; i++)
+            {
+                var s = r.Staff[i];
+                if (!(s.Side == Side.Home ? home : away) || !Frame(BenchClips.Of(s, time), out int c, out int frame)) continue;
+                var spot = new Vector3(s.X, BenchStaff.StepY, BenchStaff.StepZ);
+                draws.Add(new Draw(BenchClips.Staff, c, frame, spot, s.Heading, StaffKit(s.Coach), MaskIds.For(StaffMask + i)));
+            }
         }
         draws.Sort(static (a, b) => a.Model != b.Model ? a.Model - b.Model : a.Clip != b.Clip ? a.Clip - b.Clip : a.Frame - b.Frame);
+    }
+
+    /// <summary>Gets a look's clip and whole frame.</summary>
+    bool Frame(BenchLook look, out int c, out int frame)
+    {
+        frame = 0;
+        if (!named.TryGetValue((look.Model, look.Clip), out c)) return false;
+        int count = clips[look.Model][c].KeyFrameCount;
+        int at = look.Hold >= 0 ? look.Hold : (int)(look.Seconds * BenchClips.Fps);
+        frame = look.Loop && look.Hold < 0 ? ((at % count) + count) % count : Math.Clamp(at, 0, count - 1);
+        return true;
     }
 
     /// <summary>Gets whether any of a bench is inside the camera's view across the rink.</summary>
@@ -143,10 +165,17 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         return new Vector3(f.X, lift, f.Standing ? BenchLayout.StandZ : BenchLayout.SeatZ);
     }
 
-    Texture2D Kit(World world, Player p)
+    Texture2D Kit(World world, Player p, bool bare)
     {
         var side = world.Settings.SwapKits ? (p.Side == Side.Home ? Side.Away : Side.Home) : p.Side;
-        string path = Assets.KitAtlas(world.Setup.Club(p.Side).Id, side, p.IsGoalie ? "goalie" : "skater", p.Data.Number);
+        string role = p.IsGoalie ? "goalie" : bare ? "skater_bare" : "skater";
+        return Texture(Assets.KitAtlas(world.Setup.Club(p.Side).Id, side, role, bare ? 0 : p.Data.Number));
+    }
+
+    Texture2D StaffKit(bool coach) => Texture(coach ? BenchStaffArt.Coach : BenchStaffArt.Trainer);
+
+    Texture2D Texture(string path)
+    {
         if (!kits.TryGetValue(path, out var tex))
         {
             tex = Camera.FarTexture.Load(path);   // mipmapped so stripes hold still at broadcast range
@@ -159,10 +188,9 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
     /// then draw as they are: nothing is skinned while the match is on.</summary>
     void BakeAll()
     {
-        for (int j = 0; j < clip.Length; j++)
+        foreach (var ((m, _), c) in named)
         {
-            int m = j == 3 ? 1 : 0, c = clip[j];
-            if (c < 0 || baked.ContainsKey((m, c, 0))) continue;
+            if (baked.ContainsKey((m, c, 0))) continue;
             var model = models[m];
             for (int frame = 0; frame < clips[m][c].KeyFrameCount; frame++)
             {
@@ -177,9 +205,9 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
     /// <summary>Gets the model in a draw's baked pose.</summary>
     Model Posed(int i)
     {
-        var (_, m, c, frame) = draws[i];
-        var model = models[m];
-        model.Meshes = (Mesh*)baked[(m, c, frame)];
+        var d = draws[i];
+        var model = models[d.Model];
+        model.Meshes = (Mesh*)baked[(d.Model, d.Clip, d.Frame)];
         return model;
     }
 
@@ -219,32 +247,38 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
 
     public void DrawScene(World world, RenderContext render)
     {
+        long from = Stopwatch.GetTimestamp();
         Plan(world);
         for (int i = 0; i < draws.Count; i++)
         {
-            var f = draws[i].Figure;
+            var d = draws[i];
             var model = Posed(i);
-            var kit = Kit(world, f.Player);
             for (int k = 0; k < model.MaterialCount; k++)
             {
                 model.Materials[k].Shader = render.Toon;
-                SetMaterialTexture(ref model.Materials[k], MaterialMapIndex.Albedo, kit);
+                SetMaterialTexture(ref model.Materials[k], MaterialMapIndex.Albedo, d.Atlas);
             }
-            DrawModelEx(model, Spot(f), Vector3.UnitY, f.Heading * 180f / MathF.PI, new Vector3(Players.SkaterRenderer.Scale), Color.White);
+            DrawModelEx(model, d.At, Vector3.UnitY, d.Heading * 180f / MathF.PI, new Vector3(Players.SkaterRenderer.Scale), Color.White);
         }
+        drawTicks = Stopwatch.GetTimestamp() - from;
     }
 
-    /// <summary>The same poses in each player's mask colour, so the bench gets outlines like the ice.</summary>
+    /// <summary>The same poses in each figure's mask colour, so the bench gets outlines like the ice.</summary>
     public void DrawMask(World world, RenderContext render)
     {
+        long from = Stopwatch.GetTimestamp();
         for (int i = 0; i < draws.Count; i++)
         {
-            var f = draws[i].Figure;
+            var d = draws[i];
             var model = Posed(i);
             for (int k = 0; k < model.MaterialCount; k++) model.Materials[k].Shader = render.Mask;
-            DrawModelEx(model, Spot(f), Vector3.UnitY, f.Heading * 180f / MathF.PI, new Vector3(Players.SkaterRenderer.Scale), MaskIds.For(f.Player.MaskId));
+            DrawModelEx(model, d.At, Vector3.UnitY, d.Heading * 180f / MathF.PI, new Vector3(Players.SkaterRenderer.Scale), d.Mask);
         }
+        DrawMs = Stopwatch.GetElapsedTime(0, drawTicks + Stopwatch.GetTimestamp() - from).TotalMilliseconds;
     }
+
+    /// <summary>One model to draw: its baked pose, where, which way, in which kit and mask colour.</summary>
+    readonly record struct Draw(int Model, int Clip, int Frame, Vector3 At, float Heading, Texture2D Atlas, Color Mask);
 
     public void Dispose()
     {
