@@ -12,7 +12,7 @@ try: import numpy                        # the glTF exporter needs numpy; a Blen
 except ImportError: sys.path += glob.glob('/usr/lib/python3*/site-packages')
 from mathutils import Vector as V, Matrix
 
-NAME = os.path.basename(bpy.data.filepath).rsplit('.', 1)[0]      # skater, goalie or referee
+NAME = os.path.basename(bpy.data.filepath).rsplit('.', 1)[0]      # skater, goalie, referee or staff
 OUT = os.path.dirname(bpy.data.filepath)
 scene = bpy.context.scene; scene.render.fps = 24
 rig = bpy.data.objects['Rig']; rig.location = (0, 0, 0); rig.rotation_euler = (0, 0, 0)
@@ -82,7 +82,7 @@ def plant(spread=0.0, **kw):
 
 SB = 'stick' if 'stick' in body.vertex_groups else 'hand.R'      # the bone that carries the stick
 gi = body.vertex_groups[SB].index if SB in body.vertex_groups else -1
-STICK = [v.co.copy() for v in body.data.vertices if any(g.group == gi for g in v.groups)] if NAME != 'referee' else []
+STICK = [v.co.copy() for v in body.data.vertices if any(g.group == gi for g in v.groups)] if NAME not in ('referee', 'staff') else []
 def stick_low():
     m = PB[SB].matrix @ B[SB].matrix_local.inverted()
     return min((m @ c).z for c in STICK)
@@ -461,6 +461,57 @@ def skater_argue(i):                        # at the boards, arms flung wide at 
         if i == 1: arm('L', (0.45, -0.1, -0.6), (-0.1, -0.6, 0.8))
         else: arm('L', (0.35, -0.1, 0.9), (0.1, -0.05, 1.0))
 
+# ---------------- bench staff clips (A12) ----------------
+# The coach and the trainer stand on the step behind the bench, seen chest up over the seated
+# players at ~14 px, so the arms are posed big. Shoes on the floor: plant keeps the soles at 0.
+def staff_stand(): plant(pole=(0, -1, 0))
+
+def fold_arms():
+    reach('L', V((-0.09, -0.27, 1.21)), pole=(1, 0.2, -0.5), hand=(-1, 0.2, 0.0))       # each hand tucked at the other elbow
+    reach('R', V((0.09, -0.30, 1.17)), pole=(-1, 0.2, -0.5), hand=(1, 0.2, 0.0))
+
+def staff_idle(i):                          # arms folded, weight shifting from foot to foot, the head following the play
+    shift(x=0.025 * [0, 1, 0, -1][i]); staff_stand()
+    turn('spine', z=0.04 * [0, 1, 0, -1][i]); fold_arms()
+    turn('neck', x=-0.05); turn('head', z=[0.0, 0.3, 0.3, -0.2][i])
+
+def staff_clap(i):                          # hands apart, then together in front of the chest
+    staff_stand(); turn('spine', x=0.06); turn('neck', x=-0.08)
+    w = [0.20, 0.0][i % 2]
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        reach(s, V((sx * (0.035 + w), -0.40, 1.20 + 0.03 * (i % 2))), pole=(sx * 1, 0.3, -0.8), hand=(-sx, -0.4, 0.4))
+
+def staff_arms_up(i):                       # both arms up high in a V, pumping, up on the toes
+    up = [1.0, 0.4, 1.0, 0.4][i]
+    shift(z=0.03 * up); plant(pole=(0, -1, 0)); turn('spine', x=-0.08 * up); turn('neck', x=-0.15 * up)
+    for s in 'LR': arm(s, (0.35 + 0.25 * (1 - up), -0.1, 0.93 - 0.4 * (1 - up)), (0.22, -0.12, 0.97))
+    turn('head', x=-0.1 * up)
+
+def staff_point(i):                         # the right arm comes up, then points forward and down at the ice, leaning in
+    staff_stand(); lean = [0.0, 0.10, 0.28, 0.32][i]
+    turn('spine', x=lean); turn('neck', x=-0.12 * (i > 1)); turn('head', x=0.1 * (i > 1))
+    reach('L', V((0.30, 0.02, 0.98 - 0.05 * lean)), pole=(1, 0.6, 0), hand=(-0.4, -0.3, -0.8))      # left hand on the hip
+    if i == 0: arm('R', (0.05, 0.0, -1.0), (0.05, -0.1, -1.0))
+    elif i == 1: arm('R', (0.25, -0.70, 0.55), (0.20, -0.70, 0.70))
+    else: arm('R', (0.10, -0.92, -0.20 - 0.05 * (i - 2)), (0.05, -0.85, -0.50), (0.0, -0.8, -0.6))
+
+def staff_lean_talk(i):                     # leaning over a seated player: right hand on his shoulder, head down to him, left hand talking
+    shift(y=0.05); staff_stand()
+    turn('spine', x=0.42); turn('chest', x=0.15); turn('neck', x=0.15); turn('head', x=0.25 + [0, 0.08, 0, 0.05][i], z=[0, 0.1, 0, -0.08][i])
+    reach('R', V((-0.12, -0.45, 1.0)), pole=(-1, 0.3, -0.2), hand=(0, -0.4, -0.9))
+    hand = [(0.30, -0.50, 1.12), (0.34, -0.60, 1.25), (0.26, -0.55, 1.05), (0.38, -0.45, 1.20)][i]
+    reach('L', V(hand), pole=(1, 0.4, -0.6), hand=[(0.2, -0.8, 0.4), (0.5, -0.6, 0.6), (0.1, -0.9, 0.1), (0.6, -0.4, 0.5)][i])
+
+def staff_walk(i):                          # in place, the game moves it: heel strike, pass, push off; arms swing against the legs
+    ph = 2 * math.pi * i / 8
+    shift(z=-0.045 + 0.02 * abs(math.sin(ph)))
+    for s, o in (('L', 0.0), ('R', math.pi)):
+        c = math.cos(ph + o); sw = math.sin(ph + o) < -1e-6           # the swing half: lifted and coming forward
+        leg(s, ANKLE[s] + V((0, -0.17 * c, 0.07 * abs(math.sin(ph + o)) if sw else 0.0)), pole=(0, -1, 0))
+        turn('upperarm.' + s, x=0.38 * c); turn('forearm.' + s, x=-0.25 - 0.15 * max(0.0, -c))
+    turn('chest', z=0.08 * math.cos(ph)); turn('head', z=-0.06 * math.cos(ph))
+
 # name: (poses, frames each pose is held at 24 fps, loops?)
 CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4, 6, True), 'shoot': (skater_shoot, 6, 3, False),
                     'pass': (skater_pass, 5, 2, False), 'check': (skater_check, 4, 3, False), 'celebrate': (skater_celebrate, 4, 5, True),
@@ -475,7 +526,9 @@ CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4
          'referee': {'skate': (ref_skate, 8, 3, True), 'idle': (ref_idle, 4, 8, True),
                      'armup': (ref_armup, 2, 12, True), 'whistle': (ref_whistle, 2, 6, False), 'tripping': (ref_tripping, 2, 6, True),
                      'hooking': (ref_hooking, 2, 6, True), 'slashing': (ref_slashing, 2, 6, True), 'goal': (ref_goal, 2, 6, False),
-                     'drop': (ref_drop, 4, 4, False)}}[NAME]
+                     'drop': (ref_drop, 4, 4, False)},
+         'staff': {'idle': (staff_idle, 4, 12, True), 'clap': (staff_clap, 4, 4, True), 'arms_up': (staff_arms_up, 4, 5, True),
+                   'point': (staff_point, 4, 6, False), 'lean_talk': (staff_lean_talk, 4, 8, True), 'walk': (staff_walk, 8, 3, True)}}[NAME]
 
 # ---------------- 2. key the clips, stepped ----------------
 def fcurves(act):
@@ -516,7 +569,7 @@ info = {'tris': sum(len(p.vertices) - 2 for p in body.data.polygons), 'meshes': 
 if globals().get('RENDER', True):
     tp = os.path.join(os.path.dirname(OUT), 'scripts', 'turnaround.py'); g = {'__name__': '__main__', 'TURN': False}
     exec(compile(open(tp).read(), tp, 'exec'), g)
-    kit = 'ref' if NAME == 'referee' else 'home'
+    kit = {'referee': 'ref', 'staff': 'coach'}.get(NAME, 'home')
     g['MAT'].node_tree.nodes['Image Texture'].image = bpy.data.images['%s_%s' % (NAME, kit)]
     n_out = 0
     for cname, (fn, n, hold, loop) in CLIPS.items():
