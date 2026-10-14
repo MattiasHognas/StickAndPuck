@@ -34,8 +34,8 @@ internal static class BenchClips
 
 /// <summary>Draws both clubs' benches: everyone dressed and off the ice in his club's kit and number,
 /// in the seats <see cref="BenchLayout"/> gives, moved by <see cref="BenchCrowd"/>. Render only:
-/// the match runs the same with <see cref="Settings.Benches"/> on or off. Figures with the same clip
-/// frame share one skinning of the model, and a bench out of the camera's view is not drawn.</summary>
+/// the match runs the same with <see cref="Settings.Benches"/> on or off. Every clip frame is skinned
+/// once at load into static meshes, and a bench out of the camera's view is not drawn.</summary>
 internal sealed unsafe class BenchRenderer : ISystem, IDisposable
 {
     const float ClipFps = 24f;
@@ -45,6 +45,7 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
     readonly Model[] models = new Model[2];
     readonly ModelAnimation[][] clips = [[], []];
     readonly int[] clip = new int[5];
+    readonly Dictionary<(int Model, int Clip, int Frame), nint> baked = [];
     Maybe<BenchCrowd> crowd;
     bool loaded;
 
@@ -63,6 +64,7 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         clip[3] = Find(1, "goalie", BenchClips.Goalie);
         clip[4] = Find(0, "skater", BenchClips.SitTired);
         foreach (int c in (ReadOnlySpan<int>)[clip[0], clip[1], clip[2], clip[4]]) Unarm(0, c, "stick");
+        BakeAll();
         loaded = true;
     }
 
@@ -153,34 +155,75 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         return tex;
     }
 
-    /// <summary>Poses the model for a draw unless the one before it left it in the same pose.</summary>
-    void Pose(int i)
+    /// <summary>Skins every frame of the bench clips once, at the start, into static meshes that both passes
+    /// then draw as they are: nothing is skinned while the match is on.</summary>
+    void BakeAll()
     {
-        var (_, model, c, frame) = draws[i];
-        if (i > 0 && draws[i - 1].Model == model && draws[i - 1].Clip == c && draws[i - 1].Frame == frame) return;
-        UpdateModelAnimation(models[model], clips[model][c], frame);
+        for (int j = 0; j < clip.Length; j++)
+        {
+            int m = j == 3 ? 1 : 0, c = clip[j];
+            if (c < 0 || baked.ContainsKey((m, c, 0))) continue;
+            var model = models[m];
+            for (int frame = 0; frame < clips[m][c].KeyFrameCount; frame++)
+            {
+                UpdateModelAnimation(model, clips[m][c], frame);
+                var meshes = (Mesh*)NativeMemory.Alloc((nuint)model.MeshCount, (nuint)sizeof(Mesh));
+                for (int k = 0; k < model.MeshCount; k++) meshes[k] = Bake(model.Meshes[k]);
+                baked[(m, c, frame)] = (nint)meshes;
+            }
+        }
     }
 
-    readonly System.Diagnostics.Stopwatch tsw = new();
-    readonly List<double> tms = [];
-    int tdraws;
+    /// <summary>Gets the model in a draw's baked pose.</summary>
+    Model Posed(int i)
+    {
+        var (_, m, c, frame) = draws[i];
+        var model = models[m];
+        model.Meshes = (Mesh*)baked[(m, c, frame)];
+        return model;
+    }
+
+    /// <summary>Copies a skinned mesh's current pose into a new static mesh on the GPU.</summary>
+    static Mesh Bake(Mesh from)
+    {
+        var to = new Mesh(from.VertexCount, from.TriangleCount);
+        to.AllocVertices();
+        Copy(Has(from.AnimVertices) ? from.AnimVertices : from.Vertices, to.Vertices, from.VertexCount * 3 * sizeof(float));
+        if (Has(from.Normals))
+        {
+            to.AllocNormals();
+            Copy(Has(from.AnimNormals) ? from.AnimNormals : from.Normals, to.Normals, from.VertexCount * 3 * sizeof(float));
+        }
+        if (Has(from.TexCoords))
+        {
+            to.AllocTexCoords();
+            Copy(from.TexCoords, to.TexCoords, from.VertexCount * 2 * sizeof(float));
+        }
+        if (Has(from.Colors))
+        {
+            to.AllocColors();
+            Copy(from.Colors, to.Colors, from.VertexCount * 4);
+        }
+        if (Has(from.Indices))
+        {
+            to.AllocIndices();
+            Copy(from.Indices, to.Indices, from.TriangleCount * 3 * sizeof(ushort));
+        }
+        UploadMesh(ref to, false);
+        return to;
+    }
+
+    static bool Has(void* data) => (nint)data != 0;
+
+    static void Copy(void* from, void* to, int bytes) => Buffer.MemoryCopy(from, to, bytes, bytes);
 
     public void DrawScene(World world, RenderContext render)
-    {
-        tsw.Restart();
-        DrawScene2(world, render);
-        Rlgl.DrawRenderBatchActive();
-        tsw.Stop();
-    }
-
-    void DrawScene2(World world, RenderContext render)
     {
         Plan(world);
         for (int i = 0; i < draws.Count; i++)
         {
-            var (f, m, _, _) = draws[i];
-            Pose(i);
-            var model = models[m];
+            var f = draws[i].Figure;
+            var model = Posed(i);
             var kit = Kit(world, f.Player);
             for (int k = 0; k < model.MaterialCount; k++)
             {
@@ -194,20 +237,10 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
     /// <summary>The same poses in each player's mask colour, so the bench gets outlines like the ice.</summary>
     public void DrawMask(World world, RenderContext render)
     {
-        tsw.Start();
-        DrawMask2(render);
-        Rlgl.DrawRenderBatchActive();
-        tsw.Stop();
-        if (draws.Count > 20) { tms.Add(tsw.Elapsed.TotalMilliseconds); tdraws += draws.Count; }
-    }
-
-    void DrawMask2(RenderContext render)
-    {
         for (int i = 0; i < draws.Count; i++)
         {
-            var (f, m, _, _) = draws[i];
-            Pose(i);
-            var model = models[m];
+            var f = draws[i].Figure;
+            var model = Posed(i);
             for (int k = 0; k < model.MaterialCount; k++) model.Materials[k].Shader = render.Mask;
             DrawModelEx(model, Spot(f), Vector3.UnitY, f.Heading * 180f / MathF.PI, new Vector3(Players.SkaterRenderer.Scale), MaskIds.For(f.Player.MaskId));
         }
@@ -215,8 +248,12 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
 
     public void Dispose()
     {
-        if (tms.Count > 0) Console.WriteLine($"BENCHTIME frames {tms.Count} mean {tms.Average():0.000} ms p99 {tms.Order().ElementAt((int)(tms.Count * 0.99)):0.000} max {tms.Max():0.000} ms, {tdraws / (double)tms.Count:0.0} figures drawn");
         if (!loaded) return;
+        foreach (var (key, meshes) in baked)
+        {
+            for (int k = 0; k < models[key.Model].MeshCount; k++) UnloadMesh(((Mesh*)meshes)[k]);
+            NativeMemory.Free((void*)meshes);
+        }
         foreach (var t in kits.Values) UnloadTexture(t);
         foreach (var m in models) UnloadModel(m);
     }
