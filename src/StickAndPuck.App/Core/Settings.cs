@@ -93,6 +93,9 @@ public sealed record Settings
     /// <summary>Gets a value indicating whether the home and away kits are swapped (SAP_SWAP_KITS=0|1). Tab toggles it in play.</summary>
     public bool SwapKits { get; init; }
 
+    /// <summary>Gets a value indicating whether both clubs' benches show their players (SAP_BENCHES=0|1). Off leaves the benches empty; the match plays the same either way.</summary>
+    public bool Benches { get; init; } = true;
+
     /// <summary>Gets a value indicating whether the fps and key help line shows top left (SAP_FPS=0|1).</summary>
     public bool FpsLine { get; init; }
 
@@ -112,7 +115,7 @@ public sealed record Settings
     public IReadOnlyDictionary<GameAction, KeyBinding> Keys { get; init; } = new Dictionary<GameAction, KeyBinding>();
 
     /// <summary>Lays the SAP_* overrides over these settings: SAP_DIFFICULTY, SAP_CAMERA_ZOOM, SAP_LIGHTING,
-    /// SAP_CONTROL_MARKER, SAP_SIM_GAME, SAP_AUTO_DEKE, SAP_ONE_TIMERS, SAP_SWAP_KITS, SAP_FPS,
+    /// SAP_CONTROL_MARKER, SAP_SIM_GAME, SAP_AUTO_DEKE, SAP_ONE_TIMERS, SAP_SWAP_KITS, SAP_BENCHES, SAP_FPS,
     /// SAP_MATCH_DEBUG, SAP_LINES_DEBUG and SAP_LANGUAGE. A variable that is unset or empty changes nothing, so
     /// the saved settings stay in charge; a bad value is an error, like SAP_LIGHTING always was.</summary>
     public static Settings FromEnvironment() => FromEnvironment(new Settings());
@@ -127,6 +130,7 @@ public sealed record Settings
         if (Flag("SAP_AUTO_DEKE").TryGet(out bool deke)) s = s with { AutoDeke = deke };
         if (Flag("SAP_ONE_TIMERS").TryGet(out bool oneTimers)) s = s with { OneTimers = oneTimers };
         if (Flag("SAP_SWAP_KITS").TryGet(out bool swap)) s = s with { SwapKits = swap };
+        if (Flag("SAP_BENCHES").TryGet(out bool benches)) s = s with { Benches = benches };
         if (Flag("SAP_FPS").TryGet(out bool fps)) s = s with { FpsLine = fps };
         if (Flag("SAP_MATCH_DEBUG").TryGet(out bool match)) s = s with { MatchDebug = match };
         if (Flag("SAP_LINES_DEBUG").TryGet(out bool lines)) s = s with { LinesDebug = lines };

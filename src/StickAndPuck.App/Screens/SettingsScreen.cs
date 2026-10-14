@@ -56,6 +56,7 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
             new MenuItem(Text.Get(K.CameraZoom), value: OnOff(s.CameraZoom), change: _ => Set(s with { CameraZoom = !s.CameraZoom })),
             new MenuItem(Text.Get(K.Lighting), value: Text.Get(s.Lighting switch { LightingMood.Early => K.LightingEarly, LightingMood.Afternoon => K.LightingAfternoon, LightingMood.Late => K.LightingLate, _ => K.LightingRandom }), change: d => Set(s with { Lighting = Cycle(s.Lighting, d) })),
             new MenuItem(Text.Get(K.SwapKits), value: OnOff(s.SwapKits), change: _ => Set(s with { SwapKits = !s.SwapKits })),
+            new MenuItem(Text.Get(K.Benches), value: OnOff(s.Benches), change: _ => Set(s with { Benches = !s.Benches })),
             new MenuItem(Text.Get(K.Volume), value: ((int)MathF.Round(s.Volume * 10)).ToString(CultureInfo.InvariantCulture), change: Volume),
             new MenuItem(Text.Get(K.Language), value: Text.NameOf(s.Language), change: d => Set(s with { Language = Cycle(s.Language, d) })),
             new MenuItem(Text.Get(K.FpsLine), value: OnOff(s.FpsLine), change: _ => Set(s with { FpsLine = !s.FpsLine })),
