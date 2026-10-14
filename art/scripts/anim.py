@@ -340,11 +340,136 @@ def ref_drop(i):                            # puck held out over the dot, bent f
     arm('R', [(0.05, -0.75, -0.45), (0.0, -0.85, -0.40), (0.0, -0.55, -0.85), (0.1, -0.35, -0.9)][i],
         [(-0.1, -0.85, 0.05), (-0.05, -0.95, -0.15), (-0.05, -0.30, -0.95), (0.0, 0.0, -1.0)][i])
 
+# ---------------- bench clips (A11) ----------------
+# Bench figures stand or sit behind the far boards (board top 1.07 m above the soles), so only the
+# helmet and shoulders (seated, ~8 px) or the chest up (standing, ~14 px) show: the upper body is
+# posed big, the legs only sane. SEATED: the hip joints come down to 0.48 m, which puts the seat of
+# the pants, so the bench top, at about 0.45 m above the skate soles; thighs level, shins upright,
+# feet flat on the floor. STANDING AT THE BOARDS: the board face is 0.45 m in front of the origin
+# (-Y), its top at BOARD_TOP. Cheer reuses celebrate.
+SEAT_DROP = 0.38                            # 0.86 m rest hip height down to 0.48
+BOARD_TOP, BOARD_Y = 1.07, -0.45
+
+def hide_stick(): PB['stick'].scale = (1e-3, 1e-3, 1e-3); upd()
+
+def reach(s, P, pole=None, hand=None):
+    """two-bone arm IK: the wrist at armature-space point P, elbow toward the pole, hand along hand"""
+    sx = 1 if s == 'L' else -1
+    pole = V(pole or (sx * 1.0, 0.3, -0.6))
+    H = PB['upperarm.' + s].head.copy(); A = V(P)
+    L1, L2 = B['upperarm.' + s].length, B['forearm.' + s].length
+    d = A - H; dist = min(d.length, L1 + L2 - 1e-4); n = d.normalized()
+    a = (L1 * L1 - L2 * L2 + dist * dist) / (2 * dist); h = math.sqrt(max(0.0, L1 * L1 - a * a))
+    pv = (pole - n * pole.dot(n)).normalized()
+    K = H + n * a + pv * h
+    aim('upperarm.' + s, K - H); aim('forearm.' + s, H + n * dist - PB['forearm.' + s].head)
+    aim('hand.' + s, hand or (H + n * dist - K))
+
+def stick_dir(d, floor=None):
+    """turn the stick about the top glove so the blade end points along d; with floor, slide it
+    through the glove until the blade's lowest point rests at that height"""
+    p = PB[SB]; m = p.matrix @ B[SB].matrix_local.inverted(); w = V(d).normalized()
+    G = m @ GRIP; rd = (m.to_3x3() @ D0).normalized().rotation_difference(w).to_matrix().to_4x4()
+    p.matrix = Matrix.Translation(G) @ rd @ Matrix.Translation(-G) @ p.matrix; upd()
+    if floor is not None and abs(w.z) > 1e-3:
+        p.matrix = Matrix.Translation(w * (floor - stick_low()) / w.z) @ p.matrix; upd()
+
+def seat(lean=0.0, spread=0.0):
+    """down on the bench: hips at 0.48, thighs forward, shins down to flat feet"""
+    shift(z=-SEAT_DROP)
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        leg(s, V((sx * (0.19 + spread), -0.40, 0.12)), pole=(sx * 0.15, -1.0, 1.0))
+    turn('spine', x=lean)
+
+def knee(s): return PB['shin.' + s].head.copy()
+
+def stick_between_knees(z=0.74):
+    """the stick stands up between the knees, the top glove on the shaft above them, blade on the floor"""
+    reach('R', V((-0.13, -0.46, z)), pole=(-1, 0.2, -0.4))
+    stick_dir((0.20, -0.22, -1.0), floor=0.0)              # the knob leans back past the right shoulder, clear of the face
+
+def skater_sit(i):                          # watching the play: head follows it, a small bob
+    seat(lean=0.08 + 0.02 * (i % 2)); turn('chest', x=-0.04)
+    turn('neck', x=-0.06 + 0.04 * (i % 2)); turn('neck', z=[0.0, 0.2, 0.2, -0.2][i]); turn('head', z=[0.0, 0.4, 0.4, -0.35][i], x=[0, 0.1, 0, 0.1][i])
+    stick_between_knees()
+    reach('L', knee('L') + V((-0.02, -0.04, 0.06)), pole=(1, 0.3, -0.3))
+
+def skater_sit_tired(i):                    # bent far forward, forearms on the knees, chest heaving
+    heave = [0.0, 1.0, 0.4][i]
+    seat(lean=0.55 - 0.05 * heave); turn('chest', x=0.25 - 0.12 * heave)
+    for s in 'LR': turn('clavicle.' + s, y=(1 if s == 'L' else -1) * (-0.10 * heave))
+    turn('neck', x=-0.45); turn('head', x=-0.1 + 0.08 * heave)
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        reach(s, knee(s) + V((-sx * 0.13, -0.16, -0.02)), pole=(sx * 0.4, 0.2, -1.0), hand=(-sx * 0.3, -0.5, -0.8))
+    stick_dir((-0.35, -0.55, -0.75), floor=0.0)
+
+def skater_slump(i):                        # head hung, shoulders dropped, hands loose between the knees
+    seat(lean=0.38 + 0.03 * i); turn('chest', x=0.15)
+    for s in 'LR': turn('clavicle.' + s, y=(1 if s == 'L' else -1) * 0.30)
+    turn('neck', x=0.55 + 0.05 * i); turn('head', x=0.25, z=[0.0, -0.12][i])
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        reach(s, V((sx * 0.05, -0.48, 0.42)), pole=(sx * 0.6, 0.4, -1.0), hand=(0, -0.2, -1))
+    stick_dir((-0.25, -0.75, -0.6), floor=0.0)
+
+def skater_chat(i):                         # turned to the neighbour on the left, the left hand talking
+    seat(lean=0.10); yaw = 0.35
+    turn('spine', z=yaw * 0.5); turn('chest', z=yaw * 0.5); turn('neck', z=yaw * 0.6); turn('head', z=0.35 + [0, 0.08, 0, -0.06][i], x=[0, -0.08, 0, 0.04][i])
+    stick_between_knees()
+    hand = [(0.40, -0.42, 1.00), (0.48, -0.36, 1.18), (0.36, -0.48, 0.92), (0.52, -0.30, 1.10)][i]
+    reach('L', V(hand), pole=(1, 0.4, -0.8), hand=[(0.5, -0.6, 0.6), (0.7, -0.2, 0.7), (0.4, -0.8, 0.3), (0.8, 0.1, 0.6)][i])
+
+def skater_helmet_off(i):                   # seated: left hand up to the helmet, lifts it off, brings it down (held)
+    seat(lean=0.10); stick_between_knees()
+    turn('neck', x=[0.0, 0.10, -0.15, 0.0][i]); turn('head', x=[0, 0.15, -0.1, 0][i])
+    if i == 0: reach('L', knee('L') + V((-0.02, -0.04, 0.06)), pole=(1, 0.3, -0.3))
+    else:
+        top = PB['head'].tail
+        hand = [None, top + V((0.12, -0.02, -0.02)), top + V((0.16, -0.06, 0.30)), V((0.42, -0.30, 0.70))][i]
+        reach('L', hand, pole=(1, 0.2, -0.3 if i == 3 else 0.4), hand=[None, (-0.6, 0, 0.8), (-0.2, 0, 1), (0.2, -0.6, -0.7)][i])
+
+def stand_lean(lean=0.30):
+    shift(y=0.04, z=-0.03); turn('pelvis', x=0.08); plant(spread=0.03, pole=(0, -1, 0))
+    turn('spine', x=lean)
+
+def skater_stand_boards(i):                 # leaning on the boards, both gloves on the top of them
+    stand_lean(0.30 + 0.03 * i); turn('neck', x=-0.25); turn('head', z=[0.0, 0.2][i])
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        reach(s, V((sx * 0.24, BOARD_Y - 0.02, BOARD_TOP + 0.05)), pole=(sx * 1.0, 0.2, -0.3), hand=(sx * 0.1, -1.0, -0.3))
+    stick_dir((0.1, 0.12, -1.0), floor=0.02)
+
+def skater_bang(i):                         # stick up high in the top glove, then hammered down on the board top
+    up = [1.0, 0.0, 0.6, 0.0][i]
+    stand_lean(0.22 + 0.10 * (1 - up)); turn('chest', z=0.12); turn('neck', x=-0.2 - 0.1 * up); turn('head', x=-0.1 * up)
+    reach('L', V((0.24, BOARD_Y - 0.02, BOARD_TOP + 0.05)), pole=(1, 0.2, -0.3), hand=(0.1, -1.0, -0.3))
+    reach('R', V((-0.18, -0.28 + 0.06 * up, 1.24 + 0.30 * up)), pole=(-1, 0.2, -0.5 + 0.6 * up))
+    stick_dir((0.15, -0.45 + 0.25 * up, 0.88) if up > 0.5 else (0.10, -0.80, -0.60))   # down: the shaft lands on the board top
+
+def skater_argue(i):                        # at the boards, arms flung wide at the ice, then a jab and a fist up
+    hide_stick(); stand_lean(0.12)
+    turn('chest', z=[0.0, -0.2, 0.15, -0.1][i]); turn('neck', x=-0.25); turn('head', x=-0.15, z=[0, -0.2, 0.1, 0][i])
+    if i in (0, 2):                         # arms flung out wide, palms up
+        w = [1.0, 0, 0.8, 0][i]
+        for s in 'LR':
+            sx = 1 if s == 'L' else -1
+            arm(s, (0.8, -0.45, 0.05 + 0.2 * w), (0.75, -0.55, 0.35 * w + 0.1))
+    else:                                   # right arm jabs a point out at the ice; the left fist cocked, then pumped up
+        arm('R', (0.55, -0.75, 0.35), (0.6, -0.7, 0.4))
+        if i == 1: arm('L', (0.45, -0.1, -0.6), (-0.1, -0.6, 0.8))
+        else: arm('L', (0.35, -0.1, 0.9), (0.1, -0.05, 1.0))
+
 # name: (poses, frames each pose is held at 24 fps, loops?)
 CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4, 6, True), 'shoot': (skater_shoot, 6, 3, False),
                     'pass': (skater_pass, 5, 2, False), 'check': (skater_check, 4, 3, False), 'celebrate': (skater_celebrate, 4, 5, True),
                     'punch': (skater_punch, 5, 3, False), 'block': (skater_block, 3, 3, False), 'grab': (skater_grab, 4, 5, True),
-                    'fall': (skater_fall, 4, 4, False)},
+                    'fall': (skater_fall, 4, 4, False),
+                    'sit': (skater_sit, 4, 14, True), 'sit_tired': (skater_sit_tired, 3, 8, True),
+                    'stand_boards': (skater_stand_boards, 2, 20, True), 'slump': (skater_slump, 2, 24, True),
+                    'argue': (skater_argue, 4, 8, True), 'bang': (skater_bang, 4, 4, True),
+                    'chat': (skater_chat, 4, 8, True), 'helmet_off': (skater_helmet_off, 4, 6, False)},
          'goalie': {'ready': (goalie_ready, 4, 5, True), 'butterfly': (goalie_butterfly, 5, 3, False),
                     'glove': (goalie_glove, 4, 3, False), 'blocker': (goalie_blocker, 3, 3, False), 'shuffle': (goalie_shuffle, 4, 3, True)},
          'referee': {'skate': (ref_skate, 8, 3, True), 'idle': (ref_idle, 4, 8, True),
