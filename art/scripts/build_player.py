@@ -26,7 +26,7 @@ for c in list(scene.collection.children): scene.collection.children.unlink(c)
 V = lambda *a: Vector(a)
 X, F = V(1, 0, 0), V(0, -1, 0)
 TEX = 64
-ROLE = globals().get('ROLE', 'skater')            # set ROLE before exec: 'skater', 'goalie' or 'referee'
+ROLE = globals().get('ROLE', 'skater')            # set ROLE before exec: 'skater', 'goalie', 'referee' or 'staff'
 NAME = ROLE
 
 # texture atlas: pixel rects (x, y from the top, w, h). Each loft part unwraps around its
@@ -46,6 +46,9 @@ if ROLE == 'goalie':
     KITS = {'home': dict(KITS['home'], num='1'), 'away': dict(KITS['away'], num='30')}
 if ROLE == 'referee':
     KITS = {'ref': dict(Y='#efe0c2', Yd='#bdb9c4', B='#211b28', Bd='#18131f', num='')}
+if ROLE == 'staff':       # bench staff (A12): a dark-suited coach and a trainer in the home tracksuit, bare-headed
+    KITS = {'coach': dict(Y='#f2c14e', Yd='#c8963c', B='#2a2c40', Bd='#18131f', num='', H='#8a8790', Hd='#555f6b', Hl='#bdb9c4'),
+            'trainer': dict(Y='#f2c14e', Yd='#c8963c', B='#2f5f8f', Bd='#2a2c40', num='', H='#613b3a', Hd='#423236', Hl='#9e655c')}
 COMMON = dict(S='#f0b48a', Sd='#c47262', H='#613b3a', E='#211b28', C='#efe0c2', W='#d2ad7f',
               K='#2a2230', Kl='#423236', St='#8a8790', T='#211b28')
 DIG = {'0': ['###', '#.#', '#.#', '#.#', '###'], '1': ['.#.', '##.', '.#.', '.#.', '###'], '2': ['##.', '..#', '.#.', '#..', '###'],
@@ -81,6 +84,46 @@ def paint_referee(P, px, fill, near):
         if t > 0.4 and (near(u, 0.18, 0.02) or near(u, 0.32, 0.02)): return '#555f6b'
         return '#2a2c36'
     fill('helmet', helmet)
+
+def paint_staff(P, px, fill, near):
+    hair = lambda u, t: P['Hd'] if t < 0.3 and not near(u, 0.25, 0.2) else (P['Hl'] if t > 0.75 and int(u * 32) % 3 == 0 else P['H'])
+    fill('helmet', hair)                                  # the hair cap: crown highlights, darker over the ears and nape
+    fill('head', lambda u, t: P['S'] if near(u, 0.25, 0.2) else P['H'])
+    hx, hy, hw, hh = R['head']; c0 = hx + 8
+    for x in (c0 - 3, c0 - 2, c0 + 1, c0 + 2): px[hy + 5][x] = P['Hd']     # brows, eyes, nose, mouth, ears as the players
+    for x in (c0 - 2, c0 + 1): px[hy + 7][x] = P['E']
+    px[hy + 8][c0 - 1] = P['Sd']; px[hy + 8][c0] = P['Sd']
+    px[hy + 10][c0 - 1] = P['Sd']; px[hy + 10][c0] = P['Sd']
+    for x in (hx, hx + 15): px[hy + 7][x] = P['Sd']
+    fill('glove', lambda u, t: P['Sd'] if near(u, 0.75, 0.15) else P['S'])     # bare hands, darker on the back
+    if P['B'] == '#2a2c40':                               # coach: dark suit, light shirt V and a gold tie, black shoes
+        def jacket(u, t):
+            if t > 0.55 and near(u, 0.25, 0.04 + 0.3 * (t - 0.55)):
+                return P['Y'] if near(u, 0.25, 0.02) and t < 0.93 else P['C']
+            if t > 0.5 and near(u, 0.25, 0.08 + 0.3 * (t - 0.5)): return '#3e5875'     # lapels
+            return P['Bd'] if t < 0.05 else P['B']
+        fill('torso', jacket)
+        fill('upper', lambda u, t: P['B'])
+        fill('fore', lambda u, t: P['C'] if t > 0.86 else P['B'])
+        for k in ('pants', 'thigh', 'shin'): fill(k, lambda u, t: '#33293a' if near(u, 0.25, 0.03) else '#2a2230')
+        fill('boot', lambda u, t: '#18131f' if t < 0.2 else ('#423236' if near(u, 0.25, 0.1) and t > 0.5 else '#211b28'))
+    else:                                                 # trainer: club tracksuit, a bold stripe down sleeves and legs, white shoes
+        stripe = lambda u: near(u, 0.0, 0.07) or near(u, 0.5, 0.07)
+        def top(u, t):
+            if t > 0.9: return P['Y']                     # collar
+            if near(u, 0.234, 0.01): return P['C']        # zip
+            if stripe(u): return P['Y']
+            return P['Bd'] if t < 0.06 else P['B']
+        fill('torso', top)
+        x0, y0 = R['torso'][:2]
+        for dy in range(-1, 2):                           # a small gold crest on the left chest
+            for dx in range(-1, 2): px[y0 + 6 + dy][x0 + 10 + dx] = P['Y']
+        fill('upper', lambda u, t: P['Y'] if stripe(u) else P['B'])
+        fill('fore', lambda u, t: P['Bd'] if t > 0.86 else (P['Y'] if stripe(u) else P['B']))
+        fill('pants', lambda u, t: P['Y'] if stripe(u) else P['B'])
+        fill('thigh', lambda u, t: P['Y'] if stripe(u) else P['B'])
+        fill('shin', lambda u, t: P['Y'] if stripe(u) else (P['Bd'] if t < 0.1 else P['B']))
+        fill('boot', lambda u, t: P['Kl'] if t < 0.2 else ('#ccc9d2' if near(u, 0.75, 0.15) else P['C']))
 
 def paint_atlas(kit):
     # once an Aseprite file exists it is the source: export it and use it, never repaint over it
@@ -133,6 +176,7 @@ def paint_atlas(kit):
         fill('sw_' + k, lambda u, t, col=col: col)
     if ROLE == 'goalie': paint_goalie(P, px, fill, near)
     if ROLE == 'referee': paint_referee(P, px, fill, near)
+    if ROLE == 'staff': paint_staff(P, px, fill, near)
     img = bpy.data.images.new(NAME + '_' + kit, TEX, TEX, alpha=False)
     flat = []
     for y in range(TEX - 1, -1, -1):                                     # Blender rows run bottom to top
@@ -256,17 +300,38 @@ if ROLE == 'referee':     # upright, arms relaxed at the sides, no stick
               'elbow.L': V(0.31, 0.0, 1.12), 'wrist.L': V(0.33, -0.04, 0.90), 'grip.L': V(0.33, -0.07, 0.82),
               'elbow.R': V(-0.31, 0.0, 1.12), 'wrist.R': V(-0.33, -0.04, 0.90), 'grip.R': V(-0.33, -0.07, 0.82)})
     FOOT_DIR = {s: V(math.sin(a), -math.cos(a), 0) for s, a in {'L': 0.15, 'R': -0.15}.items()}
-TS = {'goalie': 1.15, 'referee': 0.95}.get(ROLE, 1.0)      # torso bulk: goalie chest protector, slimmer referee
+if ROLE == 'staff':       # upright in shoes on the floor: soles at 0, ankles 0.09, about 1.80 m to the top of the hair
+    J.update({'pelvis': V(0, 0.02, 0.93), 'spine': V(0, 0.0, 1.10), 'chest': V(0, -0.03, 1.28), 'neck': V(0, -0.05, 1.46), 'head': V(0, -0.07, 1.63),
+              'shoulder.L': V(0.24, -0.03, 1.38), 'shoulder.R': V(-0.24, -0.03, 1.38),
+              'hip.L': V(0.11, 0.02, 0.90), 'knee.L': V(0.12, -0.04, 0.49), 'ankle.L': V(0.13, 0.0, 0.09),
+              'hip.R': V(-0.11, 0.02, 0.90), 'knee.R': V(-0.12, -0.04, 0.49), 'ankle.R': V(-0.13, 0.0, 0.09),
+              'elbow.L': V(0.30, 0.0, 1.10), 'wrist.L': V(0.32, -0.03, 0.86), 'grip.L': V(0.32, -0.05, 0.78),
+              'elbow.R': V(-0.30, 0.0, 1.10), 'wrist.R': V(-0.32, -0.03, 0.86), 'grip.R': V(-0.32, -0.05, 0.78)})
+    FOOT_DIR = {s: V(math.sin(a), -math.cos(a), 0) for s, a in {'L': 0.12, 'R': -0.12}.items()}
+STAFF = ROLE == 'staff'
+TS = {'goalie': 1.15, 'referee': 0.95, 'staff': 0.88}.get(ROLE, 1.0)      # torso bulk: goalie chest protector, slimmer referee
 PV = J['pelvis']
 
 # ---------------- body parts ----------------
 parts = {}
 parts['Torso'] = (loft('Torso', V(0, PV.y, PV.z - 0.02), J['neck'] + V(0, 0, 0.02),
                        [(t, rx * TS, ry * TS) for t, rx, ry in [(0.0, 0.25, 0.19), (0.3, 0.24, 0.18), (0.62, 0.30, 0.21), (0.82, 0.32, 0.20), (0.94, 0.22, 0.15), (1.0, 0.11, 0.09)]], 'torso'), 'spine')
-PK = 0.8 if ROLE == 'referee' else 1.0                       # referee trousers are slimmer than hockey pants
+PK = {'referee': 0.8, 'staff': 0.74}.get(ROLE, 1.0)                      # referee trousers are slimmer than hockey pants
 parts['Pants'] = (loft('Pants', V(0, PV.y + 0.03, PV.z - 0.18), V(0, PV.y, PV.z + 0.10), [(0.0, 0.26 * PK, 0.21 * PK), (0.5, 0.29 * PK, 0.23 * PK), (1.0, 0.26 * PK, 0.2 * PK)], 'pants'), 'pelvis')
 for s in 'LR':
     sx = 1 if s == 'L' else -1
+    if STAFF:              # slim trouser legs and sleeves, bare hands, flat shoes: fewer rings than the padded players
+        parts['Thigh.' + s] = (loft('Thigh.' + s, J['hip.' + s], J['knee.' + s], [(-0.05, 0.10, 0.11), (1.05, 0.075, 0.08)], 'thigh', n=6), 'thigh.' + s)
+        parts['Shin.' + s] = (loft('Shin.' + s, J['knee.' + s], J['ankle.' + s] + V(0, 0, -0.02), [(-0.05, 0.075, 0.08), (1.0, 0.07, 0.075)], 'shin', n=6), 'shin.' + s)
+        parts['Upper.' + s] = (loft('Upper.' + s, J['shoulder.' + s] + V(0, 0, 0.02), J['elbow.' + s], [(-0.1, 0.09, 0.09), (1.05, 0.07, 0.07)], 'upper', n=6), 'upperarm.' + s)
+        parts['Fore.' + s] = (loft('Fore.' + s, J['elbow.' + s], J['wrist.' + s], [(-0.05, 0.07, 0.07), (1.0, 0.065, 0.065)], 'fore', n=6), 'forearm.' + s)
+        gdir = (J['grip.' + s] - J['wrist.' + s]).normalized()
+        parts['Glove.' + s] = (loft('Glove.' + s, J['wrist.' + s] - gdir * 0.02, J['grip.' + s] + gdir * 0.04,
+                                   [(0.0, 0.06, 0.07), (0.5, 0.075, 0.085), (1.0, 0.055, 0.06)], 'glove', n=6), 'hand.' + s)
+        d = FOOT_DIR[s]; a = J['ankle.' + s]
+        parts['Boot.' + s] = (loft('Boot.' + s, V(a.x, a.y, 0.055) - d * 0.08, V(a.x, a.y, 0.045) + d * 0.20,
+                                   [(0.0, 0.055, 0.055), (0.3, 0.06, 0.06), (1.0, 0.045, 0.04)], 'boot', n=6, up=V(0, 0, 1)), 'foot.' + s)
+        continue
     parts['Thigh.' + s] = (loft('Thigh.' + s, J['hip.' + s], J['knee.' + s], [(-0.05, 0.14, 0.15), (0.5, 0.135, 0.14), (1.05, 0.105, 0.11)], 'thigh'), 'thigh.' + s)
     parts['Shin.' + s] = (loft('Shin.' + s, J['knee.' + s], J['ankle.' + s], [(-0.08, 0.105, 0.115), (0.4, 0.1, 0.11), (1.0, 0.08, 0.085)], 'shin'), 'shin.' + s)
     parts['Upper.' + s] = (loft('Upper.' + s, J['shoulder.' + s] + V(0, 0, 0.02), J['elbow.' + s], [(-0.1, 0.115, 0.11), (0.5, 0.1, 0.1), (1.05, 0.088, 0.088)], 'upper', n=6), 'upperarm.' + s)
@@ -291,10 +356,14 @@ def rim_drop(u, t):
     if t > 0.0: return 0.0
     front = math.sin(2 * math.pi * u)                     # 1 at the front, -1 at the back
     return -0.065 * HS * (1 - front) / (0.2 * HS)
-if ROLE != 'goalie': parts['Helmet'] = (loft('Helmet', hc + V(0, 0.005, 0.045 * HS), hc + V(0, 0.005, 0.245 * HS),
+if STAFF:                 # bare head: a hair cap hugging the crown, its rim a fringe above the brows, down to the nape at the back
+    parts['Hair'] = (loft('Hair', hc + V(0, 0.01, 0.03 * HS), hc + V(0, 0.01, 0.175 * HS),
+                          [(0.0, 0.148 * HS, 0.16 * HS), (0.5, 0.146 * HS, 0.157 * HS), (0.85, 0.115 * HS, 0.125 * HS), (1.0, 0.06 * HS, 0.07 * HS)],
+                          'helmet', n=8, zoff=lambda u, t: rim_drop(u, t) * 0.8, e=0.8), 'head')
+elif ROLE != 'goalie': parts['Helmet'] = (loft('Helmet', hc + V(0, 0.005, 0.045 * HS), hc + V(0, 0.005, 0.245 * HS),
                         [(0.0, 0.178 * HS, 0.192 * HS), (0.45, 0.185 * HS, 0.2 * HS), (0.8, 0.172 * HS, 0.19 * HS),
                          (0.93, 0.14 * HS, 0.16 * HS), (1.0, 0.08 * HS, 0.1 * HS)], 'helmet', n=12, zoff=rim_drop, e=0.7), 'head')
-for sx in ((1, -1) if ROLE != 'goalie' else ()):
+for sx in ((1, -1) if ROLE not in ('goalie', 'staff') else ()):
     ear = box('Ear%+d' % sx, Matrix.Translation(hc + V(sx * 0.168 * HS, 0.0, -0.03 * HS)), (0.045, 0.1, 0.11), 'sw_navy')
     parts['Ear%+d' % sx] = (ear, 'head')
     a_, b_ = hc + V(sx * 0.15 * HS, -0.02, -0.085 * HS), hc + V(sx * 0.04, -0.125 * HS, -0.165 * HS)
