@@ -54,6 +54,8 @@ public sealed class BenchFigure(Player player, float x, float phase)
 /// <item>A club's change on the fly stands the incoming skaters up; they slide to the door and wait
 /// there; the match swaps each one on at the door, and his figure goes as he steps onto the ice.</item>
 /// <item>A skater coming off (on the fly or at a faceoff) appears at the door and walks to his seat.</item>
+/// <item>The seats close up and open out as units go on and come off (<see cref="BenchLayout.Seats"/>),
+/// and the figures walk along the bench to their new seats.</item>
 /// <item>Seated figures turn toward the puck, each at his own pace.</item>
 /// </list></summary>
 public sealed class BenchCrowd
@@ -102,18 +104,19 @@ public sealed class BenchCrowd
         if (!Bench.SquadOf(world, side).TryGet(out var squad)) return;
         var b = Bench.Board(world);
         var others = world.Players.Where(p => p.Side == side && !p.IsGoalie);
-        var seats = BenchLayout.Seats(squad, others, b.PulledGoalie[(int)side]);
+        var seats = BenchLayout.Seats(squad, others, b.PulledGoalie[(int)side], p => BenchLayout.OnBench(world, p));
         var incoming = b.Changing[(int)side].TryGet(out var change)
             ? change.Swaps.Where(s => !s.Done && !s.In.OnIce).Select(s => s.In).ToList()
             : [];
         int[] queued = new int[2];
         foreach (var p in world.Players)
         {
-            if (p.Side != side || !seats.TryGetValue(p.Id, out float seat)) continue;
+            if (p.Side != side) continue;
             bool on = p.OnIce, before = wasOnIce.GetValueOrDefault(p.Id, on);
             wasOnIce[p.Id] = on;
-            if (on || Rules.Penalties.InBox(world, p.Id))
+            if (!seats.TryGetValue(p.Id, out float seat))
             {
+                // on the ice or in the box
                 figures.Remove(p.Id);
                 continue;
             }

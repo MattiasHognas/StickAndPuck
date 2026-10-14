@@ -3,12 +3,13 @@ using StickAndPuck.App.Lines;
 
 namespace StickAndPuck.App.Benches;
 
-/// <summary>Where everyone sits on a club's bench behind the far boards (arena.glb's Bench part):
-/// one seat row 10 m long centred on the club's door. Forwards sit on the side toward centre ice,
-/// line 1 nearest the door and line 4 at the end; the defence pairs sit on the other side of the
-/// door, pair 1 nearest it, with the seat by the door kept for a pulled goalie and the far end for
-/// the goalie who is not playing. Each unit keeps its seats, so a skater coming off goes back to
-/// the free seat of his unit.</summary>
+/// <summary>Where everyone on a club's bench sits behind the far boards (arena.glb's Bench part):
+/// one seat row 10 m long centred on the club's door. Only the players on the bench get a seat,
+/// spread evenly out from the door on their group's side, so the row closes up when a unit goes
+/// on and opens when it comes off. Forwards sit on the side toward centre ice and the defence on
+/// the other, in the order their units go on: the unit after the one on the ice nearest the door,
+/// then the following ones. A pulled goalie sits by the door on the defence side and the goalie
+/// who is not playing at the end of it.</summary>
 public static class BenchLayout
 {
     /// <summary>Where a seated figure sits (z): at the back of the seat (13.05 to 13.5 m out), so his skates stay 0.45 m out behind the boards as the bench clips expect.</summary>
@@ -18,10 +19,13 @@ public static class BenchLayout
     public const float StandZ = -13.25f;
 
     /// <summary>The space from the door to the first seat on either side (m).</summary>
-    const float DoorGap = 0.7f;
+    public const float DoorGap = 0.7f;
 
     /// <summary>Half a bench (m), each side of the door, less the end wall.</summary>
     const float Reach = 4.82f;
+
+    /// <summary>The widest space between seated figures (m), so a short row stays by the door.</summary>
+    public const float MaxPitch = 0.75f;
 
     /// <summary>The space between standing figures waiting at the door (m).</summary>
     const float QueueGap = 0.42f;
@@ -42,43 +46,55 @@ public static class BenchLayout
         return DoorX(side) + way * (0.1f + k * QueueGap);
     }
 
-    /// <summary>Gets every seat of a club, by player id: the forwards' lines, then the defence pairs,
-    /// then any skater outside a unit after them on his group's side; goalies off the ice take the
-    /// far end of the defence side, and a pulled goalie the seat by the door.</summary>
+    /// <summary>Gets whether a player of a club is on its bench: off the ice and not in the penalty box.</summary>
+    public static bool OnBench(World world, Player p) => !p.OnIce && !Rules.Penalties.InBox(world, p.Id);
+
+    /// <summary>Gets the seat (x) of every player on a club's bench, by player id: the forwards'
+    /// lines on their side and the defence pairs on the other, each side in the order the units go
+    /// on, with any skater outside a unit after them on his group's side; a pulled goalie takes the
+    /// seat by the door and the goalie who is not playing the end of the defence side.</summary>
     /// <param name="squad">The club's squad.</param>
     /// <param name="others">Skaters of the club outside the squad's units, in the order they sit.</param>
     /// <param name="pulled">The club's pulled goalie, if any.</param>
-    public static Dictionary<int, float> Seats(Squad squad, IEnumerable<Player> others, Maybe<Player> pulled)
+    /// <param name="onBench">Whether a player is on the bench (see <see cref="OnBench"/>); nobody else gets a seat.</param>
+    public static Dictionary<int, float> Seats(Squad squad, IEnumerable<Player> others, Maybe<Player> pulled, Func<Player, bool> onBench)
     {
-        var seats = new Dictionary<int, float>();
         var side = squad.Side;
-        var forwards = squad.Lines.SelectMany(u => u.Members).ToList();
-        var defence = squad.Pairs.SelectMany(u => u.Members).ToList();
+        var forwards = InTurn(squad.Lines);
+        var defence = InTurn(squad.Pairs);
         foreach (var p in others)
         {
-            if (p.IsGoalie || seats.ContainsKey(p.Id) || forwards.Contains(p) || defence.Contains(p)) continue;
+            if (p.IsGoalie || forwards.Contains(p) || defence.Contains(p)) continue;
             (Squad.GroupOf(p) == Group.Forwards ? forwards : defence).Add(p);
         }
-        Row(seats, forwards, side, ForwardsWay(side), first: 0, count: Math.Max(12, forwards.Count));
+        if (pulled.TryGet(out var puller)) defence.Insert(0, puller);
+        defence.AddRange(squad.Goalies.Where(g => !pulled.Is(p => p == g)));
 
-        // the defence side: the door seat for a pulled goalie, the pairs, then the goalie's seat at the end
-        var goalies = squad.Goalies.Where(g => !pulled.Is(p => p == g)).OrderBy(g => g.OnIce).ToList();   // the one on the bench at the very end
-        int count = Math.Max(6, defence.Count) + 1 + Math.Max(1, goalies.Count);
-        Row(seats, defence, side, -ForwardsWay(side), first: 1, count: count);
-        if (pulled.TryGet(out var puller)) seats[puller.Id] = SeatX(side, -ForwardsWay(side), 0, count);
-        for (int i = 0; i < goalies.Count; i++) seats[goalies[i].Id] = SeatX(side, -ForwardsWay(side), count - 1 - i, count);
+        var seats = new Dictionary<int, float>();
+        Row(seats, forwards.Where(onBench).ToList(), side, ForwardsWay(side));
+        Row(seats, defence.Where(onBench).ToList(), side, -ForwardsWay(side));
         return seats;
     }
 
-    static void Row(Dictionary<int, float> seats, List<Player> players, Side side, float way, int first, int count)
+    /// <summary>The members of a group's units in the order they go on: from the unit after the
+    /// first one with a skater on the ice, round to it.</summary>
+    static List<Player> InTurn(IReadOnlyList<Unit> units)
     {
-        for (int i = 0; i < players.Count; i++) seats.TryAdd(players[i].Id, SeatX(side, way, first + i, count));
+        int on = 0;
+        for (int i = 0; i < units.Count; i++)
+        {
+            if (units[i].Members.Any(p => p.OnIce))
+            {
+                on = i + 1;
+                break;
+            }
+        }
+        return [.. Enumerable.Range(0, units.Count).SelectMany(i => units[(on + i) % units.Count].Members)];
     }
 
-    /// <summary>The i-th of count seats along one side of the door, 0 nearest it.</summary>
-    static float SeatX(Side side, float way, int i, int count)
+    static void Row(Dictionary<int, float> seats, List<Player> players, Side side, float way)
     {
-        float pitch = (Reach - DoorGap) / Math.Max(1, count - 1);
-        return DoorX(side) + way * (DoorGap + Math.Min(i, count - 1) * pitch);
+        float pitch = players.Count > 1 ? MathF.Min(MaxPitch, (Reach - DoorGap) / (players.Count - 1)) : 0f;
+        for (int i = 0; i < players.Count; i++) seats.TryAdd(players[i].Id, DoorX(side) + way * (DoorGap + i * pitch));
     }
 }
