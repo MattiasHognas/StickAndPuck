@@ -6,6 +6,7 @@ using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
 using AiPositioning = StickAndPuck.App.AI.Positioning;
 using StickAndPuck.App.AI.Dev;
@@ -73,6 +74,7 @@ public sealed class PositioningTests : CheckedTest
 
     /// <summary>Runs one 20 minute period of 5 on 5 and checks nobody gets stuck and the shapes hold.</summary>
     [Test]
+    [ExecutionPriority(Priority.High)]
     public void Period()
     {
         var world = Make();
@@ -192,6 +194,7 @@ public sealed class PositioningTests : CheckedTest
 
     /// <summary>Smart skaters sit nearer their ideal spots than poor ones, over the same five minutes.</summary>
     [Test]
+    [ExecutionPriority(Priority.AboveNormal)]
     public void HockeyIq()
     {
         static float Run(int smart)

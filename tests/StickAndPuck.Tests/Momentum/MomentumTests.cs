@@ -9,6 +9,7 @@ using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 using Boost = StickAndPuck.App.Momentum.Momentum;
 
 namespace StickAndPuck.Tests;
@@ -169,6 +170,7 @@ public sealed class MomentumTests : CheckedTest
     }
 
     [Test]
+    [ExecutionPriority(Priority.Critical)]
     public void FullMatch()
     {
         var world = new WorldBuilder().Setup(s => s with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] }).Build();

@@ -3,6 +3,7 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 
 namespace StickAndPuck.Tests;
 
@@ -64,6 +65,7 @@ public sealed class MatchTests : CheckedTest
 
     /// <summary>Plays three periods with a scripted list of goals and checks score, clock, ends, faceoffs and the final.</summary>
     [Test]
+    [ExecutionPriority(Priority.Critical)]
     public void FullMatch()
     {
         var w = Make();

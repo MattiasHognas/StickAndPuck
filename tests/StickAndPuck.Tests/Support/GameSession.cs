@@ -1,14 +1,12 @@
 using StickAndPuck.App.Core;
 
-// the game still keeps the SAP_* variables and the language in statics, so tests take turns
-[assembly: NotInParallel]
-
 namespace StickAndPuck.Tests.Support;
 
 /// <summary>
 /// Readies the game for tests: reads assets from the build output and clears every SAP_* variable but
-/// SAP_REPLAYTEST_PRINT so a developer's shell never changes a result. The sessions, screens and pads
-/// live on each world's <see cref="AppState"/>, so every test starts from a fresh one.
+/// SAP_REPLAYTEST_PRINT so a developer's shell never changes a result. Both happen once, before any test
+/// runs; after that no test changes the folder or a variable, and the sessions, screens and pads live on
+/// each world's <see cref="AppState"/>, so the tests run side by side, each on a fresh one.
 /// </summary>
 public static class GameSession
 {

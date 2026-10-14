@@ -39,17 +39,13 @@ public sealed class VersusTests : CheckedTest
     [Test]
     public void Devices()
     {
-        Env.Set("SAP_VERSUS_P2", "");
         var inputs = VersusMode.Inputs(InputDevice.KeyboardMouse, Player2);
         Check(inputs.Count == 2 && inputs[0] == new InputSlot(InputDevice.KeyboardMouse, Side.Home) && inputs[1] == new InputSlot(InputDevice.Gamepad1, Side.Away),
             "by default player one is keyboard and mouse on the home club, player two the first gamepad on the visitors");
-        Check(VersusMode.SecondDevice(InputDevice.Gamepad1, Player2) == InputDevice.KeyboardMouse, "when player one holds the first gamepad, player two gets the keyboard");
-        Check(VersusMode.SecondDevice(InputDevice.Gamepad2, Player2) == InputDevice.Gamepad1, "when player one holds the second gamepad, player two gets the first");
-        Env.Set("SAP_VERSUS_P2", "pad2");
-        Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse, Player2) == InputDevice.Gamepad2, "SAP_VERSUS_P2=pad2 puts player two on the second gamepad");
-        Env.Set("SAP_VERSUS_P2", "keyboard");
-        Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse, Player2) == InputDevice.Gamepad1, "SAP_VERSUS_P2 never gives both players the same device");
-        Env.Set("SAP_VERSUS_P2", "");
+        Check(VersusMode.SecondDevice(InputDevice.Gamepad1, Player2, "") == InputDevice.KeyboardMouse, "when player one holds the first gamepad, player two gets the keyboard");
+        Check(VersusMode.SecondDevice(InputDevice.Gamepad2, Player2, "") == InputDevice.Gamepad1, "when player one holds the second gamepad, player two gets the first");
+        Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse, Player2, "pad2") == InputDevice.Gamepad2, "SAP_VERSUS_P2=pad2 puts player two on the second gamepad");
+        Check(VersusMode.SecondDevice(InputDevice.KeyboardMouse, Player2, "keyboard") == InputDevice.Gamepad1, "SAP_VERSUS_P2 never gives both players the same device");
         var ai = VersusMode.Inputs(InputDevice.None, Player2);
         Check(ai.All(s => s.Device == InputDevice.None), "with no human (SAP_HUMAN=0) both clubs go to the AI");
     }

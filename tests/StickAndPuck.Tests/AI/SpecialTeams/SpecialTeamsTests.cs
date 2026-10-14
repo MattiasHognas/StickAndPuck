@@ -3,6 +3,7 @@ using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
 using AiSpecialTeams = StickAndPuck.App.AI.SpecialTeams;
 
@@ -65,6 +66,7 @@ public sealed class SpecialTeamsTests : CheckedTest
 
     /// <summary>Power plays with special teams on and off, each club on the power play in turn.</summary>
     [Test]
+    [ExecutionPriority(Priority.High)]
     public void PowerPlayAndKill()
     {
         PowerPlay(WorldBuilder.Clubs, new Settings(), Seed, Check);

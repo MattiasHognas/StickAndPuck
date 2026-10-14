@@ -9,6 +9,7 @@ using StickAndPuck.App.Players;
 using StickAndPuck.App.Referee;
 using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
+using TUnit.Core.Enums;
 
 namespace StickAndPuck.Tests;
 
@@ -382,15 +383,31 @@ public sealed class FightTests : CheckedTest
             "SHL: a club serving two penalties can still fight, since coincidental majors never leave it shorter");
     }
 
-    /// <summary>Full AI matches under each preset, with the referee at full strictness, all at once.</summary>
+    static readonly RuleSet[] Presets = [RuleSet.Arcade, RuleSet.Shl, RuleSet.Nhl];
+
+    /// <summary>Gets the full matches' results, shared by the class's tests.</summary>
+    [ClassDataSource<Played<FightCount>>(Shared = SharedType.PerClass)]
+    public required Played<FightCount> FullMatchesPlayed { get; init; }
+
+    /// <summary>Gets the matches: every seed under each preset in turn.</summary>
+    public static IEnumerable<int> MatchNumbers() => Enumerable.Range(0, Presets.Length * Seeds.Length);
+
+    /// <summary>One full AI match under a preset, with the referee at full strictness; <see cref="FullMatches"/> judges them.</summary>
     [Test]
+    [ExecutionPriority(Priority.High)]
+    [MethodDataSource(nameof(MatchNumbers))]
+    public void PlayMatch(int i) =>
+        FullMatchesPlayed.Add(i, Match(WorldBuilder.DefaultSetup.WithRules(Presets[i / Seeds.Length]) with { PeriodSeconds = 600 }, Seeds[i % Seeds.Length]));
+
+    /// <summary>Full AI matches under each preset, with the referee at full strictness.</summary>
+    [Test]
+    [DependsOn(nameof(PlayMatch), [typeof(int)])]
     public void FullMatches()
     {
-        RuleSet[] presets = [RuleSet.Arcade, RuleSet.Shl, RuleSet.Nhl];
-        var played = Matches.Play(presets.Length * Seeds.Length, i => Match(WorldBuilder.DefaultSetup.WithRules(presets[i / Seeds.Length]) with { PeriodSeconds = 600 }, Seeds[i % Seeds.Length]));
-        for (int r = 0; r < presets.Length; r++)
+        var played = FullMatchesPlayed.All(Presets.Length * Seeds.Length);
+        for (int r = 0; r < Presets.Length; r++)
         {
-            var setup = WorldBuilder.DefaultSetup.WithRules(presets[r]);
+            var setup = WorldBuilder.DefaultSetup.WithRules(Presets[r]);
             int perFight = setup.Rules.FightPenalty == FightPenalty.LoserMinor ? 1 : 2;
             int fights = 0, boxed = 0, broken = 0, open = 0;
             foreach (var (f, b, x, o) in played.Skip(r * Seeds.Length).Take(Seeds.Length))
@@ -402,9 +419,12 @@ public sealed class FightTests : CheckedTest
         }
     }
 
+    /// <summary>What one full match came to: its fights, the fighting penalties, steps a club was not at its strength, and penalties left open.</summary>
+    public sealed record FightCount(int Fights, int Boxed, int Broken, int Open);
+
     static readonly int[] Seeds = [2, 3, 4, 5];
 
-    static (int Fights, int Boxed, int Broken, int Open) Match(MatchSetup setup, int seed)
+    static FightCount Match(MatchSetup setup, int seed)
     {
         var w = new WorldBuilder()
             .Setup(setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] })
@@ -433,6 +453,6 @@ public sealed class FightTests : CheckedTest
             foreach (var side in new[] { Side.Home, Side.Away })
                 if (w.OnIce(side).Count(p => !p.IsGoalie) != Penalties.TargetSkaters(w, side)) broken++;
         }
-        return (Fighting.Started(w), boxed, broken, Current(w).HasValue ? 1 : 0);
+        return new FightCount(Fighting.Started(w), boxed, broken, Current(w).HasValue ? 1 : 0);
     }
 }

@@ -13,7 +13,7 @@ public sealed class SeasonTests : CheckedTest
     /// <summary>The game state the test plays in, fresh for each test.</summary>
     readonly AppState app = new();
 
-    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-seasontest-{Environment.ProcessId}");
+    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-seasontest-{Environment.ProcessId}-{Guid.NewGuid():N}");
 
     string SavePath => Path.Combine(folder, "season.json");
 

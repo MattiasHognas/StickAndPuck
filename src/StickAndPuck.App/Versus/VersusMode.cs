@@ -44,7 +44,7 @@ public sealed class VersusMode : IGameMode
     }
 
     /// <summary>The two human slots: player one on <paramref name="playerOne"/> and the home club, player
-    /// two on <see cref="SecondDevice"/> (from the settings pick <paramref name="picked"/>) and the visitors. <see cref="InputDevice.None"/> for
+    /// two on <see cref="SecondDevice(InputDevice, InputDevice)"/> (from the settings pick <paramref name="picked"/>) and the visitors. <see cref="InputDevice.None"/> for
     /// player one (SAP_HUMAN=0) lets the AI play both clubs, so headless runs go through.</summary>
     public static IReadOnlyList<InputSlot> Inputs(InputDevice playerOne, InputDevice picked)
     {
@@ -53,9 +53,12 @@ public sealed class VersusMode : IGameMode
     }
 
     /// <summary>Player two's device: the settings screen's PLAYER 2 CONTROLS pick (<paramref name="picked"/>, by default the first gamepad) unless player one holds it, then the keyboard; SAP_VERSUS_P2 overrides, and OFF hands the visitors to the AI.</summary>
-    public static InputDevice SecondDevice(InputDevice playerOne, InputDevice picked)
+    public static InputDevice SecondDevice(InputDevice playerOne, InputDevice picked) => SecondDevice(playerOne, picked, Env.Get("SAP_VERSUS_P2"));
+
+    /// <summary>Player two's device as <see cref="SecondDevice(InputDevice, InputDevice)"/> picks it, with <paramref name="forced"/> in place of SAP_VERSUS_P2.</summary>
+    public static InputDevice SecondDevice(InputDevice playerOne, InputDevice picked, string forced)
     {
-        var wanted = Env.Get("SAP_VERSUS_P2").ToLowerInvariant() switch
+        var wanted = forced.ToLowerInvariant() switch
         {
             "keyboard" or "kb" or "keyboardmouse" => InputDevice.KeyboardMouse,
             "pad1" or "gamepad1" or "gamepad" => InputDevice.Gamepad1,
