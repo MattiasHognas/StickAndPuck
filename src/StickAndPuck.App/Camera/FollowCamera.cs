@@ -5,10 +5,14 @@ using StickAndPuck.App.Core;
 namespace StickAndPuck.App.Camera;
 
 /// <summary>The gameplay camera's motion. It pans along the rink after the puck, leading a little in the
-/// direction of play, at a fixed height, distance and tilt, and zooms out with puck speed when the
-/// setting is on. The pan moves in whole pixels at the far boards, so the ad boards (which match
-/// their texture texel for texel) never shimmer. Anything that changes the boards' size on screen
-/// (the zoom, or moving toward the viewer) breaks that match, which is why the camera never trucks in z.</summary>
+/// direction of play, and zooms out with puck speed when the setting is on. When play comes to the near
+/// boards it also slides down the frame, so the near boards and the penalty boxes come into view, and
+/// slides back up as play leaves them, which keeps the far benches in frame. The slide is along the
+/// screen's own down direction (lower and back, same tilt), so every point keeps its distance along
+/// the view and the far boards keep their size. Both moves go in whole pixels at the far boards, so
+/// the ad boards (which match their texture texel for texel) never shimmer. Anything that changes the
+/// boards' size on screen (the zoom, or a plain truck in z) breaks that match, which is why the camera
+/// never trucks.</summary>
 internal sealed class FollowCamera
 {
     /// <summary>Seconds of puck travel the camera leads by.</summary>
@@ -35,8 +39,18 @@ internal sealed class FollowCamera
     /// <summary>How quickly zoom follows speed, in seconds.</summary>
     const float ZoomSeconds = 0.9f;
 
+    /// <summary>Puck depths (m, positive toward the viewer) where the slide down starts and where it is full.
+    /// Play nearer the centre or the far boards leaves the camera where it is: the dead zone.</summary>
+    const float DropFromZ = 3.5f, DropFullZ = 10.5f;
+
+    /// <summary>How far the camera slides down at most, in metres: the near boards and penalty boxes come into view.</summary>
+    const float MaxDrop = 3.5f;
+
+    /// <summary>The slide's settle time in seconds: slower than the pan, so a puck wobbling near the boards doesn't bob the view.</summary>
+    const float DropSettleSeconds = 1.2f;
+
     const float Z = BroadcastCamera.Back;
-    float x, vx, lead, zoom;
+    float x, vx, drop, vdrop, lead, zoom;
 
     /// <summary>Gets the camera for the current state.</summary>
     public Camera3D Camera { get; private set; } = BroadcastCamera.Straight();
@@ -50,7 +64,9 @@ internal sealed class FollowCamera
         lead = 0;
         vx = 0;
         zoom = 0;
+        vdrop = 0;
         x = Goal(world);
+        drop = DropGoal(world);
         Camera = Build();
     }
 
@@ -65,8 +81,10 @@ internal sealed class FollowCamera
         float wantZoom = world.Settings.CameraZoom ? SmoothStep(ZoomFromSpeed, ZoomFullSpeed, speed) : 0;
         zoom += (wantZoom - zoom) * (1 - MathF.Exp(-dt * 4f / ZoomSeconds));
 
-        Spring(ref x, ref vx, Goal(world), dt);
+        Spring(ref x, ref vx, Goal(world), dt, SettleSeconds);
         x = Math.Clamp(x, -MaxX(), MaxX());
+        Spring(ref drop, ref vdrop, DropGoal(world), dt, DropSettleSeconds);
+        drop = Math.Clamp(drop, 0, MaxDrop);
         Camera = Build();
     }
 
@@ -74,6 +92,12 @@ internal sealed class FollowCamera
     float Goal(World world)
     {
         return Math.Clamp(world.Puck.Position.X + lead, -MaxX(), MaxX());
+    }
+
+    /// <summary>How far down the camera wants to be: none while play is away from the near boards, easing in toward them.</summary>
+    static float DropGoal(World world)
+    {
+        return MaxDrop * SmoothStep(DropFromZ, DropFullZ, world.Puck.Position.Z);
     }
 
     float Fov => BroadcastCamera.FovY * (1 + ZoomAmount * zoom);
@@ -97,8 +121,8 @@ internal sealed class FollowCamera
         return Math.Max(0, RinkSpec.HalfLength + EndMargin - HalfWidthAtCentre());
     }
 
-    /// <summary>One pixel of the 480-wide frame, in metres along x, at the far boards. Moving the camera by
-    /// whole steps of this shifts the far boards by whole pixels.</summary>
+    /// <summary>One pixel of the 480-wide frame, in metres, at the far boards. Moving the camera across the
+    /// view (along x, or down the frame) by whole steps of this shifts the far boards by whole pixels.</summary>
     float PixelAtFarBoards()
     {
         var forward = BroadcastCamera.Forward;
@@ -110,14 +134,13 @@ internal sealed class FollowCamera
     Camera3D Build()
     {
         float step = PixelAtFarBoards();
-        float snapped = MathF.Round(x / step) * step;
-        return BroadcastCamera.Straight(snapped, Z, Fov);
+        return BroadcastCamera.Lowered(MathF.Round(x / step) * step, MathF.Round(drop / step) * step, Fov);
     }
 
     /// <summary>A critically damped spring: eases in and out with no overshoot.</summary>
-    static void Spring(ref float value, ref float velocity, float target, float dt)
+    static void Spring(ref float value, ref float velocity, float target, float dt, float settleSeconds)
     {
-        float omega = 4f / SettleSeconds;
+        float omega = 4f / settleSeconds;
         float e = MathF.Exp(-omega * dt);
         float diff = value - target;
         float temp = (velocity + omega * diff) * dt;
