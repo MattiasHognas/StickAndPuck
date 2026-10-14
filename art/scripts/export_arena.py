@@ -7,7 +7,7 @@ loads them, since a Raylib Model keeps no mesh or material names.
 2. drops players, puck, lights and cameras, flattens the ice to its base colour (the game draws
    the light bands, W2 / W18), turns any text objects into meshes (the SHL centre mark is already a mesh, see centre_logo.py),
 3. joins the scenery into one object per part, each part one named mesh: Ice, Floor, Markings,
-   Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Fans, Lanterns, Bench, BenchDoors (2b). Glass is its own mesh so the game can
+   Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Fans, Lanterns, Bench, BenchDoors (2b), PenaltyBox, BoxDoors (2c). Glass is its own mesh so the game can
    set its tone from the lighting; AdBoards is the only mesh with the ad_pixel material, which
    exports as KHR_materials_unlit,
 4. exports a Y-up GLB with transforms applied and the ad strip embedded with nearest filtering,
@@ -87,6 +87,7 @@ def box(bm, x0, x1, y0, y1, z0, z1, mi):
 def part_mesh(name, bm, colours):
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
     for key, h in colours:
+        if key in bpy.data.materials: me.materials.append(bpy.data.materials[key]); continue   # a material another part already has
         m = bpy.data.materials.new(key); m.use_nodes = True
         bsdf = m.node_tree.nodes['Principled BSDF']; bsdf.inputs['Base Color'].default_value = lin(h); bsdf.inputs['Roughness'].default_value = 0.85
         m.diffuse_color = lin(h); me.materials.append(m)
@@ -125,11 +126,44 @@ def components(bm):
         out.append(piece)
     return out
 
+# ---- 2c. the penalty boxes behind the near boards (Blender -Y; the game's +z) ----
+# the SHL spot, across from the benches either side of centre: home at x = -2.5, away at +2.5, the
+# doors Penalties.BoxDoor puts skaters through and the seat they park on (game z 13.95). Each box is
+# 3.8 m wide and 1.5 m deep: deck, a seat on a riser under the parked skater, a back wall low enough
+# that the broadcast camera behind it still sees him, end walls, and a glass partition on the inner
+# end where the timekeeper sits between the boxes. The rink glass and posts in front stay.
+BOX_X, BOX_HALF, BOX_Y1 = 2.5, 1.9, -14.55
+def box_spans(): return [(cx - BOX_HALF, cx + BOX_HALF) for cx in (-BOX_X, BOX_X)]
+def in_box(x): return any(x0 < x < x1 for x0, x1 in box_spans())
+
+def build_penalty_boxes():
+    bm = bmesh.new()   # 0 deck, 1 seat, 2 walls and riser, 3 wall cap
+    for x0, x1 in box_spans():
+        box(bm, x0, x1, BOX_Y1, -13.01, -0.05, 0.0, 0)
+        box(bm, x0 + 0.15, x1 - 0.15, -14.25, -13.75, 0.0, 0.2, 2); box(bm, x0 + 0.15, x1 - 0.15, -14.25, -13.75, 0.2, 0.48, 1)
+        box(bm, x0, x1, BOX_Y1, -14.4, 0.0, 1.0, 2); box(bm, x0, x1, BOX_Y1 - 0.02, -14.38, 1.0, 1.06, 3)
+        for ex in (x0, x1 - 0.12): box(bm, ex, ex + 0.12, -14.4, -13.01, 0.0, 1.0, 2)
+    part_mesh('PenaltyBox', bm, [('box_deck', '#211b28'), ('box_seat', '#555f6b'), ('box_wall', '#2a2c36'), ('box_cap', '#8a8790')])
+    # door outlines on the near boards' rink face, as on the bench doors: clear of the ad strip
+    bm = bmesh.new(); fy = -BOARD_Y + 0.006
+    for cx in (-BOX_X, BOX_X):
+        box(bm, cx - 0.5, cx + 0.5, fy, fy + 0.002, 0.02, 0.22, 0)
+        for ex in (cx - 0.5, cx + 0.42): box(bm, ex, ex + 0.08, fy + 0.002, fy + 0.004, 0.0, 0.25, 1)
+        box(bm, cx - 0.5, cx + 0.5, -13.015, -12.725, 1.065, 1.155, 1)
+    part_mesh('BoxDoors', bm, [('door_panel', '#74666b'), ('door_edge', '#423236')])
+    # the glass partitions on the inner end walls, joined into Glass so the game tints them with the rink glass
+    bm = bmesh.new()
+    for x0, x1 in box_spans():
+        ex = x1 - 0.12 if x1 <= 0 else x0
+        box(bm, ex + 0.05, ex + 0.07, -14.4, -13.01, 1.0, 1.9, 0)
+    part_mesh('BoxGlass', bm, [('glass', '#d8dcd2')])
+
 def trim_for_benches():
-    for name, lo, hi in (('Posts', 12.0, 13.5), ('Fans', 14.3, 15.4)):   # posts on the far glass line; the front fan row
+    for name, lo, hi, inside in (('Posts', 12.0, 13.5, in_bench), ('Fans', 14.3, 15.4, in_bench),   # posts on the far glass line; the front fan row
+                                 ('Fans', -15.4, -14.3, in_box)):                                 # and the near front fans behind the boxes
         me = bpy.data.objects[name].data; bm = bmesh.new(); bm.from_mesh(me); bm.verts.index_update()
         gone = [v for piece in components(bm) for c in [sum((p.co for p in piece), Vector()) / len(piece)]
-                if lo < c.y < hi and in_bench(c.x) for v in piece]
+                if lo < c.y < hi and inside(c.x) for v in piece]
         bmesh.ops.delete(bm, geom=gone, context='VERTS'); bm.to_mesh(me); bm.free()
     me = bpy.data.objects['Glass'].data; bm = bmesh.new(); bm.from_mesh(me)
     for x in sorted({x for span in bench_spans() for x in span}):
@@ -139,10 +173,10 @@ def trim_for_benches():
 
 # ---- 3. one object and one named mesh per part ----
 PARTS = [('Ice', ['Ice']), ('Floor', ['Floor']), ('Markings', ['Markings', 'Logo']), ('Boards', ['Boards']),
-         ('Glass', ['Glass']), ('Posts', ['Posts']), ('AdBoards', ['Ad']), ('Nets', ['NetFrame', 'Net']),
+         ('Glass', ['Glass', 'BoxGlass']), ('Posts', ['Posts']), ('AdBoards', ['Ad']), ('Nets', ['NetFrame', 'Net']),
          ('Stands', ['Stands']), ('LED', ['LED']), ('Fans', ['Fans']), ('Lanterns', ['Lanterns', 'Cable']),
-         ('Bench', ['Bench']), ('BenchDoors', ['BenchDoors'])]
-build_benches()
+         ('Bench', ['Bench']), ('BenchDoors', ['BenchDoors']), ('PenaltyBox', ['PenaltyBox']), ('BoxDoors', ['BoxDoors'])]
+build_benches(); build_penalty_boxes()
 def stem(name): return name.split('.')[0]
 for ob in scene.objects:                 # unparent, keeping world placement, so joins and applies are exact
     if ob.parent: mw = ob.matrix_world.copy(); ob.parent = None; ob.matrix_world = mw
