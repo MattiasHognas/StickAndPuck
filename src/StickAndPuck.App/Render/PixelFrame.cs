@@ -45,12 +45,16 @@ public sealed class PixelFrame : IDisposable
     readonly RenderTexture2D hud;
     readonly int width, height;
     readonly int texelLoc, innerLoc, originLoc;
+    readonly RenderScale renderScale;
+    readonly DitherGrid grid;
     int divisor = 1;
 
-    /// <summary>Creates a pixel frame with the specified internal resolution.</summary>
-    public PixelFrame(int width, int height)
+    /// <summary>Creates a pixel frame with the specified internal resolution, drawn at the scale the camera asks for, dithered from the grid's start.</summary>
+    public PixelFrame(int width, int height, RenderScale scale, DitherGrid grid)
     {
         this.width = width; this.height = height;
+        renderScale = scale;
+        this.grid = grid;
         scenes = new RenderTexture2D[RenderScale.MaxDivisor];
         masks = new RenderTexture2D[RenderScale.MaxDivisor];
         for (int i = 0; i < RenderScale.MaxDivisor; i++)
@@ -97,7 +101,7 @@ public sealed class PixelFrame : IDisposable
     /// <summary>Begins drawing into the scene texture, at the scale the camera asked for; the mask and post pass of this frame use the same one.</summary>
     public void BeginScene()
     {
-        divisor = RenderScale.Divisor;
+        divisor = renderScale.Divisor;
         BeginTextureMode(scenes[divisor - 1]);
         ClearBackground(new Color(0x2a, 0x22, 0x30, 255));
     }
@@ -137,7 +141,7 @@ public sealed class PixelFrame : IDisposable
         BeginShaderMode(Post);
         SetShaderValue(Post, texelLoc, new Vector2(1f / sw, 1f / sh), ShaderUniformDataType.Vec2);
         SetShaderValue(Post, innerLoc, divisor > 1 ? InnerDepth : 0f, ShaderUniformDataType.Float);
-        SetShaderValue(Post, originLoc, DitherGrid.Origin, ShaderUniformDataType.Vec2);
+        SetShaderValue(Post, originLoc, grid.Origin, ShaderUniformDataType.Vec2);
         SetShaderValueTexture(Post, GetShaderLocation(Post, "maskTex"), masks[divisor - 1].Texture);
         DrawTexturePro(scenes[divisor - 1].Texture, src, dest, Vector2.Zero, 0, Color.White);
         EndShaderMode();

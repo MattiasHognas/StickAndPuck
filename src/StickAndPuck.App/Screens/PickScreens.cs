@@ -6,18 +6,18 @@ using K = StickAndPuck.App.Core.Text.Keys;
 namespace StickAndPuck.App.Screens;
 
 /// <summary>"New game": every <see cref="IGameMode"/>, exhibition first. Picking one asks for its clubs, then starts it.</summary>
-internal sealed class ModeScreen : MenuScreen
+internal sealed class ModeScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 200;
 
-    readonly IReadOnlyList<IGameMode> modes = GameModes.All();
-    readonly bool board = ArcadeBoardScreen.Any();
+    readonly IReadOnlyList<IGameMode> modes = GameModes.All(app);
+    readonly bool board = ArcadeBoardScreen.Any(app);
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        var items = modes.Select(m => new MenuItem(m.Title, () => Choose(m))).ToList();
-        if (board) items.Add(new MenuItem(Text.Get(K.ArcadeBestRunsItem), () => ScreenFlow.Push(new ArcadeBoardScreen())));
+        var items = modes.Select(m => new MenuItem(m.Title, () => Choose(App, m))).ToList();
+        if (board) items.Add(new MenuItem(Text.Get(K.ArcadeBestRunsItem), () => Flow.Push(new ArcadeBoardScreen(App))));
         return items;
     }
 
@@ -31,19 +31,19 @@ internal sealed class ModeScreen : MenuScreen
     }
 
     /// <summary>Asks for the mode's clubs one at a time, then starts it.</summary>
-    public static void Choose(IGameMode mode)
+    public static void Choose(AppState app, IGameMode mode)
     {
         var picks = new List<ClubData>();
         void Next()
         {
             if (picks.Count >= Math.Clamp(mode.ClubPicks, 0, 2))
             {
-                ScreenFlow.PlayMode(mode, picks);
+                app.Screens.PlayMode(mode, picks);
                 return;
             }
             int index = picks.Count;
-            string heading = mode.PickHeading(index);
-            ScreenFlow.Push(new TeamSelectScreen(heading, index > 0 ? picks[0] : Maybe<ClubData>.None, club =>
+            string heading = mode.PickHeading(app, index);
+            app.Screens.Push(new TeamSelectScreen(app, heading, index > 0 ? picks[0] : Maybe<ClubData>.None, club =>
             {
                 picks.RemoveRange(index, picks.Count - index);    // back from a later pick and pick again
                 picks.Add(club);
@@ -59,16 +59,17 @@ internal sealed class ModeScreen : MenuScreen
 /// the rule preset the match plays. Arrows move, enter picks; down from a column's last club reaches
 /// RULES, where left and right pick SHL, ARCADE or NHL (clearing changed rules) and the choice is
 /// saved with the settings. A mode fixed to a preset (arcade) shows it greyed out.</summary>
-internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Action<ClubData> picked, Maybe<RuleSet> fixedRules = default) : Screen
+internal sealed class TeamSelectScreen(AppState app, string heading, Maybe<ClubData> taken, Action<ClubData> picked, Maybe<RuleSet> fixedRules = default) : Screen(app)
 {
     const int ColW = 150, RowH = 20, PanelW = (ColW * 2) + 24, StrengthH = 40;
 
+    readonly Dictionary<string, ClubStrengths> strengths = new(StringComparer.Ordinal);    // worked out once per club
     int selected = -1;
     bool onRules;
 
-    static IReadOnlyList<ClubData> Clubs => ScreenFlow.Clubs;
+    IReadOnlyList<ClubData> Clubs => Flow.Clubs;
 
-    static int Rows => (Clubs.Count + 1) / 2;
+    int Rows => (Clubs.Count + 1) / 2;
 
     /// <inheritdoc/>
     public override void Update(World world, IReadOnlySet<MenuButton> press)
@@ -101,7 +102,7 @@ internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Ac
         }
         else if (press.Contains(MenuButton.Back))
         {
-            ScreenFlow.Pop();
+            Flow.Pop();
         }
     }
 
@@ -129,7 +130,7 @@ internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Ac
     }
 
     /// <summary>Gets the rules the match will play: the mode's own, or the player's choice.</summary>
-    RuleSet Rules => fixedRules.TryGet(out var rules) ? rules : RulePicks.Choice.Resolve();
+    RuleSet Rules => fixedRules.TryGet(out var rules) ? rules : RulePicks.Choice(App).Resolve();
 
     /// <summary>The RULES row: up goes back to the clubs, left and right pick a preset unless the mode fixes it.</summary>
     void RulesRow(IReadOnlySet<MenuButton> press)
@@ -141,13 +142,13 @@ internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Ac
         }
         else if (press.Contains(MenuButton.Back))
         {
-            ScreenFlow.Pop();
+            Flow.Pop();
         }
         else if (dir != 0 && !fixedRules.HasValue)
         {
-            var choice = ScreenFlow.Prefs.Rules;
-            RulesScreen.Pick(choice.Custom ? choice.Preset : RulesScreen.Cycle(choice.Preset, dir));    // from CUSTOM the first press goes back to its preset
-            ScreenPrefsFile.Write(ScreenFlow.Prefs);
+            var choice = Flow.Prefs.Rules;
+            RulesScreen.Pick(Flow, choice.Custom ? choice.Preset : RulesScreen.Cycle(choice.Preset, dir));    // from CUSTOM the first press goes back to its preset
+            ScreenPrefsFile.Write(Flow.Prefs);
             Console.WriteLine($"SAP: screens: team select rules {Rules.Name}");
         }
     }
@@ -165,9 +166,9 @@ internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Ac
     }
 
     /// <summary>The selected club's strengths as bars in two columns, and how it plays.</summary>
-    static void DrawStrengths(ScreenArt art, ClubData club, int x, int y)
+    void DrawStrengths(ScreenArt art, ClubData club, int x, int y)
     {
-        var s = ClubStrengths.Of(club);
+        if (!strengths.TryGetValue(club.Id, out var s)) strengths[club.Id] = s = ClubStrengths.Of(club);
         DrawRectangle(x + 10, y - 1, PanelW - 20, 1, new Color(0x42, 0x32, 0x36, 0xff));
         (string Label, int Value)[] bars = [(K.Attack, s.Attack), (K.Defence, s.Defence), (K.Speed, s.Speed), (K.Goalie, s.Goalie)];
         for (int i = 0; i < bars.Length; i++)
@@ -182,8 +183,8 @@ internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Ac
 
     int Start()
     {
-        int last = ScreenFlow.Clubs.ToList().FindIndex(c => c != taken && string.Equals(c.Id, Scenes.DefaultSetup(Clubs).Home.Id, StringComparison.Ordinal));
-        return last >= 0 ? last : Math.Max(0, ScreenFlow.Clubs.ToList().FindIndex(c => c != taken));
+        int last = Flow.Clubs.ToList().FindIndex(c => c != taken && string.Equals(c.Id, Scenes.DefaultSetup(Clubs).Home.Id, StringComparison.Ordinal));
+        return last >= 0 ? last : Math.Max(0, Flow.Clubs.ToList().FindIndex(c => c != taken));
     }
 
     void Move(int dir)
@@ -196,12 +197,12 @@ internal sealed class TeamSelectScreen(string heading, Maybe<ClubData> taken, Ac
 }
 
 /// <summary>A yes or no question; yes runs the action, no goes back.</summary>
-internal sealed class ConfirmScreen(string question, Action yes) : MenuScreen
+internal sealed class ConfirmScreen(AppState app, string question, Action yes) : MenuScreen(app)
 {
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        return [new MenuItem(Text.Get(K.No), ScreenFlow.Pop), new MenuItem(Text.Get(K.Yes), yes)];
+        return [new MenuItem(Text.Get(K.No), Flow.Pop), new MenuItem(Text.Get(K.Yes), yes)];
     }
 
     /// <inheritdoc/>

@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
+using System.Collections.Immutable;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Rules;
@@ -24,7 +25,7 @@ namespace StickAndPuck.App.Rules;
 /// misconduct as "5:00 GM" and misconducts as "10:00 MISC".</summary>
 internal sealed class PenaltyRules : ISystem, IDisposable
 {
-    static readonly Side[] BothSides = [Side.Home, Side.Away];
+    static readonly ImmutableArray<Side> BothSides = [Side.Home, Side.Away];
 
     Maybe<HudArt> art;
 

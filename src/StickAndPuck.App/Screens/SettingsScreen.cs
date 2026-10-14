@@ -1,5 +1,6 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
@@ -13,20 +14,20 @@ namespace StickAndPuck.App.Screens;
 /// later match, and is saved on leaving. The list scrolls when it is taller than the frame. A
 /// running match stays paused while this screen is up (<see cref="ScreenSystem"/> holds every
 /// match under a screen).</summary>
-internal sealed class SettingsScreen : MenuScreen
+internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 300, PanelTop = 8;
 
     /// <summary>Rows shown at once; the rest scroll into view.</summary>
     const int Visible = 14;
 
-    static readonly InputDevice[] Devices = [InputDevice.KeyboardMouse, InputDevice.Gamepad1];
-    static readonly InputDevice[] Player2Devices = [InputDevice.None, InputDevice.KeyboardMouse, InputDevice.Gamepad1, InputDevice.Gamepad2];
+    static readonly ImmutableArray<InputDevice> Devices = [InputDevice.KeyboardMouse, InputDevice.Gamepad1];
+    static readonly ImmutableArray<InputDevice> Player2Devices = [InputDevice.None, InputDevice.KeyboardMouse, InputDevice.Gamepad1, InputDevice.Gamepad2];
 
     Maybe<World> world;
     int first;
 
-    static ScreenPrefs Prefs => ScreenFlow.Prefs;
+    ScreenPrefs Prefs => Flow.Prefs;
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
@@ -34,7 +35,7 @@ internal sealed class SettingsScreen : MenuScreen
         var s = Prefs.Settings;
         return
         [
-            new MenuItem(Text.Get(K.Rules), () => ScreenFlow.Push(new RulesScreen()), value: Prefs.Rules.Resolve().Name),
+            new MenuItem(Text.Get(K.Rules), () => Flow.Push(new RulesScreen(App)), value: Prefs.Rules.Resolve().Name),
             new MenuItem(Text.Get(K.ControlSwitching), value: Text.Get(s.Switching switch
             {
                 ControlSwitching.Auto => K.SwitchAuto,
@@ -50,7 +51,7 @@ internal sealed class SettingsScreen : MenuScreen
             new MenuItem(Text.Get(K.OneTimers), value: OnOff(s.OneTimers), change: _ => Set(s with { OneTimers = !s.OneTimers })),
             new MenuItem(Text.Get(K.Controls), value: Device(Prefs.Controls), change: Controls),
             new MenuItem(Text.Get(K.Player2Controls), value: Device(Prefs.Player2), change: Player2),
-            new MenuItem(Text.Get(K.KeyMapping), () => ScreenFlow.Push(new KeyMappingScreen())),
+            new MenuItem(Text.Get(K.KeyMapping), () => Flow.Push(new KeyMappingScreen(App))),
             new MenuItem(Text.Get(K.ControlMarker), value: OnOff(s.ControlMarker), change: _ => Set(s with { ControlMarker = !s.ControlMarker })),
             new MenuItem(Text.Get(K.CameraZoom), value: OnOff(s.CameraZoom), change: _ => Set(s with { CameraZoom = !s.CameraZoom })),
             new MenuItem(Text.Get(K.Lighting), value: Text.Get(s.Lighting switch { LightingMood.Early => K.LightingEarly, LightingMood.Afternoon => K.LightingAfternoon, LightingMood.Late => K.LightingLate, _ => K.LightingRandom }), change: d => Set(s with { Lighting = Cycle(s.Lighting, d) })),
@@ -93,50 +94,49 @@ internal sealed class SettingsScreen : MenuScreen
     /// <inheritdoc/>
     protected override void Back()
     {
-        if (world.TryGet(out var onShow)) ScreenFlow.ApplySettings(onShow);
+        if (world.TryGet(out var onShow)) Flow.ApplySettings(onShow);
         Console.WriteLine($"SAP: screens: settings saved, {Prefs}");
-        ScreenFlow.Pop();
+        Flow.Pop();
     }
 
     static string OnOff(bool on) => Text.Get(on ? K.On : K.Off);
 
-    static string Device(InputDevice device) => Players.Gamepads.Label(device);    // the pad by name
+    string Device(InputDevice device) => App.Pads.Label(device);    // the pad by name
 
     static T Cycle<T>(T value, int dir)
         where T : struct, Enum
     {
-        var all = Enum.GetValues<T>();
-        return Cycle(all, value, dir);
+        return Cycle([.. Enum.GetValues<T>()], value, dir);
     }
 
-    static T Cycle<T>(T[] all, T value, int dir)
+    static T Cycle<T>(ImmutableArray<T> all, T value, int dir)
     {
-        int i = Array.IndexOf(all, value);
+        int i = all.IndexOf(value);
         return all[((Math.Max(i, 0) + dir) % all.Length + all.Length) % all.Length];
     }
 
     void Set(Settings settings)
     {
-        ScreenFlow.Prefs = Prefs with { Settings = settings };
-        if (world.TryGet(out var onShow)) ScreenFlow.Apply(onShow, ScreenFlow.Settings);
+        Flow.Prefs = Prefs with { Settings = settings };
+        if (world.TryGet(out var onShow)) ScreenFlow.Apply(onShow, Flow.Settings);
     }
 
-    static void Period(int dir)
+    void Period(int dir)
     {
-        int[] choices = ScreenPrefs.PeriodChoices;
-        int i = Array.IndexOf(choices, Prefs.PeriodMinutes);
+        var choices = ScreenPrefs.PeriodChoices;
+        int i = choices.IndexOf(Prefs.PeriodMinutes);
         i = i < 0 ? 2 : Math.Clamp(i + dir, 0, choices.Length - 1);
-        ScreenFlow.Prefs = Prefs with { PeriodMinutes = choices[i] };
+        Flow.Prefs = Prefs with { PeriodMinutes = choices[i] };
     }
 
-    static void Controls(int dir)
+    void Controls(int dir)
     {
-        ScreenFlow.Prefs = Prefs with { Controls = Cycle(Devices, Prefs.Controls, dir) };
+        Flow.Prefs = Prefs with { Controls = Cycle(Devices, Prefs.Controls, dir) };
     }
 
-    static void Player2(int dir)
+    void Player2(int dir)
     {
-        ScreenFlow.Prefs = Prefs with { Player2 = Cycle(Player2Devices, Prefs.Player2, dir) };
+        Flow.Prefs = Prefs with { Player2 = Cycle(Player2Devices, Prefs.Player2, dir) };
     }
 
     void Volume(int dir)

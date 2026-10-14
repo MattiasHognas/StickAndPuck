@@ -6,7 +6,7 @@ namespace StickAndPuck.App.Screens;
 
 /// <summary>The start screen: continue the saved season, start a new season, a new game in another mode,
 /// the standings, settings and quit. Continue and standings show only when there is a save.</summary>
-internal sealed class StartScreen : MenuScreen
+internal sealed class StartScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 200;
 
@@ -22,18 +22,18 @@ internal sealed class StartScreen : MenuScreen
             read = true;
         }
         bool saved = save.HasValue;
-        List<MenuItem> items = [new MenuItem(Text.Get(K.ContinueSeason), ScreenFlow.PlaySeasonGame, enabled: saved)];
-        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame, enabled: Season.Is(HasNextGame)));    // off with the SimGame setting
+        List<MenuItem> items = [new MenuItem(Text.Get(K.ContinueSeason), Flow.PlaySeasonGame, enabled: saved)];
+        if (Flow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimNextGame), Flow.SimSeasonGame, enabled: Season.Is(HasNextGame)));    // off with the SimGame setting
         items.Add(new MenuItem(Text.Get(K.NewSeason), NewSeason));
-        items.Add(new MenuItem(Text.Get(K.NewGame), () => ScreenFlow.Push(new ModeScreen())));
+        items.Add(new MenuItem(Text.Get(K.NewGame), () => Flow.Push(new ModeScreen(App))));
         items.Add(new MenuItem(Text.Get(K.Standings), Standings, enabled: saved));
-        items.Add(new MenuItem(Text.Get(K.Settings), () => ScreenFlow.Push(new SettingsScreen())));
-        items.Add(new MenuItem(Text.Get(K.Quit), ScreenFlow.Quit));
+        items.Add(new MenuItem(Text.Get(K.Settings), () => Flow.Push(new SettingsScreen(App))));
+        items.Add(new MenuItem(Text.Get(K.Quit), Flow.Quit));
         return items;
     }
 
     /// <summary>Gets the season to describe: the open one (a game simmed from here changes it), else the save read on opening, or None.</summary>
-    Maybe<SeasonState> Season => SeasonSession.Current.HasValue ? SeasonSession.Current : save;
+    Maybe<SeasonState> Season => App.Season.Current.HasValue ? App.Season.Current : save;
 
     /// <summary>Whether the human's club has a season or playoff game left, as <see cref="ScreenFlow.SeasonHasNextGame"/> asks of the open season.</summary>
     static bool HasNextGame(SeasonState season)
@@ -59,7 +59,7 @@ internal sealed class StartScreen : MenuScreen
 
         if (Season.TryGet(out var season))
         {
-            string club = ScreenFlow.Clubs.FirstOrNone(c => string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)).Select(c => c.Name).Or(season.UserClub);
+            string club = Flow.Clubs.FirstOrNone(c => string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)).Select(c => c.Name).Or(season.UserClub);
             int played = season.Games.Count(g => g.Played && g.Involves(season.UserClub));
             int total = season.Games.Count(g => g.Involves(season.UserClub));
             string line = !season.IsOver ? Text.Format(K.StartGameOf, club, played + 1, total)
@@ -72,22 +72,22 @@ internal sealed class StartScreen : MenuScreen
 
     void NewSeason()
     {
-        ScreenFlow.Push(new TeamSelectScreen(Text.Get(K.PickYourClub), Maybe<ClubData>.None, club =>
+        Flow.Push(new TeamSelectScreen(App, Text.Get(K.PickYourClub), Maybe<ClubData>.None, club =>
         {
             void Begin()
             {
-                var season = SeasonSession.StartNew(ScreenFlow.Clubs, club.Id);
-                Console.WriteLine($"SAP: screens: new season for {club.Id}, {season.Games.Count} games, saved to {SeasonSession.SavePath}");
-                ScreenFlow.PlaySeasonGame();
+                var season = App.Season.StartNew(Flow.Clubs, club.Id);
+                Console.WriteLine($"SAP: screens: new season for {club.Id}, {season.Games.Count} games, saved to {App.Season.SavePath}");
+                Flow.PlaySeasonGame();
             }
 
             if (!save.HasValue) Begin();
-            else ScreenFlow.Push(new ConfirmScreen(Text.Get(K.ReplaceSave), Begin));
+            else Flow.Push(new ConfirmScreen(App, Text.Get(K.ReplaceSave), Begin));
         }));
     }
 
-    static void Standings()
+    void Standings()
     {
-        if (SeasonSession.Continue(ScreenFlow.Clubs).HasValue) ScreenFlow.Push(ScreenFlow.Overview());
+        if (App.Season.Continue(Flow.Clubs).HasValue) Flow.Push(Flow.Overview());
     }
 }

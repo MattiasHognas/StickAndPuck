@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 namespace StickAndPuck.App.Lines;
 
 /// <summary>How fast skaters tire and rest, and when lines and goalies change. Energy runs from 1 (fresh) to 0 (spent).</summary>
@@ -49,10 +50,10 @@ public static class LinesTuning
     public const int PullMaxDeficit = 2;
 
     /// <summary>How much less likely each later unit is picked, so lines 1 to 3 play most and line 4 least.</summary>
-    public static readonly float[] ForwardBias = [0f, 0.03f, 0.06f, 0.15f];
+    public static readonly ImmutableArray<float> ForwardBias = [0f, 0.03f, 0.06f, 0.15f];
 
     /// <summary>The same for defence pairs.</summary>
-    public static readonly float[] PairBias = [0f, 0.03f, 0.06f];
+    public static readonly ImmutableArray<float> PairBias = [0f, 0.03f, 0.06f];
 
 
     /// <summary>Gets how much a skater's shots keep of their speed: 1 when fresh, 0.85 when spent.</summary>

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 
 namespace StickAndPuck.App.Screens;
 
@@ -9,7 +10,7 @@ namespace StickAndPuck.App.Screens;
 internal sealed record ScreenPrefs
 {
     /// <summary>Period lengths the settings screen offers, in minutes.</summary>
-    public static readonly int[] PeriodChoices = [2, 3, 5, 10, 20];
+    public static readonly ImmutableArray<int> PeriodChoices = [2, 3, 5, 10, 20];
 
     public Settings Settings { get; init; } = new();
 

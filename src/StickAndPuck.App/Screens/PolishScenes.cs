@@ -9,29 +9,29 @@ namespace StickAndPuck.App.Screens;
 internal static class PolishScenes
 {
     /// <summary>Opens one of the season screens on its test save.</summary>
-    public static void Open(string screen, IReadOnlyList<ClubData> clubs)
+    public static void Open(AppState app, string screen, IReadOnlyList<ClubData> clubs)
     {
         switch (screen)
         {
             case "leaders" or "stats":
-                Season(clubs, "stats-test.json", 12);
-                ScreenFlow.Push(new SeasonStatsScreen().Showing(Env.Get("SAP_STATS_VIEW") is { Length: > 0 } view ? view : "POINTS"));
+                Season(app, clubs, "stats-test.json", 12);
+                app.Screens.Push(new SeasonStatsScreen(app).Showing(Env.Get("SAP_STATS_VIEW") is { Length: > 0 } view ? view : "POINTS"));
                 break;
             case "sim":
-                Season(clubs, "sim-test.json", 5);
-                ScreenFlow.SimSeasonGame();
+                Season(app, clubs, "sim-test.json", 5);
+                app.Screens.SimSeasonGame();
                 break;
             case "trophy":
-                Champions(clubs);
-                ScreenFlow.Push(new BracketScreen());
-                ScreenFlow.Push(TrophyScreen.Season());
+                Champions(app, clubs);
+                app.Screens.Push(new BracketScreen(app));
+                app.Screens.Push(TrophyScreen.Season(app));
                 break;
             case "arcadetrophy":
-                ScreenFlow.Push(TrophyScreen.Arcade(ArcadeRuns(clubs)));
+                app.Screens.Push(TrophyScreen.Arcade(app, ArcadeRuns(app, clubs)));
                 break;
             case "bestruns":
-                ArcadeRuns(clubs);
-                ScreenFlow.Push(new ArcadeBoardScreen());
+                ArcadeRuns(app, clubs);
+                app.Screens.Push(new ArcadeBoardScreen(app));
                 break;
             default:
                 break;
@@ -39,46 +39,46 @@ internal static class PolishScenes
     }
 
     /// <summary>A fresh test season with a few rounds settled on paper (the rest of each round follows).</summary>
-    public static void Season(IReadOnlyList<ClubData> clubs, string name, int games)
+    public static void Season(AppState app, IReadOnlyList<ClubData> clubs, string name, int games)
     {
         string path = TestPath(SeasonSave.DefaultPath, name);
-        SeasonSession.StartNew(clubs, Club(clubs), Seed(), path);
+        app.Season.StartNew(clubs, Club(clubs), Seed(), path);
         int settled = 0;
-        while (settled < games && SeasonSession.SimCurrentGame().HasValue) settled++;    // one at a time, as "sim this game" does
-        Console.WriteLine($"SAP: screens: test season in {path}, {SeasonSession.Current.Select(s => s.Games.Count(g => g.Played)).Or(0)} games played");
+        while (settled < games && app.Season.SimCurrentGame().HasValue) settled++;    // one at a time, as "sim this game" does
+        Console.WriteLine($"SAP: screens: test season in {path}, {app.Season.Current.Select(s => s.Games.Count(g => g.Played)).Or(0)} games played");
     }
 
     /// <summary>A fresh test season settled on paper to the end of the playoffs, so there is a champion.</summary>
-    public static void Champions(IReadOnlyList<ClubData> clubs)
+    public static void Champions(AppState app, IReadOnlyList<ClubData> clubs)
     {
-        Season(clubs, "trophy-test.json", int.MaxValue);
-        Console.WriteLine($"SAP: screens: champions {(PlayoffSession.Current.TryGet(out var playoffs) ? playoffs.Champion.Or("") : "")}");
+        Season(app, clubs, "trophy-test.json", int.MaxValue);
+        Console.WriteLine($"SAP: screens: champions {(app.Playoffs.Current.TryGet(out var playoffs) ? playoffs.Champion.Or("") : "")}");
     }
 
     /// <summary>A test arcade save with a few finished runs on its board: one lost early, one lost late and,
     /// last, a three-lives run won, which stays open for the trophy screen.</summary>
-    public static ArcadeRun ArcadeRuns(IReadOnlyList<ClubData> clubs)
+    public static ArcadeRun ArcadeRuns(AppState app, IReadOnlyList<ClubData> clubs)
     {
         string path = TestPath(ArcadeSave.DefaultPath, "arcade-test.json");
         ArcadeSave.Delete(path);
         string club = Club(clubs);
         var others = clubs.Where(c => !string.Equals(c.Id, club, StringComparison.Ordinal)).Select(c => c.Id).ToList();
-        Run(clubs, others[2 % others.Count], ArcadeRule.SuddenDeath, path, 3);
-        Run(clubs, others[5 % others.Count], ArcadeRule.ThreeLives, path, 9);
-        var run = Run(clubs, club, ArcadeRule.ThreeLives, path, int.MaxValue);
+        Run(app, clubs, others[2 % others.Count], ArcadeRule.SuddenDeath, path, 3);
+        Run(app, clubs, others[5 % others.Count], ArcadeRule.ThreeLives, path, 9);
+        var run = Run(app, clubs, club, ArcadeRule.ThreeLives, path, int.MaxValue);
         Console.WriteLine($"SAP: screens: test arcade board in {path}, {run.Records.Count} runs, this one place {run.Place}");
         return run;
     }
 
     /// <summary>Plays a run on paper: wins until <paramref name="wins"/>, then losses until it is over.</summary>
-    static ArcadeRun Run(IReadOnlyList<ClubData> clubs, string club, ArcadeRule rule, string path, int wins)
+    static ArcadeRun Run(AppState app, IReadOnlyList<ClubData> clubs, string club, ArcadeRule rule, string path, int wins)
     {
-        var run = ArcadeSession.StartNew(clubs, club, rule, Seed(), path);
-        for (int game = 0; !run.IsOver && ArcadeSession.NextSetup(InputDevice.None) is NextMatch.Play; game++)
+        var run = app.Arcade.StartNew(clubs, club, rule, Seed(), path);
+        for (int game = 0; !run.IsOver && app.Arcade.NextSetup(InputDevice.None) is NextMatch.Play; game++)
         {
             bool win = run.Stage < wins && game != 3;    // one loss on the way
             int mine = win ? 3 + (game % 3) : 1, theirs = win ? game % 3 : 2 + (game % 2);
-            ArcadeSession.Finish(run.NextAtHome ? new FixtureResult(mine, theirs, ResultKind.Regulation) : new FixtureResult(theirs, mine, ResultKind.Regulation));
+            app.Arcade.Finish(run.NextAtHome ? new FixtureResult(mine, theirs, ResultKind.Regulation) : new FixtureResult(theirs, mine, ResultKind.Regulation));
         }
         return run;
     }

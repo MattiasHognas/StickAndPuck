@@ -13,7 +13,7 @@ public sealed class LineCallsDemoScene : IScene
     public string Name => "offsidedemo";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = MatchScenes.Exhibition(clubs, settings, 120);
         world.Dev.LineCalls.Set(new LineCallsDemo());

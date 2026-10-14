@@ -58,6 +58,9 @@ public sealed class World
     /// <summary>Gets or sets the switches dev scenes and tests turn (these were statics).</summary>
     public WorldSwitches Switches { get; set; } = new();
 
+    /// <summary>Gets or sets what outlives the match: the screens, the sessions, the pads. Game hands the same one to every world it runs.</summary>
+    public AppState App { get; set; } = new();
+
     /// <summary>Gets the dev scenes' loops (these were statics).</summary>
     public DevScenes Dev { get; } = new();
 

@@ -9,16 +9,16 @@ namespace StickAndPuck.App.Arena;
 /// thin band, rising to the right on screen, clipped to the rounded rink so none spill past the
 /// boards. Built once, drawn on the ice plane with the depth test but no depth write, so a goalie or
 /// puck drawn earlier stays in front and the markings drawn later z-fight nothing.</summary>
-internal static class IceBands
+internal sealed class IceBands
 {
     const float Y = 0f;                   // on the ice plane; the sheet writes no depth while the bands go down
     const float Slope = -0.73f;           // x change per metre of z: about 36 degrees off the short axis
-    static readonly List<Vector3[]> Polygons = [];
+    readonly List<Vector3[]> polygons = [];
 
     /// <summary>Builds the band polygons once.</summary>
-    public static void Build()
+    public void Build()
     {
-        Polygons.Clear();
+        polygons.Clear();
         var rink = RinkOutline(8);
         for (float x = -42f; x < 44f; x += 12f)
         {
@@ -27,7 +27,7 @@ internal static class IceBands
         }
     }
 
-    static void Add(List<Vector2> rink, float x, float width)
+    void Add(List<Vector2> rink, float x, float width)
     {
         float h = RinkSpec.HalfWidth + 1f;
         var band = new List<Vector2>
@@ -36,7 +36,7 @@ internal static class IceBands
             new(x + h * Slope + width / 2, h), new(x + h * Slope - width / 2, h),
         };
         var clipped = Clip(band, rink);
-        if (clipped.Count >= 3) Polygons.Add(clipped.Select(p => new Vector3(p.X, Y, p.Y)).ToArray());
+        if (clipped.Count >= 3) polygons.Add(clipped.Select(p => new Vector3(p.X, Y, p.Y)).ToArray());
     }
 
     /// <summary>The ice outline as a convex polygon, counter-clockwise in (x, z).</summary>
@@ -78,12 +78,12 @@ internal static class IceBands
     }
 
     /// <summary>Draws the bands in one flat colour. The caller has turned depth writes off.</summary>
-    public static void Draw(Color tone)
+    public void Draw(Color tone)
     {
         if (tone.A == 0) return;
         Rlgl.DrawRenderBatchActive();
         Rlgl.DisableBackfaceCulling();
-        foreach (var poly in Polygons)
+        foreach (var poly in polygons)
         {
             for (int i = 1; i + 1 < poly.Length; i++)
                 DrawTriangle3D(poly[0], poly[i], poly[i + 1], tone);

@@ -11,6 +11,9 @@ namespace StickAndPuck.Tests;
 /// </summary>
 public sealed class ArcadeTests : CheckedTest
 {
+    /// <summary>The game state the test plays in, fresh for each test.</summary>
+    readonly AppState app = new();
+
     static readonly FixtureResult HomeWin = new(3, 1, ResultKind.Regulation);
     static readonly FixtureResult AwayWin = new(1, 3, ResultKind.Regulation);
 
@@ -23,7 +26,7 @@ public sealed class ArcadeTests : CheckedTest
     [After(Test)]
     public void EndRun()
     {
-        ArcadeSession.End();
+        app.Arcade.End();
         if (Directory.Exists(Folder)) Directory.Delete(Folder, recursive: true);
     }
 
@@ -119,12 +122,12 @@ public sealed class ArcadeTests : CheckedTest
     void SaveAndContinue(IReadOnlyList<ClubData> clubs, Settings settings, string path)
     {
         string user = clubs[2].Id;
-        var run = ArcadeSession.StartNew(clubs, user, ArcadeRule.ThreeLives, seed: 9, path: path);
-        Check(ArcadeSave.Exists(path) && ArcadeSession.CanContinue(path), "a new run is saved at once and can be continued");
-        var setup = Must(ArcadeSession.NextSetup());
+        var run = app.Arcade.StartNew(clubs, user, ArcadeRule.ThreeLives, seed: 9, path: path);
+        Check(ArcadeSave.Exists(path) && app.Arcade.CanContinue(path), "a new run is saved at once and can be continued");
+        var setup = Must(app.Arcade.NextSetup());
 
         // the match is lost 2-3 in a shootout and ends through the system, as in a real match
-        var world = new World(setup, settings);
+        var world = new World(setup, settings) { App = app };
         var system = new ArcadeSystem();
         void Step(Action<World> publish)
         {
@@ -148,36 +151,36 @@ public sealed class ArcadeTests : CheckedTest
 
         // restart: nothing in memory, read the save back
         string before = File.ReadAllText(path);
-        ArcadeSession.End();
-        var reread = ArcadeSession.Continue(clubs, path);
+        app.Arcade.End();
+        var reread = app.Arcade.Continue(clubs, path);
         Check(reread.Is(x => x.Games.SequenceEqual(run.Games) && x.Opponents.SequenceEqual(run.Opponents)), "continuing after a restart reads back the game and the order");
         var resumed = Must(reread);
         Check(Same(resumed.UserClub, user) && resumed.Rule == ArcadeRule.ThreeLives && resumed.LivesLeft == 2, "the save keeps the club, the rule and the lives");
-        Check(ArcadeSession.NextSetup() is NextMatch.Play n && Same(n.Setup.Home.Id, setup.Home.Id) && Same(n.Setup.Away.Id, setup.Away.Id), "after the restart the same club is next");
+        Check(app.Arcade.NextSetup() is NextMatch.Play n && Same(n.Setup.Home.Id, setup.Home.Id) && Same(n.Setup.Away.Id, setup.Away.Id), "after the restart the same club is next");
         Check(Same(File.ReadAllText(path), before), "continuing does not rewrite the save");
 
         // two more losses end the run; the finished run still loads, for its summary
-        ArcadeSession.Finish(Result(resumed, win: false));
-        ArcadeSession.NextSetup();
-        ArcadeSession.Finish(Result(resumed, win: false));
-        Check(resumed.IsOver && !ArcadeSession.CanContinue(path), "the third loss ends the run and Continue is no longer offered");
-        ArcadeSession.End();
-        Check(ArcadeSession.Continue(clubs, path).Is(x => x.Lost && x.Stage == 0) && ArcadeSession.NextSetup() is not NextMatch.Play, "a finished run reads back over, with no next game");
+        app.Arcade.Finish(Result(resumed, win: false));
+        app.Arcade.NextSetup();
+        app.Arcade.Finish(Result(resumed, win: false));
+        Check(resumed.IsOver && !app.Arcade.CanContinue(path), "the third loss ends the run and Continue is no longer offered");
+        app.Arcade.End();
+        Check(app.Arcade.Continue(clubs, path).Is(x => x.Lost && x.Stage == 0) && app.Arcade.NextSetup() is not NextMatch.Play, "a finished run reads back over, with no next game");
 
         // a match that is not the arcade game records nothing
-        var other = new World(WorldBuilder.DefaultSetup, settings);
+        var other = new World(WorldBuilder.DefaultSetup, settings) { App = app };
         other.Events.Publish(new MatchWon(other.Time, Side.Home));
         new ArcadeSystem().Update(other, Game.Step);
-        Check(Must(ArcadeSession.Current).Games.Count == 3, "a match that is not an arcade game records nothing");
+        Check(Must(app.Arcade.Current).Games.Count == 3, "a match that is not an arcade game records nothing");
     }
 
     [Test]
     public void BadSave()
     {
         string path = SavePath;
-        ArcadeSession.End();
+        app.Arcade.End();
         File.WriteAllText(path, "{ not json");
-        Check(!ArcadeSave.Read(path).HasValue && !ArcadeSession.CanContinue(path), "a broken save reads as no save");
+        Check(!ArcadeSave.Read(path).HasValue && !app.Arcade.CanContinue(path), "a broken save reads as no save");
         ArcadeSave.Delete(path);
         Check(!ArcadeSave.Exists(path), "a deleted save is gone");
     }

@@ -8,18 +8,18 @@ namespace StickAndPuck.App.Screens;
 /// <summary>The playoff bracket of the season being played (<see cref="PlayoffState"/>): one column
 /// per round, each series as two seeds with their wins, the human's club in gold and series losers
 /// greyed, and the champion or the human's next game underneath. Enter plays it.</summary>
-internal sealed class BracketScreen : MenuScreen
+internal sealed class BracketScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 468, Line = 11, Column = 114;
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
-        List<MenuItem> items = [new MenuItem(Text.Get(K.PlayNextGame), ScreenFlow.PlaySeasonGame, enabled: ScreenFlow.SeasonHasNextGame())];
-        if (ScreenFlow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimThisGame), ScreenFlow.SimSeasonGame, enabled: ScreenFlow.CanSimGame()));
-        if (PlayoffSession.Current.Is(p => p.Champion.HasValue)) items.Add(new MenuItem(Text.Get(K.Trophy), () => ScreenFlow.Push(TrophyScreen.Season())));
-        items.Add(new MenuItem(Text.Get(K.TableItem), () => ScreenFlow.Replace(new StandingsScreen())));
-        items.Add(new MenuItem(Text.Get(K.SeasonStats), () => ScreenFlow.Replace(new SeasonStatsScreen())));
+        List<MenuItem> items = [new MenuItem(Text.Get(K.PlayNextGame), Flow.PlaySeasonGame, enabled: Flow.SeasonHasNextGame())];
+        if (Flow.Settings.SimGame) items.Add(new MenuItem(Text.Get(K.SimThisGame), Flow.SimSeasonGame, enabled: Flow.CanSimGame()));
+        if (App.Playoffs.Current.Is(p => p.Champion.HasValue)) items.Add(new MenuItem(Text.Get(K.Trophy), () => Flow.Push(TrophyScreen.Season(App))));
+        items.Add(new MenuItem(Text.Get(K.TableItem), () => Flow.Replace(new StandingsScreen(App))));
+        items.Add(new MenuItem(Text.Get(K.SeasonStats), () => Flow.Replace(new SeasonStatsScreen(App))));
         items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
         return items;
     }
@@ -27,8 +27,8 @@ internal sealed class BracketScreen : MenuScreen
     /// <inheritdoc/>
     public override void Draw(ScreenArt art, World world)
     {
-        if (!PlayoffSession.Current.TryGet(out var playoffs)) return;
-        var clubs = ScreenFlow.Clubs;
+        if (!App.Playoffs.Current.TryGet(out var playoffs)) return;
+        var clubs = Flow.Clubs;
         int rows = 4 * 3;
         var items = Items();
         int h = 5 + ScreenArt.Row + 2 + Line + 4 + (rows * Line) + 6 + Line + 4 + (items.Count * ScreenArt.Row) + 4;

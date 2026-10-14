@@ -14,7 +14,7 @@ public sealed class SpecialTeamsScene : IScene
     public string Name => "specialteams";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var kill = string.Equals(Env.Get("SAP_ST_KILL"), "home", StringComparison.OrdinalIgnoreCase) ? Side.Home : Side.Away;
         var world = SpecialTeamsSetup.ShortHanded(clubs, settings, kill);

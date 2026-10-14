@@ -18,6 +18,7 @@ public sealed class WorldBuilder
     bool starters = true;
     bool begin = true;
     int seed;
+    AppState app = new();
     Maybe<PlayingPosition> human;
     readonly List<Action<World>> after = [];
     readonly List<Action<WorldSwitches>> switches = [];
@@ -125,6 +126,15 @@ public sealed class WorldBuilder
         return this;
     }
 
+    /// <summary>Runs the world with this game state (its sessions, screens and pads) instead of a fresh one.</summary>
+    /// <param name="value">The game state.</param>
+    /// <returns>This builder.</returns>
+    public WorldBuilder App(AppState value)
+    {
+        app = value;
+        return this;
+    }
+
     /// <summary>Runs a step on the finished world, after the match flow began.</summary>
     /// <param name="step">The step.</param>
     /// <returns>This builder.</returns>
@@ -138,7 +148,7 @@ public sealed class WorldBuilder
     /// <returns>The world.</returns>
     public World Build()
     {
-        var world = new World(setup, settings) { Seed = seed };
+        var world = new World(setup, settings) { Seed = seed, App = app };
         foreach (var change in switches) change(world.Switches);
         if (starters) Scenes.AddStarters(world, skaters);
         if (human.TryGet(out var position)) world.OnIce(Side.Home).First(p => p.Data.Position == position).Slot = 0;

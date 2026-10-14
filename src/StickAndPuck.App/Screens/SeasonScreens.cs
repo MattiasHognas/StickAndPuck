@@ -2,6 +2,7 @@ using System.Globalization;
 using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
+using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
 using K = StickAndPuck.App.Core.Text.Keys;
 
@@ -11,21 +12,21 @@ namespace StickAndPuck.App.Screens;
 /// Left and right on SHOW pick points, goals, assists, hits, goalies, player-of-the-game stars or
 /// the human's own club; GAMES switches between the regular season and the playoffs once they run.
 /// The latest player of the game sits underneath. Reads <see cref="SeasonStats"/>.</summary>
-internal sealed class SeasonStatsScreen : MenuScreen
+internal sealed class SeasonStatsScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 440, Line = 11, Rows = 10;
 
-    static readonly string[] Views = [K.ViewPoints, K.ViewGoals, K.ViewAssists, K.ViewHits, K.ViewGoalies, K.ViewStars, K.ViewYourClub];
+    static readonly ImmutableArray<string> Views = [K.ViewPoints, K.ViewGoals, K.ViewAssists, K.ViewHits, K.ViewGoalies, K.ViewStars, K.ViewYourClub];
 
     int view;
-    bool playoffs = SeasonSession.Current.Is(s => s.Playoffs.HasValue);
+    bool playoffs = app.Season.Current.Is(s => s.Playoffs.HasValue);
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
         List<MenuItem> items = [new MenuItem(Text.Get(K.Show), value: Text.Get(Views[view]), change: d => view = ((view + d) % Views.Length + Views.Length) % Views.Length)];
-        if (SeasonSession.Current.Is(s => s.Playoffs.HasValue)) items.Add(new MenuItem(Text.Get(K.Games), value: Text.Get(playoffs ? K.Playoffs : K.SeasonWord), change: _ => playoffs = !playoffs));
-        items.Add(new MenuItem(Text.Get(SeasonSession.Current.Is(s => s.Playoffs.HasValue) ? K.Playoffs : K.TableItem), () => ScreenFlow.Replace(ScreenFlow.Overview())));
+        if (App.Season.Current.Is(s => s.Playoffs.HasValue)) items.Add(new MenuItem(Text.Get(K.Games), value: Text.Get(playoffs ? K.Playoffs : K.SeasonWord), change: _ => playoffs = !playoffs));
+        items.Add(new MenuItem(Text.Get(App.Season.Current.Is(s => s.Playoffs.HasValue) ? K.Playoffs : K.TableItem), () => Flow.Replace(Flow.Overview())));
         items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
         return items;
     }
@@ -33,7 +34,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
     /// <summary>Shows one view, for the headless captures.</summary>
     public SeasonStatsScreen Showing(string name)
     {
-        int i = Array.FindIndex(Views, v => string.Equals(v, name, StringComparison.OrdinalIgnoreCase) || string.Equals(Text.Get(v), name, StringComparison.OrdinalIgnoreCase));
+        int i = Enumerable.Range(0, Views.Length).FirstOrDefault(j => string.Equals(Views[j], name, StringComparison.OrdinalIgnoreCase) || string.Equals(Text.Get(Views[j]), name, StringComparison.OrdinalIgnoreCase), -1);
         if (i >= 0) view = i;
         return this;
     }
@@ -43,14 +44,14 @@ internal sealed class SeasonStatsScreen : MenuScreen
     {
         var items = Items();
         int h = 5 + ScreenArt.Row + 2 + Line + (Rows * Line) + 4 + Line + 4 + (items.Count * ScreenArt.Row) + 4;
-        if (!SeasonSession.Current.TryGet(out var season))
+        if (!App.Season.Current.TryGet(out var season))
         {
             var (px, ptop) = art.Panel(Text.Get(K.SeasonStats), PanelW, 60, 100);
             art.Centred(Text.Get(K.NoSeasonYet), Game.Width / 2, ptop, ScreenArt.Muted);
             art.Menu(items, Selected, px + 120, PanelW - 240, ptop + 14);
             return;
         }
-        var clubs = ScreenFlow.Clubs;
+        var clubs = Flow.Clubs;
         season.Stats.CatchUp(season, clubs);
         bool post = playoffs && season.Playoffs.HasValue;
         var table = post ? season.Stats.Playoffs : season.Stats.Regular;
@@ -93,7 +94,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
         var ink = view != 6 && string.Equals(p.Club, user, StringComparison.Ordinal) ? art.Gold : art.Text;
         art.Right(N(i + 1), x + 22, top, ink);
         art.Left(art.Clip(p.Label, 146), x + 30, top, ink);
-        art.Left(view == 6 ? p.Position.ToString() : Short(ScreenFlow.Clubs, p.Club), x + 180, top, ink);
+        art.Left(view == 6 ? p.Position.ToString() : Short(Flow.Clubs, p.Club), x + 180, top, ink);
         string perGame = p.Games > 0 ? ((double)p.Saves / p.Games).ToString("0.0", CultureInfo.InvariantCulture) : "-";
         string[] cells = view == 4
             ? [N(p.Games), N(p.Saves), perGame, N(p.Stars)]
@@ -139,7 +140,7 @@ internal sealed class SeasonStatsScreen : MenuScreen
 /// <summary>A game settled with "sim this game" (<see cref="SeasonSession.SimCurrentGame"/>):
 /// the stage, both crests and the score with how it was decided, then the next step. When the sim
 /// decided the final, CHAMPIONS opens the trophy screen.</summary>
-internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScreen
+internal sealed class SimResultScreen(AppState app, SimmedGame game, bool crowned) : MenuScreen(app)
 {
     const int PanelW = 300;
 
@@ -147,10 +148,10 @@ internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScree
     public override IReadOnlyList<MenuItem> Items()
     {
         List<MenuItem> items = [];
-        if (crowned) items.Add(new MenuItem(Text.Get(K.Champions), () => ScreenFlow.Replace(TrophyScreen.Season())));
+        if (crowned) items.Add(new MenuItem(Text.Get(K.Champions), () => Flow.Replace(TrophyScreen.Season(App))));
         items.Add(new MenuItem(Text.Get(K.Continue), Back));
-        if (ScreenFlow.CanSimGame()) items.Add(new MenuItem(Text.Get(K.SimNextGame), ScreenFlow.SimSeasonGame));
-        if (ScreenFlow.SeasonHasNextGame()) items.Add(new MenuItem(Text.Get(K.PlayNextGame), ScreenFlow.PlaySeasonGame));
+        if (Flow.CanSimGame()) items.Add(new MenuItem(Text.Get(K.SimNextGame), Flow.SimSeasonGame));
+        if (Flow.SeasonHasNextGame()) items.Add(new MenuItem(Text.Get(K.PlayNextGame), Flow.PlaySeasonGame));
         return items;
     }
 
@@ -158,7 +159,7 @@ internal sealed class SimResultScreen(SimmedGame game, bool crowned) : MenuScree
     public override void Draw(ScreenArt art, World world)
     {
         var items = Items();
-        var clubs = ScreenFlow.Clubs;
+        var clubs = Flow.Clubs;
         int h = 5 + ScreenArt.Row + 2 + 24 + 14 + 6 + (items.Count * ScreenArt.Row) + 6;
         string kind = game.Result.Kind switch { ResultKind.Overtime => Text.Get(K.KindOt), ResultKind.Shootout => Text.Get(K.KindShootout), _ => "" };
         var (x, top) = art.Panel(Text.Format(K.SimmedHeading, game.Stage, kind), PanelW, h, Math.Max(4, (Game.Height - h - 16) / 2));
@@ -194,7 +195,8 @@ internal sealed class TrophyScreen : MenuScreen
     readonly IReadOnlyList<(string Label, string Value)> lines;
     readonly IReadOnlyList<MenuItem> items;
 
-    TrophyScreen(string heading, string club, string title, IReadOnlyList<(string, string)> lines, IReadOnlyList<MenuItem> items)
+    TrophyScreen(AppState app, string heading, string club, string title, IReadOnlyList<(string, string)> lines, IReadOnlyList<MenuItem> items)
+        : base(app)
     {
         this.heading = heading;
         this.club = club;
@@ -204,10 +206,10 @@ internal sealed class TrophyScreen : MenuScreen
     }
 
     /// <summary>The SHL champion of the season being played.</summary>
-    public static TrophyScreen Season()
+    public static TrophyScreen Season(AppState app)
     {
-        var clubs = ScreenFlow.Clubs;
-        var current = SeasonSession.Current;
+        var clubs = app.Screens.Clubs;
+        var current = app.Season.Current;
         var playoffs = current.TryGet(out var open) ? open.Playoffs : Maybe<PlayoffState>.None;
         string champion = playoffs.TryGet(out var bracket) ? bracket.Champion.Or("") : "";
         List<(string, string)> lines = [];
@@ -229,17 +231,17 @@ internal sealed class TrophyScreen : MenuScreen
             string user = Name(clubs, season.UserClub);
             lines.Add((Text.Get(K.YourClub), string.Equals(season.UserClub, champion, StringComparison.Ordinal) ? Text.Get(K.ChampionsShout) : Text.Format(playoffs.Is(p => !p.UserQualified) ? K.MissedPlayoffs : K.WentOut, user)));
         }
-        return new TrophyScreen(Text.Get(K.ShlChampions), champion, Name(clubs, champion), lines,
+        return new TrophyScreen(app, Text.Get(K.ShlChampions), champion, Name(clubs, champion), lines,
         [
-            new MenuItem(Text.Get(K.Continue), ScreenFlow.Pop),
-            new MenuItem(Text.Get(K.SeasonStats), () => ScreenFlow.Replace(new SeasonStatsScreen())),
+            new MenuItem(Text.Get(K.Continue), app.Screens.Pop),
+            new MenuItem(Text.Get(K.SeasonStats), () => app.Screens.Replace(new SeasonStatsScreen(app))),
         ]);
     }
 
     /// <summary>An arcade run won by beating every club.</summary>
-    public static TrophyScreen Arcade(ArcadeRun run)
+    public static TrophyScreen Arcade(AppState app, ArcadeRun run)
     {
-        var clubs = ScreenFlow.Clubs;
+        var clubs = app.Screens.Clubs;
         List<(string, string)> lines =
         [
             (Text.Get(K.Rule), Text.Get(run.Rule == ArcadeRule.SuddenDeath ? K.SuddenDeath : K.ThreeLives)),
@@ -248,10 +250,10 @@ internal sealed class TrophyScreen : MenuScreen
         ];
         if (run.Stats.Leaders(1, run.UserClub).FirstOrDefault() is { } top) lines.Add((Text.Get(K.TopScorer), Text.Format(K.TopScorerArcade, top.Label, top.Points)));
         if (run.Place > 0) lines.Add((Text.Get(K.BestRuns), Text.Format(K.PlaceOf, run.Place, run.Records.Count)));
-        return new TrophyScreen(Text.Get(K.ArcadeChampions), run.UserClub, Name(clubs, run.UserClub), lines,
+        return new TrophyScreen(app, Text.Get(K.ArcadeChampions), run.UserClub, Name(clubs, run.UserClub), lines,
         [
-            new MenuItem(Text.Get(K.BestRuns), () => ScreenFlow.Replace(new ArcadeBoardScreen())),
-            new MenuItem(Text.Get(K.Continue), ScreenFlow.Pop),
+            new MenuItem(Text.Get(K.BestRuns), () => app.Screens.Replace(new ArcadeBoardScreen(app))),
+            new MenuItem(Text.Get(K.Continue), app.Screens.Pop),
         ]);
     }
 

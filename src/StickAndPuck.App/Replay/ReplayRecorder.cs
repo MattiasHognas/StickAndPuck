@@ -2,21 +2,21 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Screens;
+using System.Collections.Immutable;
 
 namespace StickAndPuck.App.Replays;
 
 /// <summary>Writes the replay of the match being played. Every match started from the screens is
 /// recorded to the replays folder beside the settings (the newest <see cref="Keep"/> stay);
 /// SAP_REPLAY_OUT=file records to that file instead, and also records a SAP_SCENE match;
-/// SAP_REPLAY_OUT=0 records nothing. SAP_CHECKSUMS=file writes "tick checksum" for every step,
-/// played or replayed, to compare two runs line by line.</summary>
+/// SAP_REPLAY_OUT=0 records nothing. SAP_CHECKSUMS writes every step's checksum (<see cref="ChecksumLog"/>).</summary>
 public sealed class ReplayRecorder
 {
     /// <summary>The replays kept in the replays folder.</summary>
     public const int Keep = 50;
 
     /// <summary>The SAP_* variables that steer recording and replaying rather than the match, never stored or set again.</summary>
-    internal static readonly string[] ControlVariables =
+    internal static readonly ImmutableArray<string> ControlVariables =
         ["SAP_REPLAY", "SAP_REPLAY_OUT", "SAP_STEPS", "SAP_AT", "SAP_TAKEOVER", "SAP_CHECKSUMS", "SAP_SCREENSHOT", "SAP_RECORD", "SAP_FRAMES", "SAP_SCREEN_KEYS", "SAP_SETTINGS", "SAP_SAVE"];
 
     readonly ReplayFile file;
@@ -33,30 +33,6 @@ public sealed class ReplayRecorder
     /// <summary>Gets the folder screens matches are recorded to.</summary>
     public static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "replays");
 
-    /// <summary>Gets the SAP_CHECKSUMS log, when it is open.</summary>
-    internal static Maybe<StreamWriter> Sums { get; private set; }
-
-    /// <summary>Opens the SAP_CHECKSUMS log once, when it is set.</summary>
-    public static void OpenChecksums()
-    {
-        if (Sums.HasValue || Env.Get("SAP_CHECKSUMS") is not { Length: > 0 } f) return;
-        Sums = new StreamWriter(AssetRoot.Output(f)) { AutoFlush = false };
-        Console.WriteLine($"SAP: replay: checksum of every step to {AssetRoot.Output(f)}");
-    }
-
-    /// <summary>Writes one step's checksum to the SAP_CHECKSUMS log, when it is open.</summary>
-    public static void LogChecksum(long tick, ulong sum)
-    {
-        if (Sums.TryGet(out var sums)) sums.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{tick} {WorldChecksum.Text(sum)}"));
-    }
-
-    /// <summary>Closes the SAP_CHECKSUMS log.</summary>
-    public static void CloseChecksums()
-    {
-        if (Sums.TryGet(out var sums)) sums.Dispose();
-        Sums = Maybe<StreamWriter>.None;
-    }
-
     /// <summary>Starts recording a world that is about to start, if it is a match worth recording: a match
     /// the screens started, or any SAP_SCENE world when SAP_REPLAY_OUT names a file.</summary>
     public static Maybe<ReplayRecorder> Begin(World world, string scene)
@@ -64,8 +40,8 @@ public sealed class ReplayRecorder
         string target = Env.Get("SAP_REPLAY_OUT");
         if (string.Equals(target, "0", StringComparison.Ordinal)) return Maybe<ReplayRecorder>.None;
         bool built = scene.Length == 0;
-        var playing = built ? ScreenFlow.Playing : Maybe<MatchPlan>.None;
-        var started = built ? ScreenFlow.Started : Maybe<MatchSetup>.None;
+        var playing = built ? world.App.Screens.Playing : Maybe<MatchPlan>.None;
+        var started = built ? world.App.Screens.Started : Maybe<MatchSetup>.None;
         bool screensMatch = playing.HasValue && started.HasValue;
         if (!screensMatch && (built || target.Length == 0)) return Maybe<ReplayRecorder>.None;
 
@@ -77,7 +53,7 @@ public sealed class ReplayRecorder
             Env = Variables(),
             Setup = screensMatch ? started.Select(ReplaySetup.Of) : Maybe<ReplaySetup>.None,
             Mode = screensMatch ? playing.Select(ModeName).Or("") : "",
-            Prefs = screensMatch ? ScreenPrefsFile.ToJson(ScreenFlow.Prefs) : "",
+            Prefs = screensMatch ? ScreenPrefsFile.ToJson(world.App.Screens.Prefs) : "",
             Clubs = ClubsHash(world.Setup.Home, world.Setup.Away),
             Recorded = string.Create(CultureInfo.InvariantCulture, $"{Environment.MachineName}, {RuntimeInformation.OSDescription}, {RuntimeInformation.ProcessArchitecture}, .NET {Environment.Version}, {DateTime.Now:yyyy-MM-dd HH:mm}"),
         };

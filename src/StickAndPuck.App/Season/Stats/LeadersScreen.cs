@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Screens;
+using System.Collections.Immutable;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
@@ -8,21 +9,21 @@ namespace StickAndPuck.App.Season;
 /// <summary>The stand-in leaders page, reached from the standings: the season's top ten by points,
 /// goals, saves or player-of-the-game awards (left and right switch), for the regular season or
 /// the playoffs once they run, and the latest player of the game underneath.</summary>
-internal sealed class LeadersScreen : MenuScreen
+internal sealed class LeadersScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 420, Line = 11, Rows = 10;
 
-    static readonly string[] Views = [K.ViewPoints, K.ViewGoals, K.ViewGoalies, K.ViewStars];
+    static readonly ImmutableArray<string> Views = [K.ViewPoints, K.ViewGoals, K.ViewGoalies, K.ViewStars];
 
     int view;
-    bool playoffs = HasPlayoffs;
+    bool playoffs = app.Season.Current.Is(s => s.Playoffs.HasValue);
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
     {
         List<MenuItem> items = [new MenuItem(Text.Get(K.Show), value: Text.Get(Views[view]), change: d => view = ((view + d) % Views.Length + Views.Length) % Views.Length)];
         if (HasPlayoffs) items.Add(new MenuItem(Text.Get(K.Games), value: Text.Get(playoffs ? K.Playoffs : K.SeasonWord), change: _ => playoffs = !playoffs));
-        items.Add(new MenuItem(Text.Get(K.TableItem), () => ScreenFlow.Replace(new StandingsScreen())));
+        items.Add(new MenuItem(Text.Get(K.TableItem), () => Flow.Replace(new StandingsScreen(App))));
         items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
         return items;
     }
@@ -30,8 +31,8 @@ internal sealed class LeadersScreen : MenuScreen
     /// <inheritdoc/>
     public override void Draw(ScreenArt art, World world)
     {
-        if (!SeasonSession.Current.TryGet(out var season)) return;
-        var clubs = ScreenFlow.Clubs;
+        if (!App.Season.Current.TryGet(out var season)) return;
+        var clubs = Flow.Clubs;
         season.Stats.CatchUp(season, clubs);
         var table = playoffs && season.Playoffs.HasValue ? season.Stats.Playoffs : season.Stats.Regular;
         var items = Items();
@@ -78,7 +79,7 @@ internal sealed class LeadersScreen : MenuScreen
         art.Menu(items, Selected, x + 110, PanelW - 220, top);
     }
 
-    static bool HasPlayoffs => SeasonSession.Current.Is(s => s.Playoffs.HasValue);
+    bool HasPlayoffs => App.Season.Current.Is(s => s.Playoffs.HasValue);
 
     static string Short(IReadOnlyList<ClubData> clubs, string id)
     {

@@ -1,5 +1,6 @@
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens;
@@ -8,12 +9,12 @@ namespace StickAndPuck.App.Screens;
 /// its keyboard keys and gamepad button. Enter on a row waits for the next key or pad button; a key
 /// replaces the row's keys, a button its pad button, and escape cancels. Reset to defaults clears
 /// every rebinding. Changes apply at once and are saved with the settings on leaving.</summary>
-internal sealed class KeyMappingScreen : MenuScreen
+internal sealed class KeyMappingScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 330, PanelTop = 8, Visible = 13;
 
-    static readonly KeyboardKey[] AllKeys = [.. Enum.GetValues<KeyboardKey>().Where(k => k != KeyboardKey.Null)];
-    static readonly GamepadButton[] AllButtons = [.. Enum.GetValues<GamepadButton>().Where(b => b != GamepadButton.Unknown)];
+    static readonly ImmutableArray<KeyboardKey> AllKeys = [.. Enum.GetValues<KeyboardKey>().Where(k => k != KeyboardKey.Null)];
+    static readonly ImmutableArray<GamepadButton> AllButtons = [.. Enum.GetValues<GamepadButton>().Where(b => b != GamepadButton.Unknown)];
 
     readonly HashSet<KeyboardKey> heldKeys = [];
     readonly HashSet<(int Pad, GamepadButton Button)> heldButtons = [];
@@ -21,7 +22,7 @@ internal sealed class KeyMappingScreen : MenuScreen
     Maybe<GameAction> listening;
     int first;
 
-    static Settings Saved => ScreenFlow.Prefs.Settings;
+    Settings Saved => Flow.Prefs.Settings;
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items()
@@ -86,9 +87,9 @@ internal sealed class KeyMappingScreen : MenuScreen
     /// <inheritdoc/>
     protected override void Back()
     {
-        if (world.TryGet(out var onShow)) ScreenFlow.ApplySettings(onShow);
+        if (world.TryGet(out var onShow)) Flow.ApplySettings(onShow);
         Console.WriteLine($"SAP: screens: key mapping saved, {Saved.Keys.Count} rebound");
-        ScreenFlow.Pop();
+        Flow.Pop();
     }
 
     static string Label(GameAction action) => Text.Get(action switch
@@ -124,7 +125,7 @@ internal sealed class KeyMappingScreen : MenuScreen
     /// <summary>Binds the first key or pad button that goes down; escape cancels.</summary>
     void Capture(GameAction action)
     {
-        if (MenuInput.IsScripted)
+        if (App.MenuScript.IsScripted)
         {
             listening = Maybe<GameAction>.None;    // a headless script cannot press a key, so the row only shows it waits
             return;
@@ -178,7 +179,7 @@ internal sealed class KeyMappingScreen : MenuScreen
 
     void Set(Settings settings)
     {
-        ScreenFlow.Prefs = ScreenFlow.Prefs with { Settings = settings };
-        if (world.TryGet(out var onShow)) ScreenFlow.Apply(onShow, ScreenFlow.Settings);
+        Flow.Prefs = Flow.Prefs with { Settings = settings };
+        if (world.TryGet(out var onShow)) ScreenFlow.Apply(onShow, Flow.Settings);
     }
 }

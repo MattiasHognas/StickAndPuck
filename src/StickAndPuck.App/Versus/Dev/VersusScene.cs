@@ -13,17 +13,17 @@ public sealed class VersusScene : IScene
     public string Name => "versus";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         bool ai = Env.Is("SAP_HUMAN", "0");
         var setup = Scenes.DefaultSetup(clubs) with
         {
-            Inputs = VersusMode.Inputs(ai ? InputDevice.None : InputDevice.KeyboardMouse),
+            Inputs = VersusMode.Inputs(ai ? InputDevice.None : InputDevice.KeyboardMouse, app.Screens.Prefs.Player2),
             Overtime = OvertimeRule.Shl,
         };
         if (float.TryParse(Env.Get("SAP_PERIOD"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float s) && s > 0)
             setup = setup with { PeriodSeconds = s };
-        var world = new World(setup, settings);
+        var world = new World(setup, settings) { App = app };
         Scenes.AddStarters(world);
         VersusMode.AssignSlots(world);
         MatchFlow.Begin(world);
@@ -41,11 +41,11 @@ public sealed class VersusSetupScene : IScene
     public string Name => "versussetup";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        var world = ScreenFlow.Begin(clubs, new StartScreen());
-        ScreenFlow.Push(new ModeScreen());
-        ModeScreen.Choose(new VersusMode());
+        var world = app.Screens.Begin(clubs, new StartScreen(app));
+        app.Screens.Push(new ModeScreen(app));
+        ModeScreen.Choose(app, new VersusMode());
         Console.WriteLine("SAP: versus: team select for player 1");
         return world;
     }

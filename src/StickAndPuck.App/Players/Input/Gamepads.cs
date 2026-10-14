@@ -11,7 +11,7 @@ namespace StickAndPuck.App.Players;
 /// start are picked up on the next step. Extra SDL mappings for pads Raylib does not know are read
 /// once from SDL_GAMECONTROLLERCONFIG and from gamecontrollerdb.txt next to the game or in the
 /// settings folder.</summary>
-public static class Gamepads
+public sealed class Gamepads
 {
     /// <summary>Raylib's number of gamepad slots.</summary>
     public const int MaxSlots = 4;
@@ -21,15 +21,15 @@ public static class Gamepads
     const string BuiltInMappings =
         "03000000321500000410000000010000,Razer Raiju Ultimate Wired,a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:a3,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,righttrigger:a4,rightx:a2,righty:a5,start:b9,x:b0,y:b3,platform:Linux,\n";
 
-    static readonly string[] Seen = [.. Enumerable.Repeat(string.Empty, MaxSlots)];   // "" for no pad: a slot's name is never empty
-    static bool mappingsLoaded;
-    static double lastLog = double.NegativeInfinity;
+    readonly string[] seen = [.. Enumerable.Repeat(string.Empty, MaxSlots)];   // "" for no pad: a slot's name is never empty
+    bool mappingsLoaded;
+    double lastLog = double.NegativeInfinity;
 
     /// <summary>Gets or sets a value indicating whether every slot is printed twice a second (SAP_SCENE=padtest).</summary>
-    public static bool Logging { get; set; }
+    public bool Logging { get; set; }
 
     /// <summary>Gets the Raylib slots that hold a pad now, lowest first.</summary>
-    public static IReadOnlyList<int> Connected()
+    public IReadOnlyList<int> Connected()
     {
         if (!IsWindowReady()) return [];
         Refresh();
@@ -40,14 +40,14 @@ public static class Gamepads
     }
 
     /// <summary>Gets the Raylib slot of the n-th connected pad.</summary>
-    public static int Slot(int index)
+    public int Slot(int index)
     {
         var slots = Connected();
         return index >= 0 && index < slots.Count ? slots[index] : -1;
     }
 
     /// <summary>Gets the name of the n-th connected pad, as the settings and versus screens show it.</summary>
-    public static Maybe<string> Name(int index)
+    public Maybe<string> Name(int index)
     {
         int slot = Slot(index);
         return slot < 0 ? Maybe<string>.None : SlotName(slot);
@@ -55,7 +55,7 @@ public static class Gamepads
 
     /// <summary>Gets how a device reads on a screen: KEYBOARD, OFF, the pad's name cut to fit, or
     /// "NO GAMEPAD 1" while that pad is not connected.</summary>
-    public static string Label(InputDevice device)
+    public string Label(InputDevice device)
     {
         const int MaxName = 16;
         int index = device switch { InputDevice.Gamepad1 => 0, InputDevice.Gamepad2 => 1, _ => -1 };
@@ -74,7 +74,7 @@ public static class Gamepads
     }
 
     /// <summary>Prints every slot's pad, axes and held buttons twice a second while <see cref="Logging"/> is on.</summary>
-    public static void Log()
+    public void Log()
     {
         if (!Logging || !IsWindowReady() || GetTime() - lastLog < 0.5) return;
         lastLog = GetTime();
@@ -90,7 +90,7 @@ public static class Gamepads
     }
 
     /// <summary>Loads extra mappings once and logs pads coming and going.</summary>
-    static void Refresh()
+    void Refresh()
     {
         if (!mappingsLoaded)
         {
@@ -101,9 +101,9 @@ public static class Gamepads
         for (int slot = 0; slot < MaxSlots; slot++)
         {
             string now = IsGamepadAvailable(slot) ? SlotName(slot) : string.Empty;
-            if (string.Equals(now, Seen[slot], StringComparison.Ordinal)) continue;
+            if (string.Equals(now, seen[slot], StringComparison.Ordinal)) continue;
             Console.WriteLine(now.Length == 0 ? $"SAP: gamepad left slot {slot}" : $"SAP: gamepad in slot {slot}: {now}");
-            Seen[slot] = now;
+            seen[slot] = now;
         }
     }
 

@@ -8,23 +8,23 @@ namespace StickAndPuck.App.Screens;
 /// <summary>The arcade best runs board (<see cref="ArcadeRun.Records"/>, kept across runs in
 /// arcade.json): place, club, rule, how far the run got, losses, goals and its top scorer, the run
 /// just finished in gold. Opened after a run ends and from the new game list.</summary>
-internal sealed class ArcadeBoardScreen : MenuScreen
+internal sealed class ArcadeBoardScreen(AppState app) : MenuScreen(app)
 {
     const int PanelW = 460, Line = 12;
 
-    readonly (IReadOnlyList<ArcadeRecord> Records, int Place) board = Board();
+    readonly (IReadOnlyList<ArcadeRecord> Records, int Place) board = Board(app);
 
     /// <inheritdoc/>
     public override IReadOnlyList<MenuItem> Items() => [new MenuItem(Text.Get(K.Back), Back)];
 
     /// <summary>Gets a value indicating whether there is a board to show (any run ever finished). Reads the save.</summary>
-    public static bool Any() => Board().Records.Count > 0;
+    public static bool Any(AppState app) => Board(app).Records.Count > 0;
 
     /// <inheritdoc/>
     public override void Draw(ScreenArt art, World world)
     {
         var (records, place) = board;
-        var clubs = ScreenFlow.Clubs;
+        var clubs = Flow.Clubs;
         int rows = Math.Max(1, records.Count);
         int h = 5 + ScreenArt.Row + 2 + Line + (rows * Line) + 8 + ScreenArt.Row + 6;
         var (x, top) = art.Panel(Text.Get(K.ArcadeBestRuns), PanelW, h, Math.Max(4, (Game.Height - h - 16) / 2));
@@ -53,9 +53,9 @@ internal sealed class ArcadeBoardScreen : MenuScreen
     }
 
     /// <summary>The board: the open run's, else the save's; the place is the run just finished, or 0.</summary>
-    static (IReadOnlyList<ArcadeRecord> Records, int Place) Board()
+    static (IReadOnlyList<ArcadeRecord> Records, int Place) Board(AppState app)
     {
-        var open = ArcadeSession.Current.HasValue ? ArcadeSession.Current : ArcadeSave.Read(ArcadeSession.SavePath.Length > 0 ? ArcadeSession.SavePath : ArcadeSave.DefaultPath);
+        var open = app.Arcade.Current.HasValue ? app.Arcade.Current : ArcadeSave.Read(app.Arcade.SavePath.Length > 0 ? app.Arcade.SavePath : ArcadeSave.DefaultPath);
         if (!open.TryGet(out var run)) return ([], 0);
         return (run.Records, run.IsOver ? run.Place : 0);
     }

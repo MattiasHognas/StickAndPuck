@@ -17,7 +17,7 @@ public sealed class GoalieScene : IScene
     public string Name => "goalie";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         var data = world.Setup.Away.Roster.FirstOrDefault(p => p.Position == PlayingPosition.G) ?? new PlayerData { Position = PlayingPosition.G };

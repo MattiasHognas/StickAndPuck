@@ -22,7 +22,7 @@ internal sealed class PlayoffSystem : ISystem, IDisposable
 
     public void Start(World world)
     {
-        if (PlayoffSession.Current.HasValue) art = HudArt.Load();
+        if (world.App.Playoffs.Current.HasValue) art = HudArt.Load();
     }
 
     public void Update(World world, float dt)
@@ -35,16 +35,16 @@ internal sealed class PlayoffSystem : ISystem, IDisposable
         }
         if (world.Match.Phase == MatchPhase.Shootout) sawShootout = true;
 
-        if (!PlayoffSession.Playing.TryGet(out var series) || !string.Equals(series.NextHome, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(series.NextAway, world.Setup.Away.Id, StringComparison.Ordinal)) return;
+        if (!world.App.Playoffs.Playing.TryGet(out var series) || !string.Equals(series.NextHome, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(series.NextAway, world.Setup.Away.Id, StringComparison.Ordinal)) return;
         if (!world.Events.Of<MatchEnded>().Any()) return;
 
         var m = world.Match;
         var kind = sawShootout ? ResultKind.Shootout : m.Period > world.Setup.Periods ? ResultKind.Overtime : ResultKind.Regulation;
         var result = new FixtureResult(m.Score[(int)Side.Home], m.Score[(int)Side.Away], kind);
-        if (!PlayoffSession.Current.TryGet(out var playoffs)) return;
+        if (!world.App.Playoffs.Current.TryGet(out var playoffs)) return;
         string round = playoffs.Current.Name;
         int game = series.Games.Count + 1;
-        if (!PlayoffSession.Finish(result)) return;
+        if (!world.App.Playoffs.Finish(result)) return;
         finishedAt = world.Time;
         Console.WriteLine($"SAP: playoff {round} game {game}: {world.Setup.Home.Id} {result.HomeGoals}-{result.AwayGoals} {world.Setup.Away.Id} ({kind}), series {series.HighWins}-{series.LowWins}");
         Log(playoffs);
@@ -52,8 +52,8 @@ internal sealed class PlayoffSystem : ISystem, IDisposable
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (!art.TryGet(out var hud) || !PlayoffSession.Current.TryGet(out var playoffs)) return;
-        if (world.Switches.PlayoffBracket || world.Time - finishedAt >= BracketDelay) PlayoffBracket.Draw(hud, playoffs, SeasonSession.Clubs);
+        if (!art.TryGet(out var hud) || !world.App.Playoffs.Current.TryGet(out var playoffs)) return;
+        if (world.Switches.PlayoffBracket || world.Time - finishedAt >= BracketDelay) PlayoffBracket.Draw(hud, playoffs, world.App.Season.Clubs);
     }
 
     public void Dispose()

@@ -28,27 +28,27 @@ internal sealed class ScreenSystem : ISystem, IDisposable
 
     public void Start(World world)
     {
-        if (!ScreenFlow.Active) return;
+        if (!world.App.Screens.Active) return;
         SetExitKey(KeyboardKey.Null);    // escape pauses and goes back; Quit on the start screen ends the game
         art = ScreenArt.Load();
-        input.Swallow();
+        input.Swallow(world.App.MenuScript, world.App.Screens.Settings);
     }
 
     public void Update(World world, float dt)
     {
-        if (!ScreenFlow.Active) return;
-        var top = ScreenFlow.Top;
+        if (!world.App.Screens.Active) return;
+        var top = world.App.Screens.Top;
         bool same = top.TryGet(out var shown) ? lastTop.Is(last => ReferenceEquals(last, shown)) : !lastTop.HasValue;
-        if (!same) input.Swallow();    // a button still held from the last screen does not press here
+        if (!same) input.Swallow(world.App.MenuScript, world.App.Screens.Settings);    // a button still held from the last screen does not press here
         lastTop = top;
 
-        bool inMatch = ScreenFlow.Playing.HasValue && MatchFlow.IsRunning(world);
+        bool inMatch = world.App.Screens.Playing.HasValue && MatchFlow.IsRunning(world);
         world.Match.Paused = !inMatch || top.HasValue;
-        var press = input.Next(top.HasValue, dt);
+        var press = input.Next(world.App.MenuScript, world.App.Screens.Settings, top.HasValue, dt);
         if (top.TryGet(out var screen))
         {
             screen.Update(world, press);
-            if (!ScreenFlow.Top.HasValue && inMatch) Resumed(world);
+            if (!world.App.Screens.Top.HasValue && inMatch) Resumed(world);
             return;
         }
         if (!inMatch) return;
@@ -60,19 +60,19 @@ internal sealed class ScreenSystem : ISystem, IDisposable
         if (world.Match.Phase == MatchPhase.Final)
         {
             if (float.IsPositiveInfinity(finalAt)) finalAt = world.Time;
-            if (world.Time - finalAt >= ResultsDelay) ScreenFlow.ShowResults(Result(world));
+            if (world.Time - finalAt >= ResultsDelay) world.App.Screens.ShowResults(Result(world));
         }
         else if (press.Contains(MenuButton.Pause))
         {
             Console.WriteLine("SAP: screens: paused");
-            ScreenFlow.Push(new PauseScreen());
+            world.App.Screens.Push(new PauseScreen(world.App));
             world.Match.Paused = true;
         }
     }
 
     public void DrawHud(World world, RenderContext render)
     {
-        if (!art.TryGet(out var loaded) || !ScreenFlow.Top.TryGet(out var top)) return;
+        if (!art.TryGet(out var loaded) || !world.App.Screens.Top.TryGet(out var top)) return;
         if (top.Dims) ScreenArt.Dim();
         top.Draw(loaded, world);
     }
@@ -136,6 +136,6 @@ internal sealed class ScreenSystem : ISystem, IDisposable
             decided = PeriodLabel(world);
         }
         return new MatchResult(world.Setup, m.Score[(int)Side.Home], m.Score[(int)Side.Away], m.Shots[(int)Side.Home], m.Shots[(int)Side.Away],
-            decided, lines, ScreenFlow.Playing.TryGet(out var plan) ? plan : throw new InvalidOperationException("the results of a match that was not started"));
+            decided, lines, world.App.Screens.Playing.TryGet(out var plan) ? plan : throw new InvalidOperationException("the results of a match that was not started"));
     }
 }

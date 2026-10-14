@@ -2,6 +2,7 @@ using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
+using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Lines;
@@ -16,7 +17,7 @@ namespace StickAndPuck.App.Lines;
 /// count an extra attacker when they balance the skaters at a faceoff.</summary>
 public static class GoaliePull
 {
-    static readonly Side[] BothSides = [Side.Home, Side.Away];
+    static readonly ImmutableArray<Side> BothSides = [Side.Home, Side.Away];
 
     /// <summary>Gets whether a club has pulled its goalie.</summary>
     public static bool IsPulled(World world, Side side)

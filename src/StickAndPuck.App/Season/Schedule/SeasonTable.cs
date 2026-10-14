@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
+using System.Collections.Immutable;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season;
@@ -12,7 +13,7 @@ internal static class SeasonTable
 {
     const int Line = 12, Pad = 6;
 
-    static readonly (string Head, int X)[] Columns =
+    static readonly ImmutableArray<(string Head, int X)> Columns =
         [(K.ColGp, 150), (K.ColW, 174), (K.ColOtw, 194), (K.ColOtl, 222), (K.ColL, 250), (K.ColGoals, 268), (K.ColPts, 314)];
 
     /// <summary>Draws the table centred on the 480x270 frame.</summary>

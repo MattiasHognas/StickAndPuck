@@ -14,7 +14,7 @@ public sealed class HandlingScene : IScene
     public string Name => "handling";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         var home = Skaters(world.Setup.Home);

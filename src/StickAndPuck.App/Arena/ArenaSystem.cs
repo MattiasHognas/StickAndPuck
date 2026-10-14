@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Numerics;
 using System.Text.Json;
 using Raylib_cs;
@@ -16,9 +17,11 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
     enum Kind { Lit, Unlit, Glass }
 
     // parts in front of the ice that hide a player behind them, so the outline pass hides him too
-    static readonly HashSet<string> Occluders = new(StringComparer.Ordinal) { "Boards", "AdBoards", "Nets", "Posts" };
+    static readonly FrozenSet<string> Occluders = new[] { "Boards", "AdBoards", "Nets", "Posts" }.ToFrozenSet(StringComparer.Ordinal);
 
     readonly List<(int Mesh, Kind Kind, bool Occludes, bool Ice, bool Sheet)> meshes = [];
+    readonly IceBands bands = new();
+    readonly IceScratches scratches = new();
     Model model;
     Material maskMaterial;
 
@@ -52,8 +55,8 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
             if (albedo.Texture.Id != 0) SetTextureFilter(albedo.Texture, TextureFilter.Point);
         }
         maskMaterial = LoadMaterialDefault();
-        IceBands.Build();
-        IceScratches.Load();
+        bands.Build();
+        scratches.Load();
     }
 
     static Color ToSrgb(Color c)
@@ -84,8 +87,8 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
         DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: false);
         Rlgl.DisableDepthMask();
         DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: true);
-        IceBands.Draw(world.Look.IceBand);
-        IceScratches.Draw(world.Look.Scratch);
+        bands.Draw(world.Look.IceBand);
+        scratches.Draw(world.Look.Scratch);
         Rlgl.EnableDepthMask();
         Rlgl.ColorMask(false, false, false, false);
         DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: true);
@@ -137,7 +140,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
 
     public void Dispose()
     {
-        IceScratches.Unload();
+        scratches.Unload();
         UnloadMaterial(maskMaterial);
         UnloadModel(model);
     }

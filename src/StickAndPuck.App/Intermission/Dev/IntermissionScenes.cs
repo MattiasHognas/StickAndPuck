@@ -16,7 +16,7 @@ public sealed class ZamboniScene : IScene
     public string Name => "zamboni";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = MatchScenes.Exhibition(clubs, settings, 60f);
         var m = world.Match;

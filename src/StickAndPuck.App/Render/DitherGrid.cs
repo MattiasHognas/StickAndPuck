@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Render;
@@ -9,20 +10,20 @@ namespace StickAndPuck.App.Render;
 /// would slide over the ice each time the camera steps a pixel (the dots "crawl"); instead the
 /// pattern starts at the pixel a fixed spot on the ice lands on, so when the camera steps by whole
 /// pixels the pattern steps with the rink and the dithered bands stay put on it.</summary>
-public static class DitherGrid
+public sealed class DitherGrid
 {
     /// <summary>Spots on the ice the pattern hangs from: centre ice first, then the two ends for a camera looking away from it.</summary>
-    static readonly Vector3[] Anchors = [Vector3.Zero, new(-26f, 0, 0), new(26f, 0, 0)];
+    static readonly ImmutableArray<Vector3> Anchors = [Vector3.Zero, new(-26f, 0, 0), new(26f, 0, 0)];
 
-    static int originLoc = -1;
+    int originLoc = -1;
 
     /// <summary>Gets the pattern's start, in whole scene pixels from the bottom left (the shaders' gl_FragCoord convention).</summary>
-    public static Vector2 Origin { get; private set; }
+    public Vector2 Origin { get; private set; }
 
     /// <summary>Finds the start for this frame's camera and hands it to the toon shader; call inside the scene pass.</summary>
-    public static void Apply(Camera3D camera, Shader toon)
+    public void Apply(Camera3D camera, Shader toon, RenderScale scale)
     {
-        int w = Game.Width / RenderScale.Divisor, h = Game.Height / RenderScale.Divisor;
+        int w = Game.Width / scale.Divisor, h = Game.Height / scale.Divisor;
         var anchor = Anchor(camera);
         var p = GetWorldToScreenEx(anchor, camera, w, h);
         Origin = new Vector2(MathF.Round(p.X), MathF.Round(h - p.Y));

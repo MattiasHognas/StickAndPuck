@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Audio;
@@ -18,7 +19,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
     const float Deflection = 3f;       // m/s change in one step that counts as the puck touching something
     const float DemoGap = 1.6f;        // seconds between demo events
 
-    static readonly float[] Detune = [1f, 1.03f, 0.97f, 1.05f];
+    static readonly ImmutableArray<float> Detune = [1f, 1.03f, 0.97f, 1.05f];
 
     readonly Dictionary<Sfx, Sound[]> sounds = [];
     readonly Dictionary<Sfx, int> next = [];

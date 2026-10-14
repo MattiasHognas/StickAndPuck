@@ -14,7 +14,7 @@ public sealed class MatchScene : IScene
     public string Name => "match";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = MatchScenes.Exhibition(clubs, settings, 20 * 60);
         if (world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.C) is { } centre) centre.Slot = 0;
@@ -32,7 +32,7 @@ public sealed class MatchDemoScene : IScene
     public string Name => "matchdemo";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = MatchScenes.Exhibition(clubs, settings, 25);
         world.Dev.Match.Set(new MatchDemo());
@@ -118,7 +118,7 @@ public sealed class CelebrationScene : IScene
     public string Name => "celebration";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         float clock = float.TryParse(Env.Get("SAP_CLOCK"), NumberStyles.Float, CultureInfo.InvariantCulture, out float c) && c > 0 ? c : 4;
         var setup = Scenes.DefaultSetup(clubs) with

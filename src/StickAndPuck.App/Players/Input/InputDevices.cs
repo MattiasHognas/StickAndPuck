@@ -87,10 +87,9 @@ internal static class InputDevices
         };
     }
 
-    /// <summary>A gamepad through the button bindings; the left stick always skates, the bound buttons (the d-pad by default) too. By default right trigger sprints, A shoots, X passes, B checks, Y switches and accepts, LB changes line, RB blocks, start pauses.</summary>
-    public static DeviceState Gamepad(int index, Settings settings)
+    /// <summary>The gamepad in a Raylib slot (-1 for none, see <see cref="Gamepads.Slot"/>) through the button bindings; the left stick always skates, the bound buttons (the d-pad by default) too. By default right trigger sprints, A shoots, X passes, B checks, Y switches and accepts, LB changes line, RB blocks, start pauses.</summary>
+    public static DeviceState Gamepad(int pad, Settings settings)
     {
-        int pad = Gamepads.Slot(index);
         if (pad < 0) return default;
         bool Button(GameAction action) => PadDown(pad, KeyBindings.Of(settings, action).Button);
 

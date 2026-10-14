@@ -11,7 +11,7 @@ public sealed class OutlineScene : IScene
     public string Name => "outlines";
 
     /// <inheritdoc/>
-    public World Create(IReadOnlyList<ClubData> clubs, Settings settings)
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
         var world = new World(Scenes.DefaultSetup(clubs), settings);
         foreach (var side in new[] { Side.Home, Side.Away })
