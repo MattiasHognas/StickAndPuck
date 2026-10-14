@@ -7,7 +7,7 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Arena;
 
-/// <summary>The arena from arena.glb: ice, markings, boards, glass, nets, ad boards, stands and crowd.
+/// <summary>The arena from arena.glb: ice, markings, boards, glass, nets, ad boards, benches, stands and crowd.
 /// arena_meshes.json says which part and material each mesh is, since Raylib keeps no names.
 /// Lit parts use the toon shader; ad boards, lanterns and LEDs are unlit; the ice sheet is a
 /// flat cold grey and the glass a flat translucent tint, both from <see cref="ArenaLook"/> so
@@ -17,7 +17,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
     enum Kind { Lit, Unlit, Glass }
 
     // parts in front of the ice that hide a player behind them, so the outline pass hides him too
-    static readonly FrozenSet<string> Occluders = new[] { "Boards", "AdBoards", "Nets", "Posts" }.ToFrozenSet(StringComparer.Ordinal);
+    static readonly FrozenSet<string> Occluders = new[] { "Boards", "BenchDoors", "AdBoards", "Nets", "Posts" }.ToFrozenSet(StringComparer.Ordinal);
 
     readonly List<(int Mesh, Kind Kind, bool Occludes, bool Ice, bool Sheet)> meshes = [];
     readonly IceBands bands = new();
@@ -40,6 +40,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
             {
                 "Glass" => Kind.Glass,
                 "LED" => Kind.Unlit,
+                "Bench" or "BenchDoors" => Kind.Lit,   // the benches behind the far boards and the door outlines on them
                 "Lanterns" when string.Equals(name, "lantern", StringComparison.Ordinal) => Kind.Unlit,   // the glowing shade, not cap or cable
                 _ => unlit ? Kind.Unlit : Kind.Lit,
             };

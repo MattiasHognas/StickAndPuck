@@ -7,13 +7,14 @@ loads them, since a Raylib Model keeps no mesh or material names.
 2. drops players, puck, lights and cameras, flattens the ice to its base colour (the game draws
    the light bands, W2 / W18), turns any text objects into meshes (the SHL centre mark is already a mesh, see centre_logo.py),
 3. joins the scenery into one object per part, each part one named mesh: Ice, Floor, Markings,
-   Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Fans, Lanterns. Glass is its own mesh so the game can
+   Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Fans, Lanterns, Bench, BenchDoors (2b). Glass is its own mesh so the game can
    set its tone from the lighting; AdBoards is the only mesh with the ad_pixel material, which
    exports as KHR_materials_unlit,
 4. exports a Y-up GLB with transforms applied and the ad strip embedded with nearest filtering,
    and checks every primitive stays under Raylib's 65536-vertex limit for 16-bit indices.
 Run in Blender:  exec(open(script).read(), {'__file__': script})  or with ART / SAP_ART set."""
-import bpy, math, os, json, struct, sys, glob
+import bpy, bmesh, math, os, json, struct, sys, glob
+from mathutils import Matrix, Vector
 try: import numpy                        # the glTF exporter needs numpy; a Blender run from a venv may not see it
 except ImportError: sys.path += glob.glob('/usr/lib/python3*/site-packages')
 
@@ -70,10 +71,78 @@ bg = ad.nodes.new('ShaderNodeBackground')
 ad.links.new(tex.outputs['Color'], bg.inputs['Color']); ad.links.new(bg.outputs[0], next(n for n in ad.nodes if n.type == 'OUTPUT_MATERIAL').inputs['Surface'])
 ad.nodes.remove(em)
 
+# ---- 2b. the bench area behind the far boards (Blender +Y; the game's -z) ----
+# two 10 m benches centred on the doors at x = -6 (home) and +6 (away): deck, one row of seats on a
+# 0.2 m riser, a low dark back wall with a light cap that shows over the board top from the broadcast
+# camera, end walls, and a 0.3 m standing step behind for the coaches. No glass or posts in front, and
+# the front fan row behind them is trimmed so the bench reads as its own space.
+BOARD_Y, BENCH_Y1, DOOR_X, BENCH_HALF = 12.75, 14.25, 6.0, 5.0
+def bench_spans(): return [(cx - BENCH_HALF, cx + BENCH_HALF) for cx in (-DOOR_X, DOOR_X)]
+def in_bench(x): return any(x0 < x < x1 for x0, x1 in bench_spans())
+
+def box(bm, x0, x1, y0, y1, z0, z1, mi):
+    ret = bmesh.ops.create_cube(bm, size=1, matrix=Matrix.Translation(((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)) @ Matrix.Diagonal((x1 - x0, y1 - y0, z1 - z0, 1)))
+    for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = mi
+
+def part_mesh(name, bm, colours):
+    me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
+    for key, h in colours:
+        m = bpy.data.materials.new(key); m.use_nodes = True
+        bsdf = m.node_tree.nodes['Principled BSDF']; bsdf.inputs['Base Color'].default_value = lin(h); bsdf.inputs['Roughness'].default_value = 0.85
+        m.diffuse_color = lin(h); me.materials.append(m)
+    ob = bpy.data.objects.new(name, me); scene.collection.objects.link(ob)
+
+def build_benches():
+    bm = bmesh.new()   # 0 deck, 1 seats, 2 back and end walls, 3 wall cap, 4 standing step
+    for x0, x1 in bench_spans():
+        box(bm, x0, x1, 13.01, BENCH_Y1, -0.05, 0.0, 0)
+        box(bm, x0 + 0.1, x1 - 0.1, 13.05, 13.5, 0.0, 0.2, 2); box(bm, x0 + 0.1, x1 - 0.1, 13.05, 13.5, 0.2, 0.62, 1)
+        box(bm, x0, x1, 13.55, 13.7, 0.0, 1.5, 2); box(bm, x0, x1, 13.53, 13.72, 1.5, 1.56, 3)
+        for ex in (x0, x1 - 0.12): box(bm, ex, ex + 0.12, 13.01, 13.55, 0.0, 1.3, 2)
+        box(bm, x0, x1, 13.75, BENCH_Y1, 0.0, 0.3, 4)
+    part_mesh('Bench', bm, [('bench_deck', '#211b28'), ('bench_seat', '#555f6b'), ('bench_wall', '#2a2c36'),
+                            ('bench_cap', '#8a8790'), ('bench_step', '#33293a')])
+    # door outlines on the boards' rink face, kept clear of the ad strip (z 0.26 to 0.98) so it stays
+    # pixel-exact: a dark kick panel with edge bars, and a dark cap over the 1 m door
+    bm = bmesh.new(); fy = BOARD_Y - 0.006
+    for cx in (-DOOR_X, DOOR_X):
+        box(bm, cx - 0.5, cx + 0.5, fy - 0.002, fy, 0.02, 0.22, 0)
+        for ex in (cx - 0.5, cx + 0.42): box(bm, ex, ex + 0.08, fy - 0.004, fy - 0.002, 0.0, 0.25, 1)
+        box(bm, cx - 0.5, cx + 0.5, 12.725, 13.015, 1.065, 1.155, 1)
+    part_mesh('BenchDoors', bm, [('door_panel', '#74666b'), ('door_edge', '#423236')])
+
+def components(bm):
+    """the mesh's connected pieces as lists of verts"""
+    seen, out = set(), []
+    for v in bm.verts:
+        if v.index in seen: continue
+        stack, piece = [v], []; seen.add(v.index)
+        while stack:
+            a = stack.pop(); piece.append(a)
+            for e in a.link_edges:
+                b_ = e.other_vert(a)
+                if b_.index not in seen: seen.add(b_.index); stack.append(b_)
+        out.append(piece)
+    return out
+
+def trim_for_benches():
+    for name, lo, hi in (('Posts', 12.0, 13.5), ('Fans', 14.3, 15.4)):   # posts on the far glass line; the front fan row
+        me = bpy.data.objects[name].data; bm = bmesh.new(); bm.from_mesh(me); bm.verts.index_update()
+        gone = [v for piece in components(bm) for c in [sum((p.co for p in piece), Vector()) / len(piece)]
+                if lo < c.y < hi and in_bench(c.x) for v in piece]
+        bmesh.ops.delete(bm, geom=gone, context='VERTS'); bm.to_mesh(me); bm.free()
+    me = bpy.data.objects['Glass'].data; bm = bmesh.new(); bm.from_mesh(me)
+    for x in sorted({x for span in bench_spans() for x in span}):
+        bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=(x, 0, 0), plane_no=(1, 0, 0))
+    gone = [f for f in bm.faces if f.calc_center_median().y > 12.0 and in_bench(f.calc_center_median().x)]
+    bmesh.ops.delete(bm, geom=gone, context='FACES'); bm.to_mesh(me); bm.free()
+
 # ---- 3. one object and one named mesh per part ----
 PARTS = [('Ice', ['Ice']), ('Floor', ['Floor']), ('Markings', ['Markings', 'Logo']), ('Boards', ['Boards']),
          ('Glass', ['Glass']), ('Posts', ['Posts']), ('AdBoards', ['Ad']), ('Nets', ['NetFrame', 'Net']),
-         ('Stands', ['Stands']), ('LED', ['LED']), ('Fans', ['Fans']), ('Lanterns', ['Lanterns', 'Cable'])]
+         ('Stands', ['Stands']), ('LED', ['LED']), ('Fans', ['Fans']), ('Lanterns', ['Lanterns', 'Cable']),
+         ('Bench', ['Bench']), ('BenchDoors', ['BenchDoors'])]
+build_benches()
 def stem(name): return name.split('.')[0]
 for ob in scene.objects:                 # unparent, keeping world placement, so joins and applies are exact
     if ob.parent: mw = ob.matrix_world.copy(); ob.parent = None; ob.matrix_world = mw
@@ -93,6 +162,7 @@ for name, stems in PARTS:
     ob = bpy.context.view_layer.objects.active
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     ob.name = name; ob.data.name = name; used.add(name)
+trim_for_benches()
 left = [o.name for o in scene.objects if o.name not in used]
 for n in left: bpy.data.objects.remove(bpy.data.objects[n])
 
