@@ -197,6 +197,8 @@ public sealed class BenchCrowd
             return;
         }
 
+        if (!float.IsNaN(f.Look) && f.Showing(world.Time) != BenchReaction.None) return;   // turned to someone for a reaction
+
         // seated or waiting at the door: follow the puck, each at his own pace
         var puck = world.Puck.Position;
         float z = f.Standing ? BenchLayout.StandZ : BenchLayout.SeatZ;

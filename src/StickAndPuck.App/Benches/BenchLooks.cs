@@ -46,7 +46,7 @@ internal static class BenchClips
     [
         (Skater, "sit", false), (Skater, "sit_tired", false), (Skater, "stand_boards", false), (Skater, "idle", false),
         (Skater, "slump", false), (Skater, "chat", false), (Skater, "helmet_off", false), (Skater, "argue", false),
-        (Skater, "celebrate", true), (Skater, "bang", true),
+        (Skater, "celebrate", true), (Skater, "bang", false),
         (Goalie, "ready", true),
         (Staff, "idle", true), (Staff, "clap", true), (Staff, "arms_up", true), (Staff, "point", true), (Staff, "lean_talk", true), (Staff, "walk", true),
     ];

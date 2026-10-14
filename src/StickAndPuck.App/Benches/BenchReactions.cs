@@ -125,8 +125,8 @@ public sealed class BenchReactions
         }
         for (int i = 0; i < Math.Min(cue.Count, pick.Count); i++)
         {
-            // a goal: some of the bench bang the boards instead of throwing their arms up
-            var r = cue.Reaction == BenchReaction.Cheer && dice.NextSingle() < 0.3f ? BenchReaction.Bang : cue.Reaction;
+            // a goal: one in four of the bench (in shuffled order) bangs the boards instead of throwing his arms up
+            var r = cue.Reaction == BenchReaction.Cheer && i % 4 == 3 ? BenchReaction.Bang : cue.Reaction;
             Start(pick[i], r, now + Delay(), cue.Seconds);
             if (cue.Reaction == BenchReaction.Point) pick[i].Look = 0f;   // squared up to the ice
         }
