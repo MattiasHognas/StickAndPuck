@@ -8,7 +8,8 @@ namespace StickAndPuck.App.Season;
 
 /// <summary>A plain standings panel in the A3 pixel font: rank, club, games, regulation and overtime wins
 /// and losses, goals and points, with the human's club in gold. The standings
-/// screen uses the same <see cref="SeasonState.Table"/>.</summary>
+/// screen uses the same <see cref="SeasonState.Table"/> and the same header: the round of the human's next
+/// game, or the final table once the season is over.</summary>
 internal static class SeasonTable
 {
     const int Line = 12, Pad = 6;
@@ -24,9 +25,9 @@ internal static class SeasonTable
         int x = (Game.Width - w) / 2, y = Math.Max(2, (Game.Height - h) / 2);
         art.DrawPanel("panel", x, y, w, h);
 
-        int played = Math.Min(season.CurrentRound, season.Rounds);
         int top = y + Pad - 2;
-        art.DrawText(Text.Format(K.ShlRound, played, season.Rounds), x + Pad + 4, top, art.Score);
+        string title = season.IsOver ? Text.Get(K.ShlFinalTable) : Text.Format(K.ShlRound, Screens.StandingsScreen.Round(season), season.Rounds);
+        art.DrawText(title, x + Pad + 4, top, art.Score);
         top += Line;
         foreach (var (head, cx) in Columns) art.DrawText(Text.Get(head), x + cx, top, art.Text);
 
