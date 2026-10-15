@@ -103,6 +103,7 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
             events = demo.Events;
             fight = demo.FightOn;
         }
+        if (Dev.BoxDemo.Of(world).TryGet(out var box)) box.Run(world, DrawMs);
         c.Update(world, dt);
         r.Update(world, c, events, fight, dt);
     }
