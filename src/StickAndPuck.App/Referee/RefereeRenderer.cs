@@ -52,7 +52,7 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         int want = Want(r, time);
         float sinceDrop = (time - r.DroppedAt) * ClipFps;
         bool signalling = want != set && want != skate && want != idle;
-        if (drop >= 0 && sinceDrop < clips[drop].KeyFrameCount - 1 - ThrowFrame && !signalling)
+        if (drop >= 0 && sinceDrop >= 0 && sinceDrop < clips[drop].KeyFrameCount - 1 - ThrowFrame && !signalling)
         {
             // The throw, once, right after the puck drops
             clip = drop;
@@ -85,7 +85,9 @@ internal sealed unsafe class RefereeRenderer : IDisposable
     void Pose()
     {
         if (clip < 0) return;
-        UpdateModelAnimation(model, clips[clip], (int)frame % clips[clip].KeyFrameCount);   // whole frames only
+        // The loader's final sample is the rest pose; the set stance must stay crouched across its loop.
+        int count = clip == set ? Math.Max(1, clips[clip].KeyFrameCount - 1) : clips[clip].KeyFrameCount;
+        UpdateModelAnimation(model, clips[clip], (int)frame % count);   // whole frames only
     }
 
     public void DrawScene(Referee r, RenderContext render)

@@ -163,19 +163,19 @@ WU_HAND, WU_DIR, WU_LOW = (0.02, -0.28, 0.72), (0.7, 0.55, 0.3), 0.38
 
 def faceoff_stance(i, drop, bend, hand, d):     # set for the draw: knees bent, back over, head up at the dot, both gloves on the stick, blade flat on the ice
     bob = [0, 1][i]
-    shift(z=-drop - 0.012 * bob); turn('pelvis', x=bend * 0.45)
+    shift(y=0.10 * bend, z=-drop - 0.012 * bob); turn('pelvis', x=bend * 0.45)
     plant(spread=0.10, pole=(0, -1, 0))
     turn('spine', x=bend * 0.55); turn('chest', x=bend * 0.15)
-    turn('neck', x=-bend * 0.75); turn('head', x=-bend * 0.35)
+    turn('neck', x=-bend * 0.65); turn('head', x=-bend * 0.25)
     reach('R', V(hand) + V((0, 0, -0.01 * bob)), pole=(-1, 0.3, -0.6))
-    stick_dir(d, floor=0.02)
+    stick_dir(d, floor=0.0)
     m = PB[SB].matrix @ B[SB].matrix_local.inverted()
     reach('L', m @ GRIP + V(d).normalized() * FO_LOW, pole=(1, 0.3, -0.6))
 FO_LOW = 0.40
 def skater_faceoff_crouch(i):               # a winger or defenceman set at the circle, held
     faceoff_stance(i, 0.19, 0.55, (0.02, -0.34, 0.58), (0.25, -0.55, -0.8))
 def skater_faceoff_centre(i):               # the centre over the dot, lowest, the blade reaching out toward it
-    faceoff_stance(i, 0.25, 0.75, (0.03, -0.42, 0.50), (0.15, -0.75, -0.65))
+    faceoff_stance(i, 0.23, 0.95, (0.03, -0.42, 0.50), (0.15, -0.75, -0.65))
 
 def goalie_ready(i):
     bob = [0, 1, 2, 1][i]
