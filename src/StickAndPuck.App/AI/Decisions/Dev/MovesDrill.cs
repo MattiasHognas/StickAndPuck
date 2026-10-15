@@ -18,7 +18,9 @@ public sealed class AiMovesScene : IScene
     /// <inheritdoc/>
     public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
     {
-        var world = new World(Scenes.DefaultSetup(clubs) with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] }, settings);
+        // arcade rules: no offside whistle for a drill that starts in the attacking zone
+        var setup = Scenes.DefaultSetup(clubs).WithRules(RuleSet.Arcade);
+        var world = new World(setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] }, settings);
         MovesDrill.Setup(world, Env.Is("SAP_MOVE", "onetimer"));
         return world;
     }
