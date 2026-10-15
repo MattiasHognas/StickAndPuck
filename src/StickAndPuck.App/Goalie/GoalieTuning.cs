@@ -42,7 +42,7 @@ public static class GoalieTuning
     public const float ButterflyHalfWidth = 0.6f;
 
     /// <summary>Extra reach of the glove or blocker at mid height.</summary>
-    public const float HandReach = 0.3f;
+    public const float HandReach = 0.27f;
 
     /// <summary>Shots below this height are low: pads and butterfly.</summary>
     public const float LowShot = 0.45f;
@@ -51,7 +51,7 @@ public static class GoalieTuning
     public const float ShoulderHeight = 1.3f;
 
     /// <summary>Chance a covered shot is stopped: slow and fast reflexes. The rest squeeze through.</summary>
-    public const float CleanSlow = 0.64f, CleanFast = 1.15f;
+    public const float CleanSlow = 0.64f, CleanFast = 1.18f;
 
     /// <summary>How many of the misses <see cref="CleanSlow"/> and <see cref="CleanFast"/> leave squeeze through on a
     /// shot into the middle of the goalie, and on one at the very edge of the reach, as a share.</summary>
@@ -64,7 +64,7 @@ public static class GoalieTuning
     public const float FastShot = 20f;
 
     /// <summary>The most a very hard shot takes off the clean-stop chance.</summary>
-    public const float HardShotPenalty = 0.12f;
+    public const float HardShotPenalty = 0.2f;
 
     /// <summary>Chance to catch rather than leave a rebound: slow and fast reflexes, before height and speed.</summary>
     public const float CatchSlow = 0.28f, CatchFast = 0.65f;
