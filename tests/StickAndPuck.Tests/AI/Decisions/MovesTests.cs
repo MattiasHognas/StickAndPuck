@@ -15,8 +15,8 @@ namespace StickAndPuck.Tests;
 /// The AI's dekes and one-timers. The odds: a carrier with more puck control dekes more, a smarter
 /// one times it closer to the sweet spot, and a smarter receiver sees more one-timers. Set pieces:
 /// an AI receiver in the slot one-times a pass, and an AI carrier skating at a defender dekes him.
-/// Then full all-AI matches over several seeds: the AI dekes and one-times in every one, goals stay
-/// hockey-like, and no receiver lets a shot go by taking a pass with shoot still held.
+/// Then full all-AI matches over 24 seeds: the AI dekes and one-times in every one, goals stay
+/// hockey-like on average, and no receiver lets a shot go by taking a pass with shoot still held.
 /// </summary>
 public sealed class MovesTests : CheckedTest
 {
@@ -96,7 +96,7 @@ public sealed class MovesTests : CheckedTest
     [ClassDataSource<Played<MovesMatch>>(Shared = SharedType.PerClass)]
     public required Played<MovesMatch> MatchesPlayed { get; init; }
 
-    /// <summary>Gets the matches, 0 to 7.</summary>
+    /// <summary>Gets the matches, 0 to 23.</summary>
     public static IEnumerable<int> MatchNumbers() => Enumerable.Range(0, Seeds);
 
     /// <summary>One full all-AI match; <see cref="Matches"/> judges them.</summary>
@@ -114,14 +114,15 @@ public sealed class MovesTests : CheckedTest
         foreach (var (m, i) in played.Select((m, i) => (m, i))) Console.WriteLine($"      seed {1 + i}: {m}");
         int goals = played.Sum(m => m.Goals), sog = played.Sum(m => m.Sog), dekes = played.Sum(m => m.Dekes), kept = played.Sum(m => m.DekesKept);
         int armed = played.Sum(m => m.Armed), oneTimers = played.Sum(m => m.Struck), onGoal = played.Sum(m => m.OnGoal), oneTimerGoals = played.Sum(m => m.OneTimerGoals);
+        Console.WriteLine($"      passes completed {(float)played.Sum(m => m.Completed) / Math.Max(1, played.Sum(m => m.Passes)):P1} of {played.Sum(m => m.Passes)}");
         Console.WriteLine($"      per match: goals {(float)goals / Seeds:F1}, shots on goal {(float)sog / Seeds:F1}, shooting {(float)goals / Math.Max(1, sog):P1}; dekes {(float)dekes / Seeds:F1} ({(float)kept / Math.Max(1, dekes):P0} kept the puck), one-timers armed {(float)armed / Seeds:F1}, struck {(float)oneTimers / Seeds:F1} ({onGoal} on goal in all), scored {oneTimerGoals} in all");
-        Check(played.All(m => m.Goals is >= 1 and <= 10), $"goals stay hockey-like ({string.Join(", ", played.Select(m => m.Goals))})");
+        Check((float)goals / Seeds is >= 3f and <= 8f, $"goals stay hockey-like, 3 to 8 a match on average ({string.Join(", ", played.Select(m => m.Goals))})");
         Check(played.All(m => m.Dekes > 0 && m.Struck > 0), "the AI dekes and one-times in every match");
         Check(played.Sum(m => m.Stray) == 0, $"no receiver takes a pass with shoot held ({played.Sum(m => m.Stray)} times)");
     }
 
     /// <summary>What one all-AI match came to.</summary>
-    public sealed record MovesMatch(int Goals, int Sog, int Dekes, int DekesKept, int Armed, int Struck, int OnGoal, int OneTimerGoals, int Stray)
+    public sealed record MovesMatch(int Goals, int Sog, int Dekes, int DekesKept, int Armed, int Struck, int OnGoal, int OneTimerGoals, int Stray, int Passes, int Completed)
     {
         public override string ToString() => $"goals {Goals}, shots on goal {Sog}, dekes {Dekes} ({DekesKept} kept), one-timers armed {Armed}, struck {Struck} ({OnGoal} on goal), scored {OneTimerGoals}, stray {Stray}";
     }
@@ -156,7 +157,7 @@ public sealed class MovesTests : CheckedTest
             carried = pk.Carrier;
         }
         int armed = AiDecisions.Tally(world, Side.Home).OneTimers + AiDecisions.Tally(world, Side.Away).OneTimers;
-        return new MovesMatch(world.Match.Score[0] + world.Match.Score[1], world.Match.Shots[0] + world.Match.Shots[1], dekes, kept, armed, oneTimers, onGoal, oneTimerGoals, stray);
+        return new MovesMatch(world.Match.Score[0] + world.Match.Score[1], world.Match.Shots[0] + world.Match.Shots[1], dekes, kept, armed, oneTimers, onGoal, oneTimerGoals, stray, AiDecisions.Tally(world, Side.Home).Passes + AiDecisions.Tally(world, Side.Away).Passes, AiDecisions.Tally(world, Side.Home).Completed + AiDecisions.Tally(world, Side.Away).Completed);
     }
 
     /// <summary>A home centre at the left point of the attacking zone with the puck, a winger alone on the far side of the slot.</summary>

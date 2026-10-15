@@ -113,22 +113,24 @@ internal sealed partial class DecisionSystem
         }
         if (!brain.OneTiming) return true;
 
-        // the blade goes square onto the pass's line, then the stick turns to the corner the step the puck comes onto it
+        // the blade goes to where it meets the pass, then the stick turns to the corner the step the puck comes onto it
         bool arriving = gap < closing * ArriveSteps * Game.Step;
-        var move = arriving ? brain.ShootAim : Steering.Toward(p, Flat(p.Position) + OntoLine(pk, blade) - blade, LineArrive).Move;
+        var meet = Steering.Toward(p, Flat(p.Position) + OntoLine(p, pk, blade) - blade, LineArrive, sprint: true);
         bool hold = world.Time - brain.OneTimerPressed < OneTimerTap;
-        AiCommand.Act(world, p, p.Command with { Shoot = hold, Move = move, Sprint = false }, "one-timer");
+        AiCommand.Act(world, p, p.Command with { Shoot = hold, Move = arriving ? brain.ShootAim : meet.Move, Sprint = !arriving && meet.Sprint }, "one-timer");
         return true;
     }
 
-    /// <summary>Gets the point on the puck's line nearest the blade, at least half a metre ahead of the puck.</summary>
-    static Vector2 OntoLine(Puck pk, Vector2 blade)
+    /// <summary>Gets where the blade meets the pass: the earliest point along its slide the blade gets to first, else
+    /// the point on its line nearest the blade, at least half a metre ahead of the puck.</summary>
+    static Vector2 OntoLine(Player p, Puck pk, Vector2 blade)
     {
         var from = Flat(pk.Position);
         var v = Flat(pk.Velocity);
         if (v.Length() < 0.1f) return from;
         var dir = Vector2.Normalize(v);
-        return from + dir * Math.Max(0.5f, Vector2.Dot(blade - from, dir));
+        float along = Intercept(p, blade, from, dir, v.Length()).TryGet(out float reach) ? reach : Math.Max(0.5f, Vector2.Dot(blade - from, dir));
+        return from + dir * along;
     }
 
     /// <summary>Gets the chance a receiver in a good spot sees the one-timer: 25 % at hockey IQ 0, 85 % at 100.</summary>
