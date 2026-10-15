@@ -4,7 +4,8 @@ namespace StickAndPuck.App.Core;
 
 /// <summary>The one place the game reads environment variables. The SAP_* switches (and
 /// SDL_GAMECONTROLLERCONFIG) are read once, at the first ask; after that a replay or a test
-/// changes them here with <see cref="Set"/>, never in the process environment.</summary>
+/// changes them here with <see cref="Set"/>, never in the process environment. SAP_GPU picks the graphics
+/// card (<see cref="Settings.Gpu"/>); SAP_GPU_LAUNCHED marks a game <see cref="GpuLaunch"/> started on a card.</summary>
 public static class Env
 {
     static readonly Dictionary<string, string> Values = Read();
