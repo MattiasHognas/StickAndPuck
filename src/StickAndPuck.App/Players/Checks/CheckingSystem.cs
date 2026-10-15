@@ -105,14 +105,15 @@ internal sealed class CheckingSystem : ISystem
         float closing = Vector3.Dot(checker.Velocity - target.Velocity, dir);
         var pk = world.Puck;
         bool carrying = pk.Carrier == target.Id;
-        float strength = CheckingModel.Strength(checker, target, closing, carrying) * CheckingModel.StrengthScale(checker, world.Settings.Difficulty);
+        float strength = CheckingModel.Strength(checker, target, closing, carrying) * CheckingModel.StrengthScale(checker, world.Settings.Difficulty)
+            * AI.HumanEdge.CheckStrength(world, checker, target);
 
         // the target takes the checker's push; the checker gives up some of their speed into the hit
         target.Velocity += dir * CheckingModel.Shove(strength);
         checker.Velocity -= dir * Math.Max(0, Vector3.Dot(checker.Velocity, dir)) * 0.5f;
         world.Events.Publish(new CheckLanded(world.Time, checker.Side, checker.Id, target.Position, strength));
 
-        if (rng.NextSingle() >= CheckingModel.KnockdownChance(strength)) return;
+        if (rng.NextSingle() >= CheckingModel.KnockdownChance(strength, AI.HumanEdge.KnockdownCap(world, target))) return;
         downFor[target.Id] = CheckingModel.DownTime(strength);
         target.Begin(PlayerAction.Fallen);
         sliding[target.Id] = (target.Position, target.Velocity, target.Heading);

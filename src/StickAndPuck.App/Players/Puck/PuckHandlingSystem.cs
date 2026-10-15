@@ -52,6 +52,7 @@ internal sealed partial class PuckHandlingSystem : ISystem
     float releasedAt = float.NegativeInfinity;
     Vector3 lastPuck;
     Maybe<(Side Side, int Passer, float At)> lastPass;
+    Maybe<(Side Side, float At)> lastShot;
     readonly Dictionary<int, float> armed = [];
     readonly Dictionary<int, (float At, Vector2 Side, float Speed)> deking = [];
     readonly Dictionary<int, float> dekedAt = [];
@@ -196,6 +197,7 @@ internal sealed partial class PuckHandlingSystem : ISystem
         var from = world.Puck.Position;
         var velocity = PuckHandling.ShotVelocity(world, p, from, shot.Kind, shot.Speed, rng, shot.Held);
         Release(world, p, velocity);
+        lastShot = (p.Side, world.Time);
         world.Events.Publish(new ShotTaken(world.Time, p.Side, p.Id, from, velocity.Length()));
     }
 
@@ -231,6 +233,7 @@ internal sealed partial class PuckHandlingSystem : ISystem
         Release(world, p, velocity);
         p.Begin(PlayerAction.Shoot);
         p.ActionTime = PuckHandling.StrikeDelay;   // the clip at the sweep, where the puck leaves
+        lastShot = (p.Side, world.Time);
         world.Events.Publish(new ShotTaken(world.Time, p.Side, p.Id, from, velocity.Length()));
     }
 
@@ -254,6 +257,7 @@ internal sealed partial class PuckHandlingSystem : ISystem
         if (!pk.Live || pk.Position.Y > PuckHandling.StickHeight || PuckHandling.InNet(pk.Position)) return;
         var nearest = Maybe<Player>.None;
         float bestDistance = float.MaxValue;
+        bool block = false;
         foreach (var p in world.Players)
         {
             if (!p.OnIce || p.IsGoalie || p.Action is PlayerAction.Fallen or PlayerAction.Fight) continue;
@@ -270,12 +274,44 @@ internal sealed partial class PuckHandlingSystem : ISystem
             if (!(stick || skates) || d >= bestDistance) continue;
             nearest = p;
             bestDistance = d;
+            block = Blocks(world, p, relative);
         }
         if (!nearest.TryGet(out var best)) return;
+        if (block)
+        {
+            Block(pk, best);
+            return;
+        }
         if (armed.ContainsKey(best.Id)) { OneTimer(world, best); return; }
         pk.Carrier = best.Id;
         pk.LastTouch = best.Id;
         pk.Position = pk.Position with { Y = 0 };
+    }
+
+    /// <summary>Seconds after a shot leaves the blade that an opponent who meets it blocks it rather than takes it.</summary>
+    const float ShotLive = 0.4f;
+
+    /// <summary>A fresh shot meeting an opponent's stick or skates faster than this, in metres per second, is blocked, not caught.</summary>
+    const float BlockSpeed = 12f;
+
+    /// <summary>Whether a skater meeting the puck blocks a shot rather than takes it: an opponent's fresh shot, coming harder than a stick can stop.</summary>
+    bool Blocks(World world, Player p, float relative)
+    {
+        return lastShot.TryGet(out var shot) && shot.Side != p.Side && world.Time - shot.At < ShotLive && relative > BlockSpeed;
+    }
+
+    /// <summary>A blocked shot: the puck comes off the stick or the shin pads slower, knocked off to one side, loose.</summary>
+    void Block(Puck pk, Player p)
+    {
+        lastShot = Maybe<(Side Side, float At)>.None;
+        float angle = (0.5f + (rng.NextSingle() * 1.2f)) * (rng.Next(2) == 0 ? -1 : 1);
+        var flat = new Vector2(pk.Velocity.X, pk.Velocity.Z);
+        float keep = flat.Length() * (0.2f + (0.25f * rng.NextSingle()));
+        var dir = flat.Length() > 1e-4f ? Vector2.Normalize(flat) : Vector2.UnitX;
+        var turned = new Vector2((dir.X * SimMath.Cos(angle)) - (dir.Y * SimMath.Sin(angle)), (dir.X * SimMath.Sin(angle)) + (dir.Y * SimMath.Cos(angle)));
+        pk.Velocity = new Vector3(turned.X * keep, 0, turned.Y * keep);
+        pk.Position = pk.Position with { Y = 0 };
+        pk.LastTouch = p.Id;
     }
 
     /// <summary>Keeps the puck on the carrier's blade: it moves with the skater and settles onto the blade (pulled across the body during a deke).</summary>

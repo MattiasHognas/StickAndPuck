@@ -139,7 +139,7 @@ internal sealed partial class DecisionSystem
         if (world.Time >= brain.CheckReady && d < CheckFrom)
         {
             float checking = Traits.Unit(p.Data.Traits.Checking);
-            brain.HitUntil = rng.NextSingle() < 0.04f + 0.15f * checking ? world.Time + 0.9f : float.NegativeInfinity;
+            brain.HitUntil = rng.NextSingle() < (0.04f + 0.15f * checking) * HumanEdge.HitChance(world, carrier) ? world.Time + 0.9f : float.NegativeInfinity;
             brain.CheckReady = world.Time + 4f;
         }
         if (world.Time > brain.HitUntil) return;

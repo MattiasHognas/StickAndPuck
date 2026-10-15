@@ -100,7 +100,13 @@ public static class CheckingModel
     /// <summary>Gets the chance a hit of some strength knocks the target down.</summary>
     public static float KnockdownChance(float strength)
     {
-        return Math.Clamp((strength - 0.5f) / 0.8f, 0f, 0.95f);
+        return KnockdownChance(strength, AI.HumanEdgeTuning.KnockdownCap);
+    }
+
+    /// <summary>Gets the chance a hit of some strength knocks the target down, never above <paramref name="cap"/>.</summary>
+    public static float KnockdownChance(float strength, float cap)
+    {
+        return Math.Clamp((strength - 0.5f) / 0.8f, 0f, cap);
     }
 
     /// <summary>Gets how long a knocked-down player stays down, in seconds.</summary>

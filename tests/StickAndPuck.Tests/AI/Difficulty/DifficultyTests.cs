@@ -25,12 +25,15 @@ public sealed class DifficultyTests : CheckedTest
         var t = new Traits { HockeyIq = 60, ShotAccuracy = 95, TopSpeed = 4, GoalieReflexes = 70 };
         var easy = DifficultyScale.Scale(t, Level.Easy);
         var hard = DifficultyScale.Scale(t, Level.Hard);
-        Check(easy.HockeyIq < t.HockeyIq && easy.ShotAccuracy < t.ShotAccuracy && easy.GoalieReflexes < t.GoalieReflexes,
-            $"easy lowers the traits (hockey IQ {t.HockeyIq} -> {easy.HockeyIq}, reflexes {t.GoalieReflexes} -> {easy.GoalieReflexes})");
-        Check(hard.HockeyIq > t.HockeyIq && hard.ShotAccuracy > t.ShotAccuracy && hard.GoalieReflexes > t.GoalieReflexes,
-            $"hard raises the traits (hockey IQ {t.HockeyIq} -> {hard.HockeyIq}, reflexes {t.GoalieReflexes} -> {hard.GoalieReflexes})");
+        Check(easy.HockeyIq < t.HockeyIq && easy.ShotAccuracy < t.ShotAccuracy,
+            $"easy lowers the skater traits (hockey IQ {t.HockeyIq} -> {easy.HockeyIq})");
+        Check(hard.HockeyIq > t.HockeyIq && hard.ShotAccuracy > t.ShotAccuracy,
+            $"hard raises the skater traits (hockey IQ {t.HockeyIq} -> {hard.HockeyIq})");
         Check(hard.ShotAccuracy == 100 && easy.TopSpeed == 0, "the scaled traits stay within 0 to 100");
-        Check(DifficultyScale.Scale(t, Level.Normal) == t, "normal keeps the traits from the data files");
+        Check(DifficultyScale.Scale(t, Level.Normal) == t, "normal keeps the skater traits from the data files");
+        int[] reflexes = [.. new[] { Level.Easy, Level.Normal, Level.Hard }.Select(l => DifficultyScale.Goalie(t, l).GoalieReflexes)];
+        Check(reflexes[0] < reflexes[1] && reflexes[1] < reflexes[2] && reflexes[2] <= t.GoalieReflexes,
+            $"every difficulty takes the AI goalie down, easy most and hard least (reflexes {t.GoalieReflexes} -> {string.Join(", ", reflexes)})");
 
         var setup = WorldBuilder.DefaultSetup;     // the keyboard on the home club
         Check(DifficultyScale.AiSide(setup) == SideOrNone.Away, "the difficulty applies to the club no human plays");
@@ -39,7 +42,10 @@ public sealed class DifficultyTests : CheckedTest
         bool awayRaised = scaled.Away.Roster.Zip(setup.Away.Roster).All(p => p.First.Traits.HockeyIq >= p.Second.Traits.HockeyIq)
             && scaled.Away.Roster.Average(p => p.Traits.HockeyIq) > setup.Away.Roster.Average(p => p.Traits.HockeyIq) + 10;
         Check(homeKept && awayRaised, "a hard match raises the AI club's whole squad and leaves the human's club as it is");
-        Check(ReferenceEquals(new World(setup, new Settings()).Setup, setup), "a normal match plays the clubs as the data says");
+        var normal = new World(setup, new Settings()).Setup;
+        bool skatersKept = normal.Away.Roster.Zip(setup.Away.Roster).All(p => p.First.Position == PlayingPosition.G || p.First.Traits == p.Second.Traits);
+        bool goaliesDown = normal.Away.Roster.Zip(setup.Away.Roster).Where(p => p.First.Position == PlayingPosition.G).All(p => p.First.Traits.GoalieReflexes < p.Second.Traits.GoalieReflexes);
+        Check(ReferenceEquals(normal.Home, setup.Home) && skatersKept && goaliesDown, "a normal match plays the skaters as the data says and takes the AI goalies down");
 
         var versus = setup with { Inputs = [new InputSlot(InputDevice.KeyboardMouse, Side.Home), new InputSlot(InputDevice.Gamepad1, Side.Away)] };
         var allAi = setup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };

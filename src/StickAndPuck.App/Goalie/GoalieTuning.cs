@@ -17,10 +17,17 @@ public static class GoalieTuning
     public const float ShuffleSpeed = 3.2f;
 
     /// <summary>Time to see a shot and start moving: slow and fast reflexes.</summary>
-    public const float ReactSlow = 0.26f, ReactFast = 0.09f;
+    public const float ReactSlow = 0.28f, ReactFast = 0.11f;
 
     /// <summary>Speed of the push or slide toward a shot once reacting: slow and fast reflexes.</summary>
-    public const float SaveSpeedSlow = 3.2f, SaveSpeedFast = 6.5f;
+    public const float SaveSpeedSlow = 3.0f, SaveSpeedFast = 6.0f;
+
+    /// <summary>How far, in metres, a goalie misreads where a shot of <see cref="ReadSpeed"/> will cross, one
+    /// standard deviation: slow and fast reflexes. Faster shots are misread more, slower ones less.</summary>
+    public const float ReadErrorSlow = 0.4f, ReadErrorFast = 0.08f;
+
+    /// <summary>The shot speed the read error is given for.</summary>
+    public const float ReadSpeed = 25f;
 
     /// <summary>A puck heading at the net faster than this is a shot the goalie reacts to.</summary>
     public const float ShotSpeed = 4f;
@@ -32,10 +39,10 @@ public static class GoalieTuning
     public const float BodyHalfWidth = 0.38f;
 
     /// <summary>Half the width pads cover along the ice in the butterfly.</summary>
-    public const float ButterflyHalfWidth = 0.85f;
+    public const float ButterflyHalfWidth = 0.6f;
 
     /// <summary>Extra reach of the glove or blocker at mid height.</summary>
-    public const float HandReach = 0.3f;
+    public const float HandReach = 0.27f;
 
     /// <summary>Shots below this height are low: pads and butterfly.</summary>
     public const float LowShot = 0.45f;
@@ -44,16 +51,23 @@ public static class GoalieTuning
     public const float ShoulderHeight = 1.3f;
 
     /// <summary>Chance a covered shot is stopped: slow and fast reflexes. The rest squeeze through.</summary>
-    public const float CleanSlow = 0.87f, CleanFast = 0.99f;
+    public const float CleanSlow = 0.64f, CleanFast = 1.18f;
 
-    /// <summary>Above this speed a shot is harder to stop cleanly; the chance falls toward <see cref="HardShotPenalty"/> at 45 m/s.</summary>
+    /// <summary>How many of the misses <see cref="CleanSlow"/> and <see cref="CleanFast"/> leave squeeze through on a
+    /// shot into the middle of the goalie, and on one at the very edge of the reach, as a share.</summary>
+    public const float CentreMiss = 0.4f, EdgeMiss = 1.6f;
+
+    /// <summary>Above this speed a save is a big one: rebounds are harder to hold and the bench bangs its sticks.</summary>
     public const float HardShot = 28f;
 
+    /// <summary>Above this speed, which takes in a good wrist shot, a shot is harder to stop cleanly; the chance falls by up to <see cref="HardShotPenalty"/> at 45 m/s.</summary>
+    public const float FastShot = 20f;
+
     /// <summary>The most a very hard shot takes off the clean-stop chance.</summary>
-    public const float HardShotPenalty = 0.12f;
+    public const float HardShotPenalty = 0.2f;
 
     /// <summary>Chance to catch rather than leave a rebound: slow and fast reflexes, before height and speed.</summary>
-    public const float CatchSlow = 0.4f, CatchFast = 0.75f;
+    public const float CatchSlow = 0.28f, CatchFast = 0.65f;
 
     /// <summary>Share of the shot speed a rebound keeps: big rebounds from slow reflexes, soft ones from fast.</summary>
     public const float ReboundSlow = 0.42f, ReboundFast = 0.22f;
@@ -77,7 +91,7 @@ public static class GoalieTuning
     public const float CloseRange = 8f;
 
     /// <summary>How much further a goalie reaches against a shot from the doorstep (see <see cref="GoalieModel.CloseRead(float, int)"/>).</summary>
-    public const float CloseBonus = 0.3f;
+    public const float CloseBonus = 0.2f;
 
     /// <summary>Seconds a goalie stays down in the butterfly after dropping.</summary>
     public const float ButterflySeconds = 0.8f;

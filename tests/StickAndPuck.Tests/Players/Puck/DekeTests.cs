@@ -20,9 +20,10 @@ public sealed class DekeTests : CheckedTest
     const int Trials = 40;
     int seed = 1;
 
+    /// <summary>An empty world on hard, where the AI plays the human's carrier in full (see <see cref="StickAndPuck.App.AI.HumanEdge"/>).</summary>
     static World Make(bool autoDeke = false, bool oneTimers = true)
     {
-        return new WorldBuilder().Settings(s => s with { AutoDeke = autoDeke, OneTimers = oneTimers }).NoStarters().NotBegun().Build();
+        return new WorldBuilder().Settings(s => s with { AutoDeke = autoDeke, OneTimers = oneTimers, Difficulty = Difficulty.Hard }).NoStarters().NotBegun().Build();
     }
 
     List<MatchEvent> Run(World w, float seconds, Action<int> each)

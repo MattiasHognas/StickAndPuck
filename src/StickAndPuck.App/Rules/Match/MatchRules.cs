@@ -68,7 +68,7 @@ internal sealed class MatchRules : ISystem
     {
         var m = world.Match;
         // goals first: physics ran earlier this step, so a puck over the line before the clock ran out counts
-        foreach (var save in world.Events.Of<ShotSaved>()) m.Shots[(int)Other(save.Side)]++;
+        foreach (var save in world.Events.Of<ShotSaved>().Where(StickAndPuck.App.Goalie.GoalieModel.OnNet)) m.Shots[(int)Other(save.Side)]++;
         if (world.Events.Of<GoalScored>().FirstOrDefault() is { } goal)
         {
             var scorer = goal.Side;

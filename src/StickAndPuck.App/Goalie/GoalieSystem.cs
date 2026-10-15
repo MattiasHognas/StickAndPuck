@@ -1,6 +1,7 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Goalie.Dev;
+using StickAndPuck.App.Players;
 
 namespace StickAndPuck.App.Goalie;
 
@@ -76,7 +77,7 @@ internal sealed partial class GoalieSystem : ISystem, IDisposable
     }
 
     /// <summary>Watches for a shot; after the reaction time, aims the push at where it will cross the goalie's plane.</summary>
-    static void Track(World world, Player g, GoalieState state, int end)
+    void Track(World world, Player g, GoalieState state, int end)
     {
         var pk = world.Puck;
         if (!GoalieModel.IsShot(end, pk.Position, pk.Velocity))
@@ -90,12 +91,13 @@ internal sealed partial class GoalieSystem : ISystem, IDisposable
         {
             state.SeenAt = world.Time;
             state.ShotFrom = new Vector2(pk.Position.X - end * RinkSpec.GoalLineX, pk.Position.Z).Length();
+            state.Misread = GoalieModel.ReadError(g.Data.Traits, pk.Velocity.Length()) * PuckHandling.Gauss(Dice);
         }
         if (world.Time - state.SeenAt < GoalieModel.ReactionTime(g.Data.Traits)) return;
         var at = GoalieModel.Cross(pk.Position, pk.Velocity, g.Position.X);
         if (float.IsInfinity(at.Offset)) return;
         float limit = RinkSpec.NetWidth / 2;
-        state.ReactZ = Math.Clamp(at.Offset, -limit, limit);
+        state.ReactZ = Math.Clamp(at.Offset + state.Misread, -limit, limit);
         if (at.Height < GoalieTuning.LowShot) state.Drop(world.Time);
     }
 
@@ -123,18 +125,20 @@ internal sealed partial class GoalieSystem : ISystem, IDisposable
         if (pk.Velocity.Length() < GoalieTuning.SmotherSpeed && flat.Length() < GoalieTuning.SmotherReach && pk.Position.Y < GoalieTuning.LowShot)
         {
             state.Drop(world.Time);
-            Catch(world, g, state, pk.Velocity.Length());
+            Catch(world, g, state, pk.Velocity.Length(), pk.Position);
         }
     }
 
-    /// <summary>The chance a covered shot is stopped: reflexes, the hand on that side, the shot's speed, and how near the edge of the reach it is.</summary>
+    /// <summary>The chance a covered shot is stopped. Reflexes and the shot's speed set how many squeeze through,
+    /// a share that grows from <see cref="GoalieTuning.CentreMiss"/> times as many for a shot into the middle of the
+    /// goalie to <see cref="GoalieTuning.EdgeMiss"/> times for one at the edge of the reach; the hand on that side
+    /// then adds or takes off its share wherever the shot meets it.</summary>
     static float CleanChance(Player g, float speed, float cover, int hand)
     {
-        float chance = GoalieModel.ByReflexes(g.Data.Traits, GoalieTuning.CleanSlow, GoalieTuning.CleanFast);
-        chance += Traits.Scale(hand, -GoalieTuning.HandClean, GoalieTuning.HandClean);
-        chance -= GoalieTuning.HardShotPenalty * Math.Clamp((speed - GoalieTuning.HardShot) / (45f - GoalieTuning.HardShot), 0f, 1f);
-        if (cover > 0.75f) chance -= (cover - 0.75f) * 0.6f;
-        return chance;
+        float miss = 1f - GoalieModel.ByReflexes(g.Data.Traits, GoalieTuning.CleanSlow, GoalieTuning.CleanFast);
+        miss += GoalieTuning.HardShotPenalty * Math.Clamp((speed - GoalieTuning.FastShot) / (45f - GoalieTuning.FastShot), 0f, 1f);
+        float chance = 1f - (MathF.Max(0f, miss) * (GoalieTuning.CentreMiss + ((GoalieTuning.EdgeMiss - GoalieTuning.CentreMiss) * cover)));
+        return chance + Traits.Scale(hand, -GoalieTuning.HandClean, GoalieTuning.HandClean);
     }
 
     void Save(World world, Player g, GoalieState state, int end, Vector3 at)
@@ -142,6 +146,8 @@ internal sealed partial class GoalieSystem : ISystem, IDisposable
         var pk = world.Puck;
         float speed = pk.Velocity.Length();
         var t = g.Data.Traits;
+        var line = GoalieModel.Cross(pk.Position, pk.Velocity, end * RinkSpec.GoalLineX);
+        var heading = new Vector3(end * RinkSpec.GoalLineX, line.Height, line.Offset);
         int control = t.GoalieReboundControl;
         float catchChance = Traits.Scale(control, GoalieTuning.CatchSlow, GoalieTuning.CatchFast);
         if (at.Y < GoalieTuning.LowShot) catchChance *= 0.5f;                       // pads kick out rebounds
@@ -150,7 +156,7 @@ internal sealed partial class GoalieSystem : ISystem, IDisposable
         pk.Position = at;
         if (Dice.NextSingle() < catchChance)
         {
-            Catch(world, g, state, speed);
+            Catch(world, g, state, speed, heading);
             return;
         }
 
@@ -165,11 +171,12 @@ internal sealed partial class GoalieSystem : ISystem, IDisposable
         pk.LastTouch = g.Id;
         state.IgnoreUntil = world.Time + GoalieTuning.IgnoreAfterSave;
         state.SeenAt = float.NaN;
-        world.Events.Publish(new ShotSaved(world.Time, g.Side, g.Id, at, speed));
+        world.Events.Publish(new ShotSaved(world.Time, g.Side, g.Id, heading, speed));
         GoalieDemo.Saved(world, caught: false);
     }
 
-    static void Catch(World world, Player g, GoalieState state, float speed)
+    /// <summary>Holds the puck; the save is published at <paramref name="heading"/>, where the shot was going to cross the goal line.</summary>
+    static void Catch(World world, Player g, GoalieState state, float speed, Vector3 heading)
     {
         var pk = world.Puck;
         pk.Carrier = g.Id;
@@ -177,7 +184,7 @@ internal sealed partial class GoalieSystem : ISystem, IDisposable
         pk.Velocity = Vector3.Zero;
         state.HeldSince = world.Time;
         state.SeenAt = float.NaN;
-        world.Events.Publish(new ShotSaved(world.Time, g.Side, g.Id, pk.Position, speed));
+        world.Events.Publish(new ShotSaved(world.Time, g.Side, g.Id, heading, speed));
         GoalieDemo.Saved(world, caught: true);
     }
 
@@ -236,6 +243,9 @@ internal sealed class GoalieState
 
     /// <summary>Gets or sets how far from the net the current shot was first seen, or NaN.</summary>
     public float ShotFrom { get; set; } = float.NaN;
+
+    /// <summary>Gets or sets how far off the goalie reads where the current shot will cross, in metres along z.</summary>
+    public float Misread { get; set; }
 
     /// <summary>Gets or sets the z the goalie pushes to for the current shot, or NaN.</summary>
     public float ReactZ { get; set; } = float.NaN;
