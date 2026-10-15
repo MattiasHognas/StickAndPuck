@@ -53,6 +53,25 @@ public sealed class HumanShotTests : CheckedTest
     }
 
     /// <summary>
+    /// Goalie stats matter: the same shots against a weak club goalie (reflexes 55) and a top one (80);
+    /// the top one saves clearly more (saverate measures the same gap over full matches).
+    /// </summary>
+    [Test]
+    public void BetterGoalieSavesMore()
+    {
+        float Saved(int reflexes)
+        {
+            var traits = Average with { GoalieReflexes = reflexes };
+            Tally[] shots = [Batch(traits, SlotSpot, ShotKind.Wrist, 0.05f, AtNet), Batch(traits, CircleSpot, ShotKind.Slap, 0.8f, AtNet)];
+            Console.WriteLine($"      reflexes {reflexes}: {shots[0]}; {shots[1]}");
+            return (float)shots.Sum(t => t.Saves) / Math.Max(1, shots.Sum(t => t.Saves + t.Goals));
+        }
+
+        float weak = Saved(55), top = Saved(80);
+        Check(top > weak + 0.03f, $"the best goalies save clearly more than the weakest ({top:P1} against {weak:P1})");
+    }
+
+    /// <summary>
     /// The shots of a played match: the stick pushed up the ice toward the end boards, a wound-up slap
     /// shot or a quick wrist shot from the slot or the circles, against the club-average goalie as each
     /// difficulty plays him. Each difficulty scales the AI goalie, normal included, so the gaps are wide.

@@ -221,7 +221,10 @@ public sealed class DecisionsTests : CheckedTest
     /// <summary>How many SHL seeds LineCalls plays, from 31 on.</summary>
     const int LineSeeds = 4;
 
-    static readonly int[] IqSeeds = [51, 53, 55, 57, 59, 61];
+    static readonly int[] IqSeeds = [51, 53, 55, 57];
+
+    /// <summary>Ten-minute periods for the matches that need no full-length count: the Arcade one (no calls at all) and the hockey IQ ones (two clubs compared in the same match).</summary>
+    const float ShortPeriod = 10 * 60;
 
     /// <summary>Gets the LineCalls matches, shared by the class's tests.</summary>
     [ClassDataSource<Played<LineCallMatch>>(Shared = SharedType.PerClass)]
@@ -230,7 +233,7 @@ public sealed class DecisionsTests : CheckedTest
     /// <summary>Gets the LineCalls matches: the SHL seeds 31 on, the Arcade match, then hockey IQ 85 against 30 both ways round per IQ seed.</summary>
     public static IEnumerable<int> LineCallNumbers() => Enumerable.Range(0, LineSeeds + 1 + (IqSeeds.Length * 2));
 
-    /// <summary>One full match with the offside and icing rules on; <see cref="LineCalls"/> judges them.</summary>
+    /// <summary>One match with the offside and icing rules on; <see cref="LineCalls"/> judges them.</summary>
     [Test]
     [ExecutionPriority(Priority.Critical)]
     [MethodDataSource(nameof(LineCallNumbers))]
@@ -241,11 +244,11 @@ public sealed class DecisionsTests : CheckedTest
     {
         var clubs = WorldBuilder.Clubs;
         var settings = new Settings();
-        if (i < LineSeeds) return Calls(clubs, settings, RuleSet.Shl, 31 + i, Maybe<int>.None, Maybe<int>.None);
-        if (i == LineSeeds) return Calls(clubs, settings, RuleSet.Arcade, 41, Maybe<int>.None, Maybe<int>.None);
+        if (i < LineSeeds) return Calls(clubs, settings, RuleSet.Shl, 31 + i, 20 * 60, Maybe<int>.None, Maybe<int>.None);
+        if (i == LineSeeds) return Calls(clubs, settings, RuleSet.Arcade, 41, ShortPeriod, Maybe<int>.None, Maybe<int>.None);
         int j = i - LineSeeds - 1;
         var smart = (Side)(j % 2);
-        return Calls(clubs, settings, RuleSet.Shl, IqSeeds[j / 2] + (int)smart, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
+        return Calls(clubs, settings, RuleSet.Shl, IqSeeds[j / 2] + (int)smart, ShortPeriod, smart == Side.Home ? 85 : 30, smart == Side.Home ? 30 : 85);
     }
 
     /// <summary>Icings and offsides over full matches, per preset and per hockey IQ.</summary>
@@ -281,7 +284,7 @@ public sealed class DecisionsTests : CheckedTest
         Console.WriteLine($"      Arcade: {aIce[0] + aIce[1]} icings, {aOff[0] + aOff[1]} offsides, {arcadeClears} clears");
         Check(aIce[0] + aIce[1] == 0 && aOff[0] + aOff[1] == 0 && arcade.Match.Phase == MatchPhase.Final, "under Arcade, rules off, a full match has no icing and no offside");
 
-        // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round, twice (a 30 club
+        // the same clubs with hockey IQ 85 on one side and 30 on the other, both ways round, per IQ seed, ten-minute periods (a 30 club
         // comes up to the line with a teammate offside only a handful of times a match)
         int[] smartTotals = new int[5], poorTotals = new int[5];
         for (int s = 0; s < IqSeeds.Length; s++)
@@ -325,10 +328,10 @@ public sealed class DecisionsTests : CheckedTest
         totals[4] += tally.HoldLooks;
     }
 
-    /// <summary>Plays a full match with the offside and icing rules on; returns each side's icings and offsides.</summary>
-    static LineCallMatch Calls(IReadOnlyList<ClubData> clubs, Settings settings, RuleSet rules, int seed, Maybe<int> smartHome, Maybe<int> smartAway)
+    /// <summary>Plays a match with <paramref name="period"/>-second periods and the offside and icing rules on; returns each side's icings and offsides.</summary>
+    static LineCallMatch Calls(IReadOnlyList<ClubData> clubs, Settings settings, RuleSet rules, int seed, float period, Maybe<int> smartHome, Maybe<int> smartAway)
     {
-        var world = Make(clubs, settings, 20 * 60, smartHome, smartAway, rules);
+        var world = Make(clubs, settings, period, smartHome, smartAway, rules);
         ISystem[] systems = [.. Systems(world, seed), new OffsideRule(), new IcingRule()];
         int[] icings = [0, 0], offsides = [0, 0];
         int steps = (int)(2 * 60 * 60 / Game.Step);

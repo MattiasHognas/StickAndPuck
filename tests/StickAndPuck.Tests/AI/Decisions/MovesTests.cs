@@ -1,12 +1,8 @@
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
-using StickAndPuck.App.Goalie;
-using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players;
-using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
-using TUnit.Core.Enums;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
 
 namespace StickAndPuck.Tests;
@@ -15,7 +11,7 @@ namespace StickAndPuck.Tests;
 /// The AI's dekes and one-timers. The odds: a carrier with more puck control dekes more, a smarter
 /// one times it closer to the sweet spot, and a smarter receiver sees more one-timers. Set pieces:
 /// an AI receiver in the slot one-times a pass, and an AI carrier skating at a defender dekes him.
-/// Then full all-AI matches over 24 seeds: the AI dekes and one-times in every one, goals stay
+/// Then the full all-AI matches (<see cref="AllAiMatches"/>): the AI dekes and one-times in every one, goals stay
 /// hockey-like on average, and no receiver lets a shot go by taking a pass with shoot still held.
 /// </summary>
 public sealed class MovesTests : CheckedTest
@@ -111,74 +107,22 @@ public sealed class MovesTests : CheckedTest
         }
     }
 
-    const int Seeds = 24;
-
-    /// <summary>Gets the all-AI matches, shared by the class's tests.</summary>
-    [ClassDataSource<Played<MovesMatch>>(Shared = SharedType.PerClass)]
-    public required Played<MovesMatch> MatchesPlayed { get; init; }
-
-    /// <summary>Gets the matches, 0 to 23.</summary>
-    public static IEnumerable<int> MatchNumbers() => Enumerable.Range(0, Seeds);
-
-    /// <summary>One full all-AI match; <see cref="Matches"/> judges them.</summary>
+    /// <summary>The full all-AI matches (<see cref="AllAiMatches"/>, played by <see cref="SaveRateTests"/>): the AI dekes and one-times, goals stay hockey-like, no stray shots.</summary>
     [Test]
-    [ExecutionPriority(Priority.Critical)]
-    [MethodDataSource(nameof(MatchNumbers))]
-    public void PlayMatch(int m) => MatchesPlayed.Add(m, Match(1 + m));
-
-    /// <summary>Full all-AI matches: the AI dekes and one-times, goals stay hockey-like, no stray shots.</summary>
-    [Test]
-    [DependsOn(nameof(PlayMatch), [typeof(int)])]
+    [DependsOn(typeof(SaveRateTests), nameof(SaveRateTests.PlayMatch), [typeof(int)])]
     public void Matches()
     {
-        var played = MatchesPlayed.All(Seeds);
-        foreach (var (m, i) in played.Select((m, i) => (m, i))) Console.WriteLine($"      seed {1 + i}: {m}");
-        int goals = played.Sum(m => m.Goals), sog = played.Sum(m => m.Sog), dekes = played.Sum(m => m.Dekes), kept = played.Sum(m => m.DekesKept);
-        int armed = played.Sum(m => m.Armed), oneTimers = played.Sum(m => m.Struck), onGoal = played.Sum(m => m.OnGoal), oneTimerGoals = played.Sum(m => m.OneTimerGoals);
-        Console.WriteLine($"      passes completed {(float)played.Sum(m => m.Completed) / Math.Max(1, played.Sum(m => m.Passes)):P1} of {played.Sum(m => m.Passes)}");
-        Console.WriteLine($"      per match: goals {(float)goals / Seeds:F1}, shots on goal {(float)sog / Seeds:F1}, shooting {(float)goals / Math.Max(1, sog):P1}; dekes {(float)dekes / Seeds:F1} ({(float)kept / Math.Max(1, dekes):P0} kept the puck), one-timers armed {(float)armed / Seeds:F1}, struck {(float)oneTimers / Seeds:F1} ({onGoal} on goal in all), scored {oneTimerGoals} in all");
-        Check((float)goals / Seeds is >= 3f and <= 8f, $"goals stay hockey-like, 3 to 8 a match on average ({string.Join(", ", played.Select(m => m.Goals))})");
-        Check(played.All(m => m.Dekes > 0 && m.Struck > 0), "the AI dekes and one-times in every match");
-        Check(played.Sum(m => m.Stray) == 0, $"no receiver takes a pass with shoot held ({played.Sum(m => m.Stray)} times)");
-    }
-
-    /// <summary>What one all-AI match came to.</summary>
-    public sealed record MovesMatch(int Goals, int Sog, int Dekes, int DekesKept, int Armed, int Struck, int OnGoal, int OneTimerGoals, int Stray, int Passes, int Completed)
-    {
-        public override string ToString() => $"goals {Goals}, shots on goal {Sog}, dekes {Dekes} ({DekesKept} kept), one-timers armed {Armed}, struck {Struck} ({OnGoal} on goal), scored {OneTimerGoals}, stray {Stray}";
-    }
-
-    static MovesMatch Match(int seed)
-    {
-        var setup = WorldBuilder.DefaultSetup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] };
-        var world = new WorldBuilder().Setup(setup).Build();
-        var systems = Systems(world, seed);
-        int dekes = 0, kept = 0, oneTimers = 0, onGoal = 0, oneTimerGoals = 0, stray = 0, carried = -1;
-        var struck = new Dictionary<int, float>();
-        int steps = (int)(3 * 60 * 60 / Game.Step);
-        for (int i = 0; i < steps && world.Match.Phase != MatchPhase.Final; i++)
-        {
-            int before = AiDecisions.Tally(world, Side.Home).Dekes + AiDecisions.Tally(world, Side.Away).Dekes;
-            int carrier = world.Puck.Carrier;
-            Step(world, systems);
-            int now = AiDecisions.Tally(world, Side.Home).Dekes + AiDecisions.Tally(world, Side.Away).Dekes;
-            if (now > before) { dekes += now - before; if (world.Puck.Carrier == carrier) kept++; }
-            foreach (var e in world.Events.Current.OfType<ShotTaken>())
-            {
-                if (carrier == e.ShooterId) continue;
-                oneTimers++;
-                struck[e.ShooterId] = world.Time;
-            }
-            foreach (var g in world.Events.Current.OfType<GoalScored>())
-                if (struck.TryGetValue(g.ScorerId, out float at) && world.Time - at < 2f) { oneTimerGoals++; onGoal++; struck.Remove(g.ScorerId); }
-            foreach (var save in world.Events.Current.OfType<ShotSaved>())
-                if (struck.Values.Any(at => world.Time - at < 1.5f)) { onGoal++; struck.Clear(); }
-            var pk = world.Puck;
-            if (pk.Carrier >= 0 && pk.Carrier != carried && pk.Carrier < world.Players.Count && world.Players[pk.Carrier].Command.Shoot && !world.Players[pk.Carrier].IsGoalie) stray++;
-            carried = pk.Carrier;
-        }
-        int armed = AiDecisions.Tally(world, Side.Home).OneTimers + AiDecisions.Tally(world, Side.Away).OneTimers;
-        return new MovesMatch(world.Match.Score[0] + world.Match.Score[1], world.Match.Shots[0] + world.Match.Shots[1], dekes, kept, armed, oneTimers, onGoal, oneTimerGoals, stray, AiDecisions.Tally(world, Side.Home).Passes + AiDecisions.Tally(world, Side.Away).Passes, AiDecisions.Tally(world, Side.Home).Completed + AiDecisions.Tally(world, Side.Away).Completed);
+        const int n = AllAiMatches.Count;
+        var played = AllAiMatches.Numbers().Select(AllAiMatches.Get).ToArray();
+        foreach (var (m, i) in played.Select((m, i) => (m, i))) Console.WriteLine($"      match {i}: {m}");
+        var moves = played.Select(m => m.Moves).ToArray();
+        int goals = played.Sum(m => m.Goals), sog = played.Sum(m => m.Shots), dekes = moves.Sum(m => m.Dekes), kept = moves.Sum(m => m.DekesKept);
+        int armed = moves.Sum(m => m.Armed), oneTimers = moves.Sum(m => m.Struck), onGoal = moves.Sum(m => m.OnGoal), oneTimerGoals = moves.Sum(m => m.OneTimerGoals);
+        Console.WriteLine($"      passes completed {(float)moves.Sum(m => m.Completed) / Math.Max(1, moves.Sum(m => m.Passes)):P1} of {moves.Sum(m => m.Passes)}");
+        Console.WriteLine($"      per match: goals {(float)goals / n:F1}, shots on goal {(float)sog / n:F1}, shooting {(float)goals / Math.Max(1, sog):P1}; dekes {(float)dekes / n:F1} ({(float)kept / Math.Max(1, dekes):P0} kept the puck), one-timers armed {(float)armed / n:F1}, struck {(float)oneTimers / n:F1} ({onGoal} on goal in all), scored {oneTimerGoals} in all");
+        Check((float)goals / n is >= 3f and <= 8f, $"goals stay hockey-like, 3 to 8 a match on average ({string.Join(", ", played.Select(m => m.Goals))})");
+        Check(moves.All(m => m.Dekes > 0 && m.Struck > 0), "the AI dekes and one-times in every match");
+        Check(moves.Sum(m => m.Stray) == 0, $"no receiver takes a pass with shoot held ({moves.Sum(m => m.Stray)} times)");
     }
 
     /// <summary>A home centre at the left point of the attacking zone with the puck, a winger alone on the far side of the slot.</summary>
@@ -280,16 +224,5 @@ public sealed class MovesTests : CheckedTest
     }
 
     // the same all-AI system set as aimatchtest
-    static ISystem[] Systems(World world, int seed)
-    {
-#pragma warning disable S2245 // fixed seeds so the checks repeat
-        ISystem[] systems =
-        [
-            new PositioningSystem(new Random(seed)), new DefenceSystem(new Random(seed)), new SpecialTeamsSystem(new Random(seed)), new TacticsSystem(new Random(seed)), new DecisionSystem(new Random(seed)), new SkatingSystem(), new CheckingSystem(new Random(seed)),
-            new PuckHandlingSystem(new Random(seed)), new GoalieSystem { Dice = new Random(seed) }, new PuckPhysics(), new MatchRules(), new OvertimeRules(),
-        ];
-#pragma warning restore S2245
-        foreach (var s in systems) if (s is not (PuckPhysics or GoalieSystem)) s.Start(world);
-        return systems;
-    }
+    static ISystem[] Systems(World world, int seed) => AllAiMatches.Systems(world, seed);
 }
