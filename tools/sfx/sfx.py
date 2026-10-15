@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates the game's NES-style 8-bit sound effects into art/audio/.
+"""Generates the game's NES-style 8-bit sound effects into art/audio/effects/.
 
 The sounds are built the way an NES game builds them: two pulse voices, a triangle and a noise
 voice, each changed once per 60 Hz frame (pitch, volume 0-15, duty or noise mode), mixed with the
@@ -22,7 +22,7 @@ FRAME = 60                   # parameter updates per second, like an NES sound e
 CPU = 1789773                # NTSC CPU clock; pulse, triangle and noise timers count from it
 NOISE_PERIODS = [4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068]
 TRIANGLE_STEPS = list(range(15, -1, -1)) + list(range(16))
-OUT = pathlib.Path(__file__).resolve().parents[2] / "art" / "audio"
+OUT = pathlib.Path(__file__).resolve().parents[2] / "art" / "audio" / "effects"
 
 
 # ---- notes ---------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ def write(name, samples, gain=0.92):
         f.write(b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVEfmt ")
         f.write(struct.pack("<IHHIIHH", 16, 1, 1, RATE, RATE, 1, 8))
         f.write(b"data" + struct.pack("<I", len(data)) + data)
-    print(f"{path.relative_to(OUT.parents[1])}  {len(samples) / RATE:.2f} s")
+    print(f"{path.relative_to(OUT.parents[2])}  {len(samples) / RATE:.2f} s")
 
 
 # ---- the sounds ----------------------------------------------------------------------------
