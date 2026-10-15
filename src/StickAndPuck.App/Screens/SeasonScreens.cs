@@ -65,9 +65,9 @@ internal sealed class SeasonStatsScreen(AppState app) : MenuScreen(app)
 
         (string Head, int X)[] columns = goalies
             ? [(K.ColGp, 250), (K.ColSv, 290), (K.ColSvGp, 330), (K.ColStars, 384)]
-            : [(K.ColGp, 226), (K.ColG, 256), (K.ColA, 280), (K.ColPts, 304), (K.ColSh, 336), (K.ColHits, 362), (K.ColStars, 398)];
+            : [(K.ColGp, 204), (K.ColG, 228), (K.ColA, 250), (K.ColPts, 272), (K.ColSh, 300), (K.ColHits, 328), (K.ColClr, 360), (K.ColStars, 394)];
         art.Left(Text.Get(K.ColPlayer), x + 30, top, ScreenArt.Muted);
-        art.Left(Text.Get(view == 6 ? K.ColPos : K.ColClub), x + 180, top, ScreenArt.Muted);
+        art.Left(Text.Get(view == 6 ? K.ColPos : K.ColClub), x + 170, top, ScreenArt.Muted);
         foreach (var (head, cx) in columns) art.Left(Text.Get(head), x + cx, top, Highlight(head) ? art.Gold : ScreenArt.Muted);
         top += Line;
 
@@ -93,12 +93,12 @@ internal sealed class SeasonStatsScreen(AppState app) : MenuScreen(app)
     {
         var ink = view != 6 && string.Equals(p.Club, user, StringComparison.Ordinal) ? art.Gold : art.Text;
         art.Right(N(i + 1), x + 22, top, ink);
-        art.Left(art.Clip(p.Label, 146), x + 30, top, ink);
-        art.Left(view == 6 ? p.Position.ToString() : Short(Flow.Clubs, p.Club), x + 180, top, ink);
+        art.Left(art.Clip(p.Label, 136), x + 30, top, ink);
+        art.Left(view == 6 ? p.Position.ToString() : Short(Flow.Clubs, p.Club), x + 170, top, ink);
         string perGame = p.Games > 0 ? ((double)p.Saves / p.Games).ToString("0.0", CultureInfo.InvariantCulture) : "-";
         string[] cells = view == 4
             ? [N(p.Games), N(p.Saves), perGame, N(p.Stars)]
-            : [N(p.Games), N(p.Goals), N(p.Assists), N(p.Points), N(p.Shots), N(p.Hits), N(p.Stars)];
+            : [N(p.Games), N(p.Goals), N(p.Assists), N(p.Points), N(p.Shots), N(p.Hits), N(p.Clears), N(p.Stars)];
         for (int c = 0; c < cells.Length; c++) art.Left(cells[c], x + columns[c].X, top, ink);
     }
 

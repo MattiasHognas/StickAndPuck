@@ -202,6 +202,9 @@ public static partial class Text
         /// <summary>HITS</summary>
         public const string ColHits = nameof(ColHits);
 
+        /// <summary>CLR</summary>
+        public const string ColClr = nameof(ColClr);
+
         /// <summary>PLAYER</summary>
         public const string ColPlayer = nameof(ColPlayer);
 
