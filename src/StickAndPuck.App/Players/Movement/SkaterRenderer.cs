@@ -15,6 +15,9 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
     public const float Scale = 1.15f;
     const float ClipFps = 24f;
 
+    /// <summary>The shoot clip's back-swing, the last frame before the sweep, held by an armed one-timer.</summary>
+    const float WindUpFrame = 5f;
+
     readonly Dictionary<string, Texture2D> kits = new(StringComparer.Ordinal);
     readonly Dictionary<int, (int Clip, float Frame)> poses = [];
     Model model;
@@ -41,6 +44,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
     {
         if (KeyInput.Pressed(world.Settings, GameAction.Kit)) world.Settings = world.Settings with { SwapKits = !world.Settings.SwapKits };
         swapKits = world.Settings.SwapKits;    // the setting, which Tab flips in play
+        if (Dev.OneTimerDemo.Of(world).TryGet(out var demo)) demo.Run(world);
         foreach (var p in Skaters(world))
         {
             var (clip, frame) = poses.GetValueOrDefault(p.Id, (-1, 0f));
@@ -64,6 +68,12 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
             {
                 // A knocked-down skater plays the fall clip, which lies flat on the ice, and holds its last frame
                 poses[p.Id] = (down, p.ActionTime * ClipFps);
+                continue;
+            }
+            if (p.Action != PlayerAction.Shoot && OneTimerArming.ArmedAt(world, p.Id).TryGet(out float armedAt) && Find("shoot") is >= 0 and var wind)
+            {
+                // An armed one-timer winds the shoot clip back and holds the back-swing until the pass arrives; the strike goes on from the sweep
+                poses[p.Id] = (wind, Math.Min((world.Time - armedAt) * ClipFps, WindUpFrame));
                 continue;
             }
             int want = p.Action == PlayerAction.Shoot ? Find("shoot") : p.Speed > 0.4f ? Find("skate") : Find("idle");

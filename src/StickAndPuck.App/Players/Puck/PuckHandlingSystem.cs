@@ -79,6 +79,7 @@ internal sealed partial class PuckHandlingSystem : ISystem
     {
         HandlingDemo.Update(world);
         ShotDemo.Update(world);
+        OneTimerArming.Share(world, armed);
         var pk = world.Puck;
         if (pk.Carrier >= 0 && (pk.Carrier >= world.Players.Count || world.Players[pk.Carrier].IsGoalie))
         {
