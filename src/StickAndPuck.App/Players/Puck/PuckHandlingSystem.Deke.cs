@@ -17,7 +17,7 @@ internal sealed partial class PuckHandlingSystem
         if (!threat.HasValue) autoTried.Remove(carrier.Id);   // the next defender to come gets a fresh auto-deke
         int pc = carrier.Data.Traits.PuckControl;
         float chance;
-        if (pressed) chance = threat.TryGet(out var t) ? DekeModel.Chance(DekeModel.Timing(t.Distance), pc) : 1f;
+        if (pressed) chance = threat.TryGet(out var t) ? DekeModel.Chance(DekeModel.Timing(t.Distance), pc, AI.HumanEdge.DekeFloor(world, carrier)) : 1f;
         else if (world.Settings.AutoDeke && carrier.Slot >= 0 && threat.TryGet(out var a) && a.Distance <= DekeModel.SweetFar && autoTried.Add(carrier.Id))
             chance = DekeModel.AutoChance(pc);
         else return;

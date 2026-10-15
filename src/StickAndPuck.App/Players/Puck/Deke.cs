@@ -73,8 +73,14 @@ public static class DekeModel
     /// <summary>Gets the chance a pressed deke beats the defender: mostly timing, then puck control.</summary>
     public static float Chance(float timing, int puckControl)
     {
+        return Chance(timing, puckControl, 0f);
+    }
+
+    /// <summary>Gets the chance a pressed deke beats the defender, with a mistimed deke getting through at least <paramref name="floor"/> of the time.</summary>
+    public static float Chance(float timing, int puckControl, float floor)
+    {
         float pc = Traits.Unit(puckControl);
-        float timed = 0.75f + 0.25f * pc, mistimed = 0.1f + 0.3f * pc;
+        float timed = 0.75f + 0.25f * pc, mistimed = MathF.Max(floor, 0.1f + 0.3f * pc);
         return Math.Clamp(timing * timed + (1f - timing) * mistimed, 0.02f, 0.97f);
     }
 

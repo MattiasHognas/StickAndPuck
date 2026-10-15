@@ -282,7 +282,8 @@ public sealed class ChecksTests : CheckedTest
     public void KnockedDownHuman()
     {
         SeedFrom(31);
-        var w = Make();
+        // on hard, where an AI check hits the human in full (see HumanEdge)
+        var w = new WorldBuilder().Settings(s => s with { Switching = ControlSwitching.Auto, Difficulty = Difficulty.Hard }).NoStarters().NotBegun().Build();
         var human = Add(w, Side.Home, Vector3.Zero);
         var mate = Add(w, Side.Home, new Vector3(-8, 0, 2));
         var checker = Add(w, Side.Away, new Vector3(-1.2f, 0, 0), traits: new Traits { Checking = 100 });
