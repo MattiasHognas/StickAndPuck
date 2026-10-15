@@ -51,6 +51,7 @@ public static class DifficultyScale
         };
         if (k == 0f) return t;
         int By(int value, int step) => Math.Clamp(value + (int)MathF.Round(step * k), 0, 100);
+        int goalie = level == Difficulty.Easy ? DifficultyTuning.GoalieEasy : DifficultyTuning.Goalie;
         return t with
         {
             HockeyIq = By(t.HockeyIq, DifficultyTuning.HockeyIq),
@@ -60,11 +61,11 @@ public static class DifficultyScale
             TopSpeed = By(t.TopSpeed, DifficultyTuning.Skating),
             Acceleration = By(t.Acceleration, DifficultyTuning.Skating),
             Checking = By(t.Checking, DifficultyTuning.Checking),
-            GoalieReflexes = By(t.GoalieReflexes, DifficultyTuning.Goalie),
-            GoalieGlove = By(t.GoalieGlove, DifficultyTuning.Goalie),
-            GoalieBlocker = By(t.GoalieBlocker, DifficultyTuning.Goalie),
-            GoalieReboundControl = By(t.GoalieReboundControl, DifficultyTuning.Goalie),
-            GoaliePuckHandling = By(t.GoaliePuckHandling, DifficultyTuning.Goalie),
+            GoalieReflexes = By(t.GoalieReflexes, goalie),
+            GoalieGlove = By(t.GoalieGlove, goalie),
+            GoalieBlocker = By(t.GoalieBlocker, goalie),
+            GoalieReboundControl = By(t.GoalieReboundControl, goalie),
+            GoaliePuckHandling = By(t.GoaliePuckHandling, goalie),
         };
     }
 }
@@ -92,6 +93,9 @@ public static class DifficultyTuning
 
     /// <summary>Every goalie trait.</summary>
     public const int Goalie = 10;
+
+    /// <summary>Every goalie trait on easy, a bigger step than the rest so an easy goalie is clearly beatable.</summary>
+    public const int GoalieEasy = 20;
 
     /// <summary>Hard moves each trait up by this share of easy's step, so hard is a sharper club rather than a club of stars.</summary>
     public const float HardShare = 0.75f;

@@ -33,9 +33,6 @@ public sealed class HumanShotTests : CheckedTest
     /// <summary>A club-average goalie on normal.</summary>
     static readonly Traits Average = new() { GoalieReflexes = 66, HockeyIq = 64, GoalieGlove = 64, GoalieBlocker = 64, GoalieReboundControl = 64, GoaliePuckHandling = 0 };
 
-    /// <summary>Rögle's starter as hard plays him: reflexes 64, positioning 62, glove 65, blocker 50, all raised.</summary>
-    static readonly Traits HardRogle = DifficultyScale.Scale(new Traits { GoalieReflexes = 64, HockeyIq = 62, GoalieGlove = 65, GoalieBlocker = 50, GoalieReboundControl = 58, GoaliePuckHandling = 0 }, Difficulty.Hard);
-
     [Test]
     public void SlotAndCircles()
     {
@@ -57,25 +54,29 @@ public sealed class HumanShotTests : CheckedTest
 
     /// <summary>
     /// The shots of a played match: the stick pushed up the ice toward the end boards, a wound-up slap
-    /// shot or a quick wrist shot from the slot, against an average goalie and against Rögle's on hard.
+    /// shot or a quick wrist shot from the slot or the circles, against the club-average goalie as each
+    /// difficulty plays him. Easy is clearly beatable, normal about one in nine, hard still scorable.
     /// </summary>
     [Test]
     public void PlayedShots()
     {
-        var lines = new List<(string Name, Tally Tally)>();
-        foreach (var (who, traits) in new[] { ("average", Average), ("hard Rögle", HardRogle) })
+        var pct = new Dictionary<Difficulty, float>();
+        foreach (var level in new[] { Difficulty.Easy, Difficulty.Normal, Difficulty.Hard })
         {
-            lines.Add(($"slap shots from the slot, {who}", Batch(traits, SlotSpot, ShotKind.Slap, 0.8f, UpIce)));
-            lines.Add(($"tapped wrist shots from the slot, {who}", Batch(traits, SlotSpot, ShotKind.Wrist, 0.05f, UpIce)));
-            lines.Add(($"held wrist shots from the slot, {who}", Batch(traits, SlotSpot, ShotKind.Wrist, 0.25f, UpIce)));
-            lines.Add(($"slap shots from the circles, {who}", Batch(traits, CircleSpot, ShotKind.Slap, 0.8f, UpIce)));
+            var traits = DifficultyScale.Scale(Average, level);
+            Tally[] shots =
+            [
+                Batch(traits, SlotSpot, ShotKind.Slap, 0.8f, UpIce), Batch(traits, SlotSpot, ShotKind.Wrist, 0.05f, UpIce),
+                Batch(traits, SlotSpot, ShotKind.Wrist, 0.25f, UpIce), Batch(traits, CircleSpot, ShotKind.Slap, 0.8f, UpIce),
+            ];
+            pct[level] = (float)shots.Sum(t => t.Goals) / Math.Max(1, shots.Sum(t => t.Goals + t.Saves));
+            Console.WriteLine($"      {level} (reflexes {traits.GoalieReflexes}, positioning {traits.HockeyIq}): slot slap {shots[0]}; slot tap {shots[1]}; slot held wrist {shots[2]}; circle slap {shots[3]}; {pct[level]:P1} go in");
         }
-        foreach (var (name, tally) in lines) Console.WriteLine($"      {name}: {tally}");
-        float Pct(string who) => (float)lines.Where(l => l.Name.EndsWith(who, StringComparison.Ordinal)).Sum(l => l.Tally.Goals)
-            / Math.Max(1, lines.Where(l => l.Name.EndsWith(who, StringComparison.Ordinal)).Sum(l => l.Tally.Goals + l.Tally.Saves));
-        Console.WriteLine($"      average goalie {Pct("average"):P1}, hard Rögle {Pct("hard Rögle"):P1}");
-        Check(Pct("average") is > 0.07f and < 0.16f, $"a played shot beats an average goalie about one time in ten ({Pct("average"):P1})");
-        Check(Pct("hard Rögle") > 0.06f, $"and still beats Rögle's goalie on hard ({Pct("hard Rögle"):P1})");
+        // played matches score about two thirds of these rates (traffic, tired shooters, rushed shots), so easy
+        // aims a little above one in four here to be about one in five on the ice
+        Check(pct[Difficulty.Easy] is > 0.22f and < 0.36f, $"on easy more than one played shot in four goes in ({pct[Difficulty.Easy]:P1})");
+        Check(pct[Difficulty.Normal] is > 0.08f and < 0.15f, $"on normal about one in nine ({pct[Difficulty.Normal]:P1})");
+        Check(pct[Difficulty.Hard] is > 0.06f and < 0.1f, $"on hard still about one in thirteen ({pct[Difficulty.Hard]:P1})");
     }
 
     static Vector2 AtNet(Vector3 from, Random dice) => Vector2.Normalize(new Vector2(RinkSpec.GoalLineX - from.X, -from.Z));
