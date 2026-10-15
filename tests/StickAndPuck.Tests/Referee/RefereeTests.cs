@@ -50,8 +50,8 @@ public sealed class RefereeTests : CheckedTest
         var r = Ref.Of(w);
         r.Position = new Vector3(-20, 0, 11);
         float dropAt = float.NaN;
-        Run(w, x => x.Match.Phase == MatchPhase.Play, 20, x => { if (x.Events.Of<PuckDropped>().Any()) dropAt = x.Time; });
-        Check(w.Match.Phase == MatchPhase.Play, "the opening faceoff is dropped");
+        Run(w, x => MatchFlow.State(x).Draw.Dropped, 20, x => { if (x.Events.Of<PuckDropped>().Any()) dropAt = x.Time; });
+        Check(MatchFlow.State(w).Draw.Dropped, "the opening faceoff is dropped");
         Check(dropAt > MatchTuning.IntroSeconds + MatchTuning.FaceoffSeconds, $"the drop waits for the referee to skate from the corner ({dropAt:0.0} s)");
         Check(Distance(r.Position, Ref.DropSpot(RinkSpec.CentreDot)) <= RefereeTuning.Arrived, "the referee is at the centre dot when the puck drops");
         Check(r.LateDrops == 0, "no drop needed the safety net");
@@ -66,12 +66,12 @@ public sealed class RefereeTests : CheckedTest
         MatchFlow.Whistle(w, dot);
         var r = Ref.Of(w);
         float start = w.Time, dropAt = float.NaN, setAt = float.NaN;
-        Run(w, x => x.Match.Phase == MatchPhase.Play, 20, x =>
+        Run(w, x => MatchFlow.State(x).Draw.Dropped, 20, x =>
         {
             if (float.IsNaN(setAt) && r.SetTime > 0) setAt = x.Time;
             if (x.Events.Of<PuckDropped>().Any()) dropAt = x.Time;
         });
-        Check(w.Match.Phase == MatchPhase.Play && Distance(w.Puck.Position, dot) < 0.5f, "a whistle in the far end is followed by a drop at that dot");
+        Check(MatchFlow.State(w).Draw.Dropped && Distance(w.Puck.Position, dot) < 0.5f, "a whistle in the far end is followed by a drop at that dot");
         Check(Distance(r.Position, Ref.DropSpot(dot)) <= RefereeTuning.Arrived, "the referee skated the length of the rink to that dot");
 
         // Timed to when the referee is set at the dot, so the dice roll for the hold (0.5 to 1.8 s) never fails a seed;

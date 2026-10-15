@@ -26,7 +26,8 @@ internal sealed class MatchRules : ISystem
             case MatchPhase.Faceoff:
                 // players hold their spots until the puck drops
                 FaceoffFormation.Place(world, s.Dot);
-                if (!s.RefereeDrops && Wait(s, dt)) MatchFlow.Drop(world);
+                FaceoffDraw.Step(world, s, dt);
+                if (!s.Draw.Dropped && !s.RefereeDrops && Wait(s, dt)) MatchFlow.Drop(world);
                 break;
             case MatchPhase.Play:
                 Play(world, s, dt);
