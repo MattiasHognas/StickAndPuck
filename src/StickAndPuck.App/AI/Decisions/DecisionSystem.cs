@@ -153,7 +153,13 @@ internal sealed partial class DecisionSystem : ISystem
             }
         }
         board.LastCarrier = pk.Carrier;
+        EndPass(world, board);
+    }
 
+    /// <summary>Reads how the pass in flight ended: taken by a teammate, one-timed, intercepted, or dead.</summary>
+    static void EndPass(World world, DecisionBoard board)
+    {
+        var pk = world.Puck;
         if (!board.Pass.TryGet(out var pass)) { board.Meet = Maybe<HumanMeet>.None; return; }
         if (pk.Carrier < 0 && OneTimed(world, pass).TryGet(out var shooter))
         {

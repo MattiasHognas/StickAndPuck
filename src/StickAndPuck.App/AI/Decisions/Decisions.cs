@@ -176,10 +176,7 @@ internal sealed class Brain
     /// <summary>Gets or sets until when this skater goes for a hit on the carrier.</summary>
     public float HitUntil { get; set; } = float.NegativeInfinity;
 
-    /// <summary>Gets or sets the defender this carrier last read for a deke.</summary>
-    public int DekeFor { get; set; } = -1;
-
-    /// <summary>Gets or sets when that defender was read.</summary>
+    /// <summary>Gets or sets when this carrier last read a defender for a deke.</summary>
     public float DekeRolled { get; set; } = float.NegativeInfinity;
 
     /// <summary>Gets or sets the distance to the defender, in metres, at which this carrier presses deke; minus infinity for no deke.</summary>
@@ -187,6 +184,9 @@ internal sealed class Brain
 
     /// <summary>Gets or sets the pass (its <see cref="InFlight.At"/>) whose one-timer was read, so it is rolled once.</summary>
     public float OneTimerRun { get; set; } = float.NaN;
+
+    /// <summary>Gets or sets when this receiver pressed shoot to one-time the pass in flight.</summary>
+    public float OneTimerPressed { get; set; } = float.NegativeInfinity;
 
     /// <summary>Gets or sets a value indicating whether this receiver is one-timing the pass in flight.</summary>
     public bool OneTiming { get; set; }

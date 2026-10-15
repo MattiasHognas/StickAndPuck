@@ -43,7 +43,7 @@ public readonly record struct AiIntent(AiLayer Owner, string Reason, long Tick);
 /// decisions or, for a power play shot, a kill clear or a dump, by special teams and tactics. From
 /// then on decisions hold it (HoldShot) until the puck leaves the stick, and no layer starts
 /// another action for that skater (<see cref="Committed"/>).</item>
-/// <item>Pass, Check and Deke: decisions only (<see cref="Act"/>). Decisions also hold Shoot for a
+/// <item>Pass, Check and Deke: decisions only (<see cref="Act"/>). Decisions also tap Shoot for a
 /// receiver one-timing a pass, before the puck reaches him.</item>
 /// <item>SwitchPlayer, ChangeLine, Punch, Block, AcceptFight, Pause: never the AI's.</item>
 /// </list>
@@ -60,8 +60,8 @@ public readonly record struct AiIntent(AiLayer Owner, string Reason, long Tick);
 /// moment, then commits its shot; decisions take no shot or pass of their own meanwhile, and do
 /// not hold him up at the blue line either (<see cref="Held"/>), so a dump taken wide stays wide.</item>
 /// <item>A pass meant for an AI skater has him skate onto its line; reading a one-timer, decisions
-/// also hold shoot until the puck arrives (puck handling strikes it) or the one-timer window is all
-/// but over, so a late pass is taken rather than swung at.</item>
+/// also tap shoot, which arms it (puck handling strikes it on arrival), and let go long before the
+/// puck comes, so a pass that misses the window is taken rather than shot.</item>
 /// </list>
 /// SAP_AI_TRACE=1 prints each change of who has an AI skater at the end of a step, one line per change.</summary>
 public static class AiCommand
