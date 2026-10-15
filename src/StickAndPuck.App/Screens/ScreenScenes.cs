@@ -78,7 +78,7 @@ public sealed class StartScene : IScene
         }
 
         // The longest name on the home roster and an overtime goal, so the capture shows both fit
-        var longest = setup.Home.Roster.Where(r => r.Position != PlayingPosition.G).MaxBy(r => r.LastName.Length)!;
+        var longest = setup.Home.Roster.Where(r => r.Position != PlayingPosition.G).MaxBy(r => r.LastName.Length);
         return
         [
             new GoalLine(Side.Home, "1", "4:12", Shooter(setup.Home, 0)),

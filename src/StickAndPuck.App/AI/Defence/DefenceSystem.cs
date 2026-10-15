@@ -135,7 +135,7 @@ internal sealed class DefenceSystem : ISystem
         {
             if (free.Count == 0) break;
             var ideal = Coverage.MarkSpot(view.Zone, view.Net, view.Carrier, Flat(a.Position));
-            var marker = free.MinBy(p => Vector2.DistanceSquared(Positioning.IdealOf(world, p), ideal))!;
+            var marker = free.MinBy(p => Vector2.DistanceSquared(Positioning.IdealOf(world, p), ideal));
             free.Remove(marker);
             var plan = board.For(marker.Id);
             plan.Duty = Duty.Mark;

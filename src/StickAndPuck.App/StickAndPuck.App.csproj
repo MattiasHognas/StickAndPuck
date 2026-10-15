@@ -2,14 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net11.0</TargetFramework>
-    <LangVersion>15</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>StickAndPuck</AssemblyName>
     <RootNamespace>StickAndPuck.App</RootNamespace>
-    <NoWarn>$(NoWarn);NETSDK1244;NETSDK1057</NoWarn>
+    <NoWarn>$(NoWarn);NETSDK1057</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -23,7 +23,7 @@ internal sealed partial class TacticsSystem
         if (Skaters(world, carrier.Side).Where(p => p != carrier).MinBy(p => Vector3.Distance(p.Position, carrier.Position)) is { } outlet && forwards.Count > 0)
         {
             var o = Flat(outlet.Position);
-            var second = forwards.MinBy(p => Vector2.Distance(Flat(p.Position), o))!;
+            var second = forwards.MinBy(p => Vector2.Distance(Flat(p.Position), o));
             forwards.Remove(second);
             var between = o + SafeNormal(c - o) * 1.5f;
             Take(world, board, second, TacticTask.Outlet, TeamShape.Inside(between), dt, sprint: true);

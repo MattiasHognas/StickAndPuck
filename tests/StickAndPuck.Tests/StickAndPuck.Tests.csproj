@@ -2,25 +2,19 @@
 
   <!-- The former SAP_SCENE self-tests, run with dotnet test (TUnit on Microsoft.Testing.Platform) -->
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net11.0</TargetFramework>
-    <LangVersion>15</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <RootNamespace>StickAndPuck.Tests</RootNamespace>
     <NoWarn>$(NoWarn);CS1591;NETSDK1057</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TUnit" Version="1.74.0" />
+    <PackageReference Include="TUnit" Version="1.75.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(RepoRoot)src/StickAndPuck.App/StickAndPuck.App.csproj" />
     <!-- SAP0001/SAP0002/SAP0003: no nullable types, null literals or patterns on Maybe in the tests either -->
-    <ProjectReference Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj"
-                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

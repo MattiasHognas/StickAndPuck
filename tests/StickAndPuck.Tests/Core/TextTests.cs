@@ -36,7 +36,7 @@ public sealed partial class TextTests : CheckedTest
     public void EveryKeyConstantIsInEveryFile()
     {
         var keys = typeof(Text.Keys).GetFields(BindingFlags.Public | BindingFlags.Static)
-            .Where(f => f.IsLiteral).Select(f => (string)f.GetRawConstantValue()!).ToList();
+            .Where(f => f.IsLiteral).Select(f => (string)f.GetRawConstantValue()).ToList();
         Check(keys.Count > 0, $"{keys.Count} key constants");
         foreach (var language in Enum.GetValues<Language>())
         {

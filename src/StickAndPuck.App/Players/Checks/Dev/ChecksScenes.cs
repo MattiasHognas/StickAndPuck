@@ -49,10 +49,10 @@ internal sealed class ChecksDemo(ChecksCast cast, bool scripted)
         var home = Skaters(world.Setup.Home);
         var away = Skaters(world.Setup.Away);
         // the hunter is the club's best checker, the carrier the away club's weakest, so the hit shows
-        var hunter = world.AddPlayer(Side.Home, home.MaxBy(p => p.Traits.Checking)!, Vector3.Zero);
+        var hunter = world.AddPlayer(Side.Home, home.MaxBy(p => p.Traits.Checking), Vector3.Zero);
         var mate1 = world.AddPlayer(Side.Home, home[0] == hunter.Data ? home[1 % home.Count] : home[0], Vector3.Zero);
         var mate2 = world.AddPlayer(Side.Home, home[2 % home.Count], Vector3.Zero);
-        var carrier = world.AddPlayer(Side.Away, away.MinBy(p => p.Traits.Checking)!, Vector3.Zero);
+        var carrier = world.AddPlayer(Side.Away, away.MinBy(p => p.Traits.Checking), Vector3.Zero);
         var c = new ChecksCast(carrier, hunter, mate1, mate2);
         var demo = new ChecksDemo(c, script);
         world.Dev.Checks.Set(demo);

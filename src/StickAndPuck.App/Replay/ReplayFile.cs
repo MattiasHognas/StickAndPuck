@@ -199,7 +199,7 @@ public sealed class ReplayFile
     /// <summary>Writes the replay, gzipped, through a temporary file so a crash never leaves half a replay.</summary>
     public void Write(string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
         string temp = path + ".tmp";
         using (var file = File.Create(temp))
         using (var gzip = new GZipStream(file, CompressionLevel.Optimal))

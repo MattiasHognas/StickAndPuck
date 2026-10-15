@@ -13,7 +13,7 @@ public sealed class MaybeJsonConverterFactory : JsonConverterFactory
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var converter = typeof(MaybeJsonConverter<>).MakeGenericType(typeToConvert.GetGenericArguments()[0]);
-        return (JsonConverter)Activator.CreateInstance(converter)!;
+        return (JsonConverter)Activator.CreateInstance(converter);
     }
 }
 
