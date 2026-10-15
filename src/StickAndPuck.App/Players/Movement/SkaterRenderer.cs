@@ -15,8 +15,8 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
     public const float Scale = 1.15f;
     const float ClipFps = 24f;
 
-    /// <summary>The shoot clip's back-swing, the last frame before the sweep, held by an armed one-timer.</summary>
-    const float WindUpFrame = 5f;
+    /// <summary>The shoot clip's back-swing, the last frame before the sweep: the held wind-up when skater_windup is missing.</summary>
+    const float ShootBackSwing = 5f;
 
     readonly Dictionary<string, Texture2D> kits = new(StringComparer.Ordinal);
     readonly Dictionary<int, (int Clip, float Frame)> poses = [];
@@ -70,10 +70,11 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
                 poses[p.Id] = (down, p.ActionTime * ClipFps);
                 continue;
             }
-            if (p.Action != PlayerAction.Shoot && OneTimerArming.ArmedAt(world, p.Id).TryGet(out float armedAt) && Find("shoot") is >= 0 and var wind)
+            if (p.Action != PlayerAction.Shoot && OneTimerArming.ArmedAt(world, p.Id).TryGet(out float armedAt) && WindUp() is >= 0 and var wind)
             {
-                // An armed one-timer winds the shoot clip back and holds the back-swing until the pass arrives; the strike goes on from the sweep
-                poses[p.Id] = (wind, Math.Min((world.Time - armedAt) * ClipFps, WindUpFrame));
+                // An armed one-timer draws the stick back and up and holds it until the pass arrives; the strike goes on from the shoot clip's sweep
+                float last = wind == Find("windup") ? clips[wind].KeyFrameCount - 2 : ShootBackSwing;   // the loader's very last sample is not the held pose
+                poses[p.Id] = (wind, Math.Min((world.Time - armedAt) * ClipFps, last));
                 continue;
             }
             int want = p.Action == PlayerAction.Shoot ? Find("shoot") : p.Speed > 0.4f ? Find("skate") : Find("idle");
@@ -82,6 +83,12 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
             else frame += dt * ClipFps * (clip == Find("skate") ? Math.Clamp(p.Speed / SkatingSystem.MaxSpeed, 0.6f, 1.4f) : 1f);
             poses[p.Id] = (clip, frame);
         }
+    }
+
+    /// <summary>The wind-up clip, or the shoot clip (held at its back-swing) when the model has none.</summary>
+    int WindUp()
+    {
+        return Find("windup") is >= 0 and var w ? w : Find("shoot");
     }
 
     static IEnumerable<Player> Skaters(World world)

@@ -148,6 +148,19 @@ def skater_shoot(i):                        # left-handed wrist shot: load, swee
     turn('neck', x=-0.2); turn('head', z=-spin * 0.6)
     lift(ARMS, [0.0, 0.06, 0.0, 0.35, 0.85, 0.25][i])
 
+def skater_windup(i):                       # a one-timer waiting on the pass: stick drawn back and up over the shoulder, weight on the back leg, held
+    u = [0.35, 0.7, 1.0][i]; spin = 0.95 * u
+    shift(x=0.06 * u, z=-0.08 - 0.04 * u); turn('pelvis', x=0.16, z=spin * 0.3)
+    leg('L', ANKLE['L'] + V((0.08, 0.02, 0)), pole=(0.2, -1, 0)); leg('R', ANKLE['R'] + V((-0.06, -0.03, 0)), pole=(-0.2, -1, 0))
+    turn('spine', x=0.14, z=spin * 0.5); turn('chest', z=spin * 0.5)
+    turn('neck', x=-0.2); turn('head', z=-spin * 0.6)
+    reach('R', V((WU_HAND[0], WU_HAND[1], WU_HAND[2] + 0.3 * u)), pole=(-1, 0.3, -0.6))
+    lo, hi = V((0.3, -0.4, -0.85)), V(WU_DIR)
+    d = lo.lerp(hi, u); stick_dir(d, floor=0.03 if i == 0 else None)   # the first pose keeps the blade on the ice
+    m = PB[SB].matrix @ B[SB].matrix_local.inverted()
+    reach('L', m @ GRIP + d.normalized() * WU_LOW, pole=(1, 0.3, -0.6))
+WU_HAND, WU_DIR, WU_LOW = (0.02, -0.28, 0.72), (0.7, 0.55, 0.3), 0.38
+
 def goalie_ready(i):
     bob = [0, 1, 2, 1][i]
     shift(z=-0.012 * bob); plant(pole=(0, -1, 0))
@@ -513,7 +526,7 @@ def staff_walk(i):                          # in place, the game moves it: heel 
     turn('chest', z=0.08 * math.cos(ph)); turn('head', z=-0.06 * math.cos(ph))
 
 # name: (poses, frames each pose is held at 24 fps, loops?)
-CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4, 6, True), 'shoot': (skater_shoot, 6, 3, False),
+CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4, 6, True), 'shoot': (skater_shoot, 6, 3, False), 'windup': (skater_windup, 3, 2, False),
                     'pass': (skater_pass, 5, 2, False), 'check': (skater_check, 4, 3, False), 'celebrate': (skater_celebrate, 4, 5, True),
                     'punch': (skater_punch, 5, 3, False), 'block': (skater_block, 3, 3, False), 'grab': (skater_grab, 4, 5, True),
                     'fall': (skater_fall, 4, 4, False),
