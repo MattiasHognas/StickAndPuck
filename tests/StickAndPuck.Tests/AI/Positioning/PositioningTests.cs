@@ -79,7 +79,10 @@ public sealed class PositioningTests : CheckedTest
     {
         var world = Make();
         Scenes.AddStarters(world);
-        var systems = Systems(world, 7, new MatchRules());
+#pragma warning disable S2245 // fixed seed so the check repeats
+        // checking ends the lunge of a defender an AI carrier dekes, as in a match
+        var systems = Systems(world, 7, new CheckingSystem(new Random(7)), new MatchRules());
+#pragma warning restore S2245
         StandInPlay.Start(world, 7);
         MatchFlow.Begin(world, log: false);
         var t = new PeriodTally();

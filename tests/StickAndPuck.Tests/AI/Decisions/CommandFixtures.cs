@@ -16,7 +16,7 @@ namespace StickAndPuck.Tests;
 /// <item>A tactical dump beats an ordinary shot: while tactics has the carrier, decisions only hold its shot.</item>
 /// <item>A kill clear beats decisions' own clear and pass the same way.</item>
 /// <item>A defender the defence has containing never lines up a hit.</item>
-/// <item>An AI skater meeting a pass never presses shoot or pass, so never arms a one-timer.</item>
+/// <item>An AI skater meeting a pass never presses pass, and presses shoot only to one-time it.</item>
 /// <item>A human's command is never written by the AI, the stand-in faceoff included.</item>
 /// </list>
 /// </summary>
@@ -144,7 +144,7 @@ internal static class CommandFixtures
     /// A 2-1-2 dump-and-chase club against a 1-3-1 trap club: while tactics takes the carrier wide or
     /// dumps the puck, decisions take no shot or pass of their own and only hold the dump; a
     /// defender the defence has containing never lines up a hit (one it lets engage may); and an
-    /// AI skater meeting a pass never presses shoot or pass.
+    /// AI skater meeting a pass never presses pass, and presses shoot only to one-time it.
     /// </summary>
     internal static void DumpAndShot(IReadOnlyList<ClubData> clubs, Settings settings, Action<bool, string> check)
     {
@@ -152,7 +152,7 @@ internal static class CommandFixtures
         var trap = new ClubTactics { Forecheck = Forecheck.Trap, Entry = ZoneEntry.Carry };
         var world = TacticsTests.Make(clubs, settings, press, trap);
         var systems = TacticsTests.Systems(world, 43);
-        int dumps = 0, wide = 0, overDump = 0, contains = 0, containHits = 0, hits = 0, meets = 0, armed = 0;
+        int dumps = 0, wide = 0, overDump = 0, contains = 0, containHits = 0, hits = 0, meets = 0, armed = 0, oneTimers = 0;
         Play(world, systems, 20 * 60, step =>
         {
             foreach (var (id, writes) in step.All)
@@ -168,12 +168,14 @@ internal static class CommandFixtures
                 if (contain && hit) containHits++;
                 if (!Wrote(writes, AiLayer.Decisions, "meet the pass")) continue;
                 meets++;
-                if (p.Command.Shoot || p.Command.Pass) armed++;
+                bool oneTiming = Wrote(writes, AiLayer.Decisions, "one-timer");
+                if (oneTiming) oneTimers++;
+                if (p.Command.Pass || (p.Command.Shoot && !oneTiming)) armed++;
             }
         });
         check(dumps >= 5 && wide >= 20 && overDump == 0, $"a tactical dump beats an ordinary shot: decisions only hold it ({dumps} dumps, {wide} steps taken wide, {overDump} overwritten)");
         check(contains >= 200 && hits >= 1 && containHits == 0, $"a defender containing the carrier never lines up a hit, one engaging may ({contains} contain steps, {hits} hit steps, {containHits} both)");
-        check(meets >= 50 && armed == 0, $"an AI skater meeting a pass never presses shoot or pass, so never arms a one-timer ({meets} steps, {armed} armed)");
+        check(meets >= 50 && armed == 0, $"an AI skater meeting a pass never presses pass, and shoot only to one-time it ({meets} steps, {oneTimers} one-timing, {armed} otherwise)");
     }
 
     /// <summary>A man short, a killer's clear is held by decisions and never replaced by decisions' own clear, shot or pass.</summary>
