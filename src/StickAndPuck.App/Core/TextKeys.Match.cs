@@ -22,6 +22,9 @@ public static partial class Text
         /// <summary>ICING</summary>
         public const string Icing = nameof(Icing);
 
+        /// <summary>PRESS SHOOT AS THE PUCK DROPS</summary>
+        public const string FaceoffPrompt = nameof(FaceoffPrompt);
+
         /// <summary>{0} {1}</summary>
         public const string PenaltyBanner = nameof(PenaltyBanner);
 

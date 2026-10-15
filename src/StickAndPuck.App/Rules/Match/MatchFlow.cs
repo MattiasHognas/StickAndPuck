@@ -10,7 +10,7 @@ namespace StickAndPuck.App.Rules;
 /// <remarks>
 /// What the flow promises the readers of <see cref="World.Match"/>:
 /// the clock runs only in <see cref="MatchPhase.Play"/>; during <see cref="MatchPhase.Faceoff"/>
-/// the puck lies dead on <see cref="FaceoffDot"/> and the players hold their spots;
+/// the puck lies dead on <see cref="FaceoffDot"/> and the players hold their spots, also through the draw window after the drop;
 /// a goal (published by physics) is counted once and followed by a centre faceoff;
 /// each period end publishes PeriodEnd; after regulation a tie hands over to the overtime rules by setting
 /// <see cref="MatchPhase.Overtime"/> or <see cref="MatchPhase.Shootout"/>; otherwise MatchEnd is
@@ -77,33 +77,24 @@ public static class MatchFlow
         State(world).RefereeDrops = referee;
     }
 
-    /// <summary>Drops the puck if a faceoff is waiting; the referee calls this.</summary>
+    /// <summary>Drops the puck if a faceoff is waiting; the referee calls this. The draw window opens and play starts
+    /// when <see cref="FaceoffDraw"/> decides the draw (at once after a false start).</summary>
     public static bool Drop(World world)
     {
         if (!IsRunning(world) || world.Match.Phase != MatchPhase.Faceoff) return false;
         var s = State(world);
-        world.Match.Phase = MatchPhase.Play;
+        if (s.Draw.Dropped) return false;
         world.Puck.Position = s.Dot;
         world.Puck.Velocity = Vector3.Zero;
-        world.Puck.Live = true;
-        Draw(world, s);
         world.Events.Publish(new PuckDropped(world.Time, s.Dot));
+        FaceoffDraw.Drop(world, s);
         return true;
     }
 
-    /// <summary>The draw: the two skaters nearest the dot, one per club, contest it on puck control and hockey
-    /// IQ with some luck, and the puck is pulled back towards the winner's blade. Without it the puck
-    /// lay still on the dot and the quicker centre to skate onto it won every draw.</summary>
-    static void Draw(World world, FlowState s)
+    /// <summary>Gets a value indicating whether the faceoff prompt shows: a human takes the coming draw.</summary>
+    public static bool FaceoffPrompt(World world)
     {
-        Maybe<Player> Centre(Side side) => Maybe.From<Player>(world.OnIce(side).Where(p => !p.IsGoalie).MinBy(p => Vector3.DistanceSquared(p.Position, s.Dot)));
-        if (!Centre(Side.Home).TryGet(out var home) || !Centre(Side.Away).TryGet(out var away)) return;
-        static float Skill(Player p) => 0.5f + Traits.Unit(p.Data.Traits.PuckControl) + 0.5f * p.Data.Traits.Iq;
-        float h = Skill(home), a = Skill(away);
-        var winner = s.Dice.NextSingle() * (h + a) < h ? home : away;
-        var pull = winner.Position + (winner.Position - s.Dot) * 0.5f - s.Dot;
-        pull.Y = 0;
-        if (pull.LengthSquared() > 1e-6f) world.Puck.Velocity = Vector3.Normalize(pull) * MatchTuning.DrawSpeed;
+        return IsRunning(world) && world.Match.Phase == MatchPhase.Faceoff && FaceoffDraw.HumanCentre(world, State(world));
     }
 
     /// <summary>Gets the faceoff dot nearest a point on the ice.</summary>
@@ -132,6 +123,7 @@ public static class MatchFlow
         world.Match.Phase = MatchPhase.Faceoff;
         StopPuck(world, dot);
         FaceoffFormation.Place(world, dot);
+        FaceoffDraw.Reset(world, s);
     }
 
     static void StopPuck(World world, Vector3 dot)
@@ -161,6 +153,9 @@ internal sealed class FlowState
 
     /// <summary>Gets the luck in the draws; the match seed's stream, so runs repeat.</summary>
     public required Random Dice { get; init; }
+
+    /// <summary>Gets the draw of the current faceoff.</summary>
+    public DrawState Draw { get; } = new();
 
     /// <summary>Gets or sets how long a goalie has held the puck in play.</summary>
     public float Held { get; set; }

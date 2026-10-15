@@ -12,6 +12,18 @@ public static class MatchTuning
     /// <summary>How fast the draw pulls the puck back off the dot towards the winning skater, m/s.</summary>
     public const float DrawSpeed = 3f;
 
+    /// <summary>After the drop, how long the first press of shoot or pass can win the draw before the roll decides it.</summary>
+    public const float DrawWindow = 0.45f;
+
+    /// <summary>The quickest an AI centre presses after the drop, at full hockey IQ and no bad luck.</summary>
+    public const float DrawReaction = 0.12f;
+
+    /// <summary>How much slower an AI centre with no hockey IQ presses than one with full hockey IQ.</summary>
+    public const float DrawSlowness = 0.3f;
+
+    /// <summary>The most luck adds to an AI centre's press.</summary>
+    public const float DrawJitter = 0.12f;
+
     /// <summary>Celebration after a goal before the centre faceoff (the replay fits in here).</summary>
     public const float GoalSeconds = 4f;
 

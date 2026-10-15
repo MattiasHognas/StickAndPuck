@@ -41,6 +41,23 @@ public sealed class MatchDemoScene : IScene
     }
 }
 
+/// <summary>SAP_SCENE=faceoff: faceoffs at centre with the human on the home left wing, moved onto the centre for each
+/// draw; the scene presses shoot 0.15 s after each drop (a timed win), then whistles the next faceoff.</summary>
+public sealed class FaceoffScene : IScene
+{
+    /// <inheritdoc/>
+    public string Name => "faceoff";
+
+    /// <inheritdoc/>
+    public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
+    {
+        var world = MatchScenes.Exhibition(clubs, settings, 20 * 60);
+        if (world.OnIce(Side.Home).FirstOrDefault(p => p.Data.Position == PlayingPosition.LW) is { } wing) wing.Slot = 0;
+        world.Dev.Match.Set(new MatchDemo { PressAfter = 0.15f });
+        return world;
+    }
+}
+
 /// <summary>Shared setup for the match scenes.</summary>
 internal static class MatchScenes
 {
@@ -65,6 +82,9 @@ internal sealed class MatchDemo
     float cameraX;
     Side next = Side.Home;
 
+    /// <summary>Gets the seconds after each drop the demo presses shoot for the human centre; below zero the demo fires shots instead.</summary>
+    public float PressAfter { get; init; } = -1f;
+
     /// <summary>Fires the next shot a moment after the puck drops or settles, and pans the camera to the puck.</summary>
     public static void Update(World world)
     {
@@ -74,6 +94,7 @@ internal sealed class MatchDemo
     void Run(World world)
     {
         Pan(world);
+        if (PressAfter >= 0) { Faceoffs(world); return; }
         var pk = world.Puck;
         if (world.Match.Phase != MatchPhase.Play) { shotAt = world.Time; return; }
         float since = world.Time - shotAt;
@@ -82,6 +103,18 @@ internal sealed class MatchDemo
         Shoot(world, next);
         next = next == Side.Home ? Side.Away : Side.Home;
         shotAt = world.Time;
+    }
+
+    /// <summary>Presses shoot for slot 0 <see cref="PressAfter"/> seconds after each drop, and whistles a new faceoff a while after each draw.</summary>
+    void Faceoffs(World world)
+    {
+        var draw = MatchFlow.State(world).Draw;
+        // shotAt holds the step the drop was first seen, then the step play started
+        if (world.Match.Phase != MatchPhase.Play && !draw.Dropped) shotAt = float.PositiveInfinity;
+        if (draw.Dropped && float.IsPositiveInfinity(shotAt)) shotAt = world.Time;
+        bool press = world.Match.Phase == MatchPhase.Faceoff && draw.Dropped && world.Time - shotAt >= PressAfter;
+        if (world.Controlled(0).TryGet(out var me)) me.Command = me.Command with { Shoot = press };
+        if (world.Match.Phase == MatchPhase.Play && world.Time - shotAt > 2.5f) MatchFlow.Whistle(world, RinkSpec.CentreDot);
     }
 
     void Shoot(World world, Side shooter)

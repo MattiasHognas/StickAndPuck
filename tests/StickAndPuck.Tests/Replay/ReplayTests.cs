@@ -25,7 +25,7 @@ public sealed class ReplayTests : CheckedTest
     // written down from the cloud run; his machine and the Windows build must give the same
     const string SinCosBits = "3f576aa4 3f0a5140 3f7e9262 4081c433 3f9e830c 3ed227eb";
     const string SeedValues = "610514733 1889226249 14";
-    const string MatchSum = "e4584d5a313b8e72";
+    const string MatchSum = "9c4f91499e88f268";
 
     readonly bool print = Env.Is("SAP_REPLAYTEST_PRINT", "1");
 

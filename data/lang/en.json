@@ -338,6 +338,7 @@
   "FinalTie": "FINAL - TIE",
   "Offside": "OFFSIDE",
   "Icing": "ICING",
+  "FaceoffPrompt": "PRESS SHOOT AS THE PUCK DROPS",
   "PenaltyBanner": "{0} {1}",
   "PlayerTag": "#{0} {1}",
   "FirstGoalOfSeason": "FIRST GOAL OF THE SEASON",
