@@ -37,6 +37,7 @@
   "GraphicsCard": "GRAPHICS CARD",
   "GpuRunning": "RUNNING ON {0}",
   "GpuRestart": "ESC RESTARTS THE GAME ON {0}",
+  "GpuKeep": "KEEP THIS CARD?   ENTER KEEPS   BACK IN {0}",
   "Back": "BACK",
   "Settings": "SETTINGS",
   "More": "- MORE -",

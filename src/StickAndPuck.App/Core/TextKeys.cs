@@ -120,6 +120,9 @@ public static partial class Text
         /// <summary>ESC RESTARTS THE GAME ON {0}</summary>
         public const string GpuRestart = nameof(GpuRestart);
 
+        /// <summary>KEEP THIS CARD?   ENTER KEEPS   BACK IN {0}</summary>
+        public const string GpuKeep = nameof(GpuKeep);
+
         /// <summary>BACK</summary>
         public const string Back = nameof(Back);
 

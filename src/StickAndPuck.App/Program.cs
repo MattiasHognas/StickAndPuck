@@ -199,19 +199,27 @@ namespace StickAndPuck.App.Core
     /// <summary>Starts the game on the card the player picked (<see cref="Settings.Gpu"/>, or SAP_GPU). On
     /// Linux the game starts itself again with the card's variables: PRIME render offload for an NVIDIA
     /// card, DRI_PRIME and Mesa's GL for any other; the default card runs with neither. SAP_GPU_LAUNCHED
-    /// marks the started game with its card, so it never starts itself twice. On Windows OpenGL follows the
+    /// marks the started game with its card, so it never starts itself twice. A game started on a newly
+    /// picked card opens on the settings screen and asks to keep it; SAP_GPU_REVERT names the card to go
+    /// back to when nobody answers (a card that cannot show its window leaves the screen black). On Windows OpenGL follows the
     /// system's per-app graphics preference (a managed exe cannot export NvOptimusEnablement or
     /// AmdPowerXpressRequestHighPerformance), so the game lists DXGI's cards and runs where Windows puts it.</summary>
     public static class GpuLaunch
     {
         const string Marker = "SAP_GPU_LAUNCHED";
+        const string RevertTo = "SAP_GPU_REVERT";
 
         static readonly string[] CardVariables = ["__NV_PRIME_RENDER_OFFLOAD", "__GLX_VENDOR_LIBRARY_NAME", "__VK_LAYER_NV_optimus", "DRI_PRIME", "__EGL_VENDOR_LIBRARY_FILENAMES"];
 
         static Maybe<GpuCard> pending = Maybe<GpuCard>.None;
+        static bool ask;
 
         /// <summary>Gets the card this game draws on.</summary>
         public static GpuCard Running => GpuCards.Resolve(GpuCards.All, Env.Get(Marker));
+
+        /// <summary>Gets the card to go back to while this game, started on a newly picked card, waits to be kept; None once kept.</summary>
+        public static Maybe<GpuCard> Unconfirmed =>
+            Env.Get(RevertTo) is { Length: > 0 } back ? GpuCards.Resolve(GpuCards.All, back) : Maybe<GpuCard>.None;
 
         /// <summary>Gets a value indicating whether picking a card starts the game again on it (Linux only).</summary>
         public static bool CanSwitch => OperatingSystem.IsLinux() && GpuCards.All.Count > 1;
@@ -223,13 +231,19 @@ namespace StickAndPuck.App.Core
             if (!CanSwitch) return false;
             var wanted = GpuCards.Resolve(GpuCards.All, Settings.FromEnvironment(ScreenPrefsFile.Read().Settings).Gpu);
             if (string.Equals(wanted.Id, Running.Id, StringComparison.Ordinal)) return false;
-            Relaunch(wanted, Env.Get("SAP_GPU"));
+            Relaunch(wanted, Env.Get("SAP_GPU"), "");
             return true;
         }
 
+        /// <summary>Keeps the card this game runs on: the keep question is answered.</summary>
+        public static void Keep() => Env.Set(RevertTo, "");
+
         /// <summary>Asks for the game to start again on a card once it ends; false when it runs there already.</summary>
-        public static bool Request(string gpu)
+        /// <param name="gpu">The card, as <see cref="Settings.Gpu"/> names it.</param>
+        /// <param name="confirm">Whether the started game asks to keep the card, going back to this one otherwise.</param>
+        public static bool Request(string gpu, bool confirm)
         {
+            ask = confirm;
             var card = GpuCards.Resolve(GpuCards.All, gpu);
             pending = CanSwitch && !string.Equals(card.Id, Running.Id, StringComparison.Ordinal) ? card : Maybe<GpuCard>.None;
             return pending.HasValue;
@@ -238,10 +252,10 @@ namespace StickAndPuck.App.Core
         /// <summary>Starts the game again on the card <see cref="Request"/> asked for, if any.</summary>
         public static void AfterRun()
         {
-            if (pending.TryGet(out var card)) Relaunch(card, card.IsDefault ? "" : card.Id);
+            if (pending.TryGet(out var card)) Relaunch(card, card.IsDefault ? "" : card.Id, ask ? Running.Id : "");
         }
 
-        static void Relaunch(GpuCard card, string sapGpu)
+        static void Relaunch(GpuCard card, string sapGpu, string revertTo)
         {
             string host = Environment.ProcessPath ?? "";
             var args = Environment.GetCommandLineArgs().ToList();
@@ -250,6 +264,13 @@ namespace StickAndPuck.App.Core
             foreach (string a in viaDotnet ? args : args.Skip(1)) start.ArgumentList.Add(a);
             foreach (string v in CardVariables) start.Environment.Remove(v);
             start.Environment[Marker] = card.Id;
+            start.Environment.Remove(RevertTo);
+            if (revertTo.Length > 0)
+            {
+                start.Environment[RevertTo] = revertTo;
+                start.Environment["SAP_SCREEN"] = "settings";    // the question shows where the card was picked
+            }
+
             if (sapGpu.Length > 0) start.Environment["SAP_GPU"] = sapGpu;
             else start.Environment.Remove("SAP_GPU");
             if (!card.IsDefault && string.Equals(card.Vendor, GpuCards.Nvidia, StringComparison.Ordinal))

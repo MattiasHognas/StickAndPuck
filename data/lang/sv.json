@@ -37,6 +37,7 @@
   "GraphicsCard": "GRAFIKKORT",
   "GpuRunning": "KÖR PÅ {0}",
   "GpuRestart": "ESC STARTAR OM SPELET PÅ {0}",
+  "GpuKeep": "BEHÅLL KORTET?   ENTER BEHÅLLER   TILLBAKA OM {0}",
   "Back": "TILLBAKA",
   "Settings": "INSTÄLLNINGAR",
   "More": "- MER -",

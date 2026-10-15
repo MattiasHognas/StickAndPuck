@@ -9,7 +9,8 @@ namespace StickAndPuck.App.Screens;
 /// rule, penalties and fights among them). Game: control switching, line changes, difficulty,
 /// period length, sim game, auto deke, one-timers. Controls: player one's and
 /// player two's devices, the key mapping page, the control marker. Display and sound: camera zoom, lighting mood, swap
-/// kits, volume, language, the graphics card (leaving starts the game again on a newly picked card). Debug: the fps line, the match line, the lines panel. Left and right change a
+/// kits, volume, language, the graphics card (leaving starts the game again on a newly picked card, which
+/// opens here asking to keep it: Enter keeps it, Esc or 10 seconds go back to the card before). Debug: the fps line, the match line, the lines panel. Left and right change a
 /// value; it applies to the world on show at once (so a paused match plays on with it) and every
 /// later match, and is saved on leaving. The list scrolls when it is taller than the frame. A
 /// running match stays paused while this screen is up (<see cref="ScreenSystem"/> holds every
@@ -21,11 +22,16 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
     /// <summary>Rows shown at once; the rest scroll into view.</summary>
     const int Visible = 14;
 
+    /// <summary>Steps a newly picked graphics card waits to be kept before the game goes back to the card before.</summary>
+    const int KeepSteps = 600;
+
     static readonly ImmutableArray<InputDevice> Devices = [InputDevice.KeyboardMouse, InputDevice.Gamepad1];
     static readonly ImmutableArray<InputDevice> Player2Devices = [InputDevice.None, InputDevice.KeyboardMouse, InputDevice.Gamepad1, InputDevice.Gamepad2];
 
     Maybe<World> world;
     Maybe<string> gpu;    // the card picked on this visit
+    bool reverting;
+    int keepWait;
     int first;
 
     ScreenPrefs Prefs => Flow.Prefs;
@@ -73,6 +79,27 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
     {
         this.world = world;
         world.Match.Paused = true;    // a running match waits while the settings are open
+        if (GpuLaunch.Unconfirmed.TryGet(out var before))
+        {
+            if (press.Contains(MenuButton.Accept))
+            {
+                GpuLaunch.Keep();
+                Console.WriteLine($"SAP: gpu: kept {GpuLaunch.Running.Name}");
+                return;
+            }
+
+            if (press.Contains(MenuButton.Back) || ++keepWait >= KeepSteps)
+            {
+                Console.WriteLine($"SAP: gpu: not kept, back to {before.Name}");
+                GpuLaunch.Keep();
+                reverting = true;
+                gpu = before.IsDefault ? "" : before.Id;
+                Set(Prefs.Settings with { Gpu = gpu.Or("") });
+                Back();
+                return;
+            }
+        }
+
         base.Update(world, press);
     }
 
@@ -92,7 +119,8 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
         art.Menu(items.Skip(first).Take(shown).ToList(), Selected - first, x, PanelW, top);
         if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
         bool onGpu = Selected < items.Count && string.Equals(items[Selected].Label, Text.Get(K.GraphicsCard), StringComparison.Ordinal);
-        art.Hint(!onGpu ? Text.Get(K.HintSettings)
+        art.Hint(GpuLaunch.Unconfirmed.HasValue ? Text.Format(K.GpuKeep, (KeepSteps - keepWait + 59) / 60)
+            : !onGpu ? Text.Get(K.HintSettings)
             : gpu.HasValue && GpuLaunch.CanSwitch && !string.Equals(Card().Id, GpuLaunch.Running.Id, StringComparison.Ordinal) ? Text.Format(K.GpuRestart, Card().Name)
             : Text.Format(K.GpuRunning, GpuCards.ShortRenderer(GpuCards.Renderer)));
     }
@@ -103,7 +131,7 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
         if (world.TryGet(out var onShow)) Flow.ApplySettings(onShow);
         Console.WriteLine($"SAP: screens: settings saved, {Prefs}");
         Flow.Pop();
-        if (gpu.TryGet(out string picked) && GpuLaunch.Request(picked)) Flow.Quit();    // GpuLaunch starts the game again on it
+        if (gpu.TryGet(out string picked) && GpuLaunch.Request(picked, confirm: !reverting)) Flow.Quit();    // GpuLaunch starts the game again on it
     }
 
     static string OnOff(bool on) => Text.Get(on ? K.On : K.Off);
