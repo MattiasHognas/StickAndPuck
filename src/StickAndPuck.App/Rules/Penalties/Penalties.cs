@@ -267,7 +267,7 @@ public static partial class Penalties
             book.Misconducts.Add(new PenaltyState(p.Id, p.Side, d.Infraction, seconds + MisconductSeconds(world)));
 
         if (severity is Severity.MajorAndGameMisconduct or Severity.GameMisconduct) Eject(world, book, p);
-        else ToBox(world, p);
+        else SendToBox(world, book, p);
         book.Called[(int)p.Side]++;
         float shown = seconds > 0 ? seconds : MisconductSeconds(world);
         world.Events.Publish(new PenaltyCalled(world.Time, p.Side, p.Id, p.Position, shown));

@@ -88,7 +88,8 @@ public static partial class Penalties
     {
         book.Delayed.Clear();
         var ids = world.Match.Penalties.Select(p => p.PlayerId).Concat(book.Waiting.Select(p => p.PlayerId)).Concat(book.Held).Concat(book.Misconducts.Select(p => p.PlayerId)).ToList();
-        foreach (int id in ids.Where(id => !world.Players[id].OnIce && !book.Ejected.Contains(id))) ToBench(world, world.Players[id]);
+        foreach (int id in ids.Where(id => (!world.Players[id].OnIce || OnTheWay(world, id)) && !book.Ejected.Contains(id))) ToBench(world, world.Players[id]);
+        book.Trips.Clear();
         world.Match.Penalties.Clear();
         book.Waiting.Clear();
         book.Held.Clear();
