@@ -21,6 +21,9 @@ internal sealed class HudSystem : ISystem
     /// <summary>The top of the centre banner, above the centre-ice faceoff.</summary>
     const int BannerTop = 88;
 
+    /// <summary>The top of the faceoff prompt, under the faceoff.</summary>
+    const int PromptTop = 200;
+
     readonly HudMessages messages = new();
     Maybe<HudArt> art;
 
@@ -48,6 +51,18 @@ internal sealed class HudSystem : ISystem
         if (OvertimeRules.Shootout(world).TryGet(out var so) && world.Match.Phase is MatchPhase.Shootout or MatchPhase.Final) DrawShootout(world, hud, so);
         if (world.Match.Phase == MatchPhase.Intro) DrawIntro(world, hud);
         else if (messages.Current.TryGet(out var m)) DrawBanner(m, hud);
+        if (MatchFlow.FaceoffPrompt(world)) DrawFaceoffPrompt(hud);
+    }
+
+    /// <summary>The faceoff prompt, low and centred so the dot stays clear: press shoot as the puck drops.</summary>
+    static void DrawFaceoffPrompt(HudArt art)
+    {
+        const int pad = 5, h = 17;
+        string text = Text.Get(K.FaceoffPrompt);
+        int w = pad + art.Measure(text) + pad;
+        int x = (Game.Width - w) / 2, y = PromptTop;
+        art.DrawPanel("panel_gold", x, y, w, h);
+        art.DrawText(text, x + pad, y + ((h - 7) / 2) - 2, art.Text);
     }
 
     /// <summary>Gets the power play tag, "PP 5V4" or "PP 4V3" from the club with the extra skater, or empty at even strength.</summary>
