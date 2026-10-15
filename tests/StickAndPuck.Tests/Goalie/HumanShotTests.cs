@@ -55,7 +55,7 @@ public sealed class HumanShotTests : CheckedTest
     /// <summary>
     /// The shots of a played match: the stick pushed up the ice toward the end boards, a wound-up slap
     /// shot or a quick wrist shot from the slot or the circles, against the club-average goalie as each
-    /// difficulty plays him. Easy is clearly beatable, normal about one in nine, hard still scorable.
+    /// difficulty plays him. Each difficulty scales the AI goalie, normal included, so the gaps are wide.
     /// </summary>
     [Test]
     public void PlayedShots()
@@ -63,7 +63,7 @@ public sealed class HumanShotTests : CheckedTest
         var pct = new Dictionary<Difficulty, float>();
         foreach (var level in new[] { Difficulty.Easy, Difficulty.Normal, Difficulty.Hard })
         {
-            var traits = DifficultyScale.Scale(Average, level);
+            var traits = DifficultyScale.Goalie(Average, level);
             Tally[] shots =
             [
                 Batch(traits, SlotSpot, ShotKind.Slap, 0.8f, UpIce), Batch(traits, SlotSpot, ShotKind.Wrist, 0.05f, UpIce),
@@ -72,11 +72,11 @@ public sealed class HumanShotTests : CheckedTest
             pct[level] = (float)shots.Sum(t => t.Goals) / Math.Max(1, shots.Sum(t => t.Goals + t.Saves));
             Console.WriteLine($"      {level} (reflexes {traits.GoalieReflexes}, positioning {traits.HockeyIq}): slot slap {shots[0]}; slot tap {shots[1]}; slot held wrist {shots[2]}; circle slap {shots[3]}; {pct[level]:P1} go in");
         }
-        // played matches score about two thirds of these rates (traffic, tired shooters, rushed shots), so easy
-        // aims a little above one in four here to be about one in five on the ice
-        Check(pct[Difficulty.Easy] is > 0.22f and < 0.36f, $"on easy more than one played shot in four goes in ({pct[Difficulty.Easy]:P1})");
-        Check(pct[Difficulty.Normal] is > 0.08f and < 0.15f, $"on normal about one in nine ({pct[Difficulty.Normal]:P1})");
-        Check(pct[Difficulty.Hard] is > 0.06f and < 0.1f, $"on hard still about one in thirteen ({pct[Difficulty.Hard]:P1})");
+        // played matches score about two thirds of these rates (traffic, rushed and tired shots): on the ice
+        // that is a third or more on easy, about one in six on normal and one in nine on hard
+        Check(pct[Difficulty.Easy] is > 0.42f and < 0.58f, $"on easy about half the played shots go in ({pct[Difficulty.Easy]:P1})");
+        Check(pct[Difficulty.Normal] is > 0.2f and < 0.3f, $"on normal about one in four ({pct[Difficulty.Normal]:P1})");
+        Check(pct[Difficulty.Hard] is > 0.13f and < 0.2f, $"on hard about one in six ({pct[Difficulty.Hard]:P1})");
     }
 
     static Vector2 AtNet(Vector3 from, Random dice) => Vector2.Normalize(new Vector2(RinkSpec.GoalLineX - from.X, -from.Z));
