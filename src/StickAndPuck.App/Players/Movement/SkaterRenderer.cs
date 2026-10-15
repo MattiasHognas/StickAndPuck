@@ -77,6 +77,13 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
                 poses[p.Id] = (wind, Math.Min((world.Time - armedAt) * ClipFps, last));
                 continue;
             }
+            if (FaceoffPose.Clip(world, p).TryGet(out string stance) && Find(stance) is >= 0 and var set)
+            {
+                // Set for the draw until the puck drops: a crouch, the centres lowest over the dot; the held clip loops
+                float held = set == clip ? frame + (dt * ClipFps) : 0f;
+                poses[p.Id] = (set, held % (clips[set].KeyFrameCount - 1));
+                continue;
+            }
             int want = p.Action == PlayerAction.Shoot ? Find("shoot") : p.Speed > 0.4f ? Find("skate") : Find("idle");
             if (want != clip) { clip = want; frame = 0; }
             if (p.Action == PlayerAction.Shoot) frame = p.ActionTime * ClipFps;
