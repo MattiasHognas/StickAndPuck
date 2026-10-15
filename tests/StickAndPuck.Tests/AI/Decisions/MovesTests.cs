@@ -90,6 +90,27 @@ public sealed class MovesTests : CheckedTest
         Check(skilled > 0.6f && skilled > poor, $"a skilled one mostly beats the defender, a clumsy one less ({skilled:P0} against {poor:P0} kept the puck)");
     }
 
+    /// <summary>The aimoves drill (the scene for recording them): over a few rounds the AI dekes, and one-times the pass across.</summary>
+    [Test]
+    public void Drill()
+    {
+        foreach (bool oneTimer in new[] { false, true })
+        {
+            var world = new World(WorldBuilder.DefaultSetup with { Inputs = [new InputSlot(InputDevice.None, Side.Home), new InputSlot(InputDevice.None, Side.Away)] }, new Settings());
+            StickAndPuck.App.AI.Dev.MovesDrill.Setup(world, oneTimer);
+            var systems = Systems(world, 1);
+            int shots = 0;
+            for (int i = 0; i < 6 * 4 * 60; i++)
+            {
+                Step(world, systems);
+                shots += world.Events.Current.OfType<ShotTaken>().Count(e => e.ShooterId == 1);
+            }
+            var tally = AiDecisions.Tally(world, Side.Home);
+            if (oneTimer) Check(tally.OneTimers > 0 && shots > 0, $"the one-timer drill one-times the pass across ({tally.OneTimers} read, {shots} struck in 6 rounds)");
+            else Check(tally.Dekes > 0, $"the deke drill dekes the defender ({tally.Dekes} in 6 rounds)");
+        }
+    }
+
     const int Seeds = 24;
 
     /// <summary>Gets the all-AI matches, shared by the class's tests.</summary>

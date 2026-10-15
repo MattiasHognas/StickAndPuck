@@ -78,6 +78,7 @@ internal sealed partial class DecisionSystem : ISystem
     public void Update(World world, float dt)
     {
         var board = Decisions.Board(world);
+        Dev.MovesDrill.Restart(world, board);
         Track(world, board);
         if (!Positioning.Drives(world)) return;
         var pk = world.Puck;
@@ -108,6 +109,7 @@ internal sealed partial class DecisionSystem : ISystem
             if (p.Id == crasher) { CrashNet(world, p); continue; }
             Hit(world, board, p, brain);
         }
+        Dev.MovesDrill.Pass(world, board);
     }
 
     public void DrawHud(World world, RenderContext render)

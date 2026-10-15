@@ -102,6 +102,9 @@ internal sealed class DecisionBoard
     /// <summary>Gets or sets the carrier at the end of the last step.</summary>
     public int LastCarrier { get; set; } = -1;
 
+    /// <summary>Gets or sets the drill SAP_SCENE=aimoves runs, if any.</summary>
+    public Maybe<Dev.MovesDrill> Drill { get; set; }
+
     public Brain For(int id)
     {
         if (!brains.TryGetValue(id, out var brain)) brains[id] = brain = new Brain();
