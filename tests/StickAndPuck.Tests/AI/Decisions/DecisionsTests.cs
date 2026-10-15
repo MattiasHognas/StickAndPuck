@@ -221,7 +221,7 @@ public sealed class DecisionsTests : CheckedTest
     /// <summary>How many SHL seeds LineCalls plays, from 31 on.</summary>
     const int LineSeeds = 4;
 
-    static readonly int[] IqSeeds = [51, 53];
+    static readonly int[] IqSeeds = [51, 53, 55, 57, 59, 61];
 
     /// <summary>Gets the LineCalls matches, shared by the class's tests.</summary>
     [ClassDataSource<Played<LineCallMatch>>(Shared = SharedType.PerClass)]
