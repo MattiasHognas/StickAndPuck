@@ -73,7 +73,7 @@ public sealed class FaceoffDrawTests : CheckedTest
         Check(Run(w, x => x.Match.Phase == MatchPhase.Faceoff), "the opening faceoff");
         Run(w, _ => false, x => Press(x, 0, x.Match.Phase == MatchPhase.Faceoff && x.Time < 2.3f), 0.2f);
         Check(Draw(w).FalseStart == SideOrNone.Home && !Draw(w).Dropped, "an early press is a false start");
-        Check(Run(w, x => Draw(x).Dropped, x => Press(x, 0, false)), "the puck drops");
+        Check(Run(w, x => x.Events.Of<PuckDropped>().Any(), x => Press(x, 0, false)), "the puck drops");
         Check(w.Match.Phase == MatchPhase.Play && Draw(w).Winner == SideOrNone.Away, "the other club wins at the drop");
     }
 
@@ -83,7 +83,7 @@ public sealed class FaceoffDrawTests : CheckedTest
     {
         var w = new WorldBuilder().Human().Build();
         Press(w, 0, true);
-        Check(Run(w, x => Draw(x).Dropped, x => Press(x, 0, true), 6), "the puck drops");
+        Check(Run(w, x => x.Events.Of<PuckDropped>().Any(), x => Press(x, 0, true), 6), "the puck drops");
         Check(!Draw(w).FalseStart.IsSet(), "holding shoot from before the faceoff is no false start");
     }
 

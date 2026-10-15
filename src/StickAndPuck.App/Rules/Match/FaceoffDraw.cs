@@ -132,6 +132,7 @@ internal static class FaceoffDraw
         pk.Velocity = Vector3.Zero;
         pk.Live = true;
         s.Draw.Winner = winner.OrNone();
+        s.Draw.Dropped = false;
         if (!Centre(world, s.Dot, winner).TryGet(out var centre)) return;
         var pull = centre.Position + ((centre.Position - s.Dot) * 0.5f) - s.Dot;
         pull.Y = 0;
@@ -144,7 +145,7 @@ internal static class FaceoffDraw
 /// <summary>The draw of the current faceoff.</summary>
 internal sealed class DrawState
 {
-    /// <summary>Gets or sets a value indicating whether the puck has dropped and the window is open.</summary>
+    /// <summary>Gets or sets a value indicating whether the puck has dropped and the window is open (false again once the draw is won).</summary>
     public bool Dropped { get; set; }
 
     /// <summary>Gets or sets the seconds since the drop.</summary>
