@@ -119,7 +119,11 @@ public sealed class MatchStatTracker
             switch (e)
             {
                 case ShotTaken shot when !shootout:
-                    if (Line(shot.ShooterId).TryGet(out var shooter)) shooter.Shots++;
+                    if (Line(shot.ShooterId).TryGet(out var shooter))
+                    {
+                        if (PenaltyKillClear.IsClear(w, shot)) shooter.Clears++;
+                        else shooter.Shots++;
+                    }
                     break;
                 case CheckLanded check:
                     if (Line(check.CheckerId).TryGet(out var checker)) checker.Hits++;

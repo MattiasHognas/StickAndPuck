@@ -35,6 +35,9 @@ public sealed class PlayerStats
     /// <summary>Gets or sets the body checks landed.</summary>
     public int Hits { get; set; }
 
+    /// <summary>Gets or sets the penalty-kill clears: shots a man short from the club's own half.</summary>
+    public int Clears { get; set; }
+
     /// <summary>Gets or sets the saves, for goalies.</summary>
     public int Saves { get; set; }
 
@@ -67,6 +70,7 @@ public sealed class PlayerStats
         Assists += line.Assists;
         Shots += line.Shots;
         Hits += line.Hits;
+        Clears += line.Clears;
         Saves += line.Saves;
     }
 }
@@ -103,6 +107,9 @@ public sealed class MatchStatLine
 
     /// <summary>Gets or sets the body checks landed.</summary>
     public int Hits { get; set; }
+
+    /// <summary>Gets or sets the penalty-kill clears: shots a man short from the club's own half.</summary>
+    public int Clears { get; set; }
 
     /// <summary>Gets or sets the saves, for goalies.</summary>
     public int Saves { get; set; }
