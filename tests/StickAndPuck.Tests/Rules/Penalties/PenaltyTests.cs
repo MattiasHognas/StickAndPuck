@@ -128,7 +128,10 @@ public sealed class PenaltyTests : CheckedTest
         Check(call.Side == Side.Home && call.PlayerId == lw.Id && Math.Abs(call.Seconds - Penalties.MinorSeconds(w)) < 0.01f, "a Penalty event names the club, the skater and the minutes");
         Check(w.Match.Penalties is [{ Infraction: Infraction.Tripping, SecondsLeft: var left }] && Math.Abs(left - Penalties.MinorSeconds(w)) < 0.01f
             && Math.Abs(Penalties.MinorSeconds(w) - (2 * 60 * Period / 1200)) < 0.01f, "a two minute minor, shortened with the period");
-        Check(!lw.OnIce && Penalties.InBox(w, lw.Id) && lw.Position.Z > RinkSpec.HalfWidth, "the skater goes to the box off the ice");
+        Check(lw.OnIce && Penalties.InBox(w, lw.Id) && Penalties.OnTheWay(w, lw.Id), "the skater skates to the box: on the ice, and in the box for the lines");
+        Run(w, _ => !lw.OnIce, 12);
+        Check(!lw.OnIce && !Penalties.OnTheWay(w, lw.Id) && Penalties.InBox(w, lw.Id) && lw.Position.Z > RinkSpec.HalfWidth && w.Match.Phase == MatchPhase.Stopped,
+            "he goes in through the box door, off the ice, with the faceoff still waiting for him");
         Check(MatchFlow.FaceoffDot(w) is { X: < -20 } dot && Math.Abs(dot.X + 20.7f) < 0.01f, "the faceoff is in the penalised club's end");
         Check(Referee.Of(w).Announced.Is(c => string.Equals(c.Infraction, Infraction.Tripping, StringComparison.Ordinal)) && !Referee.Of(w).Call.HasValue, "the referee calls tripping and lowers the arm");
         ToPlay(w);
@@ -822,7 +825,7 @@ public sealed class PenaltyTests : CheckedTest
                 // in play: a call at a stoppage can leave a club a skater short until the faceoff brings it to strength (a third penalty waiting)
                 if (w.Match.Phase == MatchPhase.Play && Skaters(w, side) != Penalties.TargetSkaters(w, side))
                     broken++;
-                if (w.Match.Penalties.Exists(p => w.Players[p.PlayerId].OnIce)) broken++;
+                if (w.Match.Penalties.Exists(p => w.Players[p.PlayerId].OnIce && !Penalties.OnTheWay(w, p.PlayerId))) broken++;
             }
             served &= w.Match.Penalties.TrueForAll(p => p.SecondsLeft <= Penalties.ClubSeconds(w, Severity.Major) + 0.01f);
         }

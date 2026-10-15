@@ -26,6 +26,9 @@ internal static class BenchClips
     /// <summary>The seat top over the deck (arena.glb: a 0.2 m riser and the seat), less the clips' 0.45 m from soles to seat (m).</summary>
     public const float SeatLift = 0.62f - 0.45f;
 
+    /// <summary>The penalty box's seat top over the deck (arena.glb: a 0.2 m riser and the seat to 0.48 m), less the clips' 0.45 m.</summary>
+    public const float BoxSeatLift = 0.48f - 0.45f;
+
     /// <summary>How far a seated goalie sinks into his seat, his ready clip crouching rather than sitting (m).</summary>
     public const float GoalieLift = 0.1f;
 

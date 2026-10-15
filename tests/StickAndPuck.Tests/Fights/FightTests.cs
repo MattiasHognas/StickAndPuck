@@ -205,8 +205,8 @@ public sealed class FightTests : CheckedTest
         Check(fight.Knockdown && fight.LoserId == them.Id && fight.Exchange <= 3, $"punches timed in the middle of the bar knock the other fighter down (in {fight.Exchange + 1} exchanges, {fight.Victim.Landed} landed)");
 
         var call = w.Match.Penalties.FirstOrNone(p => p.PlayerId == them.Id);
-        Check(call.Is(c => string.Equals(c.Infraction, FightTuning.Infraction, StringComparison.Ordinal) && Math.Abs(c.SecondsLeft - Penalties.MinorSeconds(w)) < 0.01f) && !them.OnIce && Penalties.InBox(w, them.Id),
-            "the loser goes to the box for two minutes for fighting");
+        Check(call.Is(c => string.Equals(c.Infraction, FightTuning.Infraction, StringComparison.Ordinal) && Math.Abs(c.SecondsLeft - Penalties.MinorSeconds(w)) < 0.01f) && Penalties.OnTheWay(w, them.Id) && Penalties.InBox(w, them.Id),
+            "the loser skates to the box for two minutes for fighting");
         Check(events.Exists(e => e is PenaltyCalled pen && pen.PlayerId == them.Id) && me.OnIce && !Penalties.InBox(w, me.Id) && me.Action == PlayerAction.None,
             "a Penalty event is published for him; the winner stays on the ice");
         Run(w, x => x.Match.Phase == MatchPhase.Play, 15);
@@ -331,9 +331,9 @@ public sealed class FightTests : CheckedTest
         var me = Skater(w, Side.Home, PlayingPosition.C);
         var them = Skater(w, Side.Away, PlayingPosition.C);
         var events = HomeWins(w);
-        Check(Fighting5(w, me).HasValue && Fighting5(w, them).HasValue && Penalties.InBox(w, me.Id) && Penalties.InBox(w, them.Id) && !me.OnIce && !them.OnIce
+        Check(Fighting5(w, me).HasValue && Fighting5(w, them).HasValue && Penalties.InBox(w, me.Id) && Penalties.InBox(w, them.Id) && Penalties.OnTheWay(w, me.Id) && Penalties.OnTheWay(w, them.Id)
             && events.Count(e => e is PenaltyCalled) == 2 && !Penalties.Ejected(w, me.Id) && !Penalties.Ejected(w, them.Id),
-            "NHL: both fighters get a five minute major for fighting, winner and loser, and neither is ejected");
+            "NHL: both fighters get a five minute major for fighting, winner and loser, skate to the box, and neither is ejected");
         Run(w, x => x.Match.Phase == MatchPhase.Play, 15);
         Check(Skaters(w, Side.Home) == 5 && Skaters(w, Side.Away) == 5 && Penalties.PowerPlay(w) == SideOrNone.None,
             "NHL: the majors are coincidental and substituted, so play goes on five on five");

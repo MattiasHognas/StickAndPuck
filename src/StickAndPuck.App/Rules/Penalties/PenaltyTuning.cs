@@ -104,4 +104,31 @@ public static class PenaltyTuning
 
     /// <summary>Holding calls per second while a defender hangs on to a slowed carrier.</summary>
     public const float HoldRate = 0.004f;
+
+    /// <summary>How fast a penalised skater glides to the box (m/s): a steady cruise, not a sprint.</summary>
+    public const float TripSpeed = 6.5f;
+
+    /// <summary>How quickly he picks up speed on the way (m/s²).</summary>
+    public const float TripAccel = 5f;
+
+    /// <summary>How hard he slows for the door (m/s²), and the speed he steps through it at (m/s).</summary>
+    public const float TripBrake = 4f, TripDoorSpeed = 1.2f;
+
+    /// <summary>How quickly his skating line bends toward where he is going (per second).</summary>
+    public const float TripTurn = 5f;
+
+    /// <summary>How far out in front of the door he lines up before skating in (m from the near boards).</summary>
+    public const float TripLineUp = 2.2f;
+
+    /// <summary>Where he goes through the door: this far out from the near boards (m).</summary>
+    public const float TripInside = 0.5f;
+
+    /// <summary>How close to the door counts as through it (m).</summary>
+    public const float TripReach = 0.35f;
+
+    /// <summary>The longest a skate to the box takes before he is put in it (s).</summary>
+    public const float TripTimeout = 10f;
+
+    /// <summary>How long the faceoff waits after the last skater is in the box (s).</summary>
+    public const float TripAfter = 0.5f;
 }

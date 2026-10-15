@@ -39,6 +39,7 @@ internal sealed class PenaltyRules : ISystem, IDisposable
         if (!MatchFlow.IsRunning(world)) return;
         var book = Penalties.Book(world);
         var m = world.Match;
+        Penalties.Skate(world, book, dt);
         if (m.Phase is MatchPhase.Shootout or MatchPhase.Final || (m.Phase == MatchPhase.Overtime && !world.Setup.Rules.PenaltiesCarryIntoOvertime))
         {
             EndOfRegulation(world, book);

@@ -9,7 +9,7 @@ using static Raylib_cs.Raylib;
 namespace StickAndPuck.App.Benches;
 
 /// <summary>Draws both clubs' benches: everyone dressed and off the ice in his club's kit and number,
-/// in the seats <see cref="BenchLayout"/> gives, moved by <see cref="BenchCrowd"/>. Render only:
+/// in the seats <see cref="BenchLayout"/> gives, and the skaters sitting in the penalty boxes, moved by <see cref="BenchCrowd"/>. Render only:
 /// the match runs the same with <see cref="Settings.Benches"/> on or off. Every clip frame is skinned
 /// once at load into static meshes, and a bench out of the camera's view is not drawn.</summary>
 internal sealed unsafe class BenchRenderer : ISystem, IDisposable
@@ -30,6 +30,9 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
 
     /// <summary>Gets the figures on the benches this step (none with the setting off).</summary>
     internal IReadOnlyList<BenchFigure> Figures => crowd.TryGet(out var c) ? c.Shown : [];
+
+    /// <summary>Gets the figures in the penalty boxes this step (none with the setting off).</summary>
+    internal IReadOnlyList<BenchFigure> Boxed => crowd.TryGet(out var c) ? c.InBoxes : [];
 
     /// <summary>Gets the benches' reactions and staff, once the setting has been on.</summary>
     internal Maybe<BenchReactions> Reactions => reactions;
@@ -100,6 +103,7 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
             events = demo.Events;
             fight = demo.FightOn;
         }
+        if (Dev.BoxDemo.Of(world).TryGet(out var box)) box.Run(world, DrawMs);
         c.Update(world, dt);
         r.Update(world, c, events, fight, dt);
     }
@@ -110,15 +114,11 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         draws.Clear();
         if (!loaded || !world.Settings.Benches) return;
         var camera = world.Camera;
-        bool home = InView(camera, Side.Home), away = InView(camera, Side.Away);
+        bool home = InView(camera, BenchLayout.Span(Side.Home), BenchLayout.SeatZ), away = InView(camera, BenchLayout.Span(Side.Away), BenchLayout.SeatZ);
+        bool homeBox = InView(camera, BenchLayout.BoxSpan(Side.Home), BenchLayout.BoxSeatZ), awayBox = InView(camera, BenchLayout.BoxSpan(Side.Away), BenchLayout.BoxSeatZ);
         float time = world.Time;
-        foreach (var f in Figures)
-        {
-            if (!(f.Player.Side == Side.Home ? home : away)) continue;
-            var look = BenchClips.Of(f, time);
-            if (!Frame(look, out int c, out int frame)) continue;
-            draws.Add(new Draw(look.Model, c, frame, Spot(f), f.Heading, Kit(world, f.Player, BenchClips.BareAt(f, time)), MaskIds.For(f.Player.MaskId)));
-        }
+        foreach (var f in Figures) Add(world, f, f.Player.Side == Side.Home ? home : away, time);
+        foreach (var f in Boxed) Add(world, f, f.Player.Side == Side.Home ? homeBox : awayBox, time);
         if (reactions.TryGet(out var r))
         {
             for (int i = 0; i < r.Staff.Count; i++)
@@ -132,6 +132,13 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         draws.Sort(static (a, b) => a.Model != b.Model ? a.Model - b.Model : a.Clip != b.Clip ? a.Clip - b.Clip : a.Frame - b.Frame);
     }
 
+    void Add(World world, BenchFigure f, bool seen, float time)
+    {
+        var look = BenchClips.Of(f, time);
+        if (!seen || !Frame(look, out int c, out int frame)) return;
+        draws.Add(new Draw(look.Model, c, frame, Spot(f), f.Heading, Kit(world, f.Player, BenchClips.BareAt(f, time)), MaskIds.For(f.Player.MaskId)));
+    }
+
     /// <summary>Gets a look's clip and whole frame.</summary>
     bool Frame(BenchLook look, out int c, out int frame)
     {
@@ -143,16 +150,16 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         return true;
     }
 
-    /// <summary>Gets whether any of a bench is inside the camera's view across the rink.</summary>
-    static bool InView(Camera3D camera, Side side)
+    /// <summary>Gets whether any of a bench or penalty box, its x range at a depth, is inside the camera's view across the rink.</summary>
+    static bool InView(Camera3D camera, (float From, float To) span, float z)
     {
         var forward = Vector3.Normalize(camera.Target - camera.Position);
         var right = Vector3.Normalize(Vector3.Cross(forward, Vector3.UnitY));
         float half = MathF.Atan(MathF.Tan(camera.FovY * MathF.PI / 360f) * Game.Width / Game.Height) + 0.1f;
-        var (from, to) = BenchLayout.Span(side);
+        var (from, to) = span;
         for (float x = from; x <= to + 0.01f; x += (to - from) / 4f)
         {
-            var d = new Vector3(x, 1f, BenchLayout.SeatZ) - camera.Position;
+            var d = new Vector3(x, 1f, z) - camera.Position;
             float across = Vector3.Dot(d, right), ahead = Vector3.Dot(d, forward);
             if (ahead > 0 && MathF.Atan2(MathF.Abs(across), ahead) < half) return true;
         }
@@ -161,6 +168,7 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
 
     static Vector3 Spot(BenchFigure f)
     {
+        if (f.InBox) return new Vector3(f.X, f.Standing ? 0f : BenchClips.BoxSeatLift, f.Standing ? BenchLayout.BoxStandZ : BenchLayout.BoxSeatZ);
         float lift = f.Standing ? 0f : f.Player.IsGoalie ? BenchClips.GoalieLift : BenchClips.SeatLift;
         return new Vector3(f.X, lift, f.Standing ? BenchLayout.StandZ : BenchLayout.SeatZ);
     }
