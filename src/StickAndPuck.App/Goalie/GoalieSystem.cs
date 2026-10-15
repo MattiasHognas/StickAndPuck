@@ -129,15 +129,16 @@ internal sealed partial class GoalieSystem : ISystem, IDisposable
         }
     }
 
-    /// <summary>The chance a covered shot is stopped: reflexes, the hand on that side and the shot's speed set how
-    /// many squeeze through, a share that grows from <see cref="GoalieTuning.CentreMiss"/> times as many for a shot
-    /// into the middle of the goalie to <see cref="GoalieTuning.EdgeMiss"/> times for one at the edge of the reach.</summary>
+    /// <summary>The chance a covered shot is stopped. Reflexes and the shot's speed set how many squeeze through,
+    /// a share that grows from <see cref="GoalieTuning.CentreMiss"/> times as many for a shot into the middle of the
+    /// goalie to <see cref="GoalieTuning.EdgeMiss"/> times for one at the edge of the reach; the hand on that side
+    /// then adds or takes off its share wherever the shot meets it.</summary>
     static float CleanChance(Player g, float speed, float cover, int hand)
     {
-        float chance = GoalieModel.ByReflexes(g.Data.Traits, GoalieTuning.CleanSlow, GoalieTuning.CleanFast);
-        chance += Traits.Scale(hand, -GoalieTuning.HandClean, GoalieTuning.HandClean);
-        chance -= GoalieTuning.HardShotPenalty * Math.Clamp((speed - GoalieTuning.FastShot) / (45f - GoalieTuning.FastShot), 0f, 1f);
-        return 1f - ((1f - chance) * (GoalieTuning.CentreMiss + ((GoalieTuning.EdgeMiss - GoalieTuning.CentreMiss) * cover)));
+        float miss = 1f - GoalieModel.ByReflexes(g.Data.Traits, GoalieTuning.CleanSlow, GoalieTuning.CleanFast);
+        miss += GoalieTuning.HardShotPenalty * Math.Clamp((speed - GoalieTuning.FastShot) / (45f - GoalieTuning.FastShot), 0f, 1f);
+        float chance = 1f - (MathF.Max(0f, miss) * (GoalieTuning.CentreMiss + ((GoalieTuning.EdgeMiss - GoalieTuning.CentreMiss) * cover)));
+        return chance + Traits.Scale(hand, -GoalieTuning.HandClean, GoalieTuning.HandClean);
     }
 
     void Save(World world, Player g, GoalieState state, int end, Vector3 at)
