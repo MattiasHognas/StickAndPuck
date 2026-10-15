@@ -1,4 +1,8 @@
+using System.Numerics;
+using System.Text.Json;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Players;
+using StickAndPuck.App.Rules;
 using StickAndPuck.App.Season;
 using StickAndPuck.Tests.Support;
 
@@ -131,6 +135,39 @@ public sealed class StatsTests : CheckedTest
         var done = r.Tracker.Finish();
         Check(done.PlayerOfGame.Is(star => star.Number == r.A.Data.Number && star.Side == Side.Home), $"player of the game is the hat-trick scorer ({done.PlayerOfGame.Select(x => x.Label).Or("none")})");
         Check(done.Lines.Count == r.W.Players.Count && done.Lines.Count(l => l.Played) == r.W.Players.Count(p => p.OnIce), "every dressed player has a line, the ones on the ice played");
+    }
+
+    [Test]
+    public void PenaltyKillClears()
+    {
+        var tracker = new MatchStatTracker();
+        var (w, step) = Rink(WorldBuilder.DefaultSetup, new Settings(), new Observer(tracker));
+        var shooter = Skater(w, Side.Away, 0);
+        var boxed = Skater(w, Side.Away, 1);
+        step(_ => { });
+        MatchStatLine Line() => tracker.Sheet.Lines.First(l => l.Number == shooter.Data.Number && l.Side == Side.Away);
+        int end = PuckHandling.AttackEnd(w, Side.Away);
+        void Shoot(float x) => step(s => s.Events.Publish(new ShotTaken(s.Time, Side.Away, shooter.Id, new Vector3(x, 0, 0), 30)));
+
+        // even strength: a dump-in from the own half is a shot
+        Shoot(-end * 10f);
+        Check(Line() is { Shots: 1, Clears: 0 }, $"an even-strength shot from the own half is a shot ({Line().Shots} shots, {Line().Clears} clears)");
+
+        // a man short: the same shot is a clear, a shot from the attacking half is still a shot
+        w.Match.Penalties.Add(new PenaltyState(boxed.Id, Side.Away, "tripping", 120));
+        boxed.OnIce = false;
+        Check(Penalties.PowerPlay(w).Is(Side.Home), "the home club is on the power play");
+        Shoot(-end * 10f);
+        Check(Line() is { Shots: 1, Clears: 1 }, $"a shorthanded shot from the own half is a clear ({Line().Shots} shots, {Line().Clears} clears)");
+        Shoot(end * 10f);
+        Check(Line() is { Shots: 2, Clears: 1 }, $"a shorthanded shot from the attacking half is a shot ({Line().Shots} shots, {Line().Clears} clears)");
+
+        // the season's line adds the clears up, and a save from before them reads as none
+        var table = new StatTable();
+        table.Add(tracker.Sheet);
+        Check(table.Find(w.Setup.Away.Id, shooter.Data.Number).Is(p => p.Clears == 1 && p.Shots == 2), "the season line adds the clears");
+        var old = JsonSerializer.Deserialize<PlayerStats>("""{"club":"x","number":7,"shots":4}""", new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        Check(old is { Clears: 0, Shots: 4 }, "a line saved without clears reads with none");
     }
 
     [Test]
