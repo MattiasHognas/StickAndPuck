@@ -22,6 +22,9 @@ public sealed class BenchFigure(Player player, float x, float phase)
     /// <summary>Gets the player.</summary>
     public Player Player { get; } = player;
 
+    /// <summary>Gets a value indicating whether the figure sits in his club's penalty box rather than on its bench.</summary>
+    public bool InBox { get; init; }
+
     /// <summary>Gets the figure's spot along the bench (x).</summary>
     public float X { get; internal set; } = x;
 
@@ -85,7 +88,7 @@ public sealed class BenchFigure(Player player, float x, float phase)
 /// and the figures walk along the bench to their new seats.</item>
 /// <item>Seated figures turn toward the puck, each at his own pace.</item>
 /// </list></summary>
-public sealed class BenchCrowd
+public sealed partial class BenchCrowd
 {
     /// <summary>How fast a figure walks along the bench (m/s).</summary>
     public const float WalkSpeed = 2.4f;
@@ -95,6 +98,7 @@ public sealed class BenchCrowd
 
     readonly Dictionary<int, BenchFigure> figures = [];
     readonly Dictionary<int, bool> wasOnIce = [];
+    readonly Dictionary<int, bool> cameOff = [];
     readonly List<BenchFigure> shown = [];
     readonly int seed;
 
@@ -115,7 +119,12 @@ public sealed class BenchCrowd
     public void Update(World world, float dt)
     {
         shown.Clear();
-        foreach (var side in (ReadOnlySpan<Side>)[Side.Home, Side.Away]) Club(world, side, dt);
+        boxShown.Clear();
+        foreach (var side in (ReadOnlySpan<Side>)[Side.Home, Side.Away])
+        {
+            Club(world, side, dt);
+            Box(world, side, dt);
+        }
     }
 
     /// <summary>Forgets every figure, so the next update seats everyone where he belongs.</summary>
@@ -124,6 +133,9 @@ public sealed class BenchCrowd
         figures.Clear();
         wasOnIce.Clear();
         shown.Clear();
+        boxed.Clear();
+        boxShown.Clear();
+        cameOff.Clear();
     }
 
     void Club(World world, Side side, float dt)
@@ -141,6 +153,7 @@ public sealed class BenchCrowd
             if (p.Side != side) continue;
             bool on = p.OnIce, before = wasOnIce.GetValueOrDefault(p.Id, on);
             wasOnIce[p.Id] = on;
+            cameOff[p.Id] = before && !on;
             if (!seats.TryGetValue(p.Id, out float seat))
             {
                 // on the ice or in the box

@@ -18,6 +18,15 @@ public static class BenchLayout
     /// <summary>Where a standing figure stands (z): in front of the seats, clear of the boards.</summary>
     public const float StandZ = -13.25f;
 
+    /// <summary>Where a figure sits in a penalty box (z): at the back of its seat (13.75 to 14.25 m out), mirroring <see cref="SeatZ"/>.</summary>
+    public const float BoxSeatZ = 14.3f;
+
+    /// <summary>Where a figure stands in a penalty box (z): in front of the seat.</summary>
+    public const float BoxStandZ = 13.4f;
+
+    /// <summary>The seats of a penalty box out from its door (m), in the order they fill: two out from the door away from centre, where the box has room, then two toward the timekeeper.</summary>
+    static readonly float[] BoxSeats = [0.45f, 1.2f, -0.45f, -1.2f];
+
     /// <summary>The space from the door to the first seat on either side (m).</summary>
     public const float DoorGap = 0.7f;
 
@@ -32,6 +41,15 @@ public static class BenchLayout
 
     /// <summary>Gets the door's x on a club's bench.</summary>
     public static float DoorX(Side side) => Squad.Door(side).X;
+
+    /// <summary>Gets the door's x on a club's penalty box.</summary>
+    public static float BoxDoorX(Side side) => Rules.Penalties.BoxDoor(side).X;
+
+    /// <summary>Gets the x of the k-th seat in a club's penalty box, k = 0 the first one filled.</summary>
+    public static float BoxSeatX(Side side, int k) => BoxDoorX(side) + MathF.Sign(BoxDoorX(side)) * BoxSeats[Math.Min(k, BoxSeats.Length - 1)];
+
+    /// <summary>Gets the x range of a club's penalty box.</summary>
+    public static (float From, float To) BoxSpan(Side side) => (BoxDoorX(side) - 1.9f, BoxDoorX(side) + 1.9f);
 
     /// <summary>Gets the way (+1 or -1 in x) from the door to the forwards' end: toward centre ice.</summary>
     public static float ForwardsWay(Side side) => side == Side.Home ? 1f : -1f;
