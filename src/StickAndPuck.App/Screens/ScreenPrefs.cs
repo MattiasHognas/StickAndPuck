@@ -56,7 +56,7 @@ internal static class ScreenPrefsFile
     {
         try
         {
-            if (File.Exists(path) && JsonSerializer.Deserialize<ScreenPrefs>(File.ReadAllText(path), Json) is { } prefs)
+            if (File.Exists(path) && FromJson(File.ReadAllText(path)) is var prefs)
                 return prefs with { PeriodMinutes = Math.Clamp(prefs.PeriodMinutes, 1, 20) };
         }
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
@@ -70,7 +70,27 @@ internal static class ScreenPrefsFile
     public static string ToJson(ScreenPrefs prefs) => JsonSerializer.Serialize(prefs, Json);
 
     /// <summary>Reads settings <see cref="ToJson"/> wrote.</summary>
-    public static ScreenPrefs FromJson(string json) => JsonSerializer.Deserialize<ScreenPrefs>(json, Json) ?? new ScreenPrefs();
+    public static ScreenPrefs FromJson(string json)
+    {
+        var prefs = JsonSerializer.Deserialize<ScreenPrefs>(json, Json) ?? new ScreenPrefs();
+        return OldVolume(json).TryGet(out float volume) ? prefs with { Settings = prefs.Settings with { EffectsVolume = volume } } : prefs;
+    }
+
+    /// <summary>The single "volume" settings saved before the overall, effects and music volumes: it is the effects volume now.</summary>
+    static Maybe<float> OldVolume(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object) return Maybe<float>.None;
+        var settings = doc.RootElement.EnumerateObject().Where(p => Named(p, "settings") && p.Value.ValueKind == JsonValueKind.Object).Select(p => p.Value).ToList();
+        if (settings.Count == 0 || settings[0].EnumerateObject().Any(p => Named(p, nameof(Settings.EffectsVolume)))) return Maybe<float>.None;
+        foreach (var p in settings[0].EnumerateObject())
+        {
+            if (Named(p, "volume") && p.Value.ValueKind == JsonValueKind.Number && p.Value.TryGetSingle(out float volume)) return Math.Clamp(volume, 0, 1);
+        }
+        return Maybe<float>.None;
+    }
+
+    static bool Named(JsonProperty p, string name) => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Writes the settings to <see cref="DefaultPath"/>; a failure is logged, never fatal.</summary>
     public static void Write(ScreenPrefs prefs)

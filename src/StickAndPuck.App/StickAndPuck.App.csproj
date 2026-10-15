@@ -44,6 +44,7 @@
     <None Include="$(RepoRoot)art/palette/*.gpl" LinkBase="art/palette" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json" LinkBase="art/ui" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RepoRoot)art/audio/*.wav" LinkBase="art/audio" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepoRoot)art/audio/music/*.wav" LinkBase="art/audio/music" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RepoRoot)data/**/*.json" LinkBase="data" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

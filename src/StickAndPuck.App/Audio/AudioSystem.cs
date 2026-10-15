@@ -6,7 +6,8 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Audio;
 
-/// <summary>Plays the generated 8-bit effects for each match event and puck contact. Runs after every
+/// <summary>Plays the generated 8-bit effects for each match event and puck contact, and the music
+/// (<see cref="MusicPlayer"/>) under the overall volume. Runs after every
 /// publisher, reads this step's <see cref="MatchEvents"/> and maps them through
 /// <see cref="SoundCues"/>; it also watches the puck, so a pickup or a deflection nobody published
 /// still clicks. With no audio device it stays silent and the game runs on.
@@ -25,6 +26,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
     readonly Dictionary<Sfx, int> next = [];
     readonly Dictionary<Sfx, float> lastStart = [];
     readonly List<(float At, Cue Cue, float Pan)> delayed = [];
+    readonly MusicPlayer music = new();
     float clock;
     int played;
     bool ready;
@@ -60,6 +62,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
             sounds[sfx] = copies;
         }
 
+        music.Load();
         ready = true;
         Console.WriteLine($"SAP: audio: {sounds.Count} of {Enum.GetValues<Sfx>().Length} sounds loaded from {SfxTable.Folder}");
     }
@@ -68,6 +71,8 @@ internal sealed class AudioSystem : ISystem, IDisposable
     {
         clock += dt;
         if (!ready) return;
+        SetMasterVolume(Math.Clamp(world.Settings.OverallVolume, 0, 1));
+        music.Update(world);
 
         bool puckEvent = false;
         foreach (var e in world.Events.Current)
@@ -97,6 +102,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
         }
 
         sounds.Clear();
+        music.Dispose();
         CloseAudioDevice();
         Console.WriteLine($"SAP: audio: {played} sounds played");
     }
@@ -158,7 +164,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
         int i = next.GetValueOrDefault(cue.Sound);
         next[cue.Sound] = (i + 1) % copies.Length;
         var sound = copies[i];
-        SetSoundVolume(sound, Math.Clamp(world.Settings.Volume * info.Volume * cue.Volume, 0, 1));
+        SetSoundVolume(sound, Math.Clamp(world.Settings.EffectsVolume * info.Volume * cue.Volume, 0, 1));
         SetSoundPitch(sound, cue.Pitch * (info.Spatial ? Detune[i % Detune.Length] : 1));
         SetSoundPan(sound, info.Spatial ? pan : 0);
         PlaySound(sound);

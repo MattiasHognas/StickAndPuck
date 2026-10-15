@@ -9,7 +9,7 @@ namespace StickAndPuck.App.Screens;
 /// rule, penalties and fights among them). Game: control switching, line changes, difficulty,
 /// period length, sim game, auto deke, one-timers. Controls: player one's and
 /// player two's devices, the key mapping page, the control marker. Display and sound: camera zoom, lighting mood, swap
-/// kits, volume, language, the graphics card (leaving starts the game again on a newly picked card, which
+/// kits, the overall, effects and music volumes, language, the graphics card (leaving starts the game again on a newly picked card, which
 /// opens here asking to keep it: Enter keeps it, Esc or 10 seconds go back to the card before). Debug: the fps line, the match line, the lines panel. Left and right change a
 /// value; it applies to the world on show at once (so a paused match plays on with it) and every
 /// later match, and is saved on leaving. The list scrolls when it is taller than the frame. A
@@ -64,7 +64,9 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
             new MenuItem(Text.Get(K.Lighting), value: Text.Get(s.Lighting switch { LightingMood.Early => K.LightingEarly, LightingMood.Afternoon => K.LightingAfternoon, LightingMood.Late => K.LightingLate, _ => K.LightingRandom }), change: d => Set(s with { Lighting = Cycle(s.Lighting, d) })),
             new MenuItem(Text.Get(K.SwapKits), value: OnOff(s.SwapKits), change: _ => Set(s with { SwapKits = !s.SwapKits })),
             new MenuItem(Text.Get(K.Benches), value: OnOff(s.Benches), change: _ => Set(s with { Benches = !s.Benches })),
-            new MenuItem(Text.Get(K.Volume), value: ((int)MathF.Round(s.Volume * 10)).ToString(CultureInfo.InvariantCulture), change: Volume),
+            new MenuItem(Text.Get(K.OverallVolume), value: Tenths(s.OverallVolume), change: d => Set(s with { OverallVolume = Step(s.OverallVolume, d) })),
+            new MenuItem(Text.Get(K.EffectsVolume), value: Tenths(s.EffectsVolume), change: d => Set(s with { EffectsVolume = Step(s.EffectsVolume, d) })),
+            new MenuItem(Text.Get(K.MusicVolume), value: Tenths(s.MusicVolume), change: d => Set(s with { MusicVolume = Step(s.MusicVolume, d) })),
             new MenuItem(Text.Get(K.Language), value: Text.NameOf(s.Language), change: d => Set(s with { Language = Cycle(s.Language, d) })),
             new MenuItem(Text.Get(K.GraphicsCard), value: Card().Name, change: Gpu),
             new MenuItem(Text.Get(K.FpsLine), value: OnOff(s.FpsLine), change: _ => Set(s with { FpsLine = !s.FpsLine })),
@@ -185,10 +187,9 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
         Flow.Prefs = Prefs with { Player2 = Cycle(Player2Devices, Prefs.Player2, dir) };
     }
 
-    void Volume(int dir)
-    {
-        var s = Prefs.Settings;
-        float v = Math.Clamp(MathF.Round((s.Volume * 10) + dir) / 10f, 0, 1);
-        Set(s with { Volume = v });
-    }
+    /// <summary>A volume as the row shows it, 0 to 10.</summary>
+    static string Tenths(float volume) => ((int)MathF.Round(volume * 10)).ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>A volume one step of ten up or down, held between 0 and 1.</summary>
+    internal static float Step(float volume, int dir) => Math.Clamp(MathF.Round((volume * 10) + dir) / 10f, 0, 1);
 }
