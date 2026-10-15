@@ -16,6 +16,8 @@ namespace StickAndPuck.App.AI;
 /// smart club finds open teammates up the ice and a poor one passes into sticks.</item>
 /// <item>Shots: a wrist shot in close or under pressure, a slap shot from the point with time,
 /// aimed away from where the goalie leans. Shot accuracy makes a skater shoot from further out.</item>
+/// <item>Dekes and one-timers: a carrier skating at a defender may deke him, better timed with more
+/// hockey IQ; the teammate a pass is meant for may one-time it from a good shooting spot.</item>
 /// <item>Chase: the teammate a pass is meant for skates onto its line to meet it, and after a
 /// shot the forward nearest the net crashes it for the rebound. Loose pucks are chased by
 /// positioning's chaser.</item>
@@ -36,7 +38,7 @@ namespace StickAndPuck.App.AI;
 /// skater, one branch of <see cref="Update"/> runs, in this order: a committed shot is held; a
 /// delayed pass goes; a carrier holds up at the line (unless special teams or tactics claimed him
 /// this step) and looks at the play; a receiver meets the pass; the chaser pounces; the crasher
-/// goes to the net; a presser hits. Candidate passes are weighed without touching anyone.</item>
+/// goes to the net; a presser hits. A carrier may deke before his look, and the receiver may hold shoot for a one-timer. Candidate passes are weighed without touching anyone.</item>
 /// <item>After a human's pass, control follows the puck to a receiver who would otherwise
 /// skate off on the stick still held for the pass. Until he or anyone touches the puck, or the
 /// pass dies, his Move and Sprint are replaced with a skate to where his blade meets the puck's
@@ -96,11 +98,12 @@ internal sealed partial class DecisionSystem : ISystem
             if (pk.Carrier == p.Id)
             {
                 if (!AiCommand.Held(world, p)) HoldLine(world, p, brain);   // a dump taken wide stays wide
+                if (!AiCommand.Held(world, p) && Deke(world, p, brain)) continue;
                 Carry(world, p, brain);
                 continue;
             }
             brain.LatePass = Maybe<PassOption>.None;
-            if (MeetPass(world, board, p)) continue;
+            if (OneTimer(world, board, p, brain)) continue;
             if (Positioning.JobOf(world, p) == Job.Chase && pk.Carrier < 0) { Pounce(world, p); continue; }
             if (p.Id == crasher) { CrashNet(world, p); continue; }
             Hit(world, board, p, brain);
@@ -152,7 +155,17 @@ internal sealed partial class DecisionSystem : ISystem
         board.LastCarrier = pk.Carrier;
 
         if (!board.Pass.TryGet(out var pass)) { board.Meet = Maybe<HumanMeet>.None; return; }
-        if (pk.Carrier >= 0 && pk.Carrier < world.Players.Count)
+        if (pk.Carrier < 0 && OneTimed(world, pass).TryGet(out var shooter))
+        {
+            // struck on arrival without being carried: the pass reached him and was shot
+            var tally = board.Tally[(int)pass.Side];
+            tally.Completed++;
+            tally.Shots++;
+            board.Shot = (shooter.Side, world.Time);
+            board.Pass = Maybe<InFlight>.None;
+            board.Meet = Maybe<HumanMeet>.None;
+        }
+        else if (pk.Carrier >= 0 && pk.Carrier < world.Players.Count)
         {
             var tally = board.Tally[(int)pass.Side];
             if (world.Players[pk.Carrier].Side == pass.Side) tally.Completed++;
@@ -165,6 +178,15 @@ internal sealed partial class DecisionSystem : ISystem
             board.Pass = Maybe<InFlight>.None;
             board.Meet = Maybe<HumanMeet>.None;
         }
+    }
+
+    /// <summary>The teammate who one-timed the pass in flight: the loose puck last touched by a teammate of the passer, shooting.</summary>
+    static Maybe<Player> OneTimed(World world, InFlight pass)
+    {
+        int last = world.Puck.LastTouch;
+        if (last == pass.Passer || last < 0 || last >= world.Players.Count) return Maybe<Player>.None;
+        var p = world.Players[last];
+        return p.Side == pass.Side && p.Action == PlayerAction.Shoot ? p : Maybe<Player>.None;
     }
 
     /// <summary>Counts how open and how much on the move the teammate an AI pass was aimed at was.</summary>

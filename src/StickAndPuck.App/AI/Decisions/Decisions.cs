@@ -57,6 +57,12 @@ public sealed class DecisionTally
     /// <summary>Gets or sets the times an AI carrier came up to the blue line with a teammate offside and weighed holding up.</summary>
     public int HoldLooks { get; set; }
 
+    /// <summary>Gets or sets the dekes the AI pressed.</summary>
+    public int Dekes { get; set; }
+
+    /// <summary>Gets or sets the passes an AI receiver held shoot for, to one-time them.</summary>
+    public int OneTimers { get; set; }
+
     /// <summary>Gets the share of passes that reached a teammate, 0 to 1.</summary>
     public float Completion => Passes == 0 ? 0f : (float)Completed / Passes;
 }
@@ -169,6 +175,21 @@ internal sealed class Brain
 
     /// <summary>Gets or sets until when this skater goes for a hit on the carrier.</summary>
     public float HitUntil { get; set; } = float.NegativeInfinity;
+
+    /// <summary>Gets or sets the defender this carrier last read for a deke.</summary>
+    public int DekeFor { get; set; } = -1;
+
+    /// <summary>Gets or sets when that defender was read.</summary>
+    public float DekeRolled { get; set; } = float.NegativeInfinity;
+
+    /// <summary>Gets or sets the distance to the defender, in metres, at which this carrier presses deke; minus infinity for no deke.</summary>
+    public float DekeAt { get; set; } = float.NegativeInfinity;
+
+    /// <summary>Gets or sets the pass (its <see cref="InFlight.At"/>) whose one-timer was read, so it is rolled once.</summary>
+    public float OneTimerRun { get; set; } = float.NaN;
+
+    /// <summary>Gets or sets a value indicating whether this receiver is one-timing the pass in flight.</summary>
+    public bool OneTiming { get; set; }
 
     /// <summary>Gets or sets the step on which special teams or tactics last claimed this carrier's next action (<see cref="AiCommand.Hold"/>).</summary>
     public long HeldTick { get; set; } = long.MinValue;
