@@ -142,7 +142,7 @@ public sealed class MomentumTests : CheckedTest
         var s = Boost.State(w);
         float first = s.CrowdVolume;
         Run(w, x => x.Time - start >= 8f);
-        float w12 = 0.35f * w.Settings.Volume;
+        float w12 = 0.35f * w.Settings.EffectsVolume;
         Check(s.Swells >= 3 && first > w12 * 2, $"after a goal the crowd swells {s.Swells} times in 8 s, first at volume {first:0.00} (W12's goal crowd {w12:0.00})");
         Check(s.CrowdVolume < first && MomentumSystem.CrowdVolume(0.3f, 1f) < MomentumSystem.CrowdVolume(1f, 1f), "the crowd quiets as the boost drains");
     }

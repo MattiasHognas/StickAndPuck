@@ -96,8 +96,14 @@ public static partial class Text
         /// <summary>BENCHES</summary>
         public const string Benches = nameof(Benches);
 
-        /// <summary>VOLUME</summary>
-        public const string Volume = nameof(Volume);
+        /// <summary>OVERALL VOLUME</summary>
+        public const string OverallVolume = nameof(OverallVolume);
+
+        /// <summary>EFFECTS VOLUME</summary>
+        public const string EffectsVolume = nameof(EffectsVolume);
+
+        /// <summary>MUSIC VOLUME</summary>
+        public const string MusicVolume = nameof(MusicVolume);
 
         /// <summary>LANGUAGE</summary>
         public const string Language = nameof(Language);

@@ -116,7 +116,7 @@ internal sealed class MomentumSystem : ISystem, IDisposable
         swell = MomentumTuning.SwellGap;
         var state = Momentum.State(world);
         state.Swells++;
-        state.CrowdVolume = CrowdVolume(level, world.Settings.Volume);
+        state.CrowdVolume = CrowdVolume(level, world.Settings.EffectsVolume);
         if (!sound) return;
         var s = crowd[voice];
         voice = (voice + 1) % Voices;

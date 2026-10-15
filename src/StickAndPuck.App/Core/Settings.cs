@@ -108,8 +108,15 @@ public sealed record Settings
     /// <summary>Gets the language the game shows (SAP_LANGUAGE=english|swedish).</summary>
     public Language Language { get; init; } = Language.English;
 
-    /// <summary>Gets the sound effect volume, 0 to 1.</summary>
-    public float Volume { get; init; } = 0.8f;
+    /// <summary>Gets the overall volume, 0 to 1: Raylib's master volume, over the effects and the music.</summary>
+    public float OverallVolume { get; init; } = 1f;
+
+    /// <summary>Gets the sound effect volume, 0 to 1 (the crowd too). A settings.json from before there were three
+    /// volumes kept only "volume"; <see cref="Screens.ScreenPrefsFile"/> carries it over to this.</summary>
+    public float EffectsVolume { get; init; } = 0.8f;
+
+    /// <summary>Gets the music volume, 0 to 1 (the menu, intermission and end-of-game tracks).</summary>
+    public float MusicVolume { get; init; } = 0.6f;
 
     /// <summary>Gets the graphics card the game draws on, by <see cref="GpuCard.Id"/> (SAP_GPU=id or part of the
     /// card's name). "" is the machine's default card. <see cref="GpuLaunch"/> starts the game on it.</summary>
