@@ -111,6 +111,18 @@ public static partial class Text
         /// <summary>LINES PANEL</summary>
         public const string LinesPanel = nameof(LinesPanel);
 
+        /// <summary>GRAPHICS CARD</summary>
+        public const string GraphicsCard = nameof(GraphicsCard);
+
+        /// <summary>RUNNING ON {0}</summary>
+        public const string GpuRunning = nameof(GpuRunning);
+
+        /// <summary>ESC RESTARTS THE GAME ON {0}</summary>
+        public const string GpuRestart = nameof(GpuRestart);
+
+        /// <summary>KEEP THIS CARD?   ENTER KEEPS   BACK IN {0}</summary>
+        public const string GpuKeep = nameof(GpuKeep);
+
         /// <summary>BACK</summary>
         public const string Back = nameof(Back);
 

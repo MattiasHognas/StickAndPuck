@@ -9,7 +9,8 @@ namespace StickAndPuck.App.Screens;
 /// rule, penalties and fights among them). Game: control switching, line changes, difficulty,
 /// period length, sim game, auto deke, one-timers. Controls: player one's and
 /// player two's devices, the key mapping page, the control marker. Display and sound: camera zoom, lighting mood, swap
-/// kits, volume, language. Debug: the fps line, the match line, the lines panel. Left and right change a
+/// kits, volume, language, the graphics card (leaving starts the game again on a newly picked card, which
+/// opens here asking to keep it: Enter keeps it, Esc or 10 seconds go back to the card before). Debug: the fps line, the match line, the lines panel. Left and right change a
 /// value; it applies to the world on show at once (so a paused match plays on with it) and every
 /// later match, and is saved on leaving. The list scrolls when it is taller than the frame. A
 /// running match stays paused while this screen is up (<see cref="ScreenSystem"/> holds every
@@ -21,10 +22,16 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
     /// <summary>Rows shown at once; the rest scroll into view.</summary>
     const int Visible = 14;
 
+    /// <summary>Steps a newly picked graphics card waits to be kept before the game goes back to the card before.</summary>
+    const int KeepSteps = 600;
+
     static readonly ImmutableArray<InputDevice> Devices = [InputDevice.KeyboardMouse, InputDevice.Gamepad1];
     static readonly ImmutableArray<InputDevice> Player2Devices = [InputDevice.None, InputDevice.KeyboardMouse, InputDevice.Gamepad1, InputDevice.Gamepad2];
 
     Maybe<World> world;
+    Maybe<string> gpu;    // the card picked on this visit
+    bool reverting;
+    int keepWait;
     int first;
 
     ScreenPrefs Prefs => Flow.Prefs;
@@ -59,6 +66,7 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
             new MenuItem(Text.Get(K.Benches), value: OnOff(s.Benches), change: _ => Set(s with { Benches = !s.Benches })),
             new MenuItem(Text.Get(K.Volume), value: ((int)MathF.Round(s.Volume * 10)).ToString(CultureInfo.InvariantCulture), change: Volume),
             new MenuItem(Text.Get(K.Language), value: Text.NameOf(s.Language), change: d => Set(s with { Language = Cycle(s.Language, d) })),
+            new MenuItem(Text.Get(K.GraphicsCard), value: Card().Name, change: Gpu),
             new MenuItem(Text.Get(K.FpsLine), value: OnOff(s.FpsLine), change: _ => Set(s with { FpsLine = !s.FpsLine })),
             new MenuItem(Text.Get(K.MatchDebugLine), value: OnOff(s.MatchDebug), change: _ => Set(s with { MatchDebug = !s.MatchDebug })),
             new MenuItem(Text.Get(K.LinesPanel), value: OnOff(s.LinesDebug), change: _ => Set(s with { LinesDebug = !s.LinesDebug })),
@@ -71,6 +79,27 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
     {
         this.world = world;
         world.Match.Paused = true;    // a running match waits while the settings are open
+        if (GpuLaunch.Unconfirmed.TryGet(out var before))
+        {
+            if (press.Contains(MenuButton.Accept))
+            {
+                GpuLaunch.Keep();
+                Console.WriteLine($"SAP: gpu: kept {GpuLaunch.Running.Name}");
+                return;
+            }
+
+            if (press.Contains(MenuButton.Back) || ++keepWait >= KeepSteps)
+            {
+                Console.WriteLine($"SAP: gpu: not kept, back to {before.Name}");
+                GpuLaunch.Keep();
+                reverting = true;
+                gpu = before.IsDefault ? "" : before.Id;
+                Set(Prefs.Settings with { Gpu = gpu.Or("") });
+                Back();
+                return;
+            }
+        }
+
         base.Update(world, press);
     }
 
@@ -89,7 +118,11 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
         top += ScreenArt.Row / 2;
         art.Menu(items.Skip(first).Take(shown).ToList(), Selected - first, x, PanelW, top);
         if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
-        art.Hint(Text.Get(K.HintSettings));
+        bool onGpu = Selected < items.Count && string.Equals(items[Selected].Label, Text.Get(K.GraphicsCard), StringComparison.Ordinal);
+        art.Hint(GpuLaunch.Unconfirmed.HasValue ? Text.Format(K.GpuKeep, (KeepSteps - keepWait + 59) / 60)
+            : !onGpu ? Text.Get(K.HintSettings)
+            : gpu.HasValue && GpuLaunch.CanSwitch && !string.Equals(Card().Id, GpuLaunch.Running.Id, StringComparison.Ordinal) ? Text.Format(K.GpuRestart, Card().Name)
+            : Text.Format(K.GpuRunning, GpuCards.ShortRenderer(GpuCards.Renderer)));
     }
 
     /// <inheritdoc/>
@@ -98,6 +131,7 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
         if (world.TryGet(out var onShow)) Flow.ApplySettings(onShow);
         Console.WriteLine($"SAP: screens: settings saved, {Prefs}");
         Flow.Pop();
+        if (gpu.TryGet(out string picked) && GpuLaunch.Request(picked, confirm: !reverting)) Flow.Quit();    // GpuLaunch starts the game again on it
     }
 
     static string OnOff(bool on) => Text.Get(on ? K.On : K.Off);
@@ -120,6 +154,17 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
     {
         Flow.Prefs = Prefs with { Settings = settings };
         if (world.TryGet(out var onShow)) ScreenFlow.Apply(onShow, Flow.Settings);
+    }
+
+    /// <summary>The card the row shows: the one picked here, else the one the settings (and SAP_GPU) ask for.</summary>
+    GpuCard Card() => GpuCards.Resolve(GpuCards.All, gpu.Or(Flow.Settings.Gpu));
+
+    void Gpu(int dir)
+    {
+        if (GpuCards.All.Count == 0) return;
+        var card = Cycle([.. GpuCards.All], Card(), dir);
+        gpu = card.IsDefault ? "" : card.Id;
+        Set(Prefs.Settings with { Gpu = gpu.Or("") });
     }
 
     void Period(int dir)

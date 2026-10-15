@@ -111,12 +111,16 @@ public sealed record Settings
     /// <summary>Gets the sound effect volume, 0 to 1.</summary>
     public float Volume { get; init; } = 0.8f;
 
+    /// <summary>Gets the graphics card the game draws on, by <see cref="GpuCard.Id"/> (SAP_GPU=id or part of the
+    /// card's name). "" is the machine's default card. <see cref="GpuLaunch"/> starts the game on it.</summary>
+    public string Gpu { get; init; } = "";
+
     /// <summary>Gets the rebound keys and gamepad buttons; an action missing here keeps its default. Read them with <see cref="KeyBindings.Of"/>.</summary>
     public IReadOnlyDictionary<GameAction, KeyBinding> Keys { get; init; } = new Dictionary<GameAction, KeyBinding>();
 
     /// <summary>Lays the SAP_* overrides over these settings: SAP_DIFFICULTY, SAP_CAMERA_ZOOM, SAP_LIGHTING,
     /// SAP_CONTROL_MARKER, SAP_SIM_GAME, SAP_AUTO_DEKE, SAP_ONE_TIMERS, SAP_SWAP_KITS, SAP_BENCHES, SAP_FPS,
-    /// SAP_MATCH_DEBUG, SAP_LINES_DEBUG and SAP_LANGUAGE. A variable that is unset or empty changes nothing, so
+    /// SAP_MATCH_DEBUG, SAP_LINES_DEBUG, SAP_LANGUAGE and SAP_GPU. A variable that is unset or empty changes nothing, so
     /// the saved settings stay in charge; a bad value is an error, like SAP_LIGHTING always was.</summary>
     public static Settings FromEnvironment() => FromEnvironment(new Settings());
 
@@ -137,6 +141,7 @@ public sealed record Settings
         if (Choice<LightingMood>("SAP_LIGHTING").TryGet(out var mood)) s = s with { Lighting = mood };
         if (Choice<Difficulty>("SAP_DIFFICULTY").TryGet(out var level)) s = s with { Difficulty = level };
         if (Choice<Language>("SAP_LANGUAGE").TryGet(out var language)) s = s with { Language = language };
+        if (Env.Get("SAP_GPU") is { Length: > 0 } gpu) s = s with { Gpu = gpu.Trim() };
         return s;
     }
 
