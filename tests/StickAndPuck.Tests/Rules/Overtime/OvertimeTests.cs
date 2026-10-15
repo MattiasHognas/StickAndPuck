@@ -215,7 +215,7 @@ public sealed class OvertimeTests : CheckedTest
         Run(w, _ => false, limit: Game.Step);
         int Skaters(Side side) => w.OnIce(side).Count(p => !p.IsGoalie);
         Check(w.Match.Phase == MatchPhase.Overtime && Skaters(Side.Home) == 5 && Skaters(Side.Away) == 5, "playoffs: a tie after regulation keeps five skaters a side");
-        Check(w.Controlled(0).Is(p => p is { OnIce: true, Data.Position: PlayingPosition.LW }), "the human keeps the wing");
+        Check(w.Controlled(0).Is(p => p is { OnIce: true, Side: Side.Home, IsGoalie: false }), "the human keeps a skater (the centre, for the draw)");
         Run(w, x => x.Match.Phase == MatchPhase.Play, limit: 10);
         Check(w.Match.Period == 4 && w.Puck.Live && Skaters(Side.Home) == 5 && Skaters(Side.Away) == 5, "period 4 drops 5 on 5");
         Check(MathF.Abs(OvertimeRules.PeriodLength(w) - Period) < 1e-3f, "the overtime period has the format's length");

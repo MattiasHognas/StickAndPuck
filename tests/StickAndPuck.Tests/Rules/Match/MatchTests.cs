@@ -238,7 +238,9 @@ public sealed class MatchTests : CheckedTest
         Run(w, x => x.Match.Phase == MatchPhase.Faceoff, 10);
         RunFor(w, MatchTuning.FaceoffSeconds * 3);
         Check(w.Match.Phase == MatchPhase.Faceoff && !w.Puck.Live, "the faceoff waits for the referee");
-        Check(MatchFlow.Drop(w) && w.Puck.Live && w.Match.Phase == MatchPhase.Play, "Drop puts the puck in play");
+        Check(MatchFlow.Drop(w) && !w.Puck.Live, "Drop opens the draw with the puck still dead");
         Check(!MatchFlow.Drop(w), "a second Drop does nothing");
+        Run(w, x => x.Match.Phase == MatchPhase.Play, 1);
+        Check(w.Puck.Live && w.Match.Phase == MatchPhase.Play, "the draw puts the puck in play");
     }
 }
