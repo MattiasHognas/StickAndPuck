@@ -161,6 +161,22 @@ def skater_windup(i):                       # a one-timer waiting on the pass: s
     reach('L', m @ GRIP + d.normalized() * WU_LOW, pole=(1, 0.3, -0.6))
 WU_HAND, WU_DIR, WU_LOW = (0.02, -0.28, 0.72), (0.7, 0.55, 0.3), 0.38
 
+def faceoff_stance(i, drop, bend, hand, d):     # set for the draw: knees bent, back over, head up at the dot, both gloves on the stick, blade flat on the ice
+    bob = [0, 1][i]
+    shift(y=0.10 * bend, z=-drop - 0.012 * bob); turn('pelvis', x=bend * 0.45)
+    plant(spread=0.10, pole=(0, -1, 0))
+    turn('spine', x=bend * 0.55); turn('chest', x=bend * 0.15)
+    turn('neck', x=-bend * 0.65); turn('head', x=-bend * 0.25)
+    reach('R', V(hand) + V((0, 0, -0.01 * bob)), pole=(-1, 0.3, -0.6))
+    stick_dir(d, floor=0.0)
+    m = PB[SB].matrix @ B[SB].matrix_local.inverted()
+    reach('L', m @ GRIP + V(d).normalized() * FO_LOW, pole=(1, 0.3, -0.6))
+FO_LOW = 0.40
+def skater_faceoff_crouch(i):               # a winger or defenceman set at the circle, held
+    faceoff_stance(i, 0.19, 0.55, (0.02, -0.34, 0.58), (0.25, -0.55, -0.8))
+def skater_faceoff_centre(i):               # the centre over the dot, lowest, the blade reaching out toward it
+    faceoff_stance(i, 0.23, 0.95, (0.03, -0.42, 0.50), (0.15, -0.75, -0.65))
+
 def goalie_ready(i):
     bob = [0, 1, 2, 1][i]
     shift(z=-0.012 * bob); plant(pole=(0, -1, 0))
@@ -353,6 +369,13 @@ def ref_drop(i):                            # puck held out over the dot, bent f
     arm('R', [(0.05, -0.75, -0.45), (0.0, -0.85, -0.40), (0.0, -0.55, -0.85), (0.1, -0.35, -0.9)][i],
         [(-0.1, -0.85, 0.05), (-0.05, -0.95, -0.15), (-0.05, -0.30, -0.95), (0.0, 0.0, -1.0)][i])
 
+def ref_set(i):                             # set at the dot for the drop: bent well in over it, the puck held out low, held
+    bend = 0.75 + 0.03 * i
+    shift(z=-0.13); plant(spread=0.08, pole=(0, -1, 0)); turn('pelvis', x=bend * 0.4)
+    turn('spine', x=bend * 0.6); turn('neck', x=-bend * 0.5)
+    turn('upperarm.L', z=0.06)
+    arm('R', (0.0, -0.85, -0.45), (-0.05, -0.95, -0.20))
+
 # ---------------- bench clips (A11) ----------------
 # Bench figures stand or sit behind the far boards (board top 1.07 m above the soles), so only the
 # helmet and shoulders (seated, ~8 px) or the chest up (standing, ~14 px) show: the upper body is
@@ -533,13 +556,14 @@ CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4
                     'sit': (skater_sit, 4, 14, True), 'sit_tired': (skater_sit_tired, 3, 8, True),
                     'stand_boards': (skater_stand_boards, 2, 20, True), 'slump': (skater_slump, 2, 24, True),
                     'argue': (skater_argue, 4, 8, True), 'bang': (skater_bang, 4, 4, True),
-                    'chat': (skater_chat, 4, 8, True), 'helmet_off': (skater_helmet_off, 4, 6, False)},
+                    'chat': (skater_chat, 4, 8, True), 'helmet_off': (skater_helmet_off, 4, 6, False),
+                    'faceoff_crouch': (skater_faceoff_crouch, 2, 18, True), 'faceoff_centre': (skater_faceoff_centre, 2, 18, True)},
          'goalie': {'ready': (goalie_ready, 4, 5, True), 'butterfly': (goalie_butterfly, 5, 3, False),
                     'glove': (goalie_glove, 4, 3, False), 'blocker': (goalie_blocker, 3, 3, False), 'shuffle': (goalie_shuffle, 4, 3, True)},
          'referee': {'skate': (ref_skate, 8, 3, True), 'idle': (ref_idle, 4, 8, True),
                      'armup': (ref_armup, 2, 12, True), 'whistle': (ref_whistle, 2, 6, False), 'tripping': (ref_tripping, 2, 6, True),
                      'hooking': (ref_hooking, 2, 6, True), 'slashing': (ref_slashing, 2, 6, True), 'goal': (ref_goal, 2, 6, False),
-                     'drop': (ref_drop, 4, 4, False)},
+                     'drop': (ref_drop, 4, 4, False), 'set': (ref_set, 2, 18, True)},
          'staff': {'idle': (staff_idle, 4, 12, True), 'clap': (staff_clap, 4, 4, True), 'arms_up': (staff_arms_up, 4, 5, True),
                    'point': (staff_point, 4, 6, False), 'lean_talk': (staff_lean_talk, 4, 8, True), 'walk': (staff_walk, 8, 3, True)}}[NAME]
 

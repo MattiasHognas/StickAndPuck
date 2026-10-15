@@ -22,7 +22,10 @@ internal sealed unsafe class RefereeRenderer : IDisposable
     /// <summary>How long a called penalty's signal shows.</summary>
     const float SignalSeconds = 2.5f;
 
-    int idle = -1, skate = -1, armUp = -1, clip = -1;
+    /// <summary>The drop clip's first throw frame: its last two poses, the puck thrown down, play once at the drop.</summary>
+    const float ThrowFrame = 8f;
+
+    int idle = -1, skate = -1, armUp = -1, set = -1, drop = -1, clip = -1;
     float frame;
 
     public void Load()
@@ -32,6 +35,8 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         idle = Find("idle");
         skate = Find("skate");
         armUp = Find("armup");
+        set = Find("set");
+        drop = Find("drop");
         kit = Camera.FarTexture.Load(Assets.RefereeKit);   // mipmapped so stripes hold still at broadcast range
         loaded = true;
     }
@@ -44,18 +49,45 @@ internal sealed unsafe class RefereeRenderer : IDisposable
     public void Animate(Referee r, float dt, float time)
     {
         if (!loaded) return;
-        int want = r.Speed > 0.6f && skate >= 0 ? skate : idle;
-        // The call's signal for a moment after the whistle, the raised arm while a call is delayed
-        if (r.Announced.TryGet(out var called) && time - called.Time < SignalSeconds && Find(called.Infraction) is >= 0 and var signal) want = signal;
-        else if (r.Call.HasValue && armUp >= 0) want = armUp;
+        int want = Want(r, time);
+        float sinceDrop = (time - r.DroppedAt) * ClipFps;
+        bool signalling = want != set && want != skate && want != idle;
+        if (drop >= 0 && sinceDrop >= 0 && sinceDrop < clips[drop].KeyFrameCount - 1 - ThrowFrame && !signalling)
+        {
+            // The throw, once, right after the puck drops
+            clip = drop;
+            frame = ThrowFrame + sinceDrop;
+            return;
+        }
         if (want != clip) { clip = want; frame = 0; }
         frame += dt * ClipFps;
+    }
+
+    /// <summary>Gets the clip to play: a penalty signal, the delayed-call arm, the set pose at the dot, then skate or idle.</summary>
+    int Want(Referee r, float time)
+    {
+        // The call's signal for a moment after the whistle, the raised arm while a call is delayed
+        if (r.Announced.TryGet(out var called) && time - called.Time < SignalSeconds && Find(called.Infraction) is >= 0 and var signal)
+        {
+            return signal;
+        }
+        if (r.Call.HasValue && armUp >= 0)
+        {
+            return armUp;
+        }
+        if (r.SetTime > 0 && set >= 0)
+        {
+            return set;   // set at the dot, leaning in over it with the puck held out
+        }
+        return r.Speed > 0.6f && skate >= 0 ? skate : idle;
     }
 
     void Pose()
     {
         if (clip < 0) return;
-        UpdateModelAnimation(model, clips[clip], (int)frame % clips[clip].KeyFrameCount);   // whole frames only
+        // The loader's final sample is the rest pose; the set stance must stay crouched across its loop.
+        int count = clip == set ? Math.Max(1, clips[clip].KeyFrameCount - 1) : clips[clip].KeyFrameCount;
+        UpdateModelAnimation(model, clips[clip], (int)frame % count);   // whole frames only
     }
 
     public void DrawScene(Referee r, RenderContext render)
