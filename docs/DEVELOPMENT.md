@@ -1,0 +1,92 @@
+# Development
+
+[Back to the game](../README.md) · [Playing](PLAYING.md) · [Development](DEVELOPMENT.md) · [Testing](TESTING.md) · [Architecture](ARCHITECTURE.md)
+
+## Build and run
+
+Run commands from the repository root. Install a .NET SDK compatible with [global.json](../global.json), currently `11.0.100-rc.1.26425.128` (prerelease allowed, `latestFeature` roll-forward). The solution targets .NET 11 and C# 15. A graphical session with OpenGL is needed to play; [Testing](TESTING.md) covers running under Xvfb.
+
+```sh
+dotnet build
+dotnet run --project src/StickAndPuck.App
+```
+
+For a Release build, add `-c Release`. The executable is still named `StickAndPuck`; the project is `src/StickAndPuck.App/StickAndPuck.App.csproj`. The root `Directory.Build.props` defines `RepoRoot` for asset paths, and `Directory.Packages.props` holds package versions.
+
+Development overrides are environment variables in front of the command, for example `SAP_SCENE=match SAP_HOME=frolunda SAP_AWAY=djurgarden dotnet run --project src/StickAndPuck.App`. On Windows PowerShell: `$env:SAP_SCENE="match"; dotnet run --project src/StickAndPuck.App`.
+
+Environment variables override saved settings for the run. `SAP_SETTINGS=path` chooses a different settings JSON file; leaving it unset uses the platform default. They also work with the downloaded release executable. See [Playing](PLAYING.md) for settings and save locations, and [Testing](TESTING.md#visual-scenes-sap_scene) for every scene.
+
+## Match settings
+
+- `SAP_HOME`, `SAP_AWAY`: club ids, one of `bjorkloven brynas djurgarden farjestad frolunda hv71 linkoping lulea malmo orebro rogle skelleftea timra vaxjo`. Default: the first two clubs alphabetically.
+- `SAP_CLUB`: your club id for a new season, playoff or arcade run. Default: `SAP_HOME`, else the first club.
+- `SAP_PERIOD`: seconds per period. Default: the settings screen's period length in `start`, `season`, `playoffs`, `arcade` and `versussetup`; 1200 in `match`, `aimatch`, `versus`, `positioning`, `lines`, `penalty` and `fight`; 25 in `matchdemo`; 120 in `goalieswap`; 5 in `overtime`.
+- `SAP_OT`: seconds of an overtime period in the `overtime`, `season`, `playoffs` and `arcade` scenes. Default 15 in `overtime`, the normal 5 minutes (20 in `playoffs`) elsewhere.
+- `SAP_START`: `overtime` or `shootout` skips straight there in the `overtime` scene. Default: play regulation first.
+- `SAP_HUMAN`: `1` gives you the home club in the `overtime` scene (default off there); `0` lets the AI play both clubs in `start`, `season`, `playoffs`, `arcade`, `versus` and `versussetup` (default: you play).
+- `SAP_AI_HUMAN=1`: you control the home centre in `aimatch`, `positioning`, `lines`, `penalty` and `fight`. Default off (all AI).
+- `SAP_SEASON=new`: starts a new season over the save in `season` and `playoffs`. Default: continue the save.
+- `SAP_ARCADE=new`: starts a new arcade run over the save. Default: continue the save.
+- `SAP_ARCADE_RULE`: `lives` (default) or `suddendeath`, the rule for a new arcade run.
+- `SAP_SEED`: integer; fixes the season schedule or the arcade opponent order, and is the match seed: every system draws its dice from its own stream of it, so the same seed and the same inputs play the same match on every machine. Default: random for a season or arcade and for a match started from the menus (printed on the "screens: match" line and kept in its replay), fixed test seeds for a scene.
+- `SAP_SAVE`, `SAP_ARCADE_SAVE`: paths for the season and arcade save files. Default: `season.json` and `arcade.json` in the [settings folder](PLAYING.md#settings-and-saves).
+- `SAP_VERSUS_P2`: `keyboard`, `pad1` or `pad2`, player two's device in `versus`. Default: the settings screen's player 2 controls (the first gamepad), or the keyboard when player one holds that device; OFF hands the visitors to the AI. Both players never get the same device.
+- `SAP_IQ_HOME`, `SAP_IQ_AWAY`: 0 to 100, sets every skater's hockey IQ for that club in `aimatch`. Default: each player's own value.
+- `SAP_GOALIE_REFLEXES`: 0 to 100, overrides the goalie's reflexes in the `goalie` scene. Default: the goalie's own value.
+- `SAP_FATIGUE`: how many times faster than normal skaters tire and rest. Default 1 (6 in `lines` and `goalieswap`).
+- `SAP_PENALTY_STRICT`: scales how often the referee calls penalties in the `penalty` scene. Default 1.
+- `SAP_FIGHT_CHANCE`: 0 to 1, the chance a hard check drops the gloves in the `fight` scene. Default 0.4.
+- `SAP_HUD_MESSAGE`: the banner in the `hud` scene: `goal` (default), `period`, `final`, `tie`, `offside`, `icing`, `intro` or `none`.
+- `SAP_WARMUP`: `0` skips the pre-game warm-up in every match you play; a number of seconds starts the game by itself after that long. Default: warm up until start is pressed.
+- `SAP_REPLAY_AT`: seconds; fakes a goal at that time so the replay plays (used with the `camera` scene). Default off.
+
+- `SAP_RULES=shl|arcade|nhl`: chooses the rule preset in the menu flow and the overtime scene without saving that override; arcade modes retain their Arcade preset. Individual dev scenes can set up their own rules.
+
+## Visuals, sound and input
+
+- `SAP_LIGHTING`: `early`, `afternoon` or `late` fixes the arena lighting mood. Default: the settings screen's lighting (random each match).
+- `SAP_DITHER`: `0` turns off the ordered dithering at toon band edges and palette snaps, for before and after comparisons. Default: on.
+- `SAP_DIFFICULTY`: `easy`, `normal` or `hard`. Default: the settings screen's difficulty (normal).
+- `SAP_CONTROL_MARKER`, `SAP_SIM_GAME`, `SAP_AUTO_DEKE`, `SAP_ONE_TIMERS`: `0` or `1`, override the matching settings screen switches (defaults on, on, off, on).
+- `SAP_SWAP_KITS=1`: the clubs wear each other's kits. Default: the settings screen's swap kits (off). Tab toggles it while playing.
+- `SAP_BENCHES=0`: empty benches; `1` shows both clubs' players off the ice on their benches, watching the puck and standing up for changes. Default: the settings screen's benches (on).
+- `SAP_FPS=1`: fps and key help line top left. Default: the settings screen's fps line (off).
+- `SAP_CAMERA_ZOOM`: `1` camera zooms with speed, `0` fixed zoom. Default: the settings screen's value (off). F6 toggles it while playing.
+- `SAP_MATCH_DEBUG=1`: plain score and clock line at the top. Default: the settings screen's match debug line (off; on in the demo scenes).
+- `SAP_LINES_DEBUG=1`: energy panel showing each unit on the ice. Default: the settings screen's lines panel (off; on in `lines` and `goalieswap`).
+- `SAP_AI_TARGETS=1`: markers where each AI skater is heading in `positioning`. Default off.
+- `SAP_SFX=demo`: plays every event's sound in turn. Default off.
+
+- `SAP_LANGUAGE=english|swedish`: overrides the saved language.
+- `SAP_GPU`: a GPU id or part of its name, such as `nvidia` or `amd`; an unknown value falls back to the default card. Automatic GPU relaunch is supported on Linux when more than one card is found.
+- `SAP_PAD_MAPPINGS=0`: disables the game's extra gamepad mappings for detection troubleshooting; normally leave it unset. Use `SAP_SCENE=padtest` to inspect a pad.
+- `SAP_RUMBLE=0`: disables gamepad rumble.
+- `SAP_AI_TRACE=1`: logs AI command owners and reasons for debugging.
+- `SAP_TACTICS_LINE=1`: shows the tactics debug line. Off by default; the `tactics` scene enables it itself.
+- `SAP_ST_SPOTS=1`: draws the special-teams target spots on the ice. Off by default; match debug can also show them.
+
+For scene-specific fixtures, menu scripts, recording and replay variables, see [Testing](TESTING.md).
+
+### Internal GPU relaunch variables
+
+These are set by the game, rather than player-facing options:
+
+- `SAP_GPU_LAUNCHED`: the id of the card selected for the relaunched process; used to recognise the running card and avoid repeated relaunches.
+- `SAP_GPU_REVERT`: the previous card's id while a new choice awaits confirmation. The game opens the settings screen to ask whether to keep it, then clears this value when confirmed.
+
+## Art and data
+
+Club names, colours, rosters and traits are editable files in [data/clubs](../data/clubs/README.md). English and Swedish strings live in `data/lang/`. Asset paths are centralised in `Core/Assets.cs`.
+
+Models, the rink and stepped animation clips are generated with Blender scripts under `art/scripts/`; `.blend` sources and exported `.glb` files live under `art/`. Aseprite sources and Lua/Python scripts produce the pixel atlases, kits and UI. Keep changes in their scripts and source assets so exports can be regenerated. Run only one Blender job at a time.
+
+The entry scripts describe their expected inputs: `build_player.py`, `anim.py`, `build_scene.py`, `export_arena.py`, `make_kits.py` and `make_ui.py`. NES-style effects come from `tools/sfx/sfx.py` into `art/audio/effects/`; music comes from `tools/music/music.py` into `art/audio/music/`.
+
+## Building a release
+
+- `tools/publish.sh` builds self-contained single executables in `publish/linux-x64/StickAndPuck` and `publish/win-x64/StickAndPuck.exe`, with .NET, raylib and all assets packed inside.
+- `tools/publish.sh linux-x64` builds just one platform. `VERSION=0.1.2 tools/publish.sh` stamps a version.
+- Every merge to main builds, tags and publishes a GitHub Release automatically; `[milestone]` in the squash title (or a `milestone` PR label) bumps the minor version instead of the patch. Pull requests run both the build/publish check and the Release test suite.
+
+The .NET runtime, raylib and all assets are packed inside and unpacked on first start, so the executable runs from any folder. The two output paths are `publish/linux-x64/StickAndPuck` and `publish/win-x64/StickAndPuck.exe`.
