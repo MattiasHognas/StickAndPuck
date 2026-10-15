@@ -39,6 +39,13 @@ public static class GoalieModel
         return ByReflexes(traits, GoalieTuning.SaveSpeedSlow, GoalieTuning.SaveSpeedFast);
     }
 
+    /// <summary>How far a goalie misreads where a shot will cross, one standard deviation in metres: less with
+    /// better reflexes, more the faster the shot.</summary>
+    public static float ReadError(Traits traits, float speed)
+    {
+        return ByReflexes(traits, GoalieTuning.ReadErrorSlow, GoalieTuning.ReadErrorFast) * speed / GoalieTuning.ReadSpeed;
+    }
+
     /// <summary>Where a goalie stands for a puck: on the line from the middle of the net to the puck, further
     /// out the further away the puck is, and tight to the near post once the puck is behind the line.</summary>
     public static Vector3 Spot(int end, Vector3 puck)
@@ -75,6 +82,13 @@ public static class GoalieModel
         if (position.X * end >= RinkSpec.GoalLineX) return false;
         var at = Cross(position, velocity, end * RinkSpec.GoalLineX);
         return MathF.Abs(at.Offset) < RinkSpec.NetWidth / 2 + GoalieTuning.ShotMargin && at.Height < RinkSpec.NetHeight + GoalieTuning.ShotMargin;
+    }
+
+    /// <summary>Whether a save stopped a shot on goal: a shot, not a loose puck, that was heading inside the
+    /// posts and under the bar (a save is published where the shot would have crossed the goal line).</summary>
+    public static bool OnNet(ShotSaved save)
+    {
+        return save.Speed >= GoalieTuning.ShotSpeed && MathF.Abs(save.Position.Z) < RinkSpec.NetWidth / 2 && save.Position.Y < RinkSpec.NetHeight;
     }
 
     /// <summary>Where a puck in flight crosses the plane x = <paramref name="planeX"/>, with gravity on a puck off the ice.</summary>

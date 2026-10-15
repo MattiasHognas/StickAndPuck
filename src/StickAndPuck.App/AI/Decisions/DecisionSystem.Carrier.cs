@@ -55,6 +55,9 @@ internal sealed partial class DecisionSystem
         return best;
     }
 
+    /// <summary>A wrist shot holds shoot up to this many steps, short of a slap shot's wind-up, so it leaves the ice now and then.</summary>
+    const int WristLift = 16;
+
     void Shoot(World world, Player p, int end, Vector2 at, bool pressed)
     {
         var toNet = new Vector2(end * RinkSpec.GoalLineX, 0) - at;
@@ -67,7 +70,7 @@ internal sealed partial class DecisionSystem
         // else, and any slap shot, just aims at the net and lets the shot find the far side
         bool slap = distance > 13f && !pressed && rng.NextSingle() < 0.75f;
         var aim = Vector2.Normalize(new Vector2(end * 0.8f, side * 0.6f));
-        bool picksCorner = !slap && (Traits.Unit(p.Data.Traits.ShotAccuracy) >= 0.75f || roll == ReadOutcome.Lucky);
+        bool picksCorner = !slap && (Traits.Unit(p.Data.Traits.ShotAccuracy) >= 0.45f || roll == ReadOutcome.Lucky);
         if (roll == ReadOutcome.Fumble && !slap)
         {
             // Misread the goalie and pick the side he covers
@@ -76,7 +79,7 @@ internal sealed partial class DecisionSystem
         }
         if (!picksCorner || Vector2.Dot(aim, Vector2.Normalize(toNet)) < SimMath.Cos(70f * MathF.PI / 180f)) aim = Vector2.Normalize(toNet);
 
-        AiCommand.Shoot(world, p, AiLayer.Decisions, aim, slap ? 28 + rng.Next(22) : 0, slap ? "slap shot" : "wrist shot");
+        AiCommand.Shoot(world, p, AiLayer.Decisions, aim, slap ? 28 + rng.Next(22) : rng.Next(WristLift), slap ? "slap shot" : "wrist shot");
     }
 
     /// <summary>Makes a pass; a fumbled execution holds it a beat too long, so the lane may close and the receiver skate on.</summary>
