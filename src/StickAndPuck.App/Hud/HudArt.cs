@@ -40,26 +40,26 @@ internal sealed class HudArt
         using var doc = JsonDocument.Parse(File.ReadAllText(Assets.UiLayout));
         var root = doc.RootElement;
 
-        art.font = LoadFont(root.GetProperty("font").GetProperty("file").GetString()!);
+        art.font = LoadFont(root.GetProperty("font").GetProperty("file").GetString());
         SetTextureFilter(art.font.Texture, TextureFilter.Point);
 
         var bug = root.GetProperty("scorebug");
-        art.scorebug = LoadTexture(bug.GetProperty("file").GetString()!);
+        art.scorebug = LoadTexture(bug.GetProperty("file").GetString());
         var pos = bug.GetProperty("position");
         art.BugPosition = (pos[0].GetInt32(), pos[1].GetInt32());
-        art.Text = Hex(bug.GetProperty("textColour").GetString()!);
-        art.Score = Hex(bug.GetProperty("scoreColour").GetString()!);
+        art.Text = Hex(bug.GetProperty("textColour").GetString());
+        art.Score = Hex(bug.GetProperty("scoreColour").GetString());
         ReadCells(bug.GetProperty("slots"), art.slots);
 
         foreach (var panel in root.GetProperty("panels").EnumerateObject())
-            art.panels[panel.Name] = (LoadTexture(panel.Value.GetProperty("file").GetString()!), panel.Value.GetProperty("border")[0].GetInt32());
+            art.panels[panel.Name] = (LoadTexture(panel.Value.GetProperty("file").GetString()), panel.Value.GetProperty("border")[0].GetInt32());
 
         var icon = root.GetProperty("icons");
-        art.iconSheet = LoadTexture(icon.GetProperty("file").GetString()!);
+        art.iconSheet = LoadTexture(icon.GetProperty("file").GetString());
         ReadCells(icon.GetProperty("cells"), art.icons);
 
         var crest = root.GetProperty("crests");
-        art.crestSheet = LoadTexture(crest.GetProperty("file").GetString()!);
+        art.crestSheet = LoadTexture(crest.GetProperty("file").GetString());
         ReadCells(crest.GetProperty("cells"), art.crests);
         art.crestFallback = crest.GetProperty("fallback").GetString() ?? "generic";
         return art;

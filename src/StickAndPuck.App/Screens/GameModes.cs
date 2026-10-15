@@ -75,7 +75,7 @@ internal static class GameModes
         return typeof(GameModes).Assembly.GetTypes()
             .Where(t => typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false }
                 && t.GetConstructor(Type.EmptyTypes) is { })
-            .Select(t => (IGameMode)Activator.CreateInstance(t)!)
+            .Select(t => (IGameMode)Activator.CreateInstance(t))
             .Where(m => m.Available(app))
             .OrderBy(m => m.Order)
             .ThenBy(m => m.Title, StringComparer.Ordinal)
@@ -87,6 +87,6 @@ internal static class GameModes
     {
         var type = typeof(GameModes).Assembly.GetTypes().FirstOrDefault(t => string.Equals(t.Name, typeName, StringComparison.Ordinal)
             && typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false } && t.GetConstructor(Type.EmptyTypes) is { });
-        return type is { } found ? Maybe.Some((IGameMode)Activator.CreateInstance(found)!) : Maybe<IGameMode>.None;
+        return type is { } found ? Maybe.Some((IGameMode)Activator.CreateInstance(found)) : Maybe<IGameMode>.None;
     }
 }

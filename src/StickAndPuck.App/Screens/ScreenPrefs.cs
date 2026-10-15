@@ -85,7 +85,7 @@ internal static class ScreenPrefsFile
         if (DeviceInput.Playing) return;    // a replay's menus never touch the saved settings
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, JsonSerializer.Serialize(prefs, Json));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)

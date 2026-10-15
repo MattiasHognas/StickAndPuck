@@ -85,7 +85,7 @@ internal static class PolishScenes
 
     static string TestPath(string beside, string name)
     {
-        return Path.Combine(Path.GetDirectoryName(beside)!, name);
+        return Path.Combine(Path.GetDirectoryName(beside), name);
     }
 
     static string Club(IReadOnlyList<ClubData> clubs)

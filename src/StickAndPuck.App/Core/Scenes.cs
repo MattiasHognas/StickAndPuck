@@ -26,7 +26,7 @@ public static class Scenes
         return typeof(Scenes).Assembly.GetTypes()
             .Where(t => typeof(IScene).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false }
                 && t.GetConstructor(Type.EmptyTypes) is { })
-            .Select(t => (IScene)Activator.CreateInstance(t)!)
+            .Select(t => (IScene)Activator.CreateInstance(t))
             .ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
     }
 
