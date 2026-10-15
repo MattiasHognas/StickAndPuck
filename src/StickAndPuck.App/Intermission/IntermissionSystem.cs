@@ -141,7 +141,7 @@ internal sealed class IntermissionSystem : ISystem, IDisposable
         var follow = world.Camera;
         float w = blend * blend * (3 - 2 * blend);
         float x = Snap(follow.Position.X + (own.Position.X - follow.Position.X) * w);
-        world.Camera = BroadcastCamera.Straight(x, follow.Position.Z, follow.FovY);
+        world.Camera = follow with { Position = follow.Position with { X = x }, Target = follow.Target with { X = x } };
     }
 
     public void DrawScene(World world, RenderContext render)

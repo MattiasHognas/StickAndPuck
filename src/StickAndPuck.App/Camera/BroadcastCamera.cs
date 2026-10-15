@@ -29,6 +29,16 @@ public static class BroadcastCamera
         }
     }
 
+    /// <summary>The gameplay camera's screen-up direction: square to <see cref="Forward"/>, tipped toward the far boards.</summary>
+    public static Vector3 Up
+    {
+        get
+        {
+            float down = MathF.PI * TiltDegrees / 180f;
+            return new Vector3(0, MathF.Cos(down), -MathF.Sin(down));
+        }
+    }
+
     /// <summary>Gameplay camera: faces the far boards square so board text and markings sit on the pixel
     /// grid, at the Blender broadcast camera's height and tilt.</summary>
     public static Camera3D Straight()
@@ -41,6 +51,23 @@ public static class BroadcastCamera
     public static Camera3D Straight(float x, float z, float fovY)
     {
         var pos = new Vector3(x, Height, z);
+        return new Camera3D
+        {
+            Position = pos,
+            Target = pos + Forward * 10f,
+            Up = Vector3.UnitY,
+            FovY = fovY,
+            Projection = CameraProjection.Perspective,
+        };
+    }
+
+    /// <summary>The straight camera moved along the rink (x) and down the frame by a distance in metres: lower
+    /// and back toward the viewer along the screen's down direction, with the same tilt. Every point keeps
+    /// its distance along the view, so nothing grows or shrinks on screen; the picture only slides up,
+    /// bringing the near boards into view while the far boards keep their size.</summary>
+    public static Camera3D Lowered(float x, float drop, float fovY)
+    {
+        var pos = new Vector3(x, Height, Back) - (Up * drop);
         return new Camera3D
         {
             Position = pos,
