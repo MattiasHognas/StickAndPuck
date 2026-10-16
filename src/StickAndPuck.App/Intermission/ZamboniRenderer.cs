@@ -12,7 +12,7 @@ namespace StickAndPuck.App.Intermission;
 internal sealed class ZamboniRenderer : IDisposable
 {
     /// <summary>The model, next to the other art.</summary>
-    public const string Asset = "art/zamboni/zamboni.glb";
+    public const string Asset = "art.zamboni.zamboni.glb";
 
     /// <summary>The Zamboni's mask id: the one below the referee's, far above any player's.</summary>
     public const int MaskId = MaskIds.Max - 1;
@@ -23,8 +23,8 @@ internal sealed class ZamboniRenderer : IDisposable
     /// <summary>Loads the model; a missing file leaves the intermission running without it.</summary>
     public void Load()
     {
-        if (loaded || !File.Exists(Asset)) return;
-        model = LoadModel(Asset);
+        if (loaded) return;
+        model = ResourceLoader.Model(Asset);
         loaded = true;
     }
 

@@ -1,4 +1,5 @@
 using Raylib_cs;
+using StickAndPuck.App.Core;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Camera;
@@ -19,7 +20,7 @@ public static unsafe class FarTexture
     /// <summary>Loads an atlas with its palette-safe mipmap chain and nearest-texel sampling at every level.</summary>
     public static Texture2D Load(string path)
     {
-        var source = LoadImage(path);
+        var source = ResourceLoader.Image(path);
         int w = source.Width, h = source.Height;
         if (w <= 0 || w != h || (w & (w - 1)) != 0)
         {

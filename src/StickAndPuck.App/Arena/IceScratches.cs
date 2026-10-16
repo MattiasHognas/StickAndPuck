@@ -17,8 +17,7 @@ internal sealed class IceScratches
     /// <summary>Loads the scratch mask once; a missing file just leaves the ice clean.</summary>
     public void Load()
     {
-        if (!File.Exists(Assets.IceScratches)) return;
-        texture = LoadTexture(Assets.IceScratches);
+        texture = ResourceLoader.Texture(Assets.IceScratches);
         SetTextureFilter(texture, TextureFilter.Point);
     }
 

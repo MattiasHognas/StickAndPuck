@@ -27,8 +27,9 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
 
     public void Start(World world)
     {
-        model = LoadModel(Assets.Arena);
-        using var doc = JsonDocument.Parse(File.ReadAllText(Assets.ArenaMeshes));
+        model = ResourceLoader.Model(Assets.Arena);
+        string jsonText = ResourceLoader.ReadText(Assets.ArenaMeshes);
+        using var doc = JsonDocument.Parse(jsonText);
         foreach (var m in doc.RootElement.GetProperty("meshes").EnumerateArray())
         {
             int index = m.GetProperty("index").GetInt32();
@@ -47,9 +48,6 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
             };
             meshes.Add((index, kind, Occluders.Contains(part), part is "Ice" or "Floor", string.Equals(part, "Ice", StringComparison.Ordinal)));
         }
-
-        // glTF colours are linear and Raylib uses them raw, which reads darker than the Blender
-        // render; convert each material once. Textures (the ad strip) are already sRGB.
         for (int i = 0; i < model.MaterialCount; i++)
         {
             ref var albedo = ref model.Materials[i].Maps[(int)MaterialMapIndex.Albedo];

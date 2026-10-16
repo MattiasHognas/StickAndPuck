@@ -49,7 +49,7 @@ public static partial class Text
     /// <summary>Reads a language file: a flat JSON object of key to text.</summary>
     public static IReadOnlyDictionary<string, string> Read(string path)
     {
-        return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path))
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(ResourceLoader.ReadText(path))
             ?? throw new InvalidDataException($"{path} is empty");
     }
 
