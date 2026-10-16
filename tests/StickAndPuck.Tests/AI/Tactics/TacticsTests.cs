@@ -27,8 +27,8 @@ public sealed class TacticsTests : CheckedTest
     public void Data()
     {
         var clubs = WorldBuilder.Clubs;
-        string[] raw = Directory.Exists(Assets.ClubFolder) ? Directory.GetFiles(Assets.ClubFolder, "*.json") : [];
-        bool all = raw.Length > 0 && raw.All(f => File.ReadAllText(f).Contains("\"tactics\"", StringComparison.Ordinal));
+        string[] raw = ResourceLoader.List(Assets.ClubFolder, ".json").ToArray();
+        bool all = raw.Length > 0 && raw.All(f => ResourceLoader.ReadText(f).Contains("\"tactics\"", StringComparison.Ordinal));
         Check(all, $"every club file sets its tactics ({raw.Length} files)");
         int styles = clubs.Select(c => c.Tactics.Forecheck).Distinct().Count();
         int entries = clubs.Select(c => c.Tactics.Entry).Distinct().Count();

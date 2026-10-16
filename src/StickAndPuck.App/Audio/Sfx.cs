@@ -62,7 +62,7 @@ internal readonly record struct SfxInfo(string File, float Volume, float Gap, bo
 internal static class SfxTable
 {
     /// <summary>The folder the effects load from.</summary>
-    public const string Folder = "art/audio/effects";
+    public const string ResourcePath = "art.audio.effects";
 
     /// <summary>Gets how an effect is played.</summary>
     public static SfxInfo Info(Sfx sfx)

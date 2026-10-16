@@ -45,8 +45,8 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         string[] paths = [Assets.Skater, Assets.Goalie, BenchStaffArt.Model];
         for (int m = 0; m < models.Length; m++)
         {
-            models[m] = LoadModel(paths[m]);
-            clips[m] = LoadModelAnimations(paths[m]).ToArray();
+            models[m] = ResourceLoader.Model(paths[m]);
+            clips[m] = ResourceLoader.Animations(paths[m]);
         }
         foreach (var (m, name, stick) in BenchClips.All)
         {

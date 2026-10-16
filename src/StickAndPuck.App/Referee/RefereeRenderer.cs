@@ -30,8 +30,8 @@ internal sealed unsafe class RefereeRenderer : IDisposable
 
     public void Load()
     {
-        model = LoadModel(Assets.Referee);
-        clips = LoadModelAnimations(Assets.Referee).ToArray();
+        model = ResourceLoader.Model(Assets.Referee);
+        clips = ResourceLoader.Animations(Assets.Referee);
         idle = Find("idle");
         skate = Find("skate");
         armUp = Find("armup");

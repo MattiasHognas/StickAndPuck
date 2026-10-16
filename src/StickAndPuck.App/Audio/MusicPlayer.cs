@@ -26,9 +26,9 @@ internal enum MusicTrack
 internal static class MusicTracks
 {
     /// <summary>The folder the tracks stream from.</summary>
-    public const string Folder = "art/audio/music";
+    public const string ResourcePath = "art.audio.music";
 
-    /// <summary>Gets a track's file name in <see cref="Folder"/>.</summary>
+    /// <summary>Gets a track's file name.</summary>
     public static string File(MusicTrack track) => track switch
     {
         MusicTrack.Menu => "menu.wav",
@@ -69,14 +69,13 @@ internal sealed class MusicPlayer : IDisposable
     {
         foreach (var track in Enum.GetValues<MusicTrack>().Where(t => t != MusicTrack.None))
         {
-            string path = Path.Combine(MusicTracks.Folder, MusicTracks.File(track));
-            if (!System.IO.File.Exists(path)) continue;
-            var music = LoadMusicStream(path);
+            var music = ResourceLoader.Music($"{MusicTracks.ResourcePath}.{MusicTracks.File(track)}");
             if (!IsMusicValid(music)) continue;
             music.Looping = MusicTracks.Loops(track);
             tracks[track] = music;
         }
-        Console.WriteLine($"SAP: audio: {tracks.Count} music tracks loaded from {MusicTracks.Folder}");
+
+        Console.WriteLine($"SAP: audio: {tracks.Count} music tracks loaded from embedded assembly resources");
     }
 
     /// <summary>Starts, stops and feeds the stream for the world on show.</summary>
@@ -90,7 +89,6 @@ internal sealed class MusicPlayer : IDisposable
             if (tracks.TryGetValue(track, out var next)) PlayMusicStream(next);
             Console.WriteLine($"SAP: audio: music {track}");
         }
-
         if (!tracks.TryGetValue(playing, out var music)) return;
         SetMusicVolume(music, Math.Clamp(world.Settings.MusicVolume, 0, 1));
         UpdateMusicStream(music);

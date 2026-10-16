@@ -73,8 +73,8 @@ public sealed class VolumeTests : CheckedTest
         Check(MusicTracks.For(world) == MusicTrack.None, "a test scene with no screens is silent");
         foreach (var track in new[] { MusicTrack.Menu, MusicTrack.Intermission, MusicTrack.Final })
         {
-            string file = Path.Combine(AppContext.BaseDirectory, MusicTracks.Folder, MusicTracks.File(track));
-            Check(File.Exists(file), $"{MusicTracks.File(track)} is copied next to the game");
+            string file = $"{MusicTracks.ResourcePath}.{MusicTracks.File(track)}";
+            Check(ResourceLoader.Exists(file), $"{MusicTracks.File(track)} is embedded in the game");
         }
     }
 }

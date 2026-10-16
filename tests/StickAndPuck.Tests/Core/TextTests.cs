@@ -16,7 +16,7 @@ public sealed partial class TextTests : CheckedTest
     const string FontGlyphs = " !\"#%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ_ÅÄÖÉÜ";
 
     static IReadOnlyDictionary<string, string> Table(Language language) =>
-        Text.Read(Path.Combine(AppContext.BaseDirectory, Text.FileOf(language)));
+        Text.Read(Text.FileOf(language));
 
     [Test]
     public void EveryLanguageHasEnglishsKeys()

@@ -20,9 +20,16 @@ public static class Clubs
     /// <summary>Reads every club file in the folder, sorted by id.</summary>
     public static IReadOnlyList<ClubData> LoadAll(string folder = Assets.ClubFolder)
     {
-        if (!Directory.Exists(folder)) return [];
-        return Directory.GetFiles(folder, "*.json")
-            .Select(Load)
+        var clubs = new List<ClubData>();
+        foreach (string resourceName in ResourceLoader.List(folder, ".json"))
+        {
+            var club = JsonSerializer.Deserialize<ClubData>(ResourceLoader.ReadText(resourceName), Json)
+                ?? throw new InvalidDataException($"{resourceName} is empty");
+            if (string.IsNullOrWhiteSpace(club.Id))
+                club = club with { Id = resourceName.Split('.')[^2] };
+            clubs.Add(club);
+        }
+        return clubs
             .OrderBy(c => c.Id, StringComparer.Ordinal)
             .ToArray();
     }
