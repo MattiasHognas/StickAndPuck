@@ -1,6 +1,5 @@
 using System.Text.Json;
 using StickAndPuck.App.Core;
-using System.Text.Json.Serialization;
 
 namespace StickAndPuck.App.Season;
 
@@ -9,14 +8,6 @@ namespace StickAndPuck.App.Season;
 /// other. SAP_ARCADE_SAVE=path overrides it. Writes replace the file in one move, as the season save does.</summary>
 public static class ArcadeSave
 {
-    static readonly JsonSerializerOptions Json = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     /// <summary>Gets the save file path: SAP_ARCADE_SAVE, or arcade.json in the user's settings folder.</summary>
     public static string DefaultPath =>
         Env.Get("SAP_ARCADE_SAVE") is { Length: > 0 } p
@@ -42,7 +33,7 @@ public static class ArcadeSave
         Directory.CreateDirectory(Path.GetDirectoryName(path) ?? "");
         run.Saved = DateTime.UtcNow;
         string temp = path + ".tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(run, Json));
+        File.WriteAllText(temp, JsonSerializer.Serialize(run, SaveJsonContext.Default.ArcadeRun));
         File.Move(temp, path, overwrite: true);
     }
 
@@ -57,7 +48,7 @@ public static class ArcadeSave
         if (!File.Exists(path)) return Maybe<ArcadeRun>.None;
         try
         {
-            if (JsonSerializer.Deserialize<ArcadeRun>(File.ReadAllText(path), Json) is not { } run || run.Version > ArcadeRun.CurrentVersion || run.Opponents.Count == 0) return Maybe<ArcadeRun>.None;
+            if (JsonSerializer.Deserialize(File.ReadAllText(path), SaveJsonContext.Default.ArcadeRun) is not { } run || run.Version > ArcadeRun.CurrentVersion || run.Opponents.Count == 0) return Maybe<ArcadeRun>.None;
             return run;
         }
         catch (JsonException e)

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
 using System.Collections.Immutable;
 
@@ -34,14 +33,6 @@ internal sealed record ScreenPrefs
 /// SAP_SETTINGS=path overrides it.</summary>
 internal static class ScreenPrefsFile
 {
-    static readonly JsonSerializerOptions Json = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     /// <summary>Gets the settings file path.</summary>
     public static string DefaultPath =>
         Env.Get("SAP_SETTINGS") is { Length: > 0 } p
@@ -67,12 +58,12 @@ internal static class ScreenPrefsFile
     }
 
     /// <summary>Gets the settings as the file stores them (a replay keeps them).</summary>
-    public static string ToJson(ScreenPrefs prefs) => JsonSerializer.Serialize(prefs, Json);
+    public static string ToJson(ScreenPrefs prefs) => JsonSerializer.Serialize(prefs, SaveJsonContext.Default.ScreenPrefs);
 
     /// <summary>Reads settings <see cref="ToJson"/> wrote.</summary>
     public static ScreenPrefs FromJson(string json)
     {
-        var prefs = JsonSerializer.Deserialize<ScreenPrefs>(json, Json) ?? new ScreenPrefs();
+        var prefs = JsonSerializer.Deserialize(json, SaveJsonContext.Default.ScreenPrefs) ?? new ScreenPrefs();
         return OldVolume(json).TryGet(out float volume) ? prefs with { Settings = prefs.Settings with { EffectsVolume = volume } } : prefs;
     }
 
@@ -106,7 +97,7 @@ internal static class ScreenPrefsFile
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllText(path, JsonSerializer.Serialize(prefs, Json));
+            File.WriteAllText(path, JsonSerializer.Serialize(prefs, SaveJsonContext.Default.ScreenPrefs));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

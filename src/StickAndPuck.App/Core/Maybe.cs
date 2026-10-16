@@ -1,11 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 
 namespace StickAndPuck.App.Core;
 
 /// <summary>A value that may be absent, in place of a nullable type (the game bans T? and null, SAP0001/SAP0002).
 /// The default is <see cref="None"/>; a value converts to Some by itself.</summary>
-[JsonConverter(typeof(MaybeJsonConverterFactory))]
 public readonly struct Maybe<T> : IEquatable<Maybe<T>>
     where T : notnull
 {

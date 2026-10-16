@@ -2,6 +2,7 @@
 
   <!-- The former SAP_SCENE self-tests, run with dotnet test (TUnit on Microsoft.Testing.Platform) -->
   <PropertyGroup>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <IsPackable>false</IsPackable>
     <RootNamespace>StickAndPuck.Tests</RootNamespace>
     <NoWarn>$(NoWarn);CS1591;NETSDK1057</NoWarn>

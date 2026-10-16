@@ -1,6 +1,5 @@
 using System.Text.Json;
 using StickAndPuck.App.Core;
-using System.Text.Json.Serialization;
 
 namespace StickAndPuck.App.Season;
 
@@ -11,14 +10,6 @@ namespace StickAndPuck.App.Season;
 /// Writes go to a temporary file first and then replace the save, so a crash never leaves half a file.</summary>
 public static class SeasonSave
 {
-    static readonly JsonSerializerOptions Json = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     /// <summary>Gets the save file path: SAP_SAVE, or season.json in the user's settings folder.</summary>
     public static string DefaultPath =>
         Env.Get("SAP_SAVE") is { Length: > 0 } p
@@ -44,7 +35,7 @@ public static class SeasonSave
         Directory.CreateDirectory(Path.GetDirectoryName(path) ?? "");
         season.Saved = DateTime.UtcNow;
         string temp = path + ".tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(season, Json));
+        File.WriteAllText(temp, JsonSerializer.Serialize(season, SaveJsonContext.Default.SeasonState));
         File.Move(temp, path, overwrite: true);
     }
 
@@ -59,7 +50,7 @@ public static class SeasonSave
         if (!File.Exists(path)) return Maybe<SeasonState>.None;
         try
         {
-            if (JsonSerializer.Deserialize<SeasonState>(File.ReadAllText(path), Json) is not { } season || season.Version > SeasonState.CurrentVersion || season.Games.Count == 0) return Maybe<SeasonState>.None;
+            if (JsonSerializer.Deserialize(File.ReadAllText(path), SaveJsonContext.Default.SeasonState) is not { } season || season.Version > SeasonState.CurrentVersion || season.Games.Count == 0) return Maybe<SeasonState>.None;
             return season;
         }
         catch (JsonException e)
