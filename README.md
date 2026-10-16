@@ -9,7 +9,8 @@ A silly attempt at rendering 3D as pixel art in the form of a hockey game. Pick 
 **[Download the latest release](https://github.com/MattiasHognas/StickAndPuck/releases/latest)** for Linux or Windows. The game includes .NET and its assets—no SDK needed.
 
 - **Windows:** run `StickAndPuck-vX.Y.Z-win-x64.exe`.
-- **Linux:** make the downloaded file executable with `chmod +x StickAndPuck-vX.Y.Z-linux-x64`, then run it. Replace `vX.Y.Z` with the version you downloaded.
+- **Linux:** make the downloaded file executable with `chmod +x StickAndPuck-vX.Y.Z-linux-x64`, then run it.
+Replace `vX.Y.Z` with the version you downloaded.
 
 Start an exhibition, take one of the 14 clubs through a 52-game season and playoffs, or try arcade mode with one loss or three lives. Local versus lets two people share the ice. Seasons autosave after matches. Menus are available in English and Swedish.
 
