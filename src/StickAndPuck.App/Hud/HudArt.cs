@@ -37,14 +37,16 @@ internal sealed class HudArt
     public static HudArt Load()
     {
         var art = new HudArt();
-        using var doc = JsonDocument.Parse(File.ReadAllText(Assets.UiLayout));
+
+        string jsonText = ResourceLoader.ReadText(Assets.UiLayout);
+        using var doc = JsonDocument.Parse(jsonText);
         var root = doc.RootElement;
 
-        art.font = LoadFont(root.GetProperty("font").GetProperty("file").GetString());
+        art.font = ResourceLoader.Font(root.GetProperty("font").GetProperty("file").GetString());
         SetTextureFilter(art.font.Texture, TextureFilter.Point);
 
         var bug = root.GetProperty("scorebug");
-        art.scorebug = LoadTexture(bug.GetProperty("file").GetString());
+        art.scorebug = ResourceLoader.Texture(bug.GetProperty("file").GetString());
         var pos = bug.GetProperty("position");
         art.BugPosition = (pos[0].GetInt32(), pos[1].GetInt32());
         art.Text = Hex(bug.GetProperty("textColour").GetString());
@@ -52,14 +54,14 @@ internal sealed class HudArt
         ReadCells(bug.GetProperty("slots"), art.slots);
 
         foreach (var panel in root.GetProperty("panels").EnumerateObject())
-            art.panels[panel.Name] = (LoadTexture(panel.Value.GetProperty("file").GetString()), panel.Value.GetProperty("border")[0].GetInt32());
+            art.panels[panel.Name] = (ResourceLoader.Texture(panel.Value.GetProperty("file").GetString()), panel.Value.GetProperty("border")[0].GetInt32());
 
         var icon = root.GetProperty("icons");
-        art.iconSheet = LoadTexture(icon.GetProperty("file").GetString());
+        art.iconSheet = ResourceLoader.Texture(icon.GetProperty("file").GetString());
         ReadCells(icon.GetProperty("cells"), art.icons);
 
         var crest = root.GetProperty("crests");
-        art.crestSheet = LoadTexture(crest.GetProperty("file").GetString());
+        art.crestSheet = ResourceLoader.Texture(crest.GetProperty("file").GetString());
         ReadCells(crest.GetProperty("cells"), art.crests);
         art.crestFallback = crest.GetProperty("fallback").GetString() ?? "generic";
         return art;

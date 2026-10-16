@@ -37,8 +37,10 @@ internal sealed class ScreenArt
     /// <summary>Loads the art. Needs an open window.</summary>
     public static ScreenArt Load()
     {
-        var art = new ScreenArt(HudArt.Load());
-        art.title = LoadTexture("art/ui/title.png");
+        var art = new ScreenArt(HudArt.Load())
+        {
+            title = ResourceLoader.Texture("art.ui.title.png"),
+        };
         return art;
     }
 

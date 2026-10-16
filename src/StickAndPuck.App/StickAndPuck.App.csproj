@@ -12,17 +12,14 @@
     <InternalsVisibleTo Include="StickAndPuck.Tests" />
   </ItemGroup>
 
-  <!-- dotnet publish -r linux-x64 (or win-x64) makes one self-contained executable: the runtime, raylib
-       and every asset below are packed inside and unpacked on first start (tools/publish.sh) -->
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' and '$(MSBuildProjectFullPath)' != ''">
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
-    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <DebugType>embedded</DebugType>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
-  <!-- SAP0001/SAP0002: no nullable types and no null literals in the game (tests may use null) -->
   <ItemGroup>
     <ProjectReference Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
@@ -32,20 +29,19 @@
     <PackageReference Include="Raylib-cs" Version="8.1.0" />
   </ItemGroup>
 
-  <!-- the game reads its assets next to the executable: shaders, models, kit atlases, ad strips, palette, club data -->
   <ItemGroup>
-    <None Include="$(RepoRoot)shaders/**" LinkBase="shaders" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/player/*.glb;$(RepoRoot)art/player/*_64.png" LinkBase="art/player" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/ads/*.png" LinkBase="art/ads" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/kits/*.png" LinkBase="art/kits" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/kits/numbers/*.png" LinkBase="art/kits/numbers" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json" LinkBase="art/scene" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/zamboni/*.glb" LinkBase="art/zamboni" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/palette/*.gpl" LinkBase="art/palette" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json" LinkBase="art/ui" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/audio/effects/*.wav" LinkBase="art/audio/effects" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)art/audio/music/*.wav" LinkBase="art/audio/music" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(RepoRoot)data/**/*.json" LinkBase="data" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="$(RepoRoot)shaders/**" LinkBase="shaders" />
+    <EmbeddedResource Include="$(RepoRoot)art/player/*.glb;$(RepoRoot)art/player/*_64.png" LinkBase="art/player" />
+    <EmbeddedResource Include="$(RepoRoot)art/ads/*.png" LinkBase="art/ads" />
+    <EmbeddedResource Include="$(RepoRoot)art/kits/*.png" LinkBase="art/kits" />
+    <EmbeddedResource Include="$(RepoRoot)art/kits/numbers/*.png" LinkBase="art/kits/numbers" />
+    <EmbeddedResource Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json" LinkBase="art/scene" />
+    <EmbeddedResource Include="$(RepoRoot)art/zamboni/*.glb" LinkBase="art/zamboni" />
+    <EmbeddedResource Include="$(RepoRoot)art/palette/*.gpl" LinkBase="art/palette" />
+    <EmbeddedResource Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json" LinkBase="art/ui" />
+    <EmbeddedResource Include="$(RepoRoot)art/audio/effects/*.wav" LinkBase="art/audio/effects" />
+    <EmbeddedResource Include="$(RepoRoot)art/audio/music/*.wav" LinkBase="art/audio/music" />
+    <EmbeddedResource Include="$(RepoRoot)data/**/*.json" LinkBase="data" />
   </ItemGroup>
 
 </Project>

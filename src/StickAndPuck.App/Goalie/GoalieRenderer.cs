@@ -25,8 +25,8 @@ internal sealed unsafe class GoalieRenderer : IDisposable
 
     public void Load()
     {
-        model = LoadModel(Assets.Goalie);
-        clips = LoadModelAnimations(Assets.Goalie).ToArray();
+        model = ResourceLoader.Model(Assets.Goalie);
+        clips = ResourceLoader.Animations(Assets.Goalie);
         ready = Find("ready");
         butterfly = Find("butterfly");
         glove = Find("glove");

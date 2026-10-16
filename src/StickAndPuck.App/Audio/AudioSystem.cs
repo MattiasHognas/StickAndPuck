@@ -52,19 +52,19 @@ internal sealed class AudioSystem : ISystem, IDisposable
 
         foreach (var sfx in Enum.GetValues<Sfx>())
         {
-            string path = Path.Combine(SfxTable.Folder, SfxTable.Info(sfx).File);
-            if (!File.Exists(path)) continue;
-            var first = LoadSound(path);
+            string filename = SfxTable.Info(sfx).File;
+            string embeddedPath = $"{SfxTable.ResourcePath}.{filename}";
+            var first = ResourceLoader.Sound(embeddedPath);
             if (!IsSoundValid(first)) continue;
             var copies = new Sound[Voices];
             copies[0] = first;
             for (int i = 1; i < Voices; i++) copies[i] = LoadSoundAlias(first);
             sounds[sfx] = copies;
         }
-
+        
         music.Load();
         ready = true;
-        Console.WriteLine($"SAP: audio: {sounds.Count} of {Enum.GetValues<Sfx>().Length} sounds loaded from {SfxTable.Folder}");
+        Console.WriteLine($"SAP: audio: {sounds.Count} of {Enum.GetValues<Sfx>().Length} sounds loaded from embedded assembly resources");
     }
 
     public void Update(World world, float dt)

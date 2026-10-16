@@ -1,4 +1,5 @@
 using Raylib_cs;
+using StickAndPuck.App.Audio;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Fights;
 using StickAndPuck.App.Hud;
@@ -26,14 +27,18 @@ internal sealed class MomentumSystem : ISystem, IDisposable
     public void Start(World world)
     {
         Momentum.State(world);
-        string path = Path.Combine(Audio.SfxTable.Folder, "crowd.wav");
-        if (IsAudioDeviceReady() && File.Exists(path))
+        if (IsAudioDeviceReady())
         {
-            crowd[0] = LoadSound(path);
-            sound = IsSoundValid(crowd[0]);
-            for (int i = 1; sound && i < Voices; i++) crowd[i] = LoadSoundAlias(crowd[0]);
+            string filename = SfxTable.Info(Sfx.Crowd).File;
+            var first = ResourceLoader.Sound($"{SfxTable.ResourcePath}.{filename}");
+            if (IsSoundValid(first))
+            {
+                crowd[0] = first;
+                sound = true;
+                for (int i = 1; i < Voices; i++) crowd[i] = LoadSoundAlias(first);
+            }
         }
-        if (IsWindowReady() && File.Exists(Assets.UiLayout)) art = HudArt.Load();
+        if (IsWindowReady()) art = HudArt.Load();
     }
 
     /// <inheritdoc/>

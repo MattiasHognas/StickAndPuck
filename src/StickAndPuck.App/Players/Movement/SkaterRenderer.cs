@@ -26,8 +26,8 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
 
     public void Start(World world)
     {
-        model = LoadModel(Assets.Skater);
-        clips = LoadModelAnimations(Assets.Skater).ToArray();
+        model = ResourceLoader.Model(Assets.Skater);
+        clips = ResourceLoader.Animations(Assets.Skater);
     }
 
     static string ClipName(ModelAnimation a)
