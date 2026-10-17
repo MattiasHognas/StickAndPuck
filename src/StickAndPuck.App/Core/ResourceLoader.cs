@@ -121,7 +121,8 @@ public static class ResourceLoader
     /// <summary>Loads a bundled fragment shader; WebGL uses a high-precision passthrough vertex shader.</summary>
     public static unsafe Shader FragmentShader(string path)
     {
-        if (OperatingSystem.IsBrowser()) return LoadShaderFromMemory(ReadText("shaders/web/unlit.vs"), ReadText(ShaderPath(path)));
+        if (OperatingSystem.IsBrowser())
+            return LoadShaderFromMemory(ReadText("shaders/web/unlit.vs"), ReadText(ShaderPath(path)));
         byte[] source = System.Text.Encoding.UTF8.GetBytes(ReadText(ShaderPath(path)) + "\0");
         fixed (byte* fs = source) return LoadShaderFromMemory((sbyte*)0, (sbyte*)fs);
     }
