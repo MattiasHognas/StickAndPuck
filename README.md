@@ -10,6 +10,7 @@ A silly attempt at rendering 3D as pixel art in the form of a hockey game. Pick 
 
 - **Windows:** run `StickAndPuck-vX.Y.Z-win-x64.exe`.
 - **Linux:** make the downloaded file executable with `chmod +x StickAndPuck-vX.Y.Z-linux-x64`, then run it.
+- **Browser** unpack and serve `StickAndPuck-vX.Y.Z-wasm-browser.zip`.
 
 (Replace `vX.Y.Z` with the version you downloaded.)
 
