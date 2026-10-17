@@ -84,6 +84,6 @@ internal sealed class LightingSystem : ISystem
         SetShaderValue(shader, midLoc, preset.Mid * tone, ShaderUniformDataType.Vec3);
         SetShaderValue(shader, fullLoc, preset.Full * tone, ShaderUniformDataType.Vec3);
         SetShaderValue(shader, dirLoc, preset.LightDir, ShaderUniformDataType.Vec3);
-        world.App.Dither.Apply(world.Camera, shader, world.App.Scale);     // the dither pattern hangs from the ice, not the screen
+        world.App.Dither.Apply(render.Motion.Camera(world), shader, world.App.Scale);     // the dither pattern hangs from the ice, not the screen
     }
 }

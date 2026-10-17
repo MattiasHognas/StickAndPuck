@@ -79,7 +79,7 @@ public static class Game
         public bool Frame(float frameSeconds)
         {
             if (disposed || (!OperatingSystem.IsBrowser() && WindowShouldClose()) || app.Screens.QuitRequested) return false;
-            loop.Frame(world, systems, frameSeconds);
+            loop.Frame(world, systems, frameSeconds, render.Motion);
 
             // A screen started a match or went back to the menus; the new world gets fresh systems
             if (app.Screens.TakeNextWorld().TryGet(out var next))
@@ -89,6 +89,7 @@ public static class Game
                 loop.Recorder = ReplayRecorder.Begin(next, "");
                 next.Switches = world.Switches.Copy();    // the scene's switches stay on, as the statics they were did
                 (world, systems) = (next, Restart(next, systems));
+                render.Motion.Reset();
             }
 
             Draw(world, systems, pixel, render, showFps: !loop.Frames.HasValue && world.Settings.FpsLine);
@@ -141,14 +142,14 @@ public static class Game
         {
             // 1. the scene, lit with three flat tones
             pixel.BeginScene();
-            BeginMode3D(world.Camera);
+            BeginMode3D(render.Motion.Camera(world));
             foreach (var s in systems) s.DrawScene(world, render);
             EndMode3D();
             PixelFrame.EndScene();
 
             // 2. a flat mask of the players, so the post pass can draw one outline around each
             pixel.BeginMask();
-            BeginMode3D(world.Camera);
+            BeginMode3D(render.Motion.Camera(world));
             foreach (var s in systems) s.DrawMask(world, render);
             EndMode3D();
             PixelFrame.EndMask();
@@ -201,7 +202,7 @@ public static class Game
         public int ExitCode { get; private set; }
 
         /// <summary>Runs this frame's steps.</summary>
-        public void Frame(World world, IReadOnlyList<ISystem> systems, float frameSeconds)
+        public void Frame(World world, IReadOnlyList<ISystem> systems, float frameSeconds, RenderInterpolation motion)
         {
             DeviceInput.Poll();
             bool frozen = Replay.Is(r => r is { Ended: true, Live: false });    // a replay that played out holds its last frame
@@ -210,6 +211,7 @@ public static class Game
             if (Limit > 0) steps = (int)Math.Min(steps, Limit - world.Tick);
             for (int i = 0; i < steps; i++)
             {
+                motion.Capture(world);
                 StepWorld(world, systems);
                 ulong sum = WorldChecksum.Of(world);
                 if (Recorder.HasValue || Replay.HasValue) Sums.Write(world.Tick - 1, sum);    // the recorded or replayed match only
@@ -223,6 +225,7 @@ public static class Game
                 }
                 if (step == ReplayStep.End) break;
             }
+            motion.Alpha = frozen || fast || scrubShot || Replay.Is(r => r.Ended) ? 1 : clock.Alpha;
         }
 
         /// <summary>Prints the replay's report the first time it is asked for.</summary>

@@ -31,14 +31,15 @@ public static class Marker
     static readonly ImmutableArray<Color> SlotColours = [new(0xf2, 0xc1, 0x4e, 255), new(0x7f, 0x9c, 0xae, 255)];
 
     /// <summary>Draws a marker under every skater a person controls. Call inside the 3D camera.</summary>
-    public static void Draw(World world)
+    public static void Draw(World world, RenderContext render)
     {
         if (!world.Settings.ControlMarker) return;
         for (int slot = 0; slot < MatchSetup.Slots && slot < world.Setup.Inputs.Count; slot++)
         {
             if (world.Setup.Inputs[slot].Device == InputDevice.None) continue;
             if (!world.Controlled(slot).TryGet(out var p) || !p.OnIce) continue;
-            DrawOne(p.Position, p.Heading, Colour(slot));
+            var pose = render.Motion.Player(world, p);
+            DrawOne(pose.Position, pose.Heading, Colour(slot));
         }
     }
 

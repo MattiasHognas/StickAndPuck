@@ -76,6 +76,7 @@ async function instrument(page) {
         window.__frames = [];
         const raf = window.requestAnimationFrame.bind(window);
         window.requestAnimationFrame = callback => raf(timestamp => {
+            if (window.__manualFrames) return;
             const begin = performance.now();
             callback(timestamp);
             window.__frames.push({ timestamp, work: performance.now() - begin });
@@ -220,8 +221,30 @@ async function verifyBrowser(name) {
         assert.deepEqual(await saves(page), savedBeforeReplay, 'Replays never modify settings or progress.');
         await page.locator('#upload').setInputFiles({ name: 'invalid.sapreplay', mimeType: 'application/octet-stream', buffer: Buffer.from('invalid') });
         await page.waitForFunction(() => document.querySelector('#status').textContent.startsWith('Replay upload failed'));
+        // Freeze automatic scheduling, then draw at 1 ms intervals. A changed canvas while
+        // State() stays identical proves interpolation is wired into real WebGL draw passes.
+        await open(page, 'skating'); await start(page);
+        await page.waitForTimeout(1500);
+        const interpolation = await page.evaluate(async () => {
+            window.__manualFrames = true;
+            const api = (await getDotnetRuntime(0).getAssemblyExports('StickAndPuck.dll')).StickAndPuck.App.Core.BrowserHost;
+            const canvas = document.querySelector('canvas');
+            const timestamp = __frames.at(-1).timestamp;
+            let previousState = '', previousImage = '', changedBetweenTicks = 0, image = '';
+            for (let offset = 1; offset <= 40; offset++) {
+                api.Frame(timestamp + offset);
+                const state = api.State();
+                image = canvas.toDataURL('image/png');
+                if (state === previousState && image !== previousImage) changedBetweenTicks++;
+                previousState = state; previousImage = image;
+            }
+            return { changedBetweenTicks, image };
+        });
+        assert(interpolation.changedBetweenTicks > 0, 'Rendered skaters move between simulation ticks.');
+        await writeFile(resolve(artifacts, `${name}-interpolation.png`), Buffer.from(interpolation.image.split(',')[1], 'base64'));
+        await host(page, 'Stop');
         assert.equal(errors.length, 0, errors.join('\n'));
-        results.push({ ...performanceResult, checksumsCompared: fixtures.reduce((sum, fixture) => sum + fixture.steps, 0), audioPcmVerified: true, input: ['keyboard', 'mouse', 'simulated standard gamepad'], persistence: ['settings', 'season', 'arcade'], errors });
+        results.push({ ...performanceResult, checksumsCompared: fixtures.reduce((sum, fixture) => sum + fixture.steps, 0), audioPcmVerified: true, interpolatedFramesVerified: interpolation.changedBetweenTicks, input: ['keyboard', 'mouse', 'simulated standard gamepad'], persistence: ['settings', 'season', 'arcade'], errors });
         console.log(`PASS ${name}: storage, inputs, audio, replay transfer and ${results.at(-1).checksumsCompared} desktop checksums`);
         console.log(JSON.stringify(performanceResult));
     } catch (error) {

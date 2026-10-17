@@ -164,7 +164,7 @@ internal sealed class PuckPhysics : ISystem, IDisposable
 
     public void DrawScene(World world, RenderContext render)
     {
-        var pos = world.Puck.Position;
+        var pos = render.Motion.Puck(world);
         // An airborne puck drops a crisp dark shadow on the ice and grows a little, so its height reads from the broadcast camera
         if (PuckLook.Airborne(pos.Y))
         {
