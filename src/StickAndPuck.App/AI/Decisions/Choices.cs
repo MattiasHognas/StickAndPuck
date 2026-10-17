@@ -102,7 +102,7 @@ public static class Choices
             for (int i = 0; i <= LaneSamples; i++)
             {
                 float f = i / (float)LaneSamples;
-                var point = Vector2.Lerp(from, to, f);
+                var point = SimMath.Lerp(from, to, f);
                 float puckTime = times[i];
                 float reach = Math.Max(0f, Vector2.Distance(at, point) - StickReach);
                 // a stick already in the lane needs no reaction: the puck runs into it

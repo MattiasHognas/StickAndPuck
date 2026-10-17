@@ -55,7 +55,7 @@ internal sealed class CameraSystem : ISystem
 
     public void DrawScene(World world, RenderContext render)
     {
-        if (!world.ReplayPlaying) Render.Marker.Draw(world);
+        if (!world.ReplayPlaying) Render.Marker.Draw(world, render);
     }
 
     public void DrawHud(World world, RenderContext render)

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stick &amp; Puck</title>
+<link rel="icon" href="data:,">
+<style>
+body { margin: 24px; background: #171322; color: #efe0c2; font: 16px system-ui; text-align: center; }
+canvas { display: block; margin: 20px auto; max-width: 100%; image-rendering: pixelated; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+<h1>Stick &amp; Puck</h1>
+<button id="start" disabled>Loading…</button>
+<button id="stop" disabled>Stop game</button>
+<fieldset>
+<legend>Replay files</legend>
+<label>Upload replay <input id="upload" type="file" accept=".sapreplay" disabled></label>
+<label>Recorded replays <select id="replays" aria-label="Recorded replays"></select></label>
+<button id="play" disabled>Play replay</button>
+<button id="verify" disabled>Verify replay</button>
+<button id="download" disabled>Download current match</button>
+<button id="download-selected" disabled>Download selected replay</button>
+</fieldset>
+<p id="save-status" role="status">Settings, seasons and arcade progress save in this browser. Download replays to keep them after closing the page.</p>
+<pre id="status" role="status">Loading .NET and game resources…</pre>
+<canvas id="canvas" width="1440" height="810" tabindex="0"></canvas>
+<script type="module" src="./main.js"></script>
+</html>

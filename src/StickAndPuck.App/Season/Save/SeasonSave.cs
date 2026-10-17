@@ -1,6 +1,5 @@
 using System.Text.Json;
 using StickAndPuck.App.Core;
-using System.Text.Json.Serialization;
 
 namespace StickAndPuck.App.Season;
 
@@ -11,19 +10,11 @@ namespace StickAndPuck.App.Season;
 /// Writes go to a temporary file first and then replace the save, so a crash never leaves half a file.</summary>
 public static class SeasonSave
 {
-    static readonly JsonSerializerOptions Json = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     /// <summary>Gets the save file path: SAP_SAVE, or season.json in the user's settings folder.</summary>
     public static string DefaultPath =>
         Env.Get("SAP_SAVE") is { Length: > 0 } p
             ? Path.GetFullPath(p)
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "season.json");
+            : SavedFiles.DefaultPath("season.json");
 
     /// <summary>Gets a value indicating whether a season save exists, for the start screen's Continue.</summary>
     public static bool Exists() => Exists(DefaultPath);
@@ -31,7 +22,7 @@ public static class SeasonSave
     /// <summary>Gets a value indicating whether a season save exists, for the start screen's Continue.</summary>
     public static bool Exists(string path)
     {
-        return File.Exists(path);
+        return SavedFiles.Exists(path);
     }
 
     /// <summary>Writes the season, replacing any earlier save.</summary>
@@ -41,11 +32,8 @@ public static class SeasonSave
     public static void Write(SeasonState season, string path)
     {
         if (DeviceInput.Playing) return;    // a replay never touches the saves
-        Directory.CreateDirectory(Path.GetDirectoryName(path) ?? "");
         season.Saved = DateTime.UtcNow;
-        string temp = path + ".tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(season, Json));
-        File.Move(temp, path, overwrite: true);
+        SavedFiles.WriteText(path, JsonSerializer.Serialize(season, SaveJsonContext.Default.SeasonState));
     }
 
     /// <summary>Reads the saved season.</summary>
@@ -56,10 +44,10 @@ public static class SeasonSave
     /// <returns>The season, or None when there is no save, it cannot be read, or it is from a newer version.</returns>
     public static Maybe<SeasonState> Read(string path)
     {
-        if (!File.Exists(path)) return Maybe<SeasonState>.None;
+        if (!SavedFiles.Exists(path)) return Maybe<SeasonState>.None;
         try
         {
-            if (JsonSerializer.Deserialize<SeasonState>(File.ReadAllText(path), Json) is not { } season || season.Version > SeasonState.CurrentVersion || season.Games.Count == 0) return Maybe<SeasonState>.None;
+            if (JsonSerializer.Deserialize(SavedFiles.ReadText(path), SaveJsonContext.Default.SeasonState) is not { } season || season.Version > SeasonState.CurrentVersion || season.Games.Count == 0) return Maybe<SeasonState>.None;
             return season;
         }
         catch (JsonException e)
@@ -75,6 +63,6 @@ public static class SeasonSave
     /// <summary>Removes the save, for New season on the start screen.</summary>
     public static void Delete(string path)
     {
-        if (File.Exists(path)) File.Delete(path);
+        if (!DeviceInput.Playing) SavedFiles.Delete(path);
     }
 }

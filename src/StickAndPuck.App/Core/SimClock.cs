@@ -15,14 +15,22 @@ public sealed class SimClock
 
     float pending;
 
+    /// <summary>Gets the fraction between the last two simulation poses; captures use the current pose.</summary>
+    public float Alpha { get; private set; } = 1;
+
     /// <summary>Gets the steps to run for a frame.</summary>
     public int Steps(float frameSeconds, bool lockstep, bool fast)
     {
-        if (fast) return FastSteps;
-        if (lockstep) return 1;
+        if (fast || lockstep)
+        {
+            pending = 0;
+            Alpha = 1;
+            return fast ? FastSteps : 1;
+        }
         pending += Math.Min(frameSeconds, MaxFrame);
         int steps = (int)(pending / Game.Step);
         pending -= steps * Game.Step;
+        Alpha = Math.Clamp(pending / Game.Step, 0, 1);
         return steps;
     }
 }

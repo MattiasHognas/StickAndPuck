@@ -25,64 +25,149 @@ public static class Game
     /// fast as it can without waiting for the screen, then quits.</summary>
     public static void Run()
     {
-        var clubs = Clubs.LoadAll();
-        Text.Use(Settings.FromEnvironment().Language);
-        Console.WriteLine($"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}");
-        var app = new AppState();
-        var replay = ReplayPlayer.FromEnvironment(clubs, app);
-        var world = replay.TryGet(out var played) ? played.World : Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment(), app);
-        var loop = new Loop
+        using var session = new Session();
+        while (session.Frame()) { }
+    }
+
+    /// <summary>A running game, driven by the desktop loop or one browser animation frame at a time.</summary>
+    public sealed class Session : IDisposable
+    {
+        readonly AppState app;
+        readonly Maybe<ReplayPlayer> replay;
+        World world;
+        readonly Loop loop;
+        readonly PixelFrame pixel;
+        readonly RenderContext render;
+        IReadOnlyList<ISystem> systems;
+        bool disposed;
+
+        /// <summary>Loads the world and its render resources.</summary>
+        public Session()
         {
-            Headless = Env.Is("SAP_SCREENSHOT", "1"),
-            Frames = FrameRecorder.FromEnvironment(),
-            Replay = replay,
-            Limit = long.TryParse(Env.Get("SAP_STEPS"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
-            Recorder = replay.TryGet(out var r) ? (r.TakeOverAtTarget ? r.TakeOverRecorder() : Maybe<ReplayRecorder>.None) : ReplayRecorder.Begin(world, RecordedScene()),
-            Sums = ChecksumLog.FromEnvironment(),
-        };
+            var clubs = Clubs.LoadAll();
+            Text.Use(Settings.FromEnvironment().Language);
+            Console.WriteLine($"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}");
+            app = new AppState();
+            replay = ReplayPlayer.FromEnvironment(clubs, app);
+            world = replay.TryGet(out var played) ? played.World : Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment(), app);
+            loop = new Loop
+            {
+                Headless = Env.Is("SAP_SCREENSHOT", "1"),
+                Frames = FrameRecorder.FromEnvironment(),
+                Replay = replay,
+                Limit = long.TryParse(Env.Get("SAP_STEPS"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
+                Recorder = replay.TryGet(out var r) ? (r.TakeOverAtTarget ? r.TakeOverRecorder() : Maybe<ReplayRecorder>.None) : ReplayRecorder.Begin(world, RecordedScene()),
+                Sums = ChecksumLog.FromEnvironment(),
+            };
 
-        SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint);
-        InitWindow(Width * 3, Height * 3, "Stick & Puck");
-        SetTargetFPS(60);
+            SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint);
+            InitWindow(Width * 3, Height * 3, "Stick & Puck");
+            if (OperatingSystem.IsBrowser() && !IsWindowReady())
+                throw new InvalidOperationException("WebGL could not initialize. Check your browser's graphics settings and reload.");
+            SetTargetFPS(OperatingSystem.IsBrowser() ? 0 : 60);
 
-        var pixel = new PixelFrame(Width, Height, app.Scale, app.Dither);
-        var render = new RenderContext { Toon = pixel.Toon, Mask = pixel.Mask };
-        var systems = Restart(world, []);
-        Console.WriteLine($"SAP: {systems.Count} systems: {string.Join(", ", systems.Select(s => s.GetType().Name))}");
+            pixel = new PixelFrame(Width, Height, app.Scale, app.Dither);
+            render = new RenderContext { Toon = pixel.Toon, Mask = pixel.Mask, Unlit = pixel.Unlit };
+            systems = Restart(world, []);
+            Console.WriteLine($"SAP: {systems.Count} systems: {string.Join(", ", systems.Select(s => s.GetType().Name))}");
+        }
 
-        while (!WindowShouldClose() && !app.Screens.QuitRequested)
+        /// <summary>Updates and draws one frame; false when the game should close.</summary>
+        public bool Frame() => Frame(GetFrameTime());
+
+        /// <summary>Updates and draws using elapsed host time; simulation still advances in fixed steps.</summary>
+        public bool Frame(float frameSeconds)
         {
-            loop.Frame(world, systems);
+            if (disposed || (!OperatingSystem.IsBrowser() && WindowShouldClose()) || app.Screens.QuitRequested) return false;
+            loop.Frame(world, systems, frameSeconds, render.Motion);
 
             // A screen started a match or went back to the menus; the new world gets fresh systems
             if (app.Screens.TakeNextWorld().TryGet(out var next))
             {
-                if (replay.Is(p => !p.Live)) break;    // the replayed match is over
+                if (replay.Is(p => !p.Live)) return false;    // the replayed match is over
                 if (loop.Recorder.TryGet(out var recorder)) recorder.Finish(world);
                 loop.Recorder = ReplayRecorder.Begin(next, "");
                 next.Switches = world.Switches.Copy();    // the scene's switches stay on, as the statics they were did
                 (world, systems) = (next, Restart(next, systems));
+                render.Motion.Reset();
             }
 
             Draw(world, systems, pixel, render, showFps: !loop.Frames.HasValue && world.Settings.FpsLine);
-            if (loop.AfterDraw(world, systems.Count)) break;
+            return !loop.AfterDraw(world, systems.Count);
         }
 
-        loop.ReportOnce(world);    // a recording that went on to the menus or a quit ends the loop before its last step
-        if (loop.Recorder.TryGet(out var last)) last.Finish(world);
-        loop.Sums.Dispose();
-        foreach (var s in systems.OfType<IDisposable>()) s.Dispose();
-        pixel.Dispose();
-        // GPU resources go before the window, or the context is already gone
-        CloseWindow();
-        Environment.ExitCode = loop.ExitCode;
-    }
+        /// <summary>Current simulation state for browser replay checks.</summary>
+        public string State => $"{world.Tick}:{WorldChecksum.Of(world):x16}\n{StateDump.Of(world)}\n{StateDump.Exact(world)}";
 
-    /// <summary>The SAP_SCENE to note in a scene's replay, or "" for the screens, which record their own matches.</summary>
-    static string RecordedScene()
-    {
-        string scene = Env.Get("SAP_SCENE") is { Length: > 0 } s ? s : Scenes.Default;
-        return string.Equals(scene, Scenes.Default, StringComparison.OrdinalIgnoreCase) ? "" : scene;
+        /// <summary>Reports replay verification after its final step.</summary>
+        public string ReplayResult => replay.TryGet(out var played)
+            ? !played.Ended ? "Replay stopped before its final step." : loop.ExitCode == 0 ? "Replay verified: events, result and checksums match." : "Replay differs from the recording."
+            : "";
+
+        /// <summary>Writes the current recording so the browser can download it.</summary>
+        public Maybe<string> ReplaySnapshot() => loop.Recorder.Select(recorder => recorder.Snapshot(world));
+
+        /// <summary>Finishes recordings and releases graphics before closing the window.</summary>
+        public void Dispose()
+        {
+            if (disposed) return;
+            disposed = true;
+            loop.ReportOnce(world);    // a recording that went on to the menus or a quit ends the loop before its last step
+            if (loop.Recorder.TryGet(out var last)) last.Finish(world);
+            loop.Sums.Dispose();
+            foreach (var s in systems.OfType<IDisposable>()) s.Dispose();
+            pixel.Dispose();
+            // GPU resources go before the window, or the context is already gone
+            CloseWindow();
+            Environment.ExitCode = loop.ExitCode;
+        }
+
+        /// <summary>The SAP_SCENE to note in a scene's replay, or "" for the screens, which record their own matches.</summary>
+        static string RecordedScene()
+        {
+            string scene = Env.Get("SAP_SCENE") is { Length: > 0 } s ? s : Scenes.Default;
+            return string.Equals(scene, Scenes.Default, StringComparison.OrdinalIgnoreCase) ? "" : scene;
+        }
+
+        /// <summary>Disposes the old systems and starts a fresh set on the world.</summary>
+        static IReadOnlyList<ISystem> Restart(World world, IReadOnlyList<ISystem> old)
+        {
+            foreach (var s in old.OfType<IDisposable>()) s.Dispose();
+            var systems = Systems.Create(world.Seed);
+            foreach (var s in systems) s.Start(world);
+            return systems;
+        }
+
+        static void Draw(World world, IReadOnlyList<ISystem> systems, PixelFrame pixel, RenderContext render, bool showFps)
+        {
+            // 1. the scene, lit with three flat tones
+            pixel.BeginScene();
+            if (OperatingSystem.IsBrowser()) BeginShaderMode(render.Unlit);
+            BeginMode3D(render.Motion.Camera(world));
+            foreach (var s in systems) s.DrawScene(world, render);
+            EndMode3D();
+            if (OperatingSystem.IsBrowser()) EndShaderMode();
+            PixelFrame.EndScene();
+
+            // 2. a flat mask of the players, so the post pass can draw one outline around each
+            pixel.BeginMask();
+            BeginMode3D(render.Motion.Camera(world));
+            foreach (var s in systems) s.DrawMask(world, render);
+            EndMode3D();
+            PixelFrame.EndMask();
+
+            // 3. HUD at the native size, never snapped or outlined
+            pixel.BeginHud();
+            foreach (var s in systems) s.DrawHud(world, render);
+            PixelFrame.EndHud();
+
+            // 4. palette snap and outline, HUD on top, then whole-pixel upscale into the window
+            BeginDrawing();
+            ClearBackground(new Color(24, 19, 31, 255));
+            pixel.Present();
+            if (showFps) DrawText($"{GetFPS()} fps  arrows: skate  space: shoot  tab: kit", 8, 8, 10, new Color(239, 224, 194, 255));
+            EndDrawing();
+        }
     }
 
     /// <summary>Runs one fixed step of every system on the world.</summary>
@@ -119,15 +204,16 @@ public static class Game
         public int ExitCode { get; private set; }
 
         /// <summary>Runs this frame's steps.</summary>
-        public void Frame(World world, IReadOnlyList<ISystem> systems)
+        public void Frame(World world, IReadOnlyList<ISystem> systems, float frameSeconds, RenderInterpolation motion)
         {
             DeviceInput.Poll();
             bool frozen = Replay.Is(r => r is { Ended: true, Live: false });    // a replay that played out holds its last frame
             bool fast = Replay.Is(r => r.FastForward(Headless)) || (Limit > 0 && !Replay.HasValue);
-            int steps = frozen ? 0 : clock.Steps(GetFrameTime(), lockstep: Headless || Frames.HasValue, fast);
+            int steps = frozen ? 0 : clock.Steps(frameSeconds, lockstep: Headless || Frames.HasValue, fast);
             if (Limit > 0) steps = (int)Math.Min(steps, Limit - world.Tick);
             for (int i = 0; i < steps; i++)
             {
+                motion.Capture(world);
                 StepWorld(world, systems);
                 ulong sum = WorldChecksum.Of(world);
                 if (Recorder.HasValue || Replay.HasValue) Sums.Write(world.Tick - 1, sum);    // the recorded or replayed match only
@@ -141,6 +227,7 @@ public static class Game
                 }
                 if (step == ReplayStep.End) break;
             }
+            motion.Alpha = frozen || fast || scrubShot || Replay.Is(r => r.Ended) ? 1 : clock.Alpha;
         }
 
         /// <summary>Prints the replay's report the first time it is asked for.</summary>
@@ -182,41 +269,4 @@ public static class Game
         }
     }
 
-    /// <summary>Disposes the old systems and starts a fresh set on the world.</summary>
-    static IReadOnlyList<ISystem> Restart(World world, IReadOnlyList<ISystem> old)
-    {
-        foreach (var s in old.OfType<IDisposable>()) s.Dispose();
-        var systems = Systems.Create(world.Seed);
-        foreach (var s in systems) s.Start(world);
-        return systems;
-    }
-
-    static void Draw(World world, IReadOnlyList<ISystem> systems, PixelFrame pixel, RenderContext render, bool showFps)
-    {
-        // 1. the scene, lit with three flat tones
-        pixel.BeginScene();
-        BeginMode3D(world.Camera);
-        foreach (var s in systems) s.DrawScene(world, render);
-        EndMode3D();
-        PixelFrame.EndScene();
-
-        // 2. a flat mask of the players, so the post pass can draw one outline around each
-        pixel.BeginMask();
-        BeginMode3D(world.Camera);
-        foreach (var s in systems) s.DrawMask(world, render);
-        EndMode3D();
-        PixelFrame.EndMask();
-
-        // 3. HUD at the native size, never snapped or outlined
-        pixel.BeginHud();
-        foreach (var s in systems) s.DrawHud(world, render);
-        PixelFrame.EndHud();
-
-        // 4. palette snap and outline, HUD on top, then whole-pixel upscale into the window
-        BeginDrawing();
-        ClearBackground(new Color(24, 19, 31, 255));
-        pixel.Present();
-        if (showFps) DrawText($"{GetFPS()} fps  arrows: skate  space: shoot  tab: kit", 8, 8, 10, new Color(239, 224, 194, 255));
-        EndDrawing();
-    }
 }

@@ -20,6 +20,9 @@ public sealed class PixelFrame : IDisposable
     /// <summary>Shader used to render the scene with per-pixel toon shading.</summary>
     public readonly Shader Toon;
 
+    /// <summary>High-precision unlit shader for WebGL; desktop keeps raylib's default.</summary>
+    public readonly Shader Unlit;
+
     /// <summary>Shader used to generate the player mask texture.</summary>
     public readonly Shader Mask;
 
@@ -64,6 +67,7 @@ public sealed class PixelFrame : IDisposable
         }
         hud = Target(width, height);
 
+        if (OperatingSystem.IsBrowser()) Unlit = ResourceLoader.Shader("shaders/unlit.vs", "shaders/unlit.fs");
         Toon = ResourceLoader.Shader("shaders/toon.vs", "shaders/toon.fs");
         SetShaderValue(Toon, GetShaderLocation(Toon, "lightDir"), new Vector3(-0.45f, 0.75f, 0.5f), ShaderUniformDataType.Vec3);
         SetShaderValue(Toon, GetShaderLocation(Toon, "bandWidth"), Dither ? BandWidth : 0f, ShaderUniformDataType.Float);
@@ -145,6 +149,7 @@ public sealed class PixelFrame : IDisposable
     public void Dispose()
     {
         UnloadShader(Toon); UnloadShader(Mask); UnloadShader(Post);
+        if (OperatingSystem.IsBrowser()) UnloadShader(Unlit);
         foreach (var t in scenes) UnloadRenderTexture(t);
         foreach (var t in masks) UnloadRenderTexture(t);
         UnloadRenderTexture(hud);

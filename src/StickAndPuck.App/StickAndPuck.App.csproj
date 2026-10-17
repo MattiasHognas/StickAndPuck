@@ -1,6 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project>
+  <!-- Keep browser restore metadata separate from the desktop project evaluation. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <BaseIntermediateOutputPath>obj/browser/</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin/browser/</BaseOutputPath>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(RuntimeIdentifier)' != 'browser-wasm'" />
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk.WebAssembly" Condition="'$(RuntimeIdentifier)' == 'browser-wasm'" />
 
   <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**</DefaultItemExcludes>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <OutputType>Exe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>StickAndPuck</AssemblyName>
@@ -12,12 +22,27 @@
     <InternalsVisibleTo Include="StickAndPuck.Tests" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' and '$(MSBuildProjectFullPath)' != ''">
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'browser-wasm'">
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <DebugType>embedded</DebugType>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <UseMonoRuntime>true</UseMonoRuntime>
+    <WasmBuildNative>true</WasmBuildNative>
+    <EmccExtraLDFlags>-sMIN_WEBGL_VERSION=1 -sMAX_WEBGL_VERSION=1</EmccExtraLDFlags>
+    <EmccVerbose>false</EmccVerbose>
+    <!-- This project selects its SDK by RID; nested static asset builds must retain it. -->
+    <StaticWebAssetsAdditionalBuildPropertiesToRemove>$(StaticWebAssetsAdditionalBuildPropertiesToRemove.Replace('RuntimeIdentifier', ''))</StaticWebAssetsAdditionalBuildPropertiesToRemove>
+    <StaticWebAssetsAdditionalPublishPropertiesToRemove>$(StaticWebAssetsAdditionalPublishPropertiesToRemove.Replace('RuntimeIdentifier', ''))</StaticWebAssetsAdditionalPublishPropertiesToRemove>
+    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
+    <PublishTrimmed>true</PublishTrimmed>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,4 +69,6 @@
     <EmbeddedResource Include="$(RepoRoot)data/**/*.json" LinkBase="data" />
   </ItemGroup>
 
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition="'$(RuntimeIdentifier)' != 'browser-wasm'" />
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.WebAssembly" Condition="'$(RuntimeIdentifier)' == 'browser-wasm'" />
 </Project>

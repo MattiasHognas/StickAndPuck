@@ -64,7 +64,7 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         var (clip, frame) = poses.GetValueOrDefault(g.Id, (-1, 0f));
         if (clip < 0) return;
         int count = clips[clip].KeyFrameCount;
-        UpdateModelAnimation(model, clips[clip], (int)frame % count);   // whole frames only: the poses are held, never blended
+        ModelPose.Apply(model, clips[clip], (int)frame % count);   // whole frames only: the poses are held, never blended
     }
 
     Texture2D Kit(World world, Player g)
@@ -76,11 +76,6 @@ internal sealed unsafe class GoalieRenderer : IDisposable
             kits[path] = tex;
         }
         return tex;
-    }
-
-    static float Degrees(Player g)
-    {
-        return g.Heading * 180f / MathF.PI;
     }
 
     public void DrawScene(World world, RenderContext render)
@@ -95,7 +90,8 @@ internal sealed unsafe class GoalieRenderer : IDisposable
                 model.Materials[i].Shader = render.Toon;
                 SetMaterialTexture(ref model.Materials[i], MaterialMapIndex.Albedo, kit);
             }
-            DrawModelEx(model, g.Position, Vector3.UnitY, Degrees(g), new Vector3(Scale), Color.White);
+            var pose = render.Motion.Player(world, g);
+            DrawModelEx(model, pose.Position, Vector3.UnitY, pose.Heading * 180f / MathF.PI, new Vector3(Scale), Color.White);
         }
     }
 
@@ -106,7 +102,8 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         {
             Pose(g);
             for (int i = 0; i < model.MaterialCount; i++) model.Materials[i].Shader = render.Mask;
-            DrawModelEx(model, g.Position, Vector3.UnitY, Degrees(g), new Vector3(Scale), MaskIds.For(g.MaskId));
+            var pose = render.Motion.Player(world, g);
+            DrawModelEx(model, pose.Position, Vector3.UnitY, pose.Heading * 180f / MathF.PI, new Vector3(Scale), MaskIds.For(g.MaskId));
         }
     }
 

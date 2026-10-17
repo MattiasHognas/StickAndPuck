@@ -88,7 +88,7 @@ public static class Coverage
         var goalSide = attacker + Dir(attacker, net) * (zone == DefenceZone.Own ? 1.1f : 2.6f);
         var inLane = attacker + Dir(attacker, carrier) * Math.Min(2.2f, toCarrier * 0.4f);
         float lean = zone == DefenceZone.Own ? Math.Clamp(0.85f - 0.55f * danger, 0.25f, 0.8f) : 0.45f;
-        return TeamShape.Inside(Vector2.Lerp(goalSide, inLane, lean));
+        return TeamShape.Inside(SimMath.Lerp(goalSide, inLane, lean));
     }
 
     /// <summary>Gets a marker's spot kept within reach of his place in the team shape: he covers the man and

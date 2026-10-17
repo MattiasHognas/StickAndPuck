@@ -121,7 +121,7 @@ public static class TeamShape
                 if (!strong) return (-G + 3.5f, s * 1.6f);
                 // between the puck and the near post, a little nearer the puck
                 var net = new Vector2(-G + 1.5f, s * 0.6f);
-                var spot = Vector2.Lerp(net, new Vector2(pa, pz), 0.55f);
+                var spot = SimMath.Lerp(net, new Vector2(pa, pz), 0.55f);
                 return (spot.X, spot.Y);
         }
     }

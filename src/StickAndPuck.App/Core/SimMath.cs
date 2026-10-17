@@ -1,9 +1,11 @@
+using System.Numerics;
+
 namespace StickAndPuck.App.Core;
 
 /// <summary>Sine, cosine, arctangent, exp and log that give the same bits on every machine. MathF and
 /// Math hand these to the C library, and glibc, musl and Windows round them differently, so a
-/// match drifts apart between two computers. Everything here is plain double adds, multiplies,
-/// divides and square roots, which IEEE 754 rounds the same everywhere. The game's systems use
+/// match drifts apart between two computers. Transcendental functions use plain double adds,
+/// multiplies, divides and square roots; interpolation explicitly requests fused rounding. The game's systems use
 /// these in place of MathF; drawing code may keep MathF.</summary>
 public static class SimMath
 {
@@ -15,6 +17,11 @@ public static class SimMath
     const double HalfPi1 = 1.5707963267341256;
     const double HalfPi2 = 6.077100506303966e-11;
     const double HalfPi3 = 2.0222662487111665e-21;
+
+    /// <summary>Interpolates a simulation vector with the same fused rounding on every platform.</summary>
+    public static Vector2 Lerp(Vector2 from, Vector2 to, float amount) => new(
+        MathF.FusedMultiplyAdd(from.X, 1f - amount, to.X * amount),
+        MathF.FusedMultiplyAdd(from.Y, 1f - amount, to.Y * amount));
 
     /// <summary>Gets the sine.</summary>
     public static float Sin(float x) => (float)Sin((double)x);

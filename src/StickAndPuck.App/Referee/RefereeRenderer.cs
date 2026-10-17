@@ -87,7 +87,7 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         if (clip < 0) return;
         // The loader's final sample is the rest pose; the set stance must stay crouched across its loop.
         int count = clip == set ? Math.Max(1, clips[clip].KeyFrameCount - 1) : clips[clip].KeyFrameCount;
-        UpdateModelAnimation(model, clips[clip], (int)frame % count);   // whole frames only
+        ModelPose.Apply(model, clips[clip], (int)frame % count);   // whole frames only
     }
 
     public void DrawScene(Referee r, RenderContext render)
@@ -99,7 +99,8 @@ internal sealed unsafe class RefereeRenderer : IDisposable
             model.Materials[i].Shader = render.Toon;
             SetMaterialTexture(ref model.Materials[i], MaterialMapIndex.Albedo, kit);
         }
-        DrawModelEx(model, r.Position, System.Numerics.Vector3.UnitY, r.Heading * 180f / MathF.PI, new System.Numerics.Vector3(Scale), Color.White);
+        var pose = render.Motion.Referee(r);
+        DrawModelEx(model, pose.Position, System.Numerics.Vector3.UnitY, pose.Heading * 180f / MathF.PI, new System.Numerics.Vector3(Scale), Color.White);
     }
 
     public void DrawMask(Referee r, RenderContext render)
@@ -107,7 +108,8 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         if (!loaded) return;
         Pose();
         for (int i = 0; i < model.MaterialCount; i++) model.Materials[i].Shader = render.Mask;
-        DrawModelEx(model, r.Position, System.Numerics.Vector3.UnitY, r.Heading * 180f / MathF.PI, new System.Numerics.Vector3(Scale), MaskIds.For(Referee.MaskId));
+        var pose = render.Motion.Referee(r);
+        DrawModelEx(model, pose.Position, System.Numerics.Vector3.UnitY, pose.Heading * 180f / MathF.PI, new System.Numerics.Vector3(Scale), MaskIds.For(Referee.MaskId));
     }
 
     public void Dispose()

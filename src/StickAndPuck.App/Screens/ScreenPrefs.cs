@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
 using System.Collections.Immutable;
 
@@ -34,19 +33,11 @@ internal sealed record ScreenPrefs
 /// SAP_SETTINGS=path overrides it.</summary>
 internal static class ScreenPrefsFile
 {
-    static readonly JsonSerializerOptions Json = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     /// <summary>Gets the settings file path.</summary>
     public static string DefaultPath =>
         Env.Get("SAP_SETTINGS") is { Length: > 0 } p
             ? Path.GetFullPath(p)
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "settings.json");
+            : SavedFiles.DefaultPath("settings.json");
 
     /// <summary>Reads the saved settings from <see cref="DefaultPath"/>, or the defaults when there is no readable file.</summary>
     public static ScreenPrefs Read() => Read(DefaultPath);
@@ -56,7 +47,7 @@ internal static class ScreenPrefsFile
     {
         try
         {
-            if (File.Exists(path) && FromJson(File.ReadAllText(path)) is var prefs)
+            if (SavedFiles.Exists(path) && FromJson(SavedFiles.ReadText(path)) is var prefs)
                 return prefs with { PeriodMinutes = Math.Clamp(prefs.PeriodMinutes, 1, 20) };
         }
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
@@ -67,12 +58,12 @@ internal static class ScreenPrefsFile
     }
 
     /// <summary>Gets the settings as the file stores them (a replay keeps them).</summary>
-    public static string ToJson(ScreenPrefs prefs) => JsonSerializer.Serialize(prefs, Json);
+    public static string ToJson(ScreenPrefs prefs) => JsonSerializer.Serialize(prefs, SaveJsonContext.Default.ScreenPrefs);
 
     /// <summary>Reads settings <see cref="ToJson"/> wrote.</summary>
     public static ScreenPrefs FromJson(string json)
     {
-        var prefs = JsonSerializer.Deserialize<ScreenPrefs>(json, Json) ?? new ScreenPrefs();
+        var prefs = JsonSerializer.Deserialize(json, SaveJsonContext.Default.ScreenPrefs) ?? new ScreenPrefs();
         return OldVolume(json).TryGet(out float volume) ? prefs with { Settings = prefs.Settings with { EffectsVolume = volume } } : prefs;
     }
 
@@ -105,8 +96,7 @@ internal static class ScreenPrefsFile
         if (DeviceInput.Playing) return;    // a replay's menus never touch the saved settings
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllText(path, JsonSerializer.Serialize(prefs, Json));
+            SavedFiles.WriteText(path, JsonSerializer.Serialize(prefs, SaveJsonContext.Default.ScreenPrefs));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

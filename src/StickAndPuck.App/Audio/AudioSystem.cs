@@ -40,6 +40,9 @@ internal sealed class AudioSystem : ISystem, IDisposable
 
     public void Start(World world)
     {
+        // Fast replay verification can finish before a Web Audio resume promise settles.
+        // It checks simulation only; leave audio unopened until a normal Start/Play gesture.
+        if (OperatingSystem.IsBrowser() && Env.Is("SAP_SCREENSHOT", "1")) return;
         lastCarrier = world.Puck.Carrier;
         lastVelocity = world.Puck.Velocity;
         demo = string.Equals(Env.Get("SAP_SFX"), "demo", StringComparison.OrdinalIgnoreCase);

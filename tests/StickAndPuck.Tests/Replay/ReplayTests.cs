@@ -22,12 +22,36 @@ namespace StickAndPuck.Tests;
 /// </summary>
 public sealed class ReplayTests : CheckedTest
 {
-    // written down from the cloud run; his machine and the Windows build must give the same
+    // Reference values shared by the desktop tests and browser replay verification.
     const string SinCosBits = "3f576aa4 3f0a5140 3f7e9262 4081c433 3f9e830c 3ed227eb";
     const string SeedValues = "610514733 1889226249 14";
-    const string MatchSum = "0ee58c209a8adbd4";
+    // Stable blade trigonometry and explicit fused rounding replace platform matrix transforms.
+    // tools/browser/verify.mjs also checks every step against Chromium and Firefox.
+    const string MatchSum = "bc2edcc09d0786be";
 
     readonly bool print = Env.Is("SAP_REPLAYTEST_PRINT", "1");
+
+    [Test]
+    public void SnapshotDoesNotEndOngoingRecording()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "StickAndPuckSnapshot", Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(directory, "snapshot.sapreplay");
+        try
+        {
+            var world = new WorldBuilder().Build();
+            var recorder = ReplayRecorder.Begin(new ReplayHeader(), InputFrame.Empty, path);
+            world.Tick = 1;
+            recorder.AfterStep(world, WorldChecksum.Of(world));
+            recorder.Snapshot(world);
+            Check(ReplayFile.Read(path).End.StartsWith("0 ", StringComparison.Ordinal), "downloaded snapshot ends at its current step");
+            world.Tick = 2;
+            recorder.AfterStep(world, WorldChecksum.Of(world));
+            recorder.Finish(world);
+            var finished = ReplayFile.Read(path);
+            Check(finished.LastTick == 1 && finished.End.StartsWith("1 ", StringComparison.Ordinal), "recording continues and finishes at the new final step");
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
+    }
 
     [Test]
     public void Maths()
@@ -106,7 +130,7 @@ public sealed class ReplayTests : CheckedTest
         Check(a.Sums.Zip(c.Sums).Any(p => p.First != p.Second), "seed 32 plays a different match");
         string last = WorldChecksum.Text(a.Sums[^1]);
         if (print) Console.WriteLine($"      match checksum: {last}, {a.Summary}");
-        Check(string.Equals(last, MatchSum, StringComparison.Ordinal), $"seed 31 ends on the checksum written down from the cloud ({last}, {a.Summary})");
+        Check(string.Equals(last, MatchSum, StringComparison.Ordinal), $"seed 31 ends on the reference checksum ({last}, {a.Summary})");
     }
 
     static (List<ulong> Sums, string Summary) Play(int seed, int steps)

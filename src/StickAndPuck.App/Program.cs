@@ -4,10 +4,13 @@
 // OpenGL picks its graphics card when the window is made, so a game that should run on another
 // card than it started on starts itself again on that card first (see GpuLaunch).
 StickAndPuck.App.Core.AssetRoot.Enter();
-if (!StickAndPuck.App.Core.GpuLaunch.OntoWanted())
+if (!OperatingSystem.IsBrowser() && !StickAndPuck.App.Core.GpuLaunch.OntoWanted())
 {
     StickAndPuck.App.Core.Game.Run();
-    StickAndPuck.App.Core.GpuLaunch.AfterRun();
+    if (!OperatingSystem.IsBrowser())
+    {
+        StickAndPuck.App.Core.GpuLaunch.AfterRun();
+    }
 }
 
 namespace StickAndPuck.App.Core
@@ -15,6 +18,7 @@ namespace StickAndPuck.App.Core
     using System.Diagnostics;
     using System.Globalization;
     using System.Runtime.InteropServices;
+    using System.Runtime.Versioning;
     using StickAndPuck.App.Screens;
 
     /// <summary>A graphics card found on the machine.</summary>
@@ -131,6 +135,7 @@ namespace StickAndPuck.App.Core
 
         static IReadOnlyList<GpuCard> Find()
         {
+            if (OperatingSystem.IsBrowser()) return [];
             var cards = OperatingSystem.IsWindows() ? FromDxgi()
                 : FromSysfs("/sys/class/drm", File.Exists("/usr/share/hwdata/pci.ids") ? "/usr/share/hwdata/pci.ids" : "/usr/share/misc/pci.ids");
             Console.WriteLine($"SAP: gpu: {cards.Count} card(s): {string.Join(", ", cards.Select(c => $"{c.Name} [{c.Id}]{(c.IsDefault ? " default" : "")}"))}");
@@ -139,6 +144,7 @@ namespace StickAndPuck.App.Core
 
         static string AskRenderer()
         {
+            if (OperatingSystem.IsBrowser()) return "WebGL";
             try
             {
                 nint p = OperatingSystem.IsWindows() ? WglGetString(0x1F01) : GlxGetString(0x1F01);
@@ -228,6 +234,8 @@ namespace StickAndPuck.App.Core
         /// <returns>True when that game ran (and has ended) instead of this one.</returns>
         public static bool OntoWanted()
         {
+            if (OperatingSystem.IsBrowser())
+                return false;
             if (!CanSwitch) return false;
             var wanted = GpuCards.Resolve(GpuCards.All, Settings.FromEnvironment(ScreenPrefsFile.Read().Settings).Gpu);
             if (string.Equals(wanted.Id, Running.Id, StringComparison.Ordinal)) return false;
@@ -250,11 +258,13 @@ namespace StickAndPuck.App.Core
         }
 
         /// <summary>Starts the game again on the card <see cref="Request"/> asked for, if any.</summary>
+        [UnsupportedOSPlatform("browser")]
         public static void AfterRun()
         {
             if (pending.TryGet(out var card)) Relaunch(card, card.IsDefault ? "" : card.Id, ask ? Running.Id : "");
         }
 
+        [UnsupportedOSPlatform("browser")]
         static void Relaunch(GpuCard card, string sapGpu, string revertTo)
         {
             string host = Environment.ProcessPath ?? "";

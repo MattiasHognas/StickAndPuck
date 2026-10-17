@@ -162,9 +162,9 @@ internal sealed class PuckPhysics : ISystem, IDisposable
         return side == Side.Home ? Side.Away : Side.Home;
     }
 
-    public void DrawScene(World world, RenderContext render)
+    public unsafe void DrawScene(World world, RenderContext render)
     {
-        var pos = world.Puck.Position;
+        var pos = render.Motion.Puck(world);
         // An airborne puck drops a crisp dark shadow on the ice and grows a little, so its height reads from the broadcast camera
         if (PuckLook.Airborne(pos.Y))
         {
@@ -172,6 +172,8 @@ internal sealed class PuckPhysics : ISystem, IDisposable
             DrawCylinder(pos with { Y = PuckLook.ShadowLift }, r, r, 0.004f, 16, PuckLook.ShadowColour);
         }
         float scale = PuckLook.Scale(pos.Y);
+        if (OperatingSystem.IsBrowser())
+            for (int i = 0; i < puck.MaterialCount; i++) puck.Materials[i].Shader = render.Unlit;
         DrawModelEx(puck, pos, Vector3.UnitY, 0f, new Vector3(scale), Rubber);
     }
 

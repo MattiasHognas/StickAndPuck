@@ -98,8 +98,14 @@ public static partial class PuckHandling
     /// <summary>Where a blade is for a body at a position and heading.</summary>
     public static Vector3 Blade(Vector3 position, float heading)
     {
-        var tip = position + Vector3.Transform(new Vector3(0.55f, 0, 1.05f) * SkaterRenderer.Scale, Matrix4x4.CreateRotationY(heading));
-        return tip with { Y = 0 };
+        // Matrix4x4 rotation uses platform trigonometry and estimated SIMD multiply-adds.
+        // Keep the simulation on SimMath and require the same fused rounding everywhere.
+        float x = 0.55f * SkaterRenderer.Scale, z = 1.05f * SkaterRenderer.Scale;
+        float sine = SimMath.Sin(heading), cosine = SimMath.Cos(heading);
+        return new Vector3(
+            position.X + MathF.FusedMultiplyAdd(z, sine, x * cosine),
+            0,
+            position.Z + MathF.FusedMultiplyAdd(z, cosine, -x * sine));
     }
 
     /// <summary>Gets the way a player faces, on the ice (x, z).</summary>

@@ -143,3 +143,36 @@ Use these with `SAP_SCENE=start` (the default scene). Values are case-insensitiv
 Use the same game revision for recording and replay validation. A seed alone does not describe human input: keep the replay file. The automatic goal replay camera uses a short visual buffer; `.sapreplay` files record inputs for deterministic resimulation.
 
 A full replay check is the validation command above without `SAP_AT`. Scrubbing with `SAP_AT` stops early, so the current end-of-replay comparison may report a different final score/event count even when all checksums up to that tick agree.
+
+
+## Browser verification
+
+Install the `wasm-tools` workload, Node 20 or newer, and the browser dependencies once:
+
+```sh
+dotnet workload install wasm-tools
+npm ci --prefix tools/browser
+(cd tools/browser && npx playwright install --with-deps chromium firefox)
+```
+
+Run `tools/verify-browser.sh` with a working desktop display, or `xvfb-run -a tools/verify-browser.sh` on a headless Linux machine. The script builds desktop Release, publishes a fresh trimmed browser site, checks storage failure behavior, and tests Chromium and Firefox. `BROWSERS=chromium` selects one installed engine; `SITE_ROOT` can point to another published `wwwroot`.
+
+Web Audio verification also needs a working audio output. On a headless Ubuntu runner, install `pulseaudio`, start it with `pulseaudio --start --exit-idle-time=-1`, then run `pactl load-module module-null-sink sink_name=browser_test` and `pactl set-default-sink browser_test`. This provides an audio device while retaining the check that the game produces nonzero PCM samples.
+
+The browser suite checks actual menu navigation and saved settings, season and arcade reloads, native asset/animation/font/music loading, nonzero Web Audio PCM after Start, keyboard movement, mouse input, and simulated standard gamepad connect/buttons/axes/disconnect. Physical controller/driver behavior still needs hardware testing. It exercises replay downloads during a running recording, uploads, invalid-file rejection and verification without changing saves.
+
+Two desktop fixtures (1,800 AI-match steps and 6,000 match-demo steps, with separate seeds) are recorded through the real game loop. Each browser must match all 7,800 per-step checksums, events and final results. A browser input recording must also verify on desktop. The suite writes screenshots, console logs, replay fixtures, checksum logs and `results.json` under `TestResults/browser/`.
+
+Performance reports include observed drawing FPS, simulation Hz, clamped frame counts, and mean/p95/max callback work over a three-second practice sample. Headless software rendering is a reference measurement, not a hardware GPU benchmark. The suite checks that simulation steps match 60 Hz over the frame time accepted by `SimClock`, including its existing 250 ms catch-up limit for stalls. CI runs the suite on a virtual display with a virtual audio output and uploads the deployable `wwwroot` plus reports as artifacts.
+
+Browser verification also advances the skating fixture in 1 ms callbacks and checks that the WebGL canvas changes while the simulation state remains identical. This exercises interpolation through the real scene and mask passes; 30/60/120/144 Hz scheduling and discontinuities are covered by the .NET tests.
+
+The browser suite also resets WebGL’s generic vertex colour to black before drawing the practice scene and checks actual framebuffer pixels for bright ice. This catches uncoloured arena meshes accidentally inheriting context state instead of explicitly using white.
+
+For Electron/VS Code GPU regressions, serve the published site and run:
+
+```bash
+npm --prefix tools/browser run test:electron -- /path/to/electron http://localhost:8000
+```
+
+This opens a temporary test window using Electron's normal GPU selection. It checks framebuffer ice colours, high-precision vertex transforms in all 3D passes, correctly disabled colour writes in depth-only passes, and ice stability during actual camera panning. Results include the GPU renderer in `TestResults/browser/electron-gpu.json`. Run this on real hardware as well as the software-rendered Chromium/Firefox suite; software drivers can promote mediump arithmetic and hide precision errors.

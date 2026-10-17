@@ -3,7 +3,6 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Numerics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
 using static System.FormattableString;
@@ -76,14 +75,6 @@ public sealed class ReplayFile
     public const int CheckEvery = 30;
 
     const string Magic = "SAPREPLAY 1";
-
-    /// <summary>The JSON options for headers.</summary>
-    internal static readonly JsonSerializerOptions Json = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
 
     /// <summary>Gets or sets the header.</summary>
     public ReplayHeader Header { get; set; } = new();
@@ -167,7 +158,7 @@ public sealed class ReplayFile
             switch (line[0])
             {
                 case 'h':
-                    r.Header = JsonSerializer.Deserialize<ReplayHeader>(rest, Json) ?? throw new InvalidDataException("empty replay header");
+                    r.Header = JsonSerializer.Deserialize(rest, ReplayJsonContext.Default.ReplayHeader) ?? throw new InvalidDataException("empty replay header");
                     break;
                 case 'f':
                     r.Start = InputFrame.Read(rest);
@@ -206,7 +197,7 @@ public sealed class ReplayFile
         using (var w = new StreamWriter(gzip))
         {
             w.WriteLine(Magic);
-            w.WriteLine("h " + JsonSerializer.Serialize(Header, Json));
+            w.WriteLine("h " + JsonSerializer.Serialize(Header, ReplayJsonContext.Default.ReplayHeader));
             w.WriteLine("f " + Start.Write());
             var c = CultureInfo.InvariantCulture;
             foreach (var (tick, frame) in Inputs) w.WriteLine(string.Create(c, $"i {tick} {frame.Write()}"));

@@ -166,7 +166,7 @@ public sealed class StatsTests : CheckedTest
         var table = new StatTable();
         table.Add(tracker.Sheet);
         Check(table.Find(w.Setup.Away.Id, shooter.Data.Number).Is(p => p.Clears == 1 && p.Shots == 2), "the season line adds the clears");
-        var old = JsonSerializer.Deserialize<PlayerStats>("""{"club":"x","number":7,"shots":4}""", new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var old = JsonSerializer.Deserialize("""{"club":"x","number":7,"shots":4}""", SaveJsonContext.Default.PlayerStats);
         Check(old is { Clears: 0, Shots: 4 }, "a line saved without clears reads with none");
     }
 

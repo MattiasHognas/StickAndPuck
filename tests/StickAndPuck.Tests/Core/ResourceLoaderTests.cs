@@ -13,6 +13,7 @@ public sealed class ResourceLoaderTests : CheckedTest
             "art/player/staff.glb", "art/zamboni/zamboni.glb", Assets.IceScratches,
             "art/ui/font.fnt", "art/ui/font.png", Assets.UiLayout,
             "shaders/toon.vs", "shaders/toon.fs", "shaders/mask.fs", "shaders/post.fs",
+            "shaders/web/toon.vs", "shaders/web/toon.fs", "shaders/web/mask.fs", "shaders/web/post.fs", "shaders/web/unlit.vs", "shaders/web/unlit.fs",
             "data/lang/en.json", "data/lang/sv.json",
             "art/audio/music/menu.wav", "art/audio/music/intermission.wav", "art/audio/music/final.wav"];
         foreach (string path in paths)

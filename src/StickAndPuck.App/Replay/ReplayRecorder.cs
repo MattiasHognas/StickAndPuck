@@ -17,7 +17,7 @@ public sealed class ReplayRecorder
 
     /// <summary>The SAP_* variables that steer recording and replaying rather than the match, never stored or set again.</summary>
     internal static readonly ImmutableArray<string> ControlVariables =
-        ["SAP_REPLAY", "SAP_REPLAY_OUT", "SAP_STEPS", "SAP_AT", "SAP_TAKEOVER", "SAP_CHECKSUMS", "SAP_SCREENSHOT", "SAP_RECORD", "SAP_FRAMES", "SAP_SCREEN_KEYS", "SAP_SETTINGS", "SAP_SAVE"];
+        ["SAP_REPLAY", "SAP_REPLAY_OUT", "SAP_STEPS", "SAP_AT", "SAP_TAKEOVER", "SAP_CHECKSUMS", "SAP_SCREENSHOT", "SAP_RECORD", "SAP_FRAMES", "SAP_SCREEN_KEYS", "SAP_SETTINGS", "SAP_SAVE", "SAP_ARCADE_SAVE"];
 
     readonly ReplayFile file;
     readonly string path;
@@ -31,7 +31,7 @@ public sealed class ReplayRecorder
     }
 
     /// <summary>Gets the folder screens matches are recorded to.</summary>
-    public static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "replays");
+    public static string Folder => SavedFiles.DefaultPath("replays");
 
     /// <summary>Starts recording a world that is about to start, if it is a match worth recording: a match
     /// the screens started, or any SAP_SCENE world when SAP_REPLAY_OUT names a file.</summary>
@@ -92,6 +92,15 @@ public sealed class ReplayRecorder
         file.Write(path);
         Console.WriteLine($"SAP: replay: {file.LastTick + 1} steps, {file.Events.Count} events, {file.Inputs.Count} input changes, final {file.End.Split(' ')[1]} written to {path}");
         if (string.Equals(Path.GetDirectoryName(path) ?? "", Folder, StringComparison.Ordinal)) Prune();
+    }
+
+    /// <summary>Writes a downloadable snapshot without ending the ongoing recording.</summary>
+    public string Snapshot(World world)
+    {
+        string end = file.End;
+        try { Finish(world); }
+        finally { file.End = end; }
+        return path;
     }
 
     /// <summary>Gets the SAP_* variables now, without the ones that steer recording and replaying.</summary>
