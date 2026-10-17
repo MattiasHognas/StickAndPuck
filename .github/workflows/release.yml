@@ -1,5 +1,5 @@
 # Builds and tests every pull request (the test job runs tests/StickAndPuck.Tests). On each merge to main it publishes one self-contained executable per
-# platform (tools/publish.sh), tags the commit and creates a GitHub Release with the executables.
+# platform (tools/publish.sh), tags the commit and creates a GitHub Release with the executables and browser site ZIP.
 # Versioning: a merge bumps the patch (v0.0.1 -> v0.0.2). A milestone bumps the minor (v0.0.5 -> v0.1.0):
 # put [milestone] in the squash-commit message or give the PR the label "milestone".
 name: Build and release
@@ -26,6 +26,41 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      number: ${{ steps.version.outputs.number }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Pick version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          INPUT_BUMP: ${{ inputs.bump }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          bump="patch"
+          if [ "$EVENT" = workflow_dispatch ]; then
+            bump="$INPUT_BUMP"
+          elif [ "$EVENT" = pull_request ] && grep -qi '\[milestone\]' <<< "$PR_TITLE"; then
+            bump="minor"
+          elif [ "$EVENT" = push ]; then
+            labels=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[].labels[].name' || true)
+            if grep -qi '\[milestone\]' <<< "$MESSAGE" || grep -qix milestone <<< "$labels"; then
+              bump="minor"
+            fi
+          fi
+          tag=$(tools/next_version.sh "$bump")
+          echo "Bump $bump -> $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -39,6 +74,9 @@ jobs:
         run: dotnet test --project tests/StickAndPuck.Tests -c Release
 
   browser:
+    needs: version
+    env:
+      VERSION: ${{ needs.version.outputs.number }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -63,6 +101,7 @@ jobs:
         with:
           name: browser-site
           path: publish/browser-wasm/wwwroot
+          if-no-files-found: error
       - name: Upload browser verification reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,7 +110,7 @@ jobs:
           path: TestResults/browser
 
   build:
-    needs: [test, browser]
+    needs: [test, browser, version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -82,44 +121,41 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Pick version
-        id: version
-        env:
-          GH_TOKEN: ${{ github.token }}
-          EVENT: ${{ github.event_name }}
-          INPUT_BUMP: ${{ inputs.bump }}
-          MESSAGE: ${{ github.event.head_commit.message }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          bump=patch
-          if [ "$EVENT" = workflow_dispatch ]; then
-            bump="$INPUT_BUMP"
-          elif [ "$EVENT" = pull_request ] && grep -qi '\[milestone\]' <<< "$PR_TITLE"; then
-            bump=minor
-          elif [ "$EVENT" = push ]; then
-            labels=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[].labels[].name' || true)
-            if grep -qi '\[milestone\]' <<< "$MESSAGE" || grep -qix milestone <<< "$labels"; then
-              bump=minor
-            fi
-          fi
-          tag=$(tools/next_version.sh "$bump")
-          echo "Bump $bump -> $tag"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
+      - name: Download verified browser site
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-site
+          path: publish/browser-wasm/wwwroot
 
       - name: Publish
         env:
-          VERSION: ${{ steps.version.outputs.number }}
+          VERSION: ${{ needs.version.outputs.number }}
         run: tools/publish.sh linux-x64 win-x64 osx-arm64
+
+      - name: Package release assets
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          mkdir -p release
+          cp publish/linux-x64/StickAndPuck "release/StickAndPuck-$TAG-linux-x64"
+          cp publish/win-x64/StickAndPuck.exe "release/StickAndPuck-$TAG-win-x64.exe"
+          cp publish/osx-arm64/StickAndPuck "release/StickAndPuck-$TAG-osx-arm64"
+          python3 - <<'PYTHON'
+          import os
+          import shutil
+          from pathlib import Path
+
+          root = Path.cwd()
+          site = root / "publish/browser-wasm/wwwroot"
+          assert (site / "index.html").is_file(), "Browser launcher is missing"
+          assert (site / "_framework/dotnet.js").is_file(), "Browser runtime is missing"
+          archive = root / "release" / f"StickAndPuck-{os.environ['TAG']}-browser-wasm"
+          shutil.make_archive(str(archive), "zip", root_dir=site)
+          PYTHON
 
       - name: Create release
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          mkdir release
-          cp publish/linux-x64/StickAndPuck "release/StickAndPuck-$TAG-linux-x64"
-          cp publish/win-x64/StickAndPuck.exe "release/StickAndPuck-$TAG-win-x64.exe"
-          cp publish/osx-arm64/StickAndPuck "release/StickAndPuck-$TAG-osx-arm64"
-          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title "StickAndPuck $TAG" --generate-notes
+          TAG: ${{ needs.version.outputs.tag }}
+        run: gh release create "$TAG" release/* --target "$GITHUB_SHA" --title "StickAndPuck $TAG" --generate-notes

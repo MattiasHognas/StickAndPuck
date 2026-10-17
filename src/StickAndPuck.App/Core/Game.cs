@@ -67,7 +67,7 @@ public static class Game
             SetTargetFPS(OperatingSystem.IsBrowser() ? 0 : 60);
 
             pixel = new PixelFrame(Width, Height, app.Scale, app.Dither);
-            render = new RenderContext { Toon = pixel.Toon, Mask = pixel.Mask };
+            render = new RenderContext { Toon = pixel.Toon, Mask = pixel.Mask, Unlit = pixel.Unlit };
             systems = Restart(world, []);
             Console.WriteLine($"SAP: {systems.Count} systems: {string.Join(", ", systems.Select(s => s.GetType().Name))}");
         }
@@ -142,9 +142,11 @@ public static class Game
         {
             // 1. the scene, lit with three flat tones
             pixel.BeginScene();
+            if (OperatingSystem.IsBrowser()) BeginShaderMode(render.Unlit);
             BeginMode3D(render.Motion.Camera(world));
             foreach (var s in systems) s.DrawScene(world, render);
             EndMode3D();
+            if (OperatingSystem.IsBrowser()) EndShaderMode();
             PixelFrame.EndScene();
 
             // 2. a flat mask of the players, so the post pass can draw one outline around each

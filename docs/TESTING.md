@@ -164,3 +164,13 @@ Two desktop fixtures (1,800 AI-match steps and 6,000 match-demo steps, with sepa
 Performance reports include observed drawing FPS, simulation Hz, and mean/p95/max callback work over a three-second practice sample. Headless software rendering is a reference measurement, not a hardware GPU benchmark. The simulation must remain near 60 Hz even when rendering is slower. CI runs the suite on a virtual display and uploads the deployable `wwwroot` plus reports as artifacts.
 
 Browser verification also advances the skating fixture in 1 ms callbacks and checks that the WebGL canvas changes while the simulation state remains identical. This exercises interpolation through the real scene and mask passes; 30/60/120/144 Hz scheduling and discontinuities are covered by the .NET tests.
+
+The browser suite also resets WebGL’s generic vertex colour to black before drawing the practice scene and checks actual framebuffer pixels for bright ice. This catches uncoloured arena meshes accidentally inheriting context state instead of explicitly using white.
+
+For Electron/VS Code GPU regressions, serve the published site and run:
+
+```bash
+npm --prefix tools/browser run test:electron -- /path/to/electron http://localhost:8000
+```
+
+This opens a temporary test window using Electron's normal GPU selection. It checks framebuffer ice colours, high-precision vertex transforms in all 3D passes, correctly disabled colour writes in depth-only passes, and ice stability during actual camera panning. Results include the GPU renderer in `TestResults/browser/electron-gpu.json`. Run this on real hardware as well as the software-rendered Chromium/Firefox suite; software drivers can promote mediump arithmetic and hide precision errors.

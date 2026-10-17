@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Text.Json;
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Render;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Arena;
@@ -79,7 +80,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
 
     public void DrawScene(World world, RenderContext render)
     {
-        var shaderDefault = maskMaterial.Shader;   // Raylib's default shader: texture times colour, no light
+        var shaderDefault = OperatingSystem.IsBrowser() ? render.Unlit : maskMaterial.Shader;   // Raylib's default shader: texture times colour, no light
         // The goalie, referee and puck are drawn before the arena, so the ice sheet and the bands and
         // skate scratches on it all keep the depth test to stay behind them. The sheet writes no depth
         // while the overlays go down, since millimetres apart they z-fight at rink distance; a depth-only
@@ -90,10 +91,10 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
         bands.Draw(world.Look.IceBand);
         scratches.Draw(world.Look.Scratch);
         Rlgl.EnableDepthMask();
-        Rlgl.ColorMask(false, false, false, false);
+        ColorWrite.Set(false);
         DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: true);
         Rlgl.DrawRenderBatchActive();
-        Rlgl.ColorMask(true, true, true, true);
+        ColorWrite.Set(true);
         DrawPass(render, shaderDefault, world.Look.Ice, ice: false, sheet: false);
 
         // glass last and without depth, so players behind it still draw; flat colour over the crowd
@@ -104,7 +105,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
             var mat = MaterialOf(mesh);
             mat.Shader = shaderDefault;
             mat.Maps[(int)MaterialMapIndex.Albedo].Color = world.Look.Glass;
-            DrawMesh(model.Meshes[mesh], mat, Matrix4x4.Identity);
+            DrawArenaMesh(mesh, mat);
         }
         Rlgl.EnableDepthMask();
     }
@@ -124,7 +125,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
             // the ice sheet is flat in the lighting's cold grey; the toon ramp would warm it under the evening light
             mat.Shader = kind == Kind.Lit && !isSheet ? render.Toon : unlit;
             if (isSheet) mat.Maps[(int)MaterialMapIndex.Albedo].Color = iceTone;
-            DrawMesh(model.Meshes[mesh], mat, Matrix4x4.Identity);
+            DrawArenaMesh(mesh, mat);
         }
     }
 
@@ -132,10 +133,27 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
     public void DrawMask(World world, RenderContext render)
     {
         Rlgl.DrawRenderBatchActive();
-        Rlgl.ColorMask(false, false, false, false);
+        ColorWrite.Set(false);
+        var material = maskMaterial;
+        if (OperatingSystem.IsBrowser()) material.Shader = render.Unlit;
         foreach (var (mesh, _, occludes, _, _) in meshes)
-            if (occludes) DrawMesh(model.Meshes[mesh], maskMaterial, Matrix4x4.Identity);
-        Rlgl.ColorMask(true, true, true, true);
+            if (occludes) DrawArenaMesh(mesh, material);
+        ColorWrite.Set(true);
+    }
+
+    // Generic vertex attribute values belong to the context, not the VAO. raylib sets
+    // white once in UploadMesh, but a later draw can change it. Reapply it for uncoloured
+    // arena meshes before the default shader multiplies it into the ice/glass colour.
+    void DrawArenaMesh(int index, Material material)
+    {
+        var mesh = model.Meshes[index];
+        int color = material.Shader.Locs[(int)ShaderLocationIndex.VertexColor];
+        if (OperatingSystem.IsBrowser() && mesh.VboId[3] == 0 && color >= 0)
+        {
+            var white = Vector4.One;
+            Rlgl.SetVertexAttributeDefault(color, &white, (int)ShaderAttributeDataType.Vec4, 4);
+        }
+        DrawMesh(mesh, material, Matrix4x4.Identity);
     }
 
     public void Dispose()

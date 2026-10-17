@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { gunzipSync } from 'node:zlib';
 import { chromium, firefox, webkit } from 'playwright';
+import { instrumentRendering, verifyIceSurface } from './render-checks.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const site = resolve(root, process.env.SITE_ROOT || 'publish/browser-wasm/wwwroot');
@@ -55,6 +56,7 @@ await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen))
 const origin = `http://127.0.0.1:${server.address().port}`;
 
 async function instrument(page) {
+    await instrumentRendering(page);
     await page.addInitScript(() => {
         window.__audio = [];
         window.__audioEnergy = 0;
@@ -151,6 +153,7 @@ async function verifyBrowser(name) {
         assert.equal((await saves(page))['stickandpuck:v1:/saves/arcade.json'], arcade, 'Arcade continues after reload.');
 
         await open(page, 'practice'); await start(page);
+        await verifyIceSurface(page);
         const before = await host(page, 'State');
         await page.keyboard.down('ArrowRight'); await page.waitForTimeout(400);
         assert.match(await host(page, 'Input'), /k:262/);
