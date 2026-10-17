@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Benches;
 using StickAndPuck.App.Core;
@@ -162,7 +163,7 @@ public sealed class BenchReactionsTests : CheckedTest
             $"two pairs of neighbours chat ({talking.Count} talking)");
         Check(trainer.Pose == StaffPose.Walk && tired.Reaction == BenchReaction.Trainer, "the trainer walks to the most tired player");
         Run(w, b, MathF.Abs(tired.X - trainer.Home) / BenchStaff.WalkSpeed + 0.5f, []);
-        Check(trainer.Pose == StaffPose.LeanTalk && MathF.Abs(trainer.X - tired.X) < 0.5f, $"and leans in to him ({trainer.X - tired.X:0.00} m along)");
+        Check(trainer.Pose == StaffPose.LeanTalk && MathF.Abs(trainer.X - tired.X) < 0.5f, string.Create(CultureInfo.InvariantCulture, $"and leans in to him ({trainer.X - tired.X:0.00} m along)"));
         Check(tired.Showing(w.Time) == BenchReaction.Trainer && MathF.Abs(tired.Heading) > 0.8f, "who turns back to him");
         Run(w, b, 12f, []);
         Check(trainer.Free && trainer.Pose == StaffPose.Idle, "then the trainer walks back to his spot");
@@ -237,7 +238,7 @@ public sealed class BenchReactionsTests : CheckedTest
                     w.Time += Game.Step;
                     w.Tick++;
                 }
-                log.Add(string.Join(",", b.Crowd.Shown.Select(f => $"{f.Reaction}{f.ReactFrom:0.000}{f.Bare}")));
+                log.Add(string.Join(",", b.Crowd.Shown.Select(f => string.Create(CultureInfo.InvariantCulture, $"{f.Reaction}{f.ReactFrom:0.000}{f.Bare}"))));
             }
             Check(same, "the world is the same before and after every run of the reactions");
             return string.Join("|", log);

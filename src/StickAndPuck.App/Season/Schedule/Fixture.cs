@@ -2,36 +2,6 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
 
-/// <summary>How a match was decided, which sets the SHL points.</summary>
-public enum ResultKind
-{
-    /// <summary>Decided in regulation: 3 points to the winner.</summary>
-    Regulation,
-
-    /// <summary>Decided in 3 on 3 overtime: 2 points to the winner, 1 to the loser.</summary>
-    Overtime,
-
-    /// <summary>Decided in the shootout: 2 points to the winner, 1 to the loser.</summary>
-    Shootout,
-}
-
-/// <summary>A played match's final score, shootout goal included, and how it was decided.</summary>
-public sealed record FixtureResult(int HomeGoals, int AwayGoals, ResultKind Kind)
-{
-    /// <summary>Gets the SHL points for the home club.</summary>
-    public int HomePoints => Points(HomeGoals, AwayGoals);
-
-    /// <summary>Gets the SHL points for the away club.</summary>
-    public int AwayPoints => Points(AwayGoals, HomeGoals);
-
-    int Points(int own, int other)
-    {
-        if (own == other) return 1;
-        bool extra = Kind != ResultKind.Regulation;
-        return own > other ? (extra ? 2 : 3) : (extra ? 1 : 0);
-    }
-}
-
 /// <summary>One game of the season, and its result once played.</summary>
 /// <param name="Number">The game's index in the whole schedule, from 0.</param>
 /// <param name="Round">The round, from 0; every club plays once a round.</param>

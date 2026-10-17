@@ -3,23 +3,6 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Players;
 
-/// <summary>The two kinds of shot.</summary>
-public enum ShotKind
-{
-    /// <summary>A quick tap of shoot: a wrist shot, quick and accurate.</summary>
-    Wrist,
-
-    /// <summary>Shoot held past <see cref="PuckHandling.SlapAfter"/>: a slap shot, harder the longer the wind-up.</summary>
-    Slap,
-}
-
-/// <summary>A human's pass to a teammate: who threw it, who it is for, the stick held as it went, and when.</summary>
-/// <param name="Passer">The passer.</param>
-/// <param name="Receiver">The teammate it is meant for.</param>
-/// <param name="Stick">The passer's stick as the pass left; control follows the pass with it still held.</param>
-/// <param name="At">When it left the stick.</param>
-public readonly record struct HumanPass(int Passer, int Receiver, Vector2 Stick, float At);
-
 /// <summary>The numbers and aiming maths of puck handling, with no Raylib and no state, so AI
 /// and tests can ask what a pass or shot would do. Traits read here: puck control (reach, how
 /// hard a puck can be taken, how tight the puck sits on the blade), smart passes (picking and
@@ -183,14 +166,9 @@ public static partial class PuckHandling
     static bool Open(Vector2 from, Vector2 to, List<Player> foes)
     {
         var start = from + Vector2.Normalize(to - from);
-        foreach (var o in foes)
-        {
-            foreach (var at in new[] { Flat(o.Position), Flat(Blade(o)) })
-            {
-                if (Vector2.Distance(at, to) < OpenRoom || SegmentDistance(start, to, at) < LaneRoom) return false;
-            }
-        }
-        return true;
+        return !foes.Exists(o =>
+            new[] { Flat(o.Position), Flat(Blade(o)) }.Any(at =>
+                Vector2.Distance(at, to) < OpenRoom || SegmentDistance(start, to, at) < LaneRoom));
     }
 
     static float SegmentDistance(Vector2 a, Vector2 b, Vector2 p)

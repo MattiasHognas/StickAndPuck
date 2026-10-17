@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -104,7 +105,7 @@ public sealed class OvertimeTests : CheckedTest
         var final = ev.OfType<MatchEnded>().ToList();
         bool wonHere = final.Count == 1 && final[0] is MatchWon { Winner: Side.Home } && w.Match.Score[0] == 1 && w.Match.Score[1] == 0;
         // the goalie may stop it; then the overtime runs out into the shootout, still a valid ending
-        Check(wonHere || (ev.Any(e => e is ShotSaved) && w.Match.Phase != MatchPhase.Final), $"an overtime goal ends it 1-0 (score {w.Match.Score[0]}-{w.Match.Score[1]})");
+        Check(wonHere || (ev.Any(e => e is ShotSaved) && w.Match.Phase != MatchPhase.Final), string.Create(CultureInfo.InvariantCulture, $"an overtime goal ends it 1-0 (score {w.Match.Score[0]}-{w.Match.Score[1]})"));
         Check(!wonHere || !So(w).HasValue, "no shootout after an overtime goal");
     }
 

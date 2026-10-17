@@ -70,9 +70,35 @@ internal sealed partial class PositioningSystem : ISystem
         var lastTouch = pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count ? world.Players[pk.LastTouch] : Maybe<Player>.None;
         bool play = world.Match.Phase is MatchPhase.Play or MatchPhase.Overtime && pk.Live;
 
-        var owner = carrier.TryGet(out var holder) ? holder.Side.OrNone() : lastTouch.TryGet(out var toucher) ? toucher.Side.OrNone() : SideOrNone.None;
+        SideOrNone owner;
+        if (carrier.TryGet(out var holder))
+        {
+            owner = holder.Side.OrNone();
+        }
+        else if (lastTouch.TryGet(out var toucher))
+        {
+            owner = toucher.Side.OrNone();
+        }
+        else
+        {
+            owner = SideOrNone.None;
+        }
+
         foreach (var side in new[] { Side.Home, Side.Away })
-            board.Phase[(int)side] = owner.Is(side) ? TeamPhase.Attack : owner == SideOrNone.None ? Loose(world, side) : TeamPhase.Defend;
+        {
+            if (owner.Is(side))
+            {
+                board.Phase[(int)side] = TeamPhase.Attack;
+            }
+            else if (owner == SideOrNone.None)
+            {
+                board.Phase[(int)side] = Loose(world, side);
+            }
+            else
+            {
+                board.Phase[(int)side] = TeamPhase.Defend;
+            }
+        }
 
         var view = new StepView(carrier, play, new Maybe<int>[2], new Maybe<int>[2]);
         if (play && !carrier.HasValue && Chaseable(pk))
@@ -97,14 +123,38 @@ internal sealed partial class PositioningSystem : ISystem
         var teamPhase = Positioning.Board(world).Phase[(int)p.Side];
         plan.Ideal = TeamShape.Spot(plan.Role, teamPhase, end, new Vector2(pk.Position.X, pk.Position.Z));
 
-        plan.Job = p.Slot >= 0 ? Job.Human
-            : world.Tick - plan.RequestTick <= 1 && plan.Request.HasValue ? Job.Requested
-            : world.Match.Phase == MatchPhase.Faceoff ? Job.Faceoff
-            : !step.Play ? Job.Idle
-            : step.Carrier.TryGet(out var carrier) && carrier == p ? Job.Carry
-            : step.Chaser[(int)p.Side] == p.Id ? Job.Chase
-            : step.Presser[(int)p.Side] == p.Id ? Job.Pressure
-            : Job.Shape;
+        if (p.Slot >= 0)
+        {
+            plan.Job = Job.Human;
+        }
+        else if (world.Tick - plan.RequestTick <= 1 && plan.Request.HasValue)
+        {
+            plan.Job = Job.Requested;
+        }
+        else if (world.Match.Phase == MatchPhase.Faceoff)
+        {
+            plan.Job = Job.Faceoff;
+        }
+        else if (!step.Play)
+        {
+            plan.Job = Job.Idle;
+        }
+        else if (step.Carrier.TryGet(out var carrier) && carrier == p)
+        {
+            plan.Job = Job.Carry;
+        }
+        else if (step.Chaser[(int)p.Side] == p.Id)
+        {
+            plan.Job = Job.Chase;
+        }
+        else if (step.Presser[(int)p.Side] == p.Id)
+        {
+            plan.Job = Job.Pressure;
+        }
+        else
+        {
+            plan.Job = Job.Shape;
+        }
 
         var cycle = Positioning.Board(world).Cycle[(int)p.Side];
         plan.Station = cycle.Active && cycle.Stations.TryGetValue(p.Id, out var station) ? station : Maybe<Station>.None;

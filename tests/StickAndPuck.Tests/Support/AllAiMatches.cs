@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Goalie;
@@ -49,7 +50,7 @@ public static class AllAiMatches
             count.Step(world, carrier, before);
         }
         var faced = count.GoalieSaves.Keys.Union(count.GoalieGoals.Keys).Select(id => world.Players[id])
-            .Select(g => new Faced($"{world.Setup.Club(g.Side).ShortName} #{g.Data.Number}", g.Data.Traits.GoalieReflexes, count.GoalieSaves.GetValueOrDefault(g.Id), count.GoalieGoals.GetValueOrDefault(g.Id)))
+            .Select(g => new Faced(string.Create(CultureInfo.InvariantCulture, $"{world.Setup.Club(g.Side).ShortName} #{g.Data.Number}"), g.Data.Traits.GoalieReflexes, count.GoalieSaves.GetValueOrDefault(g.Id), count.GoalieGoals.GetValueOrDefault(g.Id)))
             .ToList();
         var tally = Tally(world);
         return new AllAiMatch(

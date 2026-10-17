@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
@@ -28,7 +29,7 @@ public sealed class HumanEdgeTests : CheckedTest
             knock[level] = CheckingModel.KnockdownChance(strength, HumanEdge.KnockdownCap(world, human));
             deke[level] = DekeModel.Chance(0f, human.Data.Traits.PuckControl, HumanEdge.DekeFloor(world, human));
             hit[level] = HumanEdge.HitChance(world, human);
-            Console.WriteLine($"      {level}: an AI check at 6 m/s (strength {strength:0.00}) knocks the carrier down {knock[level]:P0}; a mistimed deke gets through {deke[level]:P0}; hits tried at {hit[level]:P0} of the usual rate");
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"      {level}: an AI check at 6 m/s (strength {strength:0.00}) knocks the carrier down {knock[level]:P0}; a mistimed deke gets through {deke[level]:P0}; hits tried at {hit[level]:P0} of the usual rate"));
         }
         Check(knock[Level.Easy] < knock[Level.Normal] && knock[Level.Normal] < knock[Level.Hard], $"easy knocks the human's carrier down least, hard most ({knock[Level.Easy]:P0}, {knock[Level.Normal]:P0}, {knock[Level.Hard]:P0})");
         Check(knock[Level.Easy] <= 0.6f, $"on easy a big hit takes the carrier off the puck at most six times in ten ({knock[Level.Easy]:P0})");

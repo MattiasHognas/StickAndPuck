@@ -22,10 +22,23 @@ internal static class ArcadeSummary
         int rows = run.Games.Count + 4 + (run.IsOver ? 0 : 1) + (best.Count > 0 ? best.Count + 1 : 0);
         int h = (Pad * 2) + (rows * Line);
         int x = (Game.Width - Width) / 2, y = Math.Max(2, (Game.Height - h) / 2);
-        art.DrawPanel(run.Champion ? "panel_gold" : run.Lost ? "panel_red" : "panel", x, y, Width, h);
+        string panel;
+        if (run.Champion)
+            panel = "panel_gold";
+        else if (run.Lost)
+            panel = "panel_red";
+        else
+            panel = "panel";
+        art.DrawPanel(panel, x, y, Width, h);
 
         int left = x + Pad + 4, top = y + Pad - 2;
-        string head = Text.Get(run.Champion ? K.ArcadeHeadChampions : run.Lost ? K.ArcadeHeadRunOver : K.ArcadeHead);
+        string head;
+        if (run.Champion)
+            head = Text.Get(K.ArcadeHeadChampions);
+        else if (run.Lost)
+            head = Text.Get(K.ArcadeHeadRunOver);
+        else
+            head = Text.Get(K.ArcadeHead);
         art.DrawText(head, left, top, art.Score);
         top += Line;
         art.DrawText(Name(run.UserClub), left, top, art.Score);

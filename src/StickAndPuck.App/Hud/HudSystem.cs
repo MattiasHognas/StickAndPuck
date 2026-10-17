@@ -206,7 +206,13 @@ internal sealed class HudSystem : ISystem
     static void DrawBanner(HudMessage m, HudArt art)
     {
         const int pad = 6, crest = 16, gap = 6, line = 11;
-        int lead = m.Crest.Length > 0 ? crest + gap : m.Icon.Length > 0 ? 8 + gap : 0;
+        int lead;
+        if (m.Crest.Length > 0)
+            lead = crest + gap;
+        else if (m.Icon.Length > 0)
+            lead = 8 + gap;
+        else
+            lead = 0;
         var rows = new List<string> { m.Title };
         if (m.Detail.Length > 0) rows.Add(m.Detail);
         rows.AddRange(m.Lines);

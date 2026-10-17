@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
 using StickAndPuck.Tests.Support;
@@ -13,7 +14,7 @@ public sealed class SeasonTests : CheckedTest
     /// <summary>The game state the test plays in, fresh for each test.</summary>
     readonly AppState app = new();
 
-    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-seasontest-{Environment.ProcessId}-{Guid.NewGuid():N}");
+    readonly string folder = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap-seasontest-{Environment.ProcessId}-{Guid.NewGuid():N}"));
 
     string SavePath => Path.Combine(folder, "season.json");
 
@@ -39,11 +40,11 @@ public sealed class SeasonTests : CheckedTest
         var ids = WorldBuilder.Clubs.Select(c => c.Id).ToList();
         var games = SeasonSchedule.Build(ids, 42);
         int n = ids.Count, rounds = games.Max(g => g.Round) + 1;
-        Check(n == 14, $"14 SHL clubs load ({n})");
+        Check(n == 14, string.Create(CultureInfo.InvariantCulture, $"14 SHL clubs load ({n})"));
         Check(rounds == 52 && games.Count == 52 * 7, $"52 rounds of 7 games ({rounds} rounds, {games.Count} games)");
         Check(ids.TrueForAll(id => games.Count(g => g.Involves(id)) == 52), "every club plays 52 games");
         Check(ids.TrueForAll(id => games.Count(g => Same(g.Home, id)) == 26), "every club has 26 home games");
-        Check(Enumerable.Range(0, rounds).All(r => games.Where(g => g.Round == r).SelectMany(g => new[] { g.Home, g.Away }).Distinct().Count() == n),
+        Check(Enumerable.Range(0, rounds).All(r => games.Where(g => g.Round == r).SelectMany(g => new[] { g.Home, g.Away }).Distinct(StringComparer.Ordinal).Count() == n),
             "every club plays once in every round");
         bool pairs = ids.TrueForAll(a => ids.TrueForAll(b => Same(a, b) || (games.Count(g => Same(g.Home, a) && Same(g.Away, b)) == 2)));
         Check(pairs, "every pair meets four times, twice at each rink");

@@ -1,41 +1,9 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
 
 namespace StickAndPuck.App.Rules;
-
-/// <summary>How much a call costs: what the club serves and what the offender sits out.</summary>
-public enum Severity
-{
-    /// <summary>Two minutes; a power play goal ends it.</summary>
-    Minor,
-
-    /// <summary>Two and two; a power play goal ends the half that is running.</summary>
-    DoubleMinor,
-
-    /// <summary>Five minutes served in full, a goal or not; the offender comes back after.</summary>
-    Major,
-
-    /// <summary>Five minutes served in full by a teammate; the offender is ejected and leaves the squad.</summary>
-    MajorAndGameMisconduct,
-
-    /// <summary>Two minutes for the club, served by a teammate; the offender sits ten more, the club not short.</summary>
-    MinorAndMisconduct,
-
-    /// <summary>Ten minutes for the offender alone; the club plays at full strength.</summary>
-    Misconduct,
-
-    /// <summary>The offender is ejected; the club plays at full strength.</summary>
-    GameMisconduct,
-}
-
-/// <summary>A penalty the referee has signalled and not yet called: play goes on until the offending club touches the puck.</summary>
-/// <param name="Side">The offending club.</param>
-/// <param name="PlayerId">The offending skater.</param>
-/// <param name="Infraction">What was seen.</param>
-/// <param name="Time">When the arm went up, in <see cref="World.Time"/>.</param>
-/// <param name="Severity">What the call costs; a minor unless the referee saw worse.</param>
-public readonly record struct DelayedPenalty(Side Side, int PlayerId, string Infraction, float Time, Severity Severity = Severity.Minor);
 
 /// <summary>The penalty calls other systems and scenes use. <see cref="PenaltyRules"/> runs them each step.
 /// A call is delayed (<see cref="Signal"/>): the referee's arm goes up and play goes on until the
@@ -67,8 +35,6 @@ public readonly record struct DelayedPenalty(Side Side, int PlayerId, string Inf
 /// once, for fights.</summary>
 public static partial class Penalties
 {
-
-
     /// <summary>Gets the calls signalled and not yet made.</summary>
     public static IReadOnlyList<DelayedPenalty> Delayed(World world)
     {
@@ -105,7 +71,11 @@ public static partial class Penalties
     public static SideOrNone PowerPlay(World world)
     {
         int home = Serving(world, Side.Home), away = Serving(world, Side.Away);
-        return home < away ? SideOrNone.Home : away < home ? SideOrNone.Away : SideOrNone.None;
+        if (home < away)
+            return SideOrNone.Home;
+        if (away < home)
+            return SideOrNone.Away;
+        return SideOrNone.None;
     }
 
     /// <summary>Gets the skaters each club plays at full strength this period: 5 in regulation, 3 (or 5) in overtime, read off the ice when the period started.</summary>
@@ -273,7 +243,12 @@ public static partial class Penalties
         world.Events.Publish(new PenaltyCalled(world.Time, p.Side, p.Id, p.Position, shown));
         Referee.Referee.Announce(world, d.Infraction, p.Id);
         string what = severity == Severity.Minor ? "" : $", {severity}";
-        book.Log(world, $"{d.Infraction}, {Name(world, p)}, {MatchFlow.ClockText(shown)}{what}{(substitute ? ", coincidental, substituted" : waits ? ", waits in the box" : "")}");
+        string penaltyState = "";
+        if (substitute)
+            penaltyState = ", coincidental, substituted";
+        else if (waits)
+            penaltyState = ", waits in the box";
+        book.Log(world, $"{d.Infraction}, {Name(world, p)}, {MatchFlow.ClockText(shown)}{what}{penaltyState}");
     }
 
     internal static PenaltyBook Book(World world)
@@ -283,6 +258,6 @@ public static partial class Penalties
 
     internal static string Name(World world, Player p)
     {
-        return $"{world.Setup.Club(p.Side).ShortName} #{p.Data.Number} {p.Data.LastName}";
+        return string.Create(CultureInfo.InvariantCulture, $"{world.Setup.Club(p.Side).ShortName} #{p.Data.Number} {p.Data.LastName}");
     }
 }

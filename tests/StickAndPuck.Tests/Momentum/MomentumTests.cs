@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -94,7 +95,7 @@ public sealed class MomentumTests : CheckedTest
         Check(Boost.Of(w, Side.Away) == 0f, "a soft check gives no boost");
         Publish(w, Hit(w, Side.Away, 1.8f));
         float one = Boost.Of(w, Side.Away);
-        Check(Math.Abs(one - MomentumTuning.BigHit) < 0.01f && Boost.State(w).Cause[1] == MomentumCause.BigHit, $"a big hit gives the hitter's club a small boost ({one:0.00})");
+        Check(Math.Abs(one - MomentumTuning.BigHit) < 0.01f && Boost.State(w).Cause[1] == MomentumCause.BigHit, string.Create(CultureInfo.InvariantCulture, $"a big hit gives the hitter's club a small boost ({one:0.00})"));
         Publish(w, Hit(w, Side.Away, 2f));
         Publish(w, Hit(w, Side.Away, 2f));
         Check(Boost.Of(w, Side.Away) is > 0.99f and <= 1f, "big hits add up, to a full boost at most");
@@ -109,7 +110,7 @@ public sealed class MomentumTests : CheckedTest
         float start = live.Time;
         Run(live, x => x.Time - start >= MomentumTuning.Seconds / 2, Live);
         float half = Boost.Of(live, Side.Home);
-        Check(half is > 0.4f and < 0.6f, $"half the boost is gone after ten seconds of play ({half:0.00})");
+        Check(half is > 0.4f and < 0.6f, string.Create(CultureInfo.InvariantCulture, $"half the boost is gone after ten seconds of play ({half:0.00})"));
         Run(live, x => x.Time - start >= MomentumTuning.Seconds + 0.1f, Live);
         Check(Boost.Of(live, Side.Home) == 0f && Boost.Leader(live) == SideOrNone.None, $"the boost is gone after twenty seconds of play ({Boost.Of(live, Side.Home):0.00} and {Boost.Of(live, Side.Away):0.00})");
 

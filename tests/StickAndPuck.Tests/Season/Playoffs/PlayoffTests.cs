@@ -3,6 +3,7 @@ using StickAndPuck.App.Rules;
 using StickAndPuck.App.Season;
 using StickAndPuck.Tests.Support;
 using StickAndPuck.App.Season.Dev;
+using System.Globalization;
 
 namespace StickAndPuck.Tests;
 
@@ -16,7 +17,7 @@ public sealed class PlayoffTests : CheckedTest
     /// <summary>The game state the test plays in, fresh for each test.</summary>
     readonly AppState app = new();
 
-    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-playofftest-{Environment.ProcessId}-{Guid.NewGuid():N}");
+    readonly string folder = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap-playofftest-{Environment.ProcessId}-{Guid.NewGuid():N}"));
 
     string SavePath => Path.Combine(folder, "season.json");
 
@@ -71,7 +72,7 @@ public sealed class PlayoffTests : CheckedTest
         var season = FinishedSeason(clubs, SavePath, 2026);
         var table = season.Table.Select(r => r.ClubId).ToList();
         var p = PlayoffState.New(season);
-        Check(p.Seeds.SequenceEqual(table), "the seeds are the final table");
+        Check(p.Seeds.SequenceEqual(table, StringComparer.Ordinal), "the seeds are the final table");
         var playIn = p.Rounds.Single();
         Check(playIn is { BestOf: 3, Series.Count: 2 }, "the play-in is two best of three series");
         Check(playIn.Series[0] is { HighSeed: 7, LowSeed: 10 } && playIn.Series[1] is { HighSeed: 8, LowSeed: 9 }, "the play-in is 7 v 10 and 8 v 9");
@@ -86,7 +87,7 @@ public sealed class PlayoffTests : CheckedTest
         var survivors = p.Rounds[0].Series.Select(s => p.SeedOf(Must(s.Winner))).Order().ToList();
         Check(qf.Series.Select(s => s.HighSeed).SequenceEqual([1, 2, 3, 4]), "the quarter-finals hold seeds 1 to 4 at home");
         Check(qf.Series[0].LowSeed == survivors[1] && qf.Series[1].LowSeed == survivors[0] && qf.Series[2].LowSeed == 6 && qf.Series[3].LowSeed == 5,
-            $"reseeded: 1 meets the worst play-in winner, 2 the other, 3 v 6, 4 v 5 ({string.Join(",", qf.Series.Select(s => $"{s.HighSeed}v{s.LowSeed}"))})");
+            $"reseeded: 1 meets the worst play-in winner, 2 the other, 3 v 6, 4 v 5 ({string.Join(",", qf.Series.Select(s => string.Create(CultureInfo.InvariantCulture, $"{s.HighSeed}v{s.LowSeed}")))})");
         Check(qf.Series.SelectMany(s => new[] { s.HighSeed, s.LowSeed }).Order().SequenceEqual(direct.Concat(survivors)), "the top six and both play-in winners make the quarter-finals");
         Check(p.Rounds.Count == 4 && p.Rounds[2].Series.Count == 2 && p.Rounds[3].Series.Count == 1, "quarter-finals, semi-finals and a final follow");
         var semis = p.Rounds[2].Series;
@@ -178,7 +179,7 @@ public sealed class PlayoffTests : CheckedTest
         app.Playoffs.End();
         var resumed = Must(app.Season.Continue(clubs, path));
         var seeds = Must(season.Playoffs).Seeds;
-        Check(resumed.Playoffs.Is(p => p.Rounds.Count == 1 && p.Rounds[0].Series.Sum(s => s.Games.Count) == 2 && p.Seeds.SequenceEqual(seeds)), "continuing after a restart reads the playoffs back");
+        Check(resumed.Playoffs.Is(p => p.Rounds.Count == 1 && p.Rounds[0].Series.Sum(s => s.Games.Count) == 2 && p.Seeds.SequenceEqual(seeds, StringComparer.Ordinal)), "continuing after a restart reads the playoffs back");
         var next = app.Playoffs.NextSetup();
         Check(next is NextMatch.Play n && app.Playoffs.Playing.Is(x => x.Games.Count == 1 && x.HighSeed == 8) && Same(n.Setup.Home.Id, resumed.UserClub), "after the restart game 2 of the play-in is next, at the human's rink");
         Check(Same(File.ReadAllText(path), before), "continuing does not rewrite the save");

@@ -4,13 +4,6 @@ using StickAndPuck.App.Players;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>One pass a carrier could make: to whom, where the puck is aimed, and what it is worth.</summary>
-/// <param name="Receiver">The teammate.</param>
-/// <param name="Target">Where the pass is aimed (x, z), leading the receiver.</param>
-/// <param name="Success">The passer's estimate that the pass arrives, 0 to 1.</param>
-/// <param name="Value">What the pass is worth: <see cref="Success"/> times the value of the receiver's spot.</param>
-public readonly record struct PassOption(Player Receiver, Vector2 Target, float Success, float Value);
-
 /// <summary>The maths behind the AI's choices, with no state and no Raylib, so tests can ask what a
 /// skater would think of a shot or a pass. Values share one scale, roughly "how likely this
 /// possession ends in a good chance": a shot from the slot is worth about 0.6, the puck in the

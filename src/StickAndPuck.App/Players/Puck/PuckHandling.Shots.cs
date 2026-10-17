@@ -45,16 +45,39 @@ public static partial class PuckHandling
         int accuracy = shooter.Data.Traits.ShotAccuracy;
         if (!atNet)
         {
-            float up = held >= 0 ? ShotHeight.Upward(held, accuracy, rng) : kind == ShotKind.Wrist ? 1f : 0f;
+            float up;
+            if (held >= 0)
+            {
+                up = ShotHeight.Upward(held, accuracy, rng);
+            }
+            else if (kind == ShotKind.Wrist)
+            {
+                up = 1f;
+            }
+            else
+            {
+                up = 0f;
+            }
+
             return new Vector3(intent.X * speed, up, intent.Y * speed);
         }
 
         float stray = (1f - Traits.Unit(accuracy)) * (kind == ShotKind.Slap ? 1.4f : 1f);
         float side = RinkSpec.NetWidth / 2 - 0.2f;
         float stickZ = shooter.Command.Move.Y;
-        float z = MathF.Abs(stickZ) > 0.35f ? MathF.Sign(stickZ) * side
-            : MathF.Abs(from.Z) > 0.3f ? -MathF.Sign(from.Z) * side * 0.8f
-            : (rng.NextSingle() * 2 - 1) * side;
+        float z;
+        if (MathF.Abs(stickZ) > 0.35f)
+        {
+            z = MathF.Sign(stickZ) * side;
+        }
+        else if (MathF.Abs(from.Z) > 0.3f)
+        {
+            z = -MathF.Sign(from.Z) * side * 0.8f;
+        }
+        else
+        {
+            z = (rng.NextSingle() * 2 - 1) * side;
+        }
         float h;
         if (held >= 0)
         {

@@ -26,7 +26,21 @@ internal static class PlayoffBracket
         {
             int cx = x + Pad + 4 + (r * Column);
             art.DrawText(PlayoffState.RoundTitle(r), cx, top, art.Text);
-            var series = r < playoffs.Rounds.Count ? playoffs.Rounds[r].Series : (r == 1 ? Waiting(playoffs) : []);
+
+            List<PlayoffSeries> series;
+            if (r < playoffs.Rounds.Count)
+            {
+                series = playoffs.Rounds[r].Series;
+            }
+            else if (r == 1)
+            {
+                series = Waiting(playoffs);
+            }
+            else
+            {
+                series = [];
+            }
+
             int gap = r == 0 ? 3 * Line : (Height - (Pad * 2) - (Line * 6)) / Math.Max(1, series.Count);
             for (int s = 0; s < series.Count; s++)
             {

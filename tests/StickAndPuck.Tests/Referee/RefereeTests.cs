@@ -6,6 +6,7 @@ using StickAndPuck.App.Rules;
 using StickAndPuck.Tests.Support;
 using Ref = StickAndPuck.App.Referee.Referee;
 using StickAndPuck.App.Rules.Dev;
+using System.Globalization;
 
 namespace StickAndPuck.Tests;
 
@@ -52,7 +53,7 @@ public sealed class RefereeTests : CheckedTest
         float dropAt = float.NaN;
         Run(w, x => MatchFlow.State(x).Draw.Dropped, 20, x => { if (x.Events.Of<PuckDropped>().Any()) dropAt = x.Time; });
         Check(MatchFlow.State(w).Draw.Dropped, "the opening faceoff is dropped");
-        Check(dropAt > MatchTuning.IntroSeconds + MatchTuning.FaceoffSeconds, $"the drop waits for the referee to skate from the corner ({dropAt:0.0} s)");
+        Check(dropAt > MatchTuning.IntroSeconds + MatchTuning.FaceoffSeconds, string.Create(CultureInfo.InvariantCulture, $"the drop waits for the referee to skate from the corner ({dropAt:0.0} s)"));
         Check(Distance(r.Position, Ref.DropSpot(RinkSpec.CentreDot)) <= RefereeTuning.Arrived, "the referee is at the centre dot when the puck drops");
         Check(r.LateDrops == 0, "no drop needed the safety net");
     }
@@ -76,7 +77,7 @@ public sealed class RefereeTests : CheckedTest
 
         // Timed to when the referee is set at the dot, so the dice roll for the hold (0.5 to 1.8 s) never fails a seed;
         // with the shortest hold the puck still drops inside the 7 s this check always asked for
-        Check(setAt - start < 7 - RefereeTuning.SetSeconds, $"and got there in good time (set {setAt - start:0.0} s after the whistle, dropped at {dropAt - start:0.0} s)");
+        Check(setAt - start < 7 - RefereeTuning.SetSeconds, string.Create(CultureInfo.InvariantCulture, $"and got there in good time (set {setAt - start:0.0} s after the whistle, dropped at {dropAt - start:0.0} s)"));
     }
 
     /// <summary>Ten faceoffs in a row at centre ice with seeded dice: every hold lies inside the span, they differ visibly, and the same seed repeats them.</summary>

@@ -28,11 +28,23 @@ internal sealed class LightingSystem : ISystem
     {
         // A seeded match (and so its replay) always gets the same mood; the unseeded menu backdrop varies
         var dice = world.Seed != 0 ? Seeds.Dice(world.Seed, "lighting", 0) : Random.Shared;
-        var time = Env.Get("SAP_LIGHTING") is { Length: > 0 } name
-            ? Enum.TryParse<TimeOfDay>(name, ignoreCase: true, out var t) ? t
-                : throw new InvalidOperationException($"SAP_LIGHTING={name}: use early, afternoon or late")
-            : Enum.TryParse<TimeOfDay>(world.Settings.Lighting.ToString(), out var chosen) ? chosen    // the settings screen's mood
-            : (TimeOfDay)dice.Next(3);
+
+        TimeOfDay time;
+        var lightingName = Env.Get("SAP_LIGHTING");
+        if (lightingName is { Length: > 0 })
+        {
+            if (!Enum.TryParse<TimeOfDay>(lightingName, ignoreCase: true, out time))
+                throw new InvalidOperationException($"SAP_LIGHTING={lightingName}: use early, afternoon or late");
+        }
+        else if (Enum.TryParse<TimeOfDay>(world.Settings.Lighting.ToString(), out var chosen))
+        {
+            time = chosen;    // the settings screen's mood
+        }
+        else
+        {
+            time = (TimeOfDay)dice.Next(3);
+        }
+
         preset = LightPresets.For(time);
         string startTime = preset.StartTimes[dice.Next(preset.StartTimes.Length)];
         Console.WriteLine($"SAP: lighting {time.ToString().ToLowerInvariant()}, face-off {startTime}");

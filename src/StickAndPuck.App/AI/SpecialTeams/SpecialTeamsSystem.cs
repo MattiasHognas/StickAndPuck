@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
@@ -182,7 +183,7 @@ internal sealed partial class SpecialTeamsSystem : ISystem
         var board = SpecialTeams.Board(world);
         if (!board.PowerPlay.TryGetSide(out var pp)) return;
         var kill = pp == Side.Home ? Side.Away : Side.Home;
-        string text = $"PP {world.Setup.Club(pp).ShortName} {Name(board.PpShape)}   KILL {Name(board.KillShape)}   CLEARS {board.Tally[(int)kill].Clears}";
+        string text = string.Create(CultureInfo.InvariantCulture, $"PP {world.Setup.Club(pp).ShortName} {Name(board.PpShape)}   KILL {Name(board.KillShape)}   CLEARS {board.Tally[(int)kill].Clears}");
         DrawText(text, 6, 252, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }
 

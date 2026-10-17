@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Goalie;
@@ -37,7 +38,7 @@ public sealed class TacticsTests : CheckedTest
 
         Check(Fails("{\"forecheck\": \"zone\"}"), "an unknown tactic fails the club load");
         Check(Fails("{\"forcheck\": \"trap\"}"), "a misspelt tactics key fails the club load");
-        string path = Path.Combine(Path.GetTempPath(), $"sap_tactics_{Environment.ProcessId}.json");
+        string path = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap_tactics_{Environment.ProcessId}.json"));
         File.WriteAllText(path, "{\"id\": \"t\", \"tactics\": {\"forecheck\": \"trap\", \"entry\": \"dumpAndChase\", \"powerPlay\": \"oneThreeOne\"}}");
         var club = Clubs.Load(path);
         File.Delete(path);
@@ -46,7 +47,7 @@ public sealed class TacticsTests : CheckedTest
 
     static bool Fails(string tactics)
     {
-        string path = Path.Combine(Path.GetTempPath(), $"sap_tactics_bad_{Environment.ProcessId}.json");
+        string path = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap_tactics_bad_{Environment.ProcessId}.json"));
         File.WriteAllText(path, $"{{\"id\": \"t\", \"tactics\": {tactics}}}");
         try
         {

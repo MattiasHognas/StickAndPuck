@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
@@ -124,7 +125,7 @@ public sealed class HandlingTests : CheckedTest
             if (i > 10 && i < 300) worst = Math.Max(worst, Vector3.Distance(pk, PuckHandling.Blade(p)));
         });
         Check(w.Puck.Carrier == p.Id, "a skater sprinting in circles and into the boards keeps the puck");
-        Check(worst < 0.5f, $"the carried puck stays on the blade (worst {worst:0.00} m)");
+        Check(worst < 0.5f, string.Create(CultureInfo.InvariantCulture, $"the carried puck stays on the blade (worst {worst:0.00} m)"));
         Check(!outside, "the carried puck never leaves the rink");
     }
 
@@ -148,7 +149,7 @@ public sealed class HandlingTests : CheckedTest
             t.Puck.Position = blade - new Vector3(speed * 0.3f, 0, 0);
             t.Puck.Velocity = new Vector3(speed, 0, 0);
             Run(seeds, t, 0.5f);
-            Check((t.Puck.Carrier == q.Id) == takes, $"puck control {control} {(takes ? "takes" : "cannot take")} a {speed:0} m/s puck");
+            Check((t.Puck.Carrier == q.Id) == takes, string.Create(CultureInfo.InvariantCulture, $"puck control {control} {(takes ? "takes" : "cannot take")} a {speed:0} m/s puck"));
         }
     }
 

@@ -133,8 +133,20 @@ public static class NetBody
         // skater's lean decides, since the nearer edge flips there; a goalie heads for a spot just past
         // the frame, so the nearer edge always decides for it
         bool corner = MathF.Abs(normal.X) > 0.2f && MathF.Abs(normal.Y) > 0.2f;
-        float intent = goalie ? float.PositiveInfinity : corner ? 0.05f : PuckTuning.SlideIntent;
-        float way = MathF.Abs(along) > intent ? MathF.Sign(along) : edge < 0 ? -1 : 1;
+        float intent;
+        if (goalie)
+            intent = float.PositiveInfinity;
+        else if (corner)
+            intent = 0.05f;
+        else
+            intent = PuckTuning.SlideIntent;
+        float way;
+        if (MathF.Abs(along) > intent)
+            way = MathF.Sign(along);
+        else if (edge < 0)
+            way = -1;
+        else
+            way = 1;
         return tangent * way;
     }
 }

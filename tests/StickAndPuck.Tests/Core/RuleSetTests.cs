@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
@@ -23,7 +24,7 @@ public sealed class RuleSetTests : CheckedTest
 
     static readonly MatchSetup Setup = WorldBuilder.DefaultSetup with { PeriodSeconds = 600 };
 
-    readonly string dir = Path.Combine(Path.GetTempPath(), $"sap_rulestest_{Environment.ProcessId}_{Guid.NewGuid():N}");
+    readonly string dir = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap_rulestest_{Environment.ProcessId}_{Guid.NewGuid():N}"));
 
     [Before(Test)]
     public void MakeFolder() => Directory.CreateDirectory(dir);

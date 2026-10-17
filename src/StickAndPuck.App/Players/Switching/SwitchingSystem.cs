@@ -60,13 +60,11 @@ internal sealed class SwitchingSystem : ISystem
             {
                 want = Nearest(world, side, slot, me);
             }
-            else if (mode == ControlSwitching.Auto && defence)
+            else if (mode == ControlSwitching.Auto && defence &&
+                Nearest(world, side, slot, Maybe<Player>.None).TryGet(out var near) && near != me &&
+                (newDefence || (world.Time - switchedAt[slot] >= Settle && ToPuck(world, near) + Nearer < ToPuck(world, me))))
             {
-                if (Nearest(world, side, slot, Maybe<Player>.None).TryGet(out var near) && near != me && (newDefence ||
-                    (world.Time - switchedAt[slot] >= Settle && ToPuck(world, near) + Nearer < ToPuck(world, me))))
-                {
-                    want = near;
-                }
+                want = near;
             }
 
             if (want.TryGet(out var to) && to != me)

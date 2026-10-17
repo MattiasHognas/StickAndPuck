@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
 using StickAndPuck.Tests.Support;
@@ -17,7 +18,7 @@ public sealed class ArcadeTests : CheckedTest
     static readonly FixtureResult HomeWin = new(3, 1, ResultKind.Regulation);
     static readonly FixtureResult AwayWin = new(1, 3, ResultKind.Regulation);
 
-    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-arcadetest-{Environment.ProcessId}-{Guid.NewGuid():N}");
+    readonly string folder = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap-arcadetest-{Environment.ProcessId}-{Guid.NewGuid():N}"));
     string SavePath => Path.Combine(folder, "arcade.json");
 
     [Before(Test)]
@@ -52,11 +53,11 @@ public sealed class ArcadeTests : CheckedTest
         var clubs = WorldBuilder.Clubs;
         string user = clubs[0].Id;
         var run = ArcadeRun.New(clubs, user, ArcadeRule.ThreeLives, 5);
-        Check(run.Opponents.Count == clubs.Count - 1 && run.Opponents.Distinct().Count() == run.Opponents.Count, $"the run meets each of the other {clubs.Count - 1} clubs once");
+        Check(run.Opponents.Count == clubs.Count - 1 && run.Opponents.Distinct(StringComparer.Ordinal).Count() == run.Opponents.Count, string.Create(CultureInfo.InvariantCulture, $"the run meets each of the other {clubs.Count - 1} clubs once"));
         Check(!run.Opponents.Contains(user), "the human's club is not an opponent");
         var strength = run.Opponents.Select(id => ArcadeRun.Strength(clubs.First(c => Same(c.Id, id)))).ToList();
         Check(strength.Zip(strength.Skip(1)).All(p => p.Second >= p.First - 2), "opponents come weakest first");
-        Check(run.Opponents.SequenceEqual(ArcadeRun.New(clubs, user, ArcadeRule.ThreeLives, 5).Opponents), "the same seed gives the same order");
+        Check(run.Opponents.SequenceEqual(ArcadeRun.New(clubs, user, ArcadeRule.ThreeLives, 5).Opponents, StringComparer.Ordinal), "the same seed gives the same order");
         var setup = Must(run.NextSetup(clubs));
         Check(Same(setup.Home.Id, user) && Same(setup.Away.Id, run.Opponents[0]) && setup.Inputs[0] is { Device: InputDevice.KeyboardMouse, Side: Side.Home } && setup.Overtime == OvertimeRule.Shl,
             "game 1: the human at home against the first club, SHL overtime");
@@ -153,7 +154,7 @@ public sealed class ArcadeTests : CheckedTest
         string before = File.ReadAllText(path);
         app.Arcade.End();
         var reread = app.Arcade.Continue(clubs, path);
-        Check(reread.Is(x => x.Games.SequenceEqual(run.Games) && x.Opponents.SequenceEqual(run.Opponents)), "continuing after a restart reads back the game and the order");
+        Check(reread.Is(x => x.Games.SequenceEqual(run.Games) && x.Opponents.SequenceEqual(run.Opponents, StringComparer.Ordinal)), "continuing after a restart reads back the game and the order");
         var resumed = Must(reread);
         Check(Same(resumed.UserClub, user) && resumed.Rule == ArcadeRule.ThreeLives && resumed.LivesLeft == 2, "the save keeps the club, the rule and the lives");
         Check(app.Arcade.NextSetup() is NextMatch.Play n && Same(n.Setup.Home.Id, setup.Home.Id) && Same(n.Setup.Away.Id, setup.Away.Id), "after the restart the same club is next");

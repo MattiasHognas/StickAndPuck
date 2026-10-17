@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using K = StickAndPuck.App.Core.Text.Keys;
 
@@ -111,7 +112,7 @@ public sealed class SeasonSession
             var result = QuickSim.Play(home, away, season.GameSeed(game.Number));
             if (!Finish(result)) return Maybe<SimmedGame>.None;
             Save();
-            Console.WriteLine($"SAP: simmed season game {game.Number + 1}, round {game.Round + 1}: {game.Home} {result.HomeGoals}-{result.AwayGoals} {game.Away} ({result.Kind})");
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: simmed season game {game.Number + 1}, round {game.Round + 1}: {game.Home} {result.HomeGoals}-{result.AwayGoals} {game.Away} ({result.Kind})"));
             return new SimmedGame(game.Home, game.Away, result, Playoff: false, Text.Format(K.SimRound, game.Round + 1));
         }
 

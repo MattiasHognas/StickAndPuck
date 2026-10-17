@@ -66,7 +66,7 @@ internal static class PlayoffScenes
             return BracketWorld(clubs, settings);
         }
 
-        Console.WriteLine($"SAP: playoff {playoffs.Current.Name} game {series.Games.Count + 1}: {setup.Home.Name} vs {setup.Away.Name}, series {series.High} {series.HighWins}-{series.LowWins} {series.Low}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: playoff {playoffs.Current.Name} game {series.Games.Count + 1}: {setup.Home.Name} vs {setup.Away.Name}, series {series.High} {series.HighWins}-{series.LowWins} {series.Low}"));
         if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
         var world = new World(setup, settings);
         if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) world.Switches.OvertimeSeconds = ot;
@@ -97,7 +97,7 @@ internal static class PlayoffScenes
         int settled = SettleSeason(app);
         if (settled > 0) SeasonSave.Write(season, path);
         int place = season.Table.ToList().FindIndex(r => string.Equals(r.ClubId, season.UserClub, StringComparison.Ordinal)) + 1;
-        Console.WriteLine($"SAP: playoff test season in {path}: {season.UserClub} finished {place} of {season.Clubs.Count}{(settled > 0 ? $", {settled} of the human's games settled on paper" : "")}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: playoff test season in {path}: {season.UserClub} finished {place} of {season.Clubs.Count}{(settled > 0 ? $", {settled} of the human's games settled on paper" : "")}"));
     }
 
     /// <summary>Starts the playoff test season at its own save (SAP_CLUB, SAP_SEED as in the season scene).</summary>

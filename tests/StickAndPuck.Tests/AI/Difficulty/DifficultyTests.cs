@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Goalie;
@@ -26,7 +27,7 @@ public sealed class DifficultyTests : CheckedTest
         var easy = DifficultyScale.Scale(t, Level.Easy);
         var hard = DifficultyScale.Scale(t, Level.Hard);
         Check(easy.HockeyIq < t.HockeyIq && easy.ShotAccuracy < t.ShotAccuracy,
-            $"easy lowers the skater traits (hockey IQ {t.HockeyIq} -> {easy.HockeyIq})");
+            string.Create(CultureInfo.InvariantCulture, $"easy lowers the skater traits (hockey IQ {t.HockeyIq} -> {easy.HockeyIq})"));
         Check(hard.HockeyIq > t.HockeyIq && hard.ShotAccuracy > t.ShotAccuracy,
             $"hard raises the skater traits (hockey IQ {t.HockeyIq} -> {hard.HockeyIq})");
         Check(hard.ShotAccuracy == 100 && easy.TopSpeed == 0, "the scaled traits stay within 0 to 100");

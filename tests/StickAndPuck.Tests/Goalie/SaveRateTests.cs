@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.Tests.Support;
 using TUnit.Core.Enums;
 
@@ -32,11 +33,11 @@ public sealed class SaveRateTests : CheckedTest
         var played = MatchesPlayed.All(AllAiMatches.Count);
         int shots = played.Sum(p => p.Shots), goals = played.Sum(p => p.Goals);
         float shooting = (float)goals / Math.Max(1, shots);
-        var lines = played.SelectMany(p => p.Goalies).GroupBy(f => f.Goalie)
+        var lines = played.SelectMany(p => p.Goalies).GroupBy(f => f.Goalie, StringComparer.Ordinal)
             .Select(g => (Goalie: g.Key, g.First().Reflexes, Saves: g.Sum(f => f.Saves), Goals: g.Sum(f => f.Goals)))
             .Where(g => g.Saves + g.Goals >= 20)
             .OrderByDescending(g => g.Reflexes).ToList();
-        foreach (var g in lines) Console.WriteLine($"      {g.Goalie} reflexes {g.Reflexes}: {g.Saves} saves, {g.Goals} goals, {Pct(g.Saves, g.Goals):P1}");
+        foreach (var g in lines) Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"      {g.Goalie} reflexes {g.Reflexes}: {g.Saves} saves, {g.Goals} goals, {Pct(g.Saves, g.Goals):P1}"));
         Console.WriteLine($"      {played.Length} matches: {goals} goals on {shots} shots on goal, {shooting:P1}, {(float)goals / played.Length:F1} goals a match");
         Console.WriteLine($"      {played.Sum(p => p.Caught)} of {played.Sum(p => p.Saves)} saves held ({(float)played.Sum(p => p.Caught) / Math.Max(1, played.Sum(p => p.Saves)):P0})");
         Check(shooting is > 0.07f and < 0.13f, $"about one shot on goal in ten goes in ({shooting:P1})");

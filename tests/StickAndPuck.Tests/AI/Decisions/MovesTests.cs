@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -19,7 +20,7 @@ public sealed class MovesTests : CheckedTest
     [Test]
     public void Odds()
     {
-        Check(DecisionSystem.DekeOdds(90) > DecisionSystem.DekeOdds(20), $"more puck control dekes more ({DecisionSystem.DekeOdds(20):P0} at 20, {DecisionSystem.DekeOdds(90):P0} at 90)");
+        Check(DecisionSystem.DekeOdds(90) > DecisionSystem.DekeOdds(20), string.Create(CultureInfo.InvariantCulture, $"more puck control dekes more ({DecisionSystem.DekeOdds(20):P0} at 20, {DecisionSystem.DekeOdds(90):P0} at 90)"));
         Check(DecisionSystem.DekeMisjudge(90) < DecisionSystem.DekeMisjudge(20) / 2, $"more hockey IQ times a deke closer to the sweet spot ({DecisionSystem.DekeMisjudge(20):F2} m off at 20, {DecisionSystem.DekeMisjudge(90):F2} m at 90)");
         Check(DecisionSystem.OneTimerOdds(90) > DecisionSystem.OneTimerOdds(20) + 0.3f, $"more hockey IQ sees more one-timers ({DecisionSystem.OneTimerOdds(20):P0} at 20, {DecisionSystem.OneTimerOdds(90):P0} at 90)");
     }

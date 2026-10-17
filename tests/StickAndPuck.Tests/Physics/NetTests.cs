@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
@@ -77,7 +78,7 @@ public sealed class NetTests : CheckedTest
             var ev = Run(w, 1.5f);
             var p = w.Puck.Position;
             Check(!Goal(ev) && PuckMotion.Depth(p, end) >= d && Outside(p),
-                $"{End(end)}: {what} shot into the back of the net rebounds, no goal (depth {PuckMotion.Depth(p, end):0.00} m)");
+                string.Create(CultureInfo.InvariantCulture, $"{End(end)}: {what} shot into the back of the net rebounds, no goal (depth {PuckMotion.Depth(p, end):0.00} m)"));
         }
 
         // a slow dribble into the back stops against it
@@ -101,7 +102,7 @@ public sealed class NetTests : CheckedTest
                 var ev = Run(w, 1.5f);
                 var p = w.Puck.Position;
                 Check(!Goal(ev) && s * p.Z >= w2 && Outside(p),
-                    $"{End(end)}: {what} shot into the {(s < 0 ? "-z" : "+z")} side of the net rebounds, no goal (z {p.Z:0.00})");
+                    string.Create(CultureInfo.InvariantCulture, $"{End(end)}: {what} shot into the {(s < 0 ? "-z" : "+z")} side of the net rebounds, no goal (z {p.Z:0.00})"));
             }
 
             // a sneak from beside the net, cutting in just behind the post

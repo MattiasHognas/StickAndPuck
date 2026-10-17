@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Benches;
 using StickAndPuck.App.Core;
@@ -79,7 +80,7 @@ public sealed class BenchesTests : CheckedTest
             {
                 var row = seats.Values.Where(x => (x - door) * way > 0).Select(x => MathF.Abs(x - door)).Order().ToList();
                 var gaps = row.Zip(row.Skip(1), (a, b) => b - a).ToList();
-                Check(row.Count > 2 && MathF.Abs(row[0] - BenchLayout.DoorGap) < 1e-4f, $"{side} {way}: the first of {row.Count} seats is {row[0]:0.00} m from the door, none in the door gap");
+                Check(row.Count > 2 && MathF.Abs(row[0] - BenchLayout.DoorGap) < 1e-4f, string.Create(CultureInfo.InvariantCulture, $"{side} {way}: the first of {row.Count} seats is {row[0]:0.00} m from the door, none in the door gap"));
                 Check(gaps.Max() - gaps.Min() < 1e-4f && gaps.Max() <= BenchLayout.MaxPitch + 1e-4f, $"{side} {way}: evenly spread, {gaps.Min():0.00} to {gaps.Max():0.00} m apart");
             }
         }

@@ -89,8 +89,9 @@ internal sealed partial class PositioningSystem
     static Vector2 CarryTarget(World world, Player p, int end)
     {
         float pa = end * p.Position.X, pz = p.Position.Z;
+        float side = pz > 0f ? -2.5f : 2.5f;
         var spot = pa > RinkSpec.GoalLineX - 9f
-            ? new Vector2(RinkSpec.GoalLineX - 8f, pz > 0 ? -2.5f : 2.5f)
+            ? new Vector2(RinkSpec.GoalLineX - 8f, side)
             : new Vector2(Math.Min(pa + 10f, RinkSpec.GoalLineX - 8f), pz * 0.5f);
         if (world.Players
             .Where(o => o.OnIce && o.Side != p.Side && !o.IsGoalie)

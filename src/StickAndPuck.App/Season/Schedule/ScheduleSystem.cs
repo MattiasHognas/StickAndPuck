@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
 
@@ -33,17 +34,27 @@ internal sealed class ScheduleSystem : ISystem, IDisposable
             sawShootout = false;
             finishedAt = float.PositiveInfinity;
         }
-        if (world.Match.Phase == MatchPhase.Shootout) sawShootout = true;
+        if (world.Match.Phase == MatchPhase.Shootout)
+            sawShootout = true;
 
         if (!world.App.Season.Playing.TryGet(out var game) || !string.Equals(game.Home, world.Setup.Home.Id, StringComparison.Ordinal) || !string.Equals(game.Away, world.Setup.Away.Id, StringComparison.Ordinal)) return;
         if (!world.Events.Of<MatchEnded>().Any()) return;
 
         var m = world.Match;
-        var kind = sawShootout ? ResultKind.Shootout : m.Period > world.Setup.Periods ? ResultKind.Overtime : ResultKind.Regulation;
+        var kind = ResultKind.Regulation;
+        if (sawShootout)
+        {
+            kind = ResultKind.Shootout;
+        }
+        else if (m.Period > world.Setup.Periods)
+        {
+            kind = ResultKind.Overtime;
+        }
+
         var result = new FixtureResult(m.Score[(int)Side.Home], m.Score[(int)Side.Away], kind);
         if (!world.App.Season.Finish(result)) return;
         finishedAt = world.Time;
-        Console.WriteLine($"SAP: season game {game.Number + 1}, round {game.Round + 1}: {game.Home} {result.HomeGoals}-{result.AwayGoals} {game.Away} ({kind})");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: season game {game.Number + 1}, round {game.Round + 1}: {game.Home} {result.HomeGoals}-{result.AwayGoals} {game.Away} ({kind})"));
     }
 
     public void DrawHud(World world, RenderContext render)

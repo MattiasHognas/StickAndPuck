@@ -1,7 +1,8 @@
+using System.Collections.Immutable;
+using System.Linq;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
-using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Render;
@@ -35,8 +36,9 @@ public sealed class DitherGrid
     static Vector3 Anchor(Camera3D camera)
     {
         var forward = Vector3.Normalize(camera.Target - camera.Position);
-        foreach (var a in Anchors)
-            if (Vector3.Dot(a - camera.Position, forward) > 1f) return a;
-        return camera.Target;
+        return Anchors
+            .Where(a => Vector3.Dot(a - camera.Position, forward) > 1f)
+            .DefaultIfEmpty(camera.Target)
+            .First();
     }
 }

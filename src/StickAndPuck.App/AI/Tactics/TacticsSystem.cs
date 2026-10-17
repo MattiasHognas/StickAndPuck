@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
@@ -117,7 +118,15 @@ internal sealed partial class TacticsSystem : ISystem
     {
         var pk = world.Puck;
         var lastTouch = pk.LastTouch >= 0 && pk.LastTouch < world.Players.Count ? world.Players[pk.LastTouch] : Maybe<Player>.None;
-        var owner = carrier.TryGet(out var holder) ? holder.Side.OrNone() : lastTouch.TryGet(out var toucher) ? toucher.Side.OrNone() : SideOrNone.None;
+        var owner = SideOrNone.None;
+        if (carrier.TryGet(out var holder))
+        {
+            owner = holder.Side.OrNone();
+        }
+        else if (lastTouch.TryGet(out var toucher))
+        {
+            owner = toucher.Side.OrNone();
+        }
         var skater = carrier.TryGet(out var held) && !held.IsGoalie ? held : Maybe<Player>.None;
         if (carrier.TryGet(out var onPuck) && !board.Owner.Is(onPuck.Side))
         {
@@ -166,7 +175,7 @@ internal sealed partial class TacticsSystem : ISystem
         {
             var t = Tactics.Of(world, side);
             var tally = Tactics.Tally(world, side);
-            return $"{world.Setup.Club(side).ShortName} {Name(t.Forecheck)} {(t.Entry == ZoneEntry.DumpAndChase ? "DUMP" : "CARRY")} {tally.Dumps}/{tally.Entries}";
+            return string.Create(CultureInfo.InvariantCulture, $"{world.Setup.Club(side).ShortName} {Name(t.Forecheck)} {(t.Entry == ZoneEntry.DumpAndChase ? "DUMP" : "CARRY")} {tally.Dumps}/{tally.Entries}");
         }
         DrawText($"{Club(Side.Home)}   {Club(Side.Away)}", 6, 246, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }

@@ -7,6 +7,7 @@ using StickAndPuck.App.Rules;
 
 using StickAndPuck.App.Lines;
 using StickAndPuck.Tests.Support;
+using System.Globalization;
 
 namespace StickAndPuck.Tests;
 
@@ -86,7 +87,7 @@ public sealed class LinesTests : CheckedTest
             var squad = Must(Bench.SquadOf(w, side));
             int roster = w.Setup.Club(side).Roster.Count;
             Check(w.Players.Count(p => p.Side == side) == roster && w.OnIce(side).Count() == 6,
-                $"{side}: whole roster of {roster} in the match, 6 on the ice");
+                string.Create(CultureInfo.InvariantCulture, $"{side}: whole roster of {roster} in the match, 6 on the ice"));
             Check(squad.Lines.Count == 4 && squad.Lines.All(l => l.Members.Count == 3) && squad.Pairs.Count == 3
                 && squad.Pairs.All(p => p.Members.Count == 2) && squad.Goalies.Count == 2,
                 $"{side}: 4 lines of 3, 3 pairs, 2 goalies");
@@ -111,7 +112,7 @@ public sealed class LinesTests : CheckedTest
             SetEnergy(world.Players.Where(p => p.OnIce && p != skater && p != idle), 1f);   // nobody else changes
         });
         Check(skater.Energy < idle.Energy - 0.05f && idle.Energy < 1f,
-            $"a sprinting skater tires faster than a standing one ({skater.Energy:0.00} vs {idle.Energy:0.00} after 10 s)");
+            string.Create(CultureInfo.InvariantCulture, $"a sprinting skater tires faster than a standing one ({skater.Energy:0.00} vs {idle.Energy:0.00} after 10 s)"));
         Check(bench.Energy > 0.65f, $"the bench rests ({bench.Energy:0.00} from 0.50 after 10 s)");
         Check(w.Players.Where(p => p.IsGoalie).All(g => g.Energy >= 1f), "goalies do not tire");
     }

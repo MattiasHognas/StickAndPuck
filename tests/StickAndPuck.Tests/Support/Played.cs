@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 
 namespace StickAndPuck.Tests.Support;
 
@@ -17,5 +18,5 @@ public sealed class Played<T>
     public void Add(int match, T result) => results[match] = result;
 
     /// <summary>Gets matches 0 to <paramref name="count"/> - 1, in order.</summary>
-    public T[] All(int count) => [.. Enumerable.Range(0, count).Select(i => results.TryGetValue(i, out var r) ? r : throw new InvalidOperationException($"match {i} has not been played"))];
+    public T[] All(int count) => [.. Enumerable.Range(0, count).Select(i => results.TryGetValue(i, out var r) ? r : throw new InvalidOperationException(string.Create(CultureInfo.InvariantCulture, $"match {i} has not been played")))];
 }

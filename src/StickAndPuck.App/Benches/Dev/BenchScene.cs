@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
@@ -74,7 +75,7 @@ internal sealed class BenchDemo
         int now = (int)MathF.Floor((world.Time - FirstAt) / StepSeconds);
         if (now <= step || now < 0) return;
         step = now;
-        if (frames > 0) Console.WriteLine($"SAP: benches draw {drawMs / frames:0.000} ms/frame avg, {drawMax:0.000} max over {frames} frames");
+        if (frames > 0) Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: benches draw {drawMs / frames:0.000} ms/frame avg, {drawMax:0.000} max over {frames} frames"));
         (drawMs, drawMax, frames) = (0, 0, 0);
         if (step >= Steps.Length) return;
         Console.WriteLine($"SAP: benches step {step} {Steps[step]} at tick {world.Tick}");

@@ -26,7 +26,15 @@ internal sealed partial class TacticsSystem
             var opponents = Skaters(world, Other(p.Side));
             bool covered = opponents.Exists(o => end * o.Position.X > a && Vector3.Distance(o.Position, p.Position) < 12f);
             if (rng.NextSingle() >= (covered ? 0.75f : 0.2f)) return;   // open ice ahead: carry it in
-            float wide = MathF.Abs(at.Y) > 2f ? MathF.Sign(at.Y) : rng.NextSingle() < 0.5f ? -1f : 1f;
+            float wide;
+            if (MathF.Abs(at.Y) > 2f)
+            {
+                wide = MathF.Sign(at.Y);
+            }
+            else
+            {
+                wide = rng.NextSingle() < 0.5f ? -1f : 1f;
+            }
             board.Dump = new DumpPlan(p.Id, brain.GotAt, wide);
         }
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
@@ -18,7 +19,13 @@ internal sealed partial class OvertimeRules
                     // The human home club picks; nothing else runs until it does (or the time runs out)
                     s.Timer -= dt;
                     var pick = ShootoutOrder.Pick(world);
-                    s.First = pick.IsSet() ? pick : s.Timer <= -ShootoutOrder.ChooseSeconds ? SideOrNone.Home : SideOrNone.None;
+                    var first = pick.IsSet() ? pick : SideOrNone.None;
+                    if (!first.IsSet() && s.Timer <= -ShootoutOrder.ChooseSeconds)
+                    {
+                        first = SideOrNone.Home;
+                    }
+
+                    s.First = first;
                     if (s.First.TryGetSide(out var picked)) { s.Timer = 0.5f; Log(world, $"{world.Setup.Home.ShortName} choose to shoot {(picked == Side.Home ? "first" : "second")}"); }
                     break;
                 }
@@ -61,7 +68,7 @@ internal sealed partial class OvertimeRules
                 .ThenBy(p => p.Id)];
         }
 
-        Log(world, $"shootout, {ShootoutOrder.Shooters(world.Setup)} shooters each, {(s.First.TryGetSide(out var f) ? $"{world.Setup.Club(f).ShortName} first" : $"{world.Setup.Home.ShortName} to choose")}");
+        Log(world, string.Create(CultureInfo.InvariantCulture, $"shootout, {ShootoutOrder.Shooters(world.Setup)} shooters each, {(s.First.TryGetSide(out var f) ? $"{world.Setup.Club(f).ShortName} first" : $"{world.Setup.Home.ShortName} to choose")}"));
     }
 
     /// <summary>Brings out the next shooter: the clubs in turn, the first club opening every round, round after round through the order.</summary>
@@ -184,9 +191,11 @@ internal sealed partial class OvertimeRules
         }
 
         // skate the lane toward where the shot or the cut starts
+        var dekeFrom = s.Deke != 0 ? OvertimeTuning.DekeFrom : 0;
+        var shootFrom = Math.Max(s.ShootFrom, dekeFrom);
         var target = cutting
             ? new Vector2(attack * (RinkSpec.GoalLineX - 1.5f), s.Deke * 1.1f)
-            : new Vector2(attack * (RinkSpec.GoalLineX - Math.Max(s.ShootFrom, s.Deke != 0 ? OvertimeTuning.DekeFrom : 0) + 1f), s.Lane);
+            : new Vector2(attack * (RinkSpec.GoalLineX - shootFrom + 1f), s.Lane);
         var dir = Vector2.Normalize(target - here);
         float top = SkatingModel.TopSpeed(traits, shooter.Energy) * OvertimeTuning.SkateIn;
         float speed = Math.Min(top, shooter.Speed + (SkatingModel.Push(traits, shooter.Energy) * dt));
@@ -203,7 +212,19 @@ internal sealed partial class OvertimeRules
         // (puck handling guards only the shots it fires itself)
         var pk = world.Puck;
         var from = pk.Position with { Y = PuckHandling.StickHeight + 0.02f };
-        float corner = side != 0 ? side : MathF.Abs(from.Z) > 0.5f ? -MathF.Sign(from.Z) : (rng.Next(2) * 2) - 1;
+        float corner;
+        if (side != 0)
+        {
+            corner = side;
+        }
+        else if (MathF.Abs(from.Z) > 0.5f)
+        {
+            corner = -MathF.Sign(from.Z);
+        }
+        else
+        {
+            corner = (rng.Next(2) * 2) - 1;
+        }
         // aim like a human pushing the stick toward that corner
         shooter.Command = shooter.Command with { Move = Vector2.Normalize(toNet + new Vector2(0, corner * 0.8f)) };
         var velocity = PuckHandling.ShotVelocity(world, shooter, from, ShotKind.Wrist, PuckHandling.WristSpeed(shooter.Data.Traits), rng);
@@ -225,7 +246,7 @@ internal sealed partial class OvertimeRules
         world.Puck.Live = false;
         s.Stage = ShootoutStage.Result;
         s.Timer = OvertimeTuning.ResultSeconds;
-        Log(world, $"shootout #{shooter.Data.Number} {world.Setup.Club(shooter.Side).ShortName} {(scored ? "scores" : "misses")}, {so.Goals(Side.Home)}-{so.Goals(Side.Away)}");
+        Log(world, string.Create(CultureInfo.InvariantCulture, $"shootout #{shooter.Data.Number} {world.Setup.Club(shooter.Side).ShortName} {(scored ? "scores" : "misses")}, {so.Goals(Side.Home)}-{so.Goals(Side.Away)}"));
     }
 
     /// <summary>The shootout is decided: the winner gets one goal on the final score and the match ends.</summary>

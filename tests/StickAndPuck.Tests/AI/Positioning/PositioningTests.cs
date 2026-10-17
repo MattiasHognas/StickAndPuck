@@ -10,6 +10,7 @@ using TUnit.Core.Enums;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
 using AiPositioning = StickAndPuck.App.AI.Positioning;
 using StickAndPuck.App.AI.Dev;
+using System.Globalization;
 
 namespace StickAndPuck.Tests;
 
@@ -181,7 +182,7 @@ public sealed class PositioningTests : CheckedTest
         float longestStill = t.LongestStill, stackSeconds = t.Stacked, pileSeconds = t.Piled, offsideSeconds = t.Offside;
         float meanAway = t.AwaySum / Math.Max(1, t.Shaped);
         float minutes = world.Setup.PeriodSeconds / 60f;
-        Console.WriteLine($"      period: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {AiDecisions.Tally(world, Side.Home).Shots}-{AiDecisions.Tally(world, Side.Away).Shots}, {touches} touches by {touchers} skaters, {deadPucks} dead pucks, longest still {longestStill:F1} s, stacked {stackSeconds:F0} s, piled {pileSeconds:F0} s, mean {meanAway:F1} m off the ideal spot, offside shape {offsideSeconds:F0} s");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"      period: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, attempts {AiDecisions.Tally(world, Side.Home).Shots}-{AiDecisions.Tally(world, Side.Away).Shots}, {touches} touches by {touchers} skaters, {deadPucks} dead pucks, longest still {longestStill:F1} s, stacked {stackSeconds:F0} s, piled {pileSeconds:F0} s, mean {meanAway:F1} m off the ideal spot, offside shape {offsideSeconds:F0} s"));
         Check(world.Match.Phase == MatchPhase.Intermission, $"a {minutes:F0} minute period runs through to the intermission under the match rules");
         Check(outsideCount == 0, "no skater leaves the rink or loses its position");
         Check(longestStill < 20f, $"nobody stands idle: longest without moving a metre is {longestStill:F1} s");

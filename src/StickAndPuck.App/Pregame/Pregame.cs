@@ -44,7 +44,7 @@ public static class Pregame
     {
         if (!IsWarmingUp(world)) return false;
         State(world).Started = true;
-        Console.WriteLine($"SAP: warm-up over after {State(world).Elapsed:0.0} s, the game starts");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: warm-up over after {State(world).Elapsed:0.0} s, the game starts"));
         return true;
     }
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
@@ -37,7 +38,18 @@ internal sealed class StatsSystem : ISystem
         catchUp = true;
         var sheet = tracker.Finish();
         world.App.LastMatchStats = sheet;
-        string star = sheet.PlayerOfGame.TryGet(out var p) ? $"{p.Label} ({p.Club}) {(p.IsGoalie ? $"{p.Saves} saves" : $"{p.Goals}G {p.Assists}A")}" : "nobody";
+        string star;
+        if (sheet.PlayerOfGame.TryGet(out var p))
+        {
+            string performance = p.IsGoalie
+                ? string.Create(CultureInfo.InvariantCulture, $"{p.Saves} saves")
+                : string.Create(CultureInfo.InvariantCulture, $"{p.Goals}G {p.Assists}A");
+            star = $"{p.Label} ({p.Club}) {performance}";
+        }
+        else
+        {
+            star = "nobody";
+        }
         Console.WriteLine($"SAP: stats: {sheet.Home} {sheet.HomeGoals}-{sheet.AwayGoals} {sheet.Away}, player of the game {star}");
 
         if (world.App.Season.Current.TryGet(out var season) && world.App.Season.Playing.TryGet(out var game) && Matches(world, game.Home, game.Away))

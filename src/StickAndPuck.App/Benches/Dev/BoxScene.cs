@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using StickAndPuck.App.Camera;
@@ -63,7 +64,7 @@ internal sealed class BoxDemo(string mode)
         if (frames >= 300)
         {
             int boxed = world.Players.Count(p => !p.OnIce && Penalties.InBox(world, p.Id));
-            Console.WriteLine($"SAP: benches and boxes draw {drawMs / frames:0.000} ms/frame avg, {drawMax:0.000} max over {frames} frames, {boxed} in the boxes");
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: benches and boxes draw {drawMs / frames:0.000} ms/frame avg, {drawMax:0.000} max over {frames} frames, {boxed} in the boxes"));
             (drawMs, drawMax, frames) = (0, 0, 0);
         }
         if (called || world.Match.Phase != MatchPhase.Play || world.Time < CallAt) return;

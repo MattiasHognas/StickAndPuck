@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.Tests.Support;
 
@@ -15,7 +16,7 @@ public sealed class SimClockTests : CheckedTest
             int steps = 0;
             for (int frame = 0; frame < refresh * 10; frame++)
                 steps += clock.Steps(1f / refresh, lockstep: false, fast: false);
-            Check(Math.Abs(steps - 600) <= 1, $"{refresh} Hz callbacks simulate ten seconds at 60 Hz ({steps} steps)");
+            Check(Math.Abs(steps - 600) <= 1, string.Create(CultureInfo.InvariantCulture, $"{refresh} Hz callbacks simulate ten seconds at 60 Hz ({steps} steps)"));
         }
     }
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
 using StickAndPuck.App.Rules;
@@ -97,7 +98,7 @@ public sealed class FaceoffDrawTests : CheckedTest
         int home = 0;
         const int draws = 100;
         for (int i = 0; i < draws; i++) if (OneDraw(w) == SideOrNone.Home) home++;
-        Check(home > draws * 0.75, $"the sharper centre wins most draws ({home} of {draws})");
+        Check(home > draws * 0.75, string.Create(CultureInfo.InvariantCulture, $"the sharper centre wins most draws ({home} of {draws})"));
     }
 
     /// <summary>When nobody presses (two humans who wait) the window closes and the roll decides.</summary>
@@ -124,6 +125,6 @@ public sealed class FaceoffDrawTests : CheckedTest
             for (int i = 0; i < 200; i++, total++) if (OneDraw(w) == SideOrNone.Home) home++;
         }
         float share = home / (float)total;
-        Check(share is > 0.4f and < 0.6f, $"the home share is about half ({share:0.00})");
+        Check(share is > 0.4f and < 0.6f, string.Create(CultureInfo.InvariantCulture, $"the home share is about half ({share:0.00})"));
     }
 }

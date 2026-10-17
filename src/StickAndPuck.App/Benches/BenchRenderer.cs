@@ -12,7 +12,8 @@ namespace StickAndPuck.App.Benches;
 /// in the seats <see cref="BenchLayout"/> gives, and the skaters sitting in the penalty boxes, moved by <see cref="BenchCrowd"/>. Render only:
 /// the match runs the same with <see cref="Settings.Benches"/> on or off. Every clip frame is skinned
 /// once at load into static meshes, and a bench out of the camera's view is not drawn.</summary>
-internal sealed unsafe class BenchRenderer : ISystem, IDisposable
+#pragma warning disable S6640 // Raylib mesh baking requires pointer-based manipulation of native model data.
+internal sealed unsafe partial class BenchRenderer : ISystem, IDisposable
 {
     /// <summary>The mask ids of the staff (home coach, home trainer, away coach, away trainer), clear of the players', the Zamboni's and the referee's.</summary>
     const int StaffMask = MaskIds.Max - 5;
@@ -129,7 +130,12 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
                 draws.Add(new Draw(BenchClips.Staff, c, frame, spot, s.Heading, StaffKit(s.Coach), MaskIds.For(StaffMask + i)));
             }
         }
-        draws.Sort(static (a, b) => a.Model != b.Model ? a.Model - b.Model : a.Clip != b.Clip ? a.Clip - b.Clip : a.Frame - b.Frame);
+        draws.Sort(static (a, b) =>
+        {
+            if (a.Model != b.Model) return a.Model - b.Model;
+            if (a.Clip != b.Clip) return a.Clip - b.Clip;
+            return a.Frame - b.Frame;
+        });
     }
 
     void Add(World world, BenchFigure f, bool seen, float time)
@@ -169,14 +175,31 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
     static Vector3 Spot(BenchFigure f)
     {
         if (f.InBox) return new Vector3(f.X, f.Standing ? 0f : BenchClips.BoxSeatLift, f.Standing ? BenchLayout.BoxStandZ : BenchLayout.BoxSeatZ);
-        float lift = f.Standing ? 0f : f.Player.IsGoalie ? BenchClips.GoalieLift : BenchClips.SeatLift;
+
+        float lift;
+        if (f.Standing)
+            lift = 0f;
+        else if (f.Player.IsGoalie)
+            lift = BenchClips.GoalieLift;
+        else
+            lift = BenchClips.SeatLift;
+
         return new Vector3(f.X, lift, f.Standing ? BenchLayout.StandZ : BenchLayout.SeatZ);
     }
 
     Texture2D Kit(World world, Player p, bool bare)
     {
-        var side = world.Settings.SwapKits ? (p.Side == Side.Home ? Side.Away : Side.Home) : p.Side;
-        string role = p.IsGoalie ? "goalie" : bare ? "skater_bare" : "skater";
+        var side = p.Side;
+        if (world.Settings.SwapKits)
+            side = p.Side == Side.Home ? Side.Away : Side.Home;
+
+        string role;
+        if (p.IsGoalie)
+            role = "goalie";
+        else if (bare)
+            role = "skater_bare";
+        else
+            role = "skater";
         return Texture(Assets.KitAtlas(world.Setup.Club(p.Side).Id, side, role, bare ? 0 : p.Data.Number));
     }
 
@@ -285,9 +308,6 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         DrawMs = Stopwatch.GetElapsedTime(0, drawTicks + Stopwatch.GetTimestamp() - from).TotalMilliseconds;
     }
 
-    /// <summary>One model to draw: its baked pose, where, which way, in which kit and mask colour.</summary>
-    readonly record struct Draw(int Model, int Clip, int Frame, Vector3 At, float Heading, Texture2D Atlas, Color Mask);
-
     public void Dispose()
     {
         if (!loaded) return;
@@ -300,3 +320,4 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
         foreach (var m in models) UnloadModel(m);
     }
 }
+#pragma warning restore S6640 // Raylib mesh baking requires pointer-based manipulation of native model data.

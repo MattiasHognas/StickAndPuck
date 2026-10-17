@@ -1,3 +1,4 @@
+using System.Globalization;
 using Raylib_cs;
 using StickAndPuck.App.Render;
 using StickAndPuck.App.Replays;
@@ -26,7 +27,9 @@ public static class Game
     public static void Run()
     {
         using var session = new Session();
+#pragma warning disable S108 // Nested blocks of code should not be left empty
         while (session.Frame()) { }
+#pragma warning restore S108 // Nested blocks of code should not be left empty
     }
 
     /// <summary>A running game, driven by the desktop loop or one browser animation frame at a time.</summary>
@@ -50,13 +53,23 @@ public static class Game
             app = new AppState();
             replay = ReplayPlayer.FromEnvironment(clubs, app);
             world = replay.TryGet(out var played) ? played.World : Scenes.CreateFromEnvironment(clubs, Settings.FromEnvironment(), app);
+            Maybe<ReplayRecorder> recorder;
+            if (replay.TryGet(out var r))
+            {
+                recorder = r.TakeOverAtTarget ? r.TakeOverRecorder() : Maybe<ReplayRecorder>.None;
+            }
+            else
+            {
+                recorder = ReplayRecorder.Begin(world, RecordedScene());
+            }
+
             loop = new Loop
             {
                 Headless = Env.Is("SAP_SCREENSHOT", "1"),
                 Frames = FrameRecorder.FromEnvironment(),
                 Replay = replay,
-                Limit = long.TryParse(Env.Get("SAP_STEPS"), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
-                Recorder = replay.TryGet(out var r) ? (r.TakeOverAtTarget ? r.TakeOverRecorder() : Maybe<ReplayRecorder>.None) : ReplayRecorder.Begin(world, RecordedScene()),
+                Limit = long.TryParse(Env.Get("SAP_STEPS"), NumberStyles.Integer, CultureInfo.InvariantCulture, out long n) && n > 0 ? n : 0,
+                Recorder = recorder,
                 Sums = ChecksumLog.FromEnvironment(),
             };
 
@@ -97,12 +110,20 @@ public static class Game
         }
 
         /// <summary>Current simulation state for browser replay checks.</summary>
-        public string State => $"{world.Tick}:{WorldChecksum.Of(world):x16}\n{StateDump.Of(world)}\n{StateDump.Exact(world)}";
+        public string State => string.Create(CultureInfo.InvariantCulture, $"{world.Tick}:{WorldChecksum.Of(world):x16}\n{StateDump.Of(world)}\n{StateDump.Exact(world)}");
 
         /// <summary>Reports replay verification after its final step.</summary>
-        public string ReplayResult => replay.TryGet(out var played)
-            ? !played.Ended ? "Replay stopped before its final step." : loop.ExitCode == 0 ? "Replay verified: events, result and checksums match." : "Replay differs from the recording."
-            : "";
+        public string ReplayResult
+        {
+            get
+            {
+                if (!replay.TryGet(out var played)) return "";
+                if (!played.Ended) return "Replay stopped before its final step.";
+                return loop.ExitCode == 0
+                    ? "Replay verified: events, result and checksums match."
+                    : "Replay differs from the recording.";
+            }
+        }
 
         /// <summary>Writes the current recording so the browser can download it.</summary>
         public Maybe<string> ReplaySnapshot() => loop.Recorder.Select(recorder => recorder.Snapshot(world));
@@ -126,16 +147,20 @@ public static class Game
         static string RecordedScene()
         {
             string scene = Env.Get("SAP_SCENE") is { Length: > 0 } s ? s : Scenes.Default;
-            return string.Equals(scene, Scenes.Default, StringComparison.OrdinalIgnoreCase) ? "" : scene;
+            return string.Equals(scene, Scenes.Default, StringComparison.OrdinalIgnoreCase)
+                ? ""
+                : scene;
         }
 
         /// <summary>Disposes the old systems and starts a fresh set on the world.</summary>
         static IReadOnlyList<ISystem> Restart(World world, IReadOnlyList<ISystem> old)
         {
-            foreach (var s in old.OfType<IDisposable>()) s.Dispose();
-            var systems = Systems.Create(world.Seed);
-            foreach (var s in systems) s.Start(world);
-            return systems;
+            foreach (var s in old.OfType<IDisposable>())
+                s.Dispose();
+            var freshSystems = Systems.Create(world.Seed);
+            foreach (var s in freshSystems)
+                s.Start(world);
+            return freshSystems;
         }
 
         static void Draw(World world, IReadOnlyList<ISystem> systems, PixelFrame pixel, RenderContext render, bool showFps)
@@ -165,7 +190,7 @@ public static class Game
             BeginDrawing();
             ClearBackground(new Color(24, 19, 31, 255));
             pixel.Present();
-            if (showFps) DrawText($"{GetFPS()} fps  arrows: skate  space: shoot  tab: kit", 8, 8, 10, new Color(239, 224, 194, 255));
+            if (showFps) DrawText(string.Create(CultureInfo.InvariantCulture, $"{GetFPS()} fps  arrows: skate  space: shoot  tab: kit"), 8, 8, 10, new Color(239, 224, 194, 255));
             EndDrawing();
         }
     }

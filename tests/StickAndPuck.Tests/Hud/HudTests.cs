@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
 using StickAndPuck.App.Physics;
@@ -48,7 +49,7 @@ public sealed class HudTests : CheckedTest
         var scorer = w.OnIce(Side.Away).First(p => !p.IsGoalie);
         w.Events.Publish(new GoalScored(w.Time, Side.Away, scorer.Id, default, 0));
         hud.Update(w);
-        Check(Shown(hud).TryGet(out var g) && g is { Title: "GOAL!" } && string.Equals(g.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal) && string.Equals(g.Crest, w.Setup.Away.Id, StringComparison.Ordinal),
+        Check(Shown(hud).TryGet(out var g) && g is { Title: "GOAL!" } && string.Equals(g.Detail, string.Create(CultureInfo.InvariantCulture, $"#{scorer.Data.Number} {scorer.Data.LastName}"), StringComparison.Ordinal) && string.Equals(g.Crest, w.Setup.Away.Id, StringComparison.Ordinal),
             "a goal shows GOAL! with the scorer and the scoring club's crest");
 
         var home = w.OnIce(Side.Home).First(p => !p.IsGoalie);
@@ -97,7 +98,7 @@ public sealed class HudTests : CheckedTest
         Goal(Side.Home, scorer.Id);
         Check(Shown(hud).Is(b => b is { Title: "GOAL!" }), "two goals are not a hat trick");
         Goal(Side.Home, scorer.Id);
-        Check(Shown(hud).TryGet(out var h) && h is { Title: "HAT TRICK!" } && string.Equals(h.Detail, $"#{scorer.Data.Number} {scorer.Data.LastName}", StringComparison.Ordinal), "the third goal by one player shows HAT TRICK!");
+        Check(Shown(hud).TryGet(out var h) && h is { Title: "HAT TRICK!" } && string.Equals(h.Detail, string.Create(CultureInfo.InvariantCulture, $"#{scorer.Data.Number} {scorer.Data.LastName}"), StringComparison.Ordinal), "the third goal by one player shows HAT TRICK!");
         Goal(Side.Home, scorer.Id);
         Check(Shown(hud).Is(b => b is { Title: "GOAL!" }), "the fourth is a plain goal again");
         w.Switches.SeasonGoals = (_, _) => Maybe<int>.None;

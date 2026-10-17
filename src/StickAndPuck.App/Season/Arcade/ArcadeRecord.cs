@@ -43,10 +43,14 @@ public sealed record ArcadeRecord(string Club, ArcadeRule Rule, int Beaten, bool
     }
 
     /// <summary>Adds a run to a board and keeps the best <see cref="Kept"/>, best first.</summary>
-    public static List<ArcadeRecord> Add(IEnumerable<ArcadeRecord> board, ArcadeRecord record)
+    public static IReadOnlyList<ArcadeRecord> Add(IEnumerable<ArcadeRecord> board, ArcadeRecord record)
     {
         var all = board.Append(record).ToList();
-        all.Sort((a, b) => a == b ? 0 : a.Beats(b) ? -1 : 1);
+        all.Sort((a, b) =>
+        {
+            if (a == b) return 0;
+            return a.Beats(b) ? -1 : 1;
+        });
         return all.Take(Kept).ToList();
     }
 

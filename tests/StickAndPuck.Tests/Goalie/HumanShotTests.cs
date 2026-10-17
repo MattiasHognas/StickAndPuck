@@ -1,5 +1,6 @@
 #pragma warning disable S2245 // game dice with fixed seeds, so every run fires the same shots
 
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -47,7 +48,7 @@ public sealed class HumanShotTests : CheckedTest
         var all = new[] { tapSlot, tapCircle, heldSlot, slap };
         float shooting = (float)all.Sum(t => t.Goals) / Math.Max(1, all.Sum(t => t.Saves + t.Goals));
         float held = (float)all.Sum(t => t.Caught) / Math.Max(1, all.Sum(t => t.Saves));
-        Check(tapSlot.Shooting is > 0.07f and < 0.22f && heldSlot.Shooting is > 0.07f and < 0.22f, $"a slot shot goes in about one time in ten ({tapSlot.Shooting:P1} tapped, {heldSlot.Shooting:P1} held)");
+        Check(tapSlot.Shooting is > 0.07f and < 0.22f && heldSlot.Shooting is > 0.07f and < 0.22f, string.Create(CultureInfo.InvariantCulture, $"a slot shot goes in about one time in ten ({tapSlot.Shooting:P1} tapped, {heldSlot.Shooting:P1} held)"));
         Check(shooting is > 0.06f and < 0.14f, $"about one shot in ten goes in overall ({shooting:P1})");
         Check(held < 0.45f, $"the goalie holds under half of what it stops ({held:P0})");
     }

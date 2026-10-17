@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
@@ -23,10 +24,10 @@ public sealed class SeasonStats
     public HashSet<string> Credited { get; set; } = new(StringComparer.Ordinal);
 
     /// <summary>The key of a regular-season game.</summary>
-    public static string GameKey(int number) => $"g{number}";
+    public static string GameKey(int number) => string.Create(CultureInfo.InvariantCulture, $"g{number}");
 
     /// <summary>The key of a playoff game.</summary>
-    public static string PlayoffKey(int round, int series, int game) => $"p{round}.{series}.{game}";
+    public static string PlayoffKey(int round, int series, int game) => string.Create(CultureInfo.InvariantCulture, $"p{round}.{series}.{game}");
 
     /// <summary>Gets the latest award, or None before any game.</summary>
     public Maybe<PlayerOfGameAward> LastAward => Awards.Count == 0 ? Maybe<PlayerOfGameAward>.None : Awards[^1];

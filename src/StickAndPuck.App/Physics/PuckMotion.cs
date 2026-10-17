@@ -3,38 +3,6 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Physics;
 
-/// <summary>What the puck hit during a step.</summary>
-public enum PuckHit
-{
-    /// <summary>The boards.</summary>
-    Boards,
-
-    /// <summary>The glass above the boards.</summary>
-    Glass,
-
-    /// <summary>A post or the crossbar.</summary>
-    Post,
-
-    /// <summary>The net mesh or frame.</summary>
-    Net,
-
-    /// <summary>A player's body.</summary>
-    Body,
-
-    /// <summary>The ice, landing from the air.</summary>
-    Ice,
-}
-
-/// <summary>One impact: what was hit, where, how hard (speed into the surface) and, for a body, whose.</summary>
-/// <param name="Kind">The surface.</param>
-/// <param name="Position">The puck's position at the hit.</param>
-/// <param name="Speed">Speed into the surface, metres per second.</param>
-/// <param name="PlayerId">The player hit, or -1.</param>
-public readonly record struct PuckImpact(PuckHit Kind, Vector3 Position, float Speed, int PlayerId = -1);
-
-/// <summary>A body the puck can bounce off: a standing cylinder.</summary>
-public readonly record struct PuckBody(int PlayerId, Vector3 Position, Vector3 Velocity);
-
 /// <summary>Moves a loose puck: gravity, ice friction and drag, boards with rounded corners, glass, posts,
 /// crossbar, net mesh and bodies. Pure maths on a position and a velocity, so it runs without a window
 /// and the self-test can drive it. The puck's <see cref="Puck.Position"/> has y = 0 when it lies
@@ -56,7 +24,7 @@ public static class PuckMotion
     /// <param name="dt">The step length in seconds.</param>
     /// <param name="bodies">Bodies on the ice.</param>
     /// <param name="impacts">Receives every impact.</param>
-    public static void Step(ref Vector3 position, ref Vector3 velocity, ref int inNet, float dt, ReadOnlySpan<PuckBody> bodies, List<PuckImpact> impacts)
+    public static void Step(ref Vector3 position, ref Vector3 velocity, ref int inNet, float dt, ReadOnlySpan<PuckBody> bodies, ICollection<PuckImpact> impacts)
     {
         float move = velocity.Length() * dt;
         int steps = Math.Clamp((int)MathF.Ceiling(move / PuckTuning.MaxSubstepMove), 1, 64);
@@ -70,7 +38,7 @@ public static class PuckMotion
         }
     }
 
-    static void SubStep(ref Vector3 p, ref Vector3 v, ref int inNet, float h, ReadOnlySpan<PuckBody> bodies, List<PuckImpact> impacts)
+    static void SubStep(ref Vector3 p, ref Vector3 v, ref int inNet, float h, ReadOnlySpan<PuckBody> bodies, ICollection<PuckImpact> impacts)
     {
         var prev = p;
 
@@ -116,7 +84,7 @@ public static class PuckMotion
     }
 
     /// <summary>The rink outline: straight boards with rounded corners, glass above, netting above that.</summary>
-    static void Boards(ref Vector3 p, ref Vector3 v, List<PuckImpact> impacts)
+    static void Boards(ref Vector3 p, ref Vector3 v, ICollection<PuckImpact> impacts)
     {
         float r = RinkSpec.PuckRadius, cr = RinkSpec.CornerRadius;
         float cx = RinkSpec.HalfLength - cr, cz = RinkSpec.HalfWidth - cr;
@@ -150,7 +118,7 @@ public static class PuckMotion
     /// softly off the back, sides and top from within. Any other puck that overlaps the cage, whether it
     /// flew in from behind, from a side or from above, or was carried through the mesh on a stick and let
     /// go there, is pushed back out through the nearest wall and bounces off it.</summary>
-    static void Net(int end, Vector3 prev, ref Vector3 p, ref Vector3 v, ref int inNet, float h, List<PuckImpact> impacts)
+    static void Net(int end, Vector3 prev, ref Vector3 p, ref Vector3 v, ref int inNet, float h, ICollection<PuckImpact> impacts)
     {
         float r = RinkSpec.PuckRadius, w = RinkSpec.NetWidth / 2, d = RinkSpec.NetDepth, top = RinkSpec.NetHeight;
         float u = Depth(p, end), pu = Depth(prev, end);
@@ -177,7 +145,19 @@ public static class PuckMotion
         }
         else if (side <= over)
         {
-            float s = prev.Z != 0 ? MathF.Sign(prev.Z) : p.Z != 0 ? MathF.Sign(p.Z) : 1;
+            float s;
+            if (prev.Z != 0)
+            {
+                s = MathF.Sign(prev.Z);
+            }
+            else if (p.Z != 0)
+            {
+                s = MathF.Sign(p.Z);
+            }
+            else
+            {
+                s = 1;
+            }
             p.Z = s * (w + r);
             Reflect(ref v, new Vector2(0, -s), PuckTuning.NetOutsideBounce, PuckTuning.WallGrip, PuckHit.Net, p, impacts);
         }
@@ -193,7 +173,7 @@ public static class PuckMotion
     }
 
     /// <summary>A puck that came in through the mouth: the mesh drags it, and it bounces softly off the back, sides and top from within.</summary>
-    static void Inside(int end, ref Vector3 p, ref Vector3 v, ref int inNet, float h, List<PuckImpact> impacts)
+    static void Inside(int end, ref Vector3 p, ref Vector3 v, ref int inNet, float h, ICollection<PuckImpact> impacts)
     {
         float r = RinkSpec.PuckRadius, w = RinkSpec.NetWidth / 2, d = RinkSpec.NetDepth, top = RinkSpec.NetHeight;
         float u = Depth(p, end);
@@ -244,13 +224,13 @@ public static class PuckMotion
         p.X = end * (RinkSpec.GoalLineX + u);
     }
 
-    static void Mesh(ref Vector3 v, Vector2 outward, Vector3 p, List<PuckImpact> impacts)
+    static void Mesh(ref Vector3 v, Vector2 outward, Vector3 p, ICollection<PuckImpact> impacts)
     {
         Reflect(ref v, outward, PuckTuning.MeshBounce, 0.6f, PuckHit.Net, p, impacts);
     }
 
     /// <summary>Two posts standing on the goal line and the crossbar between them.</summary>
-    static void Posts(int end, ref Vector3 p, ref Vector3 v, List<PuckImpact> impacts)
+    static void Posts(int end, ref Vector3 p, ref Vector3 v, ICollection<PuckImpact> impacts)
     {
         float x0 = end * RinkSpec.GoalLineX, w = RinkSpec.NetWidth / 2, top = RinkSpec.NetHeight;
         float reach = RinkSpec.PuckRadius + PuckTuning.PostRadius;
@@ -291,7 +271,7 @@ public static class PuckMotion
     }
 
     /// <summary>A body: a standing cylinder that soaks up most of the hit and carries its own speed into the puck.</summary>
-    static void Body(PuckBody b, ref Vector3 p, ref Vector3 v, List<PuckImpact> impacts)
+    static void Body(PuckBody b, ref Vector3 p, ref Vector3 v, ICollection<PuckImpact> impacts)
     {
         if (p.Y > PuckTuning.BodyHeight) return;
         float reach = PuckTuning.BodyRadius + RinkSpec.PuckRadius;
@@ -310,7 +290,7 @@ public static class PuckMotion
     }
 
     /// <summary>Bounces the horizontal velocity off a wall with the given outward normal.</summary>
-    static void Reflect(ref Vector3 v, Vector2 outward, float bounce, float grip, PuckHit kind, Vector3 p, List<PuckImpact> impacts)
+    static void Reflect(ref Vector3 v, Vector2 outward, float bounce, float grip, PuckHit kind, Vector3 p, ICollection<PuckImpact> impacts)
     {
         var v2 = new Vector2(v.X, v.Z);
         float into = Vector2.Dot(v2, outward);

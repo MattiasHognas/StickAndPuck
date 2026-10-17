@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
@@ -70,7 +71,7 @@ public sealed class PuckTests : CheckedTest
         var ev = Run(w, 1.2f);
         var v = w.Puck.Velocity;
         Check(ev.Any(e => e is PuckHitBoards), "corner shot hits the boards");
-        Check(Vector3.Dot(v, dir) < 0, $"corner shot comes back out of the corner (v = {v.X:0.0}, {v.Z:0.0})");
+        Check(Vector3.Dot(v, dir) < 0, string.Create(CultureInfo.InvariantCulture, $"corner shot comes back out of the corner (v = {v.X:0.0}, {v.Z:0.0})"));
         Check(v.Length() is > 4 and < 16, $"corner rebound keeps some speed ({v.Length():0.0} of 20 m/s)");
         Check(InsideRink(w.Puck.Position), "corner shot stays inside the rink");
     }

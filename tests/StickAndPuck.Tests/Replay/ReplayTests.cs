@@ -67,7 +67,7 @@ public sealed class ReplayTests : CheckedTest
             if (x > 0) worst = Math.Max(worst, Math.Abs(SimMath.Log(x) - Math.Log(x)));
             if (x > 0) worst = Math.Max(worst, Math.Abs(SimMath.Pow(x, 1.5) - Math.Pow(x, 1.5)) / Math.Pow(x, 1.5));
         }
-        Check(worst < 1e-12, $"the game's sine, cosine, arctangent, exp, log and pow agree with the C library to 1e-12 ({worst:E1})");
+        Check(worst < 1e-12, string.Create(CultureInfo.InvariantCulture, $"the game's sine, cosine, arctangent, exp, log and pow agree with the C library to 1e-12 ({worst:E1})"));
         bool corners = BitConverter.SingleToInt32Bits(SimMath.Atan2(0f, -1f)) == BitConverter.SingleToInt32Bits(MathF.PI)
             && BitConverter.SingleToInt32Bits(SimMath.Atan2(1f, 0f)) == BitConverter.SingleToInt32Bits(MathF.PI / 2)
             && BitConverter.SingleToInt32Bits(SimMath.Sin(0f)) == 0 && BitConverter.SingleToInt32Bits(SimMath.Cos(0f)) == BitConverter.SingleToInt32Bits(1f);
@@ -106,7 +106,7 @@ public sealed class ReplayTests : CheckedTest
         file.Checks[0] = 0xdeadbeefcafef00dUL;
         file.Events.Add(ReplayFile.EventLine(3, new PassMade(0.05f, Side.Home, 2, new Vector3(1, 0, 2), 0)));
         Check(string.Equals(file.Events[0], "3 PassMade 0.05 Home 2 1,0,2 0", StringComparison.Ordinal), $"an event line names its type and fields ({file.Events[0]})");
-        string path = Path.Combine(Path.GetTempPath(), $"sap-replaytest-{Environment.ProcessId}.sapreplay");
+        string path = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap-replaytest-{Environment.ProcessId}.sapreplay"));
         file.Write(path);
         var read = ReplayFile.Read(path);
         File.Delete(path);
@@ -126,7 +126,7 @@ public sealed class ReplayTests : CheckedTest
         var b = Play(31, Steps);
         var c = Play(32, Steps);
         int same = a.Sums.Zip(b.Sums).TakeWhile(p => p.First == p.Second).Count();
-        Check(same == Steps, $"two matches with seed 31 agree on the world's checksum at every one of {Steps} steps ({same})");
+        Check(same == Steps, string.Create(CultureInfo.InvariantCulture, $"two matches with seed 31 agree on the world's checksum at every one of {Steps} steps ({same})"));
         Check(a.Sums.Zip(c.Sums).Any(p => p.First != p.Second), "seed 32 plays a different match");
         string last = WorldChecksum.Text(a.Sums[^1]);
         if (print) Console.WriteLine($"      match checksum: {last}, {a.Summary}");

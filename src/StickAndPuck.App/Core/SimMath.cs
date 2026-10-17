@@ -26,24 +26,6 @@ public static class SimMath
     /// <summary>Gets the sine.</summary>
     public static float Sin(float x) => (float)Sin((double)x);
 
-    /// <summary>Gets the cosine.</summary>
-    public static float Cos(float x) => (float)Cos((double)x);
-
-    /// <summary>Gets the tangent.</summary>
-    public static float Tan(float x) => (float)(Sin((double)x) / Cos((double)x));
-
-    /// <summary>Gets the angle of the point (x, y) from the x axis, -pi to pi, as Math.Atan2.</summary>
-    public static float Atan2(float y, float x) => (float)Atan2((double)y, (double)x);
-
-    /// <summary>Gets e raised to a power.</summary>
-    public static float Exp(float x) => (float)Exp((double)x);
-
-    /// <summary>Gets the natural logarithm.</summary>
-    public static float Log(float x) => (float)Log((double)x);
-
-    /// <summary>Gets x raised to the power y for x of zero or more.</summary>
-    public static float Pow(float x, float y) => (float)Pow((double)x, (double)y);
-
     /// <summary>Gets the sine.</summary>
     public static double Sin(double x)
     {
@@ -59,6 +41,9 @@ public static class SimMath
     }
 
     /// <summary>Gets the cosine.</summary>
+    public static float Cos(float x) => (float)Cos((double)x);
+
+    /// <summary>Gets the cosine.</summary>
     public static double Cos(double x)
     {
         if (!double.IsFinite(x)) return double.NaN;
@@ -71,6 +56,9 @@ public static class SimMath
             _ => SinPoly(r),
         };
     }
+
+    /// <summary>Gets the tangent.</summary>
+    public static float Tan(float x) => (float)(Sin((double)x) / Cos((double)x));
 
     /// <summary>Gets the arctangent, -pi/2 to pi/2.</summary>
     public static double Atan(double x)
@@ -93,15 +81,29 @@ public static class SimMath
     }
 
     /// <summary>Gets the angle of the point (x, y) from the x axis, -pi to pi, as Math.Atan2.</summary>
+    public static float Atan2(float y, float x) => (float)Atan2((double)y, (double)x);
+
+    /// <summary>Gets the angle of the point (x, y) from the x axis, -pi to pi, as Math.Atan2.</summary>
     public static double Atan2(double y, double x)
     {
         if (double.IsNaN(x) || double.IsNaN(y)) return double.NaN;
-        if (x == 0 && y == 0) return double.IsNegative(x) ? (double.IsNegative(y) ? -PiHi : PiHi) : y;
+        if (x == 0 && y == 0)
+        {
+            if (double.IsNegative(x))
+            {
+                if (double.IsNegative(y)) return -PiHi;
+                return PiHi;
+            }
+            return y;
+        }
         if (x == 0) return y > 0 ? HalfPi : -HalfPi;
         double a = Atan(Math.Abs(y / x));
         if (x < 0) a = PiHi - a;
         return double.IsNegative(y) ? -a : a;
     }
+
+    /// <summary>Gets e raised to a power.</summary>
+    public static float Exp(float x) => (float)Exp((double)x);
 
     /// <summary>Gets e raised to a power.</summary>
     public static double Exp(double x)
@@ -119,6 +121,9 @@ public static class SimMath
         }
         return Math.ScaleB(sum, (int)k);
     }
+
+    /// <summary>Gets the natural logarithm.</summary>
+    public static float Log(float x) => (float)Log((double)x);
 
     /// <summary>Gets the natural logarithm.</summary>
     public static double Log(double x)
@@ -141,6 +146,9 @@ public static class SimMath
         }
         return (2 * sum) + (e * Ln2);
     }
+
+    /// <summary>Gets x raised to the power y for x of zero or more.</summary>
+    public static float Pow(float x, float y) => (float)Pow((double)x, (double)y);
 
     /// <summary>Gets x raised to the power y for x of zero or more.</summary>
     public static double Pow(double x, double y)

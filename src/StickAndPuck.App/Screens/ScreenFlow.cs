@@ -5,24 +5,6 @@ using StickAndPuck.App.Season;
 
 namespace StickAndPuck.App.Screens;
 
-/// <summary>What the match being played is, so the results screen knows where to go next.</summary>
-/// <param name="Mode">The game mode, or None for a season game.</param>
-/// <param name="Picks">The clubs the player picked for the mode.</param>
-internal sealed record MatchPlan(Maybe<IGameMode> Mode, IReadOnlyList<ClubData> Picks)
-{
-    /// <summary>Gets the plan of a season game.</summary>
-    public static MatchPlan SeasonGame() => new(Maybe<IGameMode>.None, []);
-
-    /// <summary>Gets a value indicating whether the match is a season game.</summary>
-    public bool Season => !Mode.HasValue;
-}
-
-/// <summary>A goal for the results screen.</summary>
-internal sealed record GoalLine(Side Side, string Period, string Clock, string Scorer);
-
-/// <summary>How a match ended.</summary>
-internal sealed record MatchResult(MatchSetup Setup, int HomeGoals, int AwayGoals, int HomeShots, int AwayShots, string Decided, IReadOnlyList<GoalLine> Goals, MatchPlan Plan);
-
 /// <summary>Where the game is between screens and matches. Game.cs asks <see cref="TakeNextWorld"/>
 /// after every frame's steps; when a screen starts a match or goes back to the menus, the loop
 /// swaps in the new world with fresh systems. Inactive (and so out of the way) in every
@@ -143,7 +125,14 @@ internal sealed class ScreenFlow(AppState app)
         stack.Add(new StartScreen(app));
         stack.Add(new ResultsScreen(app, result));
         next = MenuWorld();
-        Console.WriteLine($"SAP: screens: results {result.Setup.Home.Id} {result.HomeGoals}-{result.AwayGoals} {result.Setup.Away.Id}{(result.Decided.Length > 0 ? " " + result.Decided : "")}, {(plan.TryGet(out var ended) ? ended.Mode.TryGet(out var m) ? m.Title : "season" : "")}");
+        var decidedText = result.Decided.Length > 0 ? " " + result.Decided : "";
+        var modeTitle = "";
+        if (plan.TryGet(out var ended))
+        {
+            if (ended.Mode.TryGet(out var mode)) modeTitle = mode.Title;
+            else modeTitle = "season";
+        }
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: screens: results {result.Setup.Home.Id} {result.HomeGoals}-{result.AwayGoals} {result.Setup.Away.Id}{decidedText}, {modeTitle}"));
     }
 
     /// <summary>Plays the human's next season game; once the regular season is over, their next playoff game
@@ -172,7 +161,7 @@ internal sealed class ScreenFlow(AppState app)
         bool crowned = app.Playoffs.Current.Is(p => p.Champion.HasValue);
         var simmed = app.Season.SimCurrentGame();
         crowned = !crowned && app.Playoffs.Current.Is(p => p.Champion.HasValue);
-        if (simmed.TryGet(out var game)) Console.WriteLine($"SAP: screens: simmed {game.Home} {game.Result.HomeGoals}-{game.Result.AwayGoals} {game.Away} ({game.Stage}){(crowned ? ", champions crowned" : "")}");
+        if (simmed.TryGet(out var game)) Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: screens: simmed {game.Home} {game.Result.HomeGoals}-{game.Result.AwayGoals} {game.Away} ({game.Stage}){(crowned ? ", champions crowned" : "")}"));
         while (Top.Is(t => t is SimResultScreen or ResultsScreen)) Pop();
         var overview = Overview();
         if (Top.TryGet(out var top) && top is StandingsScreen or BracketScreen)
@@ -255,7 +244,7 @@ internal sealed class ScreenFlow(AppState app)
         Started = setup;
         stack.Clear();
         next = world;
-        Console.WriteLine($"SAP: screens: match {setup.Home.Id} vs {setup.Away.Id}, {(plan.Mode.TryGet(out var mode) ? mode.Title : "season")}, {setup.PeriodSeconds:0} s periods, seed {world.Seed}, {world.Settings}, {setup.Rules}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: screens: match {setup.Home.Id} vs {setup.Away.Id}, {(plan.Mode.TryGet(out var mode) ? mode.Title : "season")}, {setup.PeriodSeconds:0} s periods, seed {world.Seed}, {world.Settings}, {setup.Rules}"));
     }
 
     /// <summary>Gets the setup the last match started from, before the difficulty scaled it: what its replay rebuilds it from, or None before the first.</summary>

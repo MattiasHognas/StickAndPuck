@@ -5,19 +5,6 @@ using StickAndPuck.App.Screens;
 
 namespace StickAndPuck.App.Replays;
 
-/// <summary>What a replayed step led to.</summary>
-public enum ReplayStep
-{
-    /// <summary>Nothing new: keep going.</summary>
-    Next,
-
-    /// <summary>The SAP_AT moment was reached on this step.</summary>
-    Target,
-
-    /// <summary>The recording has no more steps.</summary>
-    End,
-}
-
 /// <summary>Plays a replay file back. SAP_REPLAY=file builds the match again from the file's header
 /// (seed, clubs, rules, settings and the SAP_* variables it ran with) and feeds the game the
 /// recorded device frames step by step, checking the world's checksum against the file as it goes.
@@ -73,19 +60,19 @@ public sealed class ReplayPlayer
     public static Maybe<ReplayPlayer> FromEnvironment(IReadOnlyList<ClubData> clubs, AppState app)
     {
         if (Env.Get("SAP_REPLAY") is not { Length: > 0 } name) return Maybe<ReplayPlayer>.None;
-        string path = AssetRoot.Output(name);
-        var file = ReplayFile.Read(path);
-        var h = file.Header;
-        if (h.Version != ReplayHeader.CurrentVersion) throw new InvalidDataException($"{path} is replay version {h.Version}; this game reads version {ReplayHeader.CurrentVersion}");
-        var target = ScrubTarget.Parse(Env.Get("SAP_AT"));
+        string filePath = AssetRoot.Output(name);
+        var replayFile = ReplayFile.Read(filePath);
+        var h = replayFile.Header;
+        if (h.Version != ReplayHeader.CurrentVersion) throw new InvalidDataException(string.Create(CultureInfo.InvariantCulture, $"{filePath} is replay version {h.Version}; this game reads version {ReplayHeader.CurrentVersion}"));
+        var scrubTarget = ScrubTarget.Parse(Env.Get("SAP_AT"));
         bool takeOver = Env.Is("SAP_TAKEOVER", "1");
-        if (takeOver && !target.HasValue) throw new InvalidOperationException("SAP_TAKEOVER=1 needs SAP_AT, the moment to take over from");
+        if (takeOver && !scrubTarget.HasValue) throw new InvalidOperationException("SAP_TAKEOVER=1 needs SAP_AT, the moment to take over from");
         SetVariables(h.Env);
-        Console.WriteLine($"SAP: replay: {path}: {h.Kind} {(string.Equals(h.Kind, "scene", StringComparison.Ordinal) ? h.Scene : $"{h.Setup.Select(s => s.Home).Or("")} vs {h.Setup.Select(s => s.Away).Or("")}")}, seed {h.Seed}, {file.LastTick + 1} steps, recorded on {h.Recorded}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: replay: {filePath}: {h.Kind} {(string.Equals(h.Kind, "scene", StringComparison.Ordinal) ? h.Scene : $"{h.Setup.Select(s => s.Home).Or("")} vs {h.Setup.Select(s => s.Away).Or("")}")}, seed {h.Seed}, {replayFile.LastTick + 1} steps, recorded on {h.Recorded}"));
 
         // the frames must be in place before the world is built: the screens read the devices as they start
-        DeviceInput.Set(file.Start);
-        DeviceInput.Play(tick => file.Inputs.TryGetValue(tick, out var f) ? f : Maybe<InputFrame>.None);
+        DeviceInput.Set(replayFile.Start);
+        DeviceInput.Play(tick => replayFile.Inputs.TryGetValue(tick, out var f) ? f : Maybe<InputFrame>.None);
         World world;
         if (string.Equals(h.Kind, "match", StringComparison.Ordinal))
         {
@@ -100,7 +87,7 @@ public sealed class ReplayPlayer
         }
         if (!string.Equals(ReplayRecorder.ClubsHash(world.Setup.Home, world.Setup.Away), h.Clubs, StringComparison.Ordinal))
             Console.WriteLine("SAP: replay: WARNING: a club file changed since this was recorded, so the match may play differently");
-        return new ReplayPlayer(file, path, world, target, takeOver);
+        return new ReplayPlayer(replayFile, filePath, world, scrubTarget, takeOver);
     }
 
     /// <summary>Gets a value indicating whether to run steps as fast as possible without drawing them.</summary>
@@ -165,10 +152,12 @@ public sealed class ReplayPlayer
         bool endOk = SameEnd(end, wantEnd);
         int sameEvents = events.Zip(file.Events).TakeWhile(p => string.Equals(p.First, p.Second, StringComparison.Ordinal)).Count();
         bool eventsOk = sameEvents == events.Count && events.Count == file.Events.Count;
+        string firstEventDifference = sameEvents < events.Count ? events[sameEvents] : "none";
+        string firstRecordedEventDifference = sameEvents < file.Events.Count ? file.Events[sameEvents] : "none";
         var m = world.Match;
         Console.WriteLine($"SAP: replay: played {world.Tick} steps: {world.Setup.Home.Id} {m.Score[0]}-{m.Score[1]} {world.Setup.Away.Id}, shots {m.Shots[0]}-{m.Shots[1]}, {events.Count} events");
         Console.WriteLine($"{(endOk ? "PASS" : "FAIL")}  the replay ends as recorded ({end}; recorded {wantEnd})");
-        Console.WriteLine($"{(eventsOk ? "PASS" : "FAIL")}  every event happens as recorded ({sameEvents} of {file.Events.Count} the same{(eventsOk ? "" : $", first difference: {(sameEvents < events.Count ? events[sameEvents] : "none")} against {(sameEvents < file.Events.Count ? file.Events[sameEvents] : "none")}")})");
+        Console.WriteLine($"{(eventsOk ? "PASS" : "FAIL")}  every event happens as recorded ({sameEvents} of {file.Events.Count} the same{(eventsOk ? "" : $", first difference: {firstEventDifference} against {firstRecordedEventDifference}")})");
         Console.WriteLine($"{(mismatches == 0 ? "PASS" : "FAIL")}  the world's checksum matches at all {file.Checks.Count} recorded steps{(mismatches == 0 ? "" : $" ({mismatches} differ, first at step {firstMismatch})")}");
         bool ok = endOk && eventsOk && mismatches == 0;
         Console.WriteLine(ok ? "REPLAY: matches the recording" : "REPLAY: differs from the recording");
@@ -193,35 +182,4 @@ public sealed class ReplayPlayer
         foreach (var (k, v) in env) Env.Set(k, v);
         Env.Set("SAP_SCREEN_KEYS", "");    // the scripted presses are in the frames
     }
-}
-
-/// <summary>A moment in a match to scrub to: a period and the clock, or a step.</summary>
-/// <param name="Period">The period, or 0 for a step.</param>
-/// <param name="Clock">The clock as the scorebug shows it (seconds left), or the step.</param>
-public sealed record ScrubTarget(int Period, double Clock)
-{
-    /// <summary>Reads SAP_AT: "2:12:30" (period 2 at 12:30 on the clock), "2:750" (seconds) or "t3600" (step 3600).</summary>
-    public static Maybe<ScrubTarget> Parse(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return Maybe<ScrubTarget>.None;
-        var c = CultureInfo.InvariantCulture;
-        if (text.StartsWith('t')) return new ScrubTarget(0, long.Parse(text[1..], c));
-        string[] parts = text.Split(':');
-        if (parts.Length is < 2 or > 3) throw new FormatException($"SAP_AT={text}: use period:mm:ss, period:seconds or t<step>");
-        int period = int.Parse(parts[0], c);
-        double seconds = parts.Length == 3 ? (int.Parse(parts[1], c) * 60) + double.Parse(parts[2], c) : double.Parse(parts[1], c);
-        return new ScrubTarget(period, seconds);
-    }
-
-    /// <summary>Whether the world has reached the moment.</summary>
-    public bool Hit(World world)
-    {
-        if (Period == 0) return world.Tick - 1 >= (long)Clock;
-        var m = world.Match;
-        return m.Period > Period || (m.Period == Period && m.Clock <= Clock && m.Phase != MatchPhase.Intro);
-    }
-
-    /// <inheritdoc/>
-    public override string ToString() =>
-        Period == 0 ? string.Create(CultureInfo.InvariantCulture, $"step {Clock}") : $"period {Period} {MatchFlow.ClockText((float)Clock)}";
 }

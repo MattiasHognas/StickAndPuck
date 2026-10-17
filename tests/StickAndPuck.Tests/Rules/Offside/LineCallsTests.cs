@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
@@ -102,7 +103,7 @@ public sealed class LineCallsTests : CheckedTest
     /// <summary>The whistle leads to a faceoff at <paramref name="dot"/> with the puck there.</summary>
     void FaceoffAt(World w, Vector3 dot, string what)
     {
-        Check(w.Match.Phase == MatchPhase.Stopped && MatchFlow.FaceoffDot(w) == dot, $"{what}: play stops for a faceoff at ({dot.X}, {dot.Z})");
+        Check(w.Match.Phase == MatchPhase.Stopped && MatchFlow.FaceoffDot(w) == dot, string.Create(CultureInfo.InvariantCulture, $"{what}: play stops for a faceoff at ({dot.X}, {dot.Z})"));
         Run(w, x => x.Match.Phase == MatchPhase.Faceoff, 5);
         Check(w.Match.Phase == MatchPhase.Faceoff && w.Puck.Position == dot, $"{what}: the puck is placed on that dot");
     }

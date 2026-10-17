@@ -62,9 +62,19 @@ internal sealed class StartScreen(AppState app) : MenuScreen(app)
             string club = Flow.Clubs.FirstOrNone(c => string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)).Select(c => c.Name).Or(season.UserClub);
             int played = season.Games.Count(g => g.Played && g.Involves(season.UserClub));
             int total = season.Games.Count(g => g.Involves(season.UserClub));
-            string line = !season.IsOver ? Text.Format(K.StartGameOf, club, played + 1, total)
-                : season.Playoffs.Is(p => p.Champion.HasValue || !p.UserSeries.HasValue) ? Text.Format(K.StartSeasonOver, club)
-                : Text.Format(K.StartPlayoffs, club);
+            string line;
+            if (!season.IsOver)
+            {
+                line = Text.Format(K.StartGameOf, club, played + 1, total);
+            }
+            else if (season.Playoffs.Is(p => p.Champion.HasValue || !p.UserSeries.HasValue))
+            {
+                line = Text.Format(K.StartSeasonOver, club);
+            }
+            else
+            {
+                line = Text.Format(K.StartPlayoffs, club);
+            }
             art.Centred(line, Game.Width / 2, 80 + h + 6, art.Text);
         }
         art.Hint(Text.Get(K.HintMenu));

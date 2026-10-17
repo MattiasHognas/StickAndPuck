@@ -3,6 +3,7 @@ using Raylib_cs;
 using StickAndPuck.App.Core;
 using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
+using System.Globalization;
 
 namespace StickAndPuck.App.Audio;
 
@@ -107,7 +108,7 @@ internal sealed class AudioSystem : ISystem, IDisposable
         sounds.Clear();
         music.Dispose();
         CloseAudioDevice();
-        Console.WriteLine($"SAP: audio: {played} sounds played");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: audio: {played} sounds played"));
     }
 
     void Queue(World world, MatchEvent e)

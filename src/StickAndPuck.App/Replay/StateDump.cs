@@ -24,8 +24,8 @@ public static class StateDump
         b.AppendLine(c, $"STATE puck at {V(puck.Position)} moving {V(puck.Velocity)}, carrier {puck.Carrier}, last touch {puck.LastTouch}{(puck.Live ? "" : ", dead")}");
         foreach (var p in world.Players)
         {
-            string who = $"{p.Side} #{p.Data.Number} {p.Data.Position} {p.Data.LastName}";
-            string control = p.Slot >= 0 ? $", human {p.Slot}" : "";
+            string who = string.Create(CultureInfo.InvariantCulture, $"{p.Side} #{p.Data.Number} {p.Data.Position} {p.Data.LastName}");
+            string control = p.Slot >= 0 ? string.Create(CultureInfo.InvariantCulture, $", human {p.Slot}") : "";
             b.AppendLine(c, $"STATE player {p.Id} {who}{(p.OnIce ? "" : " (bench)")}{control}: at {V(p.Position)} moving {V(p.Velocity)} heading {p.Heading:0.000}, {p.Action} {p.ActionTime:0.00} s, energy {p.Energy:0.000}");
         }
         foreach (var e in world.Events.Current)

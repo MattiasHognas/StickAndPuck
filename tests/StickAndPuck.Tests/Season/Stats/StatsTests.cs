@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
 using StickAndPuck.App.Core;
@@ -19,7 +20,7 @@ public sealed class StatsTests : CheckedTest
     /// <summary>The game state the test plays in, fresh for each test.</summary>
     readonly AppState app = new();
 
-    readonly string folder = Path.Combine(Path.GetTempPath(), $"sap-statstest-{Environment.ProcessId}-{Guid.NewGuid():N}");
+    readonly string folder = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap-statstest-{Environment.ProcessId}-{Guid.NewGuid():N}"));
     string SeasonPath => Path.Combine(folder, "season.json");
     string ArcadePath => Path.Combine(folder, "arcade.json");
 
@@ -118,7 +119,7 @@ public sealed class StatsTests : CheckedTest
         r.W.Time += MatchStatTracker.AssistWindow + 1;
         r.Touch(r.A);
         r.Goal(Side.Home, r.A);
-        Check(r.L(r.A).Goals == 3 && r.L(r.C).Assists == 1, $"a touch more than {MatchStatTracker.AssistWindow:0} s before the goal is no assist");
+        Check(r.L(r.A).Goals == 3 && r.L(r.C).Assists == 1, string.Create(CultureInfo.InvariantCulture, $"a touch more than {MatchStatTracker.AssistWindow:0} s before the goal is no assist"));
     }
 
     void HitsSavesAndStar(Rig r)

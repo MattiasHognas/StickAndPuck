@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Intermission;
 using StickAndPuck.App.Rules;
@@ -41,10 +42,10 @@ public sealed class ZamboniTests : CheckedTest
             bool atDoor = MathF.Abs(MathF.Abs(p.X) - 6f) < 4f && p.Y < -RinkSpec.HalfWidth + 2.5f;
             clearOfBenches &= !atDoor;
         }
-        Check(inside, $"the laps stay inside the boards (closest {nearestBoards:F1} m from the centre to the boards)");
+        Check(inside, string.Create(CultureInfo.InvariantCulture, $"the laps stay inside the boards (closest {nearestBoards:F1} m from the centre to the boards)"));
         Check(clearOfCreases, "the Zamboni never reaches a crease, so the goalies stay put");
         Check(clearOfBenches, "the Zamboni keeps clear of the skaters waiting at the bench doors");
-        Check(route.Duration is > 20f and < 45f, $"one drive takes {route.Duration:F0} s");
+        Check(route.Duration is > 20f and < 45f, string.Create(CultureInfo.InvariantCulture, $"one drive takes {route.Duration:F0} s"));
         float far = 0;
         for (float d = 0; d <= route.Length; d += 0.5f) far = Math.Max(far, route.At(d).X);
         Check(far > 15f, $"it laps the whole rink, out to x {far:F1} at the away end");

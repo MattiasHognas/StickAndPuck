@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules.Dev;
 using static Raylib_cs.Raylib;
@@ -54,7 +55,7 @@ internal sealed class MatchRules : ISystem
         // a plain readout for checking the flow; SAP_MATCH_DEBUG=1 turns it on
         if (!world.Switches.MatchLine || !MatchFlow.IsRunning(world)) return;
         var m = world.Match;
-        string text = $"{world.Setup.Home.ShortName} {m.Score[0]} - {m.Score[1]} {world.Setup.Away.ShortName}   P{m.Period} {MatchFlow.ClockText(m.Clock)}   {m.Phase}";
+        string text = string.Create(CultureInfo.InvariantCulture, $"{world.Setup.Home.ShortName} {m.Score[0]} - {m.Score[1]} {world.Setup.Away.ShortName}   P{m.Period} {MatchFlow.ClockText(m.Clock)}   {m.Phase}");
         DrawRectangle(4, 252, MeasureText(text, 10) + 8, 14, new Raylib_cs.Color(24, 19, 31, 255));
         DrawText(text, 8, 254, 10, new Raylib_cs.Color(239, 224, 194, 255));
     }
@@ -131,9 +132,19 @@ internal sealed class MatchRules : ISystem
     {
         var m = world.Match;
         world.Puck.Live = false;
-        var winner = m.Score[0] > m.Score[1] ? SideOrNone.Home : m.Score[1] > m.Score[0] ? SideOrNone.Away : SideOrNone.None;
-        m.Phase = Celebration.Begin(world, s, winner) ? MatchPhase.Stopped : MatchPhase.Final;
-        world.Events.Publish(winner.TryGetSide(out var w) ? new MatchWon(world.Time, w) : new MatchTied(world.Time));
+        SideOrNone winner;
+        if (m.Score[0] > m.Score[1])
+            winner = SideOrNone.Home;
+        else if (m.Score[1] > m.Score[0])
+            winner = SideOrNone.Away;
+        else
+            winner = SideOrNone.None;
+        m.Phase = Celebration.Begin(world, s, winner)
+            ? MatchPhase.Stopped
+            : MatchPhase.Final;
+        world.Events.Publish(winner.TryGetSide(out var w)
+            ? new MatchWon(world.Time, w)
+            : new MatchTied(world.Time));
         Log(world, s, "final");
     }
 

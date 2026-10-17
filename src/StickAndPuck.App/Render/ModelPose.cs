@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
@@ -7,6 +8,7 @@ namespace StickAndPuck.App.Render;
 public static class ModelPose
 {
     /// <summary>Updates a pose and uploads both positions and normals.</summary>
+    [SuppressMessage("Major Code Smell", "S6640:Avoid using unsafe code blocks", Justification = "Required for the Raylib browser normal-buffer workaround.")]
     public static unsafe void Apply(Model model, ModelAnimation animation, int frame)
     {
         if (!OperatingSystem.IsBrowser())
@@ -18,16 +20,21 @@ public static class ModelPose
         // raylib 6.0 uploads animated normals using SHADER_LOC_VERTEX_NORMAL (3),
         // although UploadMesh stores that buffer at RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL (2).
         // Temporarily alias the upload slot, then restore the colour buffer before drawing/unloading.
-        Span<uint> colors = stackalloc uint[model.MeshCount];
+        uint[] colors = new uint[model.MeshCount];
         for (int i = 0; i < model.MeshCount; i++)
         {
-            colors[i] = model.Meshes[i].VboId[3];
-            model.Meshes[i].VboId[3] = model.Meshes[i].VboId[2];
+            uint* vboIds = model.Meshes[i].VboId;
+            colors[i] = vboIds[3];
+            vboIds[3] = vboIds[2];
         }
         try { UpdateModelAnimation(model, animation, frame); }
         finally
         {
-            for (int i = 0; i < model.MeshCount; i++) model.Meshes[i].VboId[3] = colors[i];
+            for (int i = 0; i < model.MeshCount; i++)
+            {
+                uint* vboIds = model.Meshes[i].VboId;
+                vboIds[3] = colors[i];
+            }
         }
     }
 }

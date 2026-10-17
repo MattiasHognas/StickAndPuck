@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 
@@ -107,7 +108,7 @@ public static class MatchFlow
     public static string ClockText(float seconds)
     {
         int s = (int)MathF.Ceiling(Math.Max(0, seconds) - 0.0001f);
-        return $"{s / 60}:{s % 60:00}";
+        return string.Create(CultureInfo.InvariantCulture, $"{s / 60}:{s % 60:00}");
     }
 
     internal static FlowState State(World world)

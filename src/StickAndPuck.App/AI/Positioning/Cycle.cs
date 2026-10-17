@@ -4,35 +4,6 @@ using StickAndPuck.App.Players;
 
 namespace StickAndPuck.App.AI;
 
-/// <summary>Where a forward plays in the attacking-zone cycle.</summary>
-public enum Station
-{
-    /// <summary>In front of the net, a few metres out: the shooting spot.</summary>
-    Slot,
-
-    /// <summary>Low in the corner on the puck side, along the boards.</summary>
-    Corner,
-
-    /// <summary>Behind the net.</summary>
-    BehindNet,
-}
-
-/// <summary>What one club's cycle came to in a match, for tests and the aimatch line.</summary>
-public sealed class CycleTally
-{
-    /// <summary>Gets or sets how many times the club settled into the cycle in the attacking zone.</summary>
-    public int Entries { get; set; }
-
-    /// <summary>Gets or sets how many times the forwards rotated stations.</summary>
-    public int Turns { get; set; }
-
-    /// <summary>Gets or sets the seconds the club cycled.</summary>
-    public float Seconds { get; set; }
-
-    /// <summary>Gets or sets the seconds a cycling carrier had the puck behind the attacked goal line.</summary>
-    public float BehindNet { get; set; }
-}
-
 /// <summary>The attacking-zone cycle. With the puck in the attacking zone, the forwards take three
 /// stations (corner, behind the net, slot) while the defence hold the points. Every few seconds
 /// they rotate: on one turn the carrier skates the puck on from the corner behind the net, or
@@ -71,7 +42,19 @@ public static class Cycle
         var f = new Vector2(end * from.X, from.Y);
         var t = new Vector2(end * to.X, to.Y);
         if (!Crosses(f, t, lo, hi, hz)) return to;
-        float side = MathF.Abs(f.Y) > 0.3f ? MathF.Sign(f.Y) : t.Y >= 0 ? 1f : -1f;
+        float side;
+        if (MathF.Abs(f.Y) > 0.3f)
+        {
+            side = MathF.Sign(f.Y);
+        }
+        else if (t.Y >= 0)
+        {
+            side = 1f;
+        }
+        else
+        {
+            side = -1f;
+        }
         float z = side * (hz + 0.4f);
         Vector2[] corners = [new(hi + 0.4f, z), new(lo - 0.4f, z), new(f.X, z)];
         var way = corners.Where(c => !Crosses(f, c, lo, hi, hz)).OrderBy(c => Vector2.Distance(c, t)).FirstOrDefault(corners[2]);
@@ -82,9 +65,8 @@ public static class Cycle
     public static bool ThroughNet(Vector2 from, Vector2 to)
     {
         const float lo = RinkSpec.GoalLineX - 0.2f, hi = RinkSpec.GoalLineX + RinkSpec.NetDepth + 0.2f, hz = RinkSpec.NetWidth / 2 + 0.25f;
-        foreach (int end in new[] { -1, 1 })
-            if (Crosses(new Vector2(end * from.X, from.Y), new Vector2(end * to.X, to.Y), lo, hi, hz)) return true;
-        return false;
+        return new[] { -1, 1 }.Any(end =>
+            Crosses(new Vector2(end * from.X, from.Y), new Vector2(end * to.X, to.Y), lo, hi, hz));
     }
 
     /// <summary>Whether the segment from f to t crosses the box a in [lo, hi], |z| &lt; hz (Liang-Barsky).</summary>
@@ -207,9 +189,9 @@ public static class Cycle
         }
 
         // a defenceman has it at the point: all three forwards rotate slot -> corner -> behind the net -> slot
-        foreach (var m in mates)
+        foreach (var id in mates.Select(m => m.Id))
         {
-            state.Stations[m.Id] = state.Stations[m.Id] switch
+            state.Stations[id] = state.Stations[id] switch
             {
                 Station.Slot => Station.Corner,
                 Station.Corner => Station.BehindNet,
@@ -224,29 +206,4 @@ public static class Cycle
         int iq = (int)forwards.Average(p => p.Data.Traits.HockeyIq);
         return Traits.Scale(iq, 4f, 2.6f) * (0.8f + 0.4f * rng.NextSingle());
     }
-}
-
-/// <summary>One side's cycle: whether it runs, each forward's station and when it next turns.</summary>
-internal sealed class CycleState
-{
-    public bool Active { get; set; }
-
-    public float NextTurn { get; set; }
-
-    public float GraceUntil { get; set; } = float.NegativeInfinity;
-
-    public int LastCarrier { get; set; } = -1;
-
-    /// <summary>Gets or sets when the carrier last skated at pace or turned, to spot a pinned carrier.</summary>
-    public float MovingAt { get; set; }
-
-    /// <summary>Gets or sets the side of the ice (z sign) the corner station is on.</summary>
-    public float CornerSide { get; set; } = 1f;
-
-    /// <summary>Gets or sets how many turns this cycle has made, to alternate the kinds of turn.</summary>
-    public int Count { get; set; }
-
-    public Dictionary<int, Station> Stations { get; } = [];
-
-    public CycleTally Tally { get; } = new();
 }

@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
 using Raylib_cs;
@@ -36,7 +37,7 @@ internal sealed unsafe class ArenaSystem : ISystem, IDisposable
             int index = m.GetProperty("index").GetInt32();
             string part = m.GetProperty("part").GetString() ?? "";
             string name = m.GetProperty("material").GetString() ?? "";
-            if (index >= model.MeshCount) throw new InvalidDataException($"{Assets.ArenaMeshes} lists mesh {index}, arena.glb has {model.MeshCount}");
+            if (index >= model.MeshCount) throw new InvalidDataException(string.Create(CultureInfo.InvariantCulture, $"{Assets.ArenaMeshes} lists mesh {index}, arena.glb has {model.MeshCount}"));
             bool unlit = m.GetProperty("unlit").GetBoolean();
             var kind = part switch
             {

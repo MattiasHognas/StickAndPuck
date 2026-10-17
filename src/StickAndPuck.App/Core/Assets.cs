@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace StickAndPuck.App.Core;
 
 /// <summary>Every bundled asset name in one place, resolved by <see cref="ResourceLoader"/>.</summary>
@@ -45,7 +47,7 @@ public static class Assets
     public static string KitAtlas(string clubId, Side side, string role, int number = 0)
     {
         string kit = side == Side.Home ? "home" : "away";
-        string numbered = $"art.kits.numbers.{clubId}_{kit}_{role}_{number}_64.png";
+        string numbered = string.Create(CultureInfo.InvariantCulture, $"art.kits.numbers.{clubId}_{kit}_{role}_{number}_64.png");
         if (number > 0 && ResourceLoader.Exists(numbered)) return numbered;
         string club = $"art.kits.{clubId}_{kit}_{role}_64.png";
         return ResourceLoader.Exists(club) ? club : $"art.player.{role}_{kit}_64.png";

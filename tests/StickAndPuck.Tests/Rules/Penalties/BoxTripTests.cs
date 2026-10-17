@@ -7,6 +7,7 @@ using StickAndPuck.Tests.Support;
 
 namespace StickAndPuck.Tests;
 
+using System.Globalization;
 using StickAndPuck.App.Referee;
 using Penalties = StickAndPuck.App.Rules.Penalties;
 
@@ -79,7 +80,7 @@ public sealed class BoxTripTests : CheckedTest
             if (lw.Velocity.Length() > 1f) faced &= Vector3.Dot(new Vector3(MathF.Sin(lw.Heading), 0, MathF.Cos(lw.Heading)), Vector3.Normalize(lw.Velocity)) > 0.99f;
         });
         Check(!lw.OnIce && lw.Position.Z > RinkSpec.HalfWidth && MathF.Abs(lw.Position.X - door.X) < 0.01f && !Penalties.OnTheWay(w, lw.Id),
-            $"he goes in through his club's door ({from:0.0} m away), off the ice");
+            string.Create(CultureInfo.InvariantCulture, $"he goes in through his club's door ({from:0.0} m away), off the ice"));
         Check(held && fast && faced, "the faceoff waits for him all the way; he skates at a cruise, facing where he goes");
         Run(w, x => x.Match.Phase == MatchPhase.Play, 5);
         Check(w.Match.Phase == MatchPhase.Play && w.OnIce(Side.Home).Count(p => !p.IsGoalie) == 4, "then the faceoff, his club a skater short");

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
@@ -66,8 +67,8 @@ public sealed class ShotTests : CheckedTest
         // the median height at the goal line: a few wild ones that ring off the bar and fly up do not skew it
         float Median(int steps) => Enumerable.Range(0, 13).Select(_ => Shoot(steps).AtLine).Order().ElementAt(6);
         float tap = Median(2), half = Median(24), full = Median(66);
-        Check(tap < 0.25f, $"a tap stays low ({tap:0.00} m at the goal line)");
-        Check(full > 0.8f, $"a full wind-up goes high ({full:0.00} m at the goal line)");
+        Check(tap < 0.25f, string.Create(CultureInfo.InvariantCulture, $"a tap stays low ({tap:0.00} m at the goal line)"));
+        Check(full > 0.8f, string.Create(CultureInfo.InvariantCulture, $"a full wind-up goes high ({full:0.00} m at the goal line)"));
         Check(tap < half && half < full, $"height grows with the hold ({tap:0.00} < {half:0.00} < {full:0.00} m)");
         int goals = Enumerable.Range(0, 12).Count(_ => Shoot(66, accuracy: 95).Goal);
         Check(goals >= 9, $"a sharp shooter's full wind-up still goes in under the bar ({goals}/12 into an empty net)");

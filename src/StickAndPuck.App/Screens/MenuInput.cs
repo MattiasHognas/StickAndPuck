@@ -56,8 +56,8 @@ internal sealed class MenuInput
         }
 
         var held = Held(settings);
-        foreach (var b in held)
-            if (!last.Contains(b)) pressed.Add(b);
+        foreach (var b in held.Where(b => !last.Contains(b)))
+            pressed.Add(b);
 
         // the arrows repeat while held
         var arrow = Repeats.FirstOrDefault(held.Contains);

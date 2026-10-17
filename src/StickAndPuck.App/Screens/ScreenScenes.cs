@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Dev;
 
@@ -74,7 +75,7 @@ public sealed class StartScene : IScene
         string Shooter(ClubData club, int n)
         {
             var p = club.Roster.Where(r => r.Position != PlayingPosition.G).Skip(n).First();
-            return $"#{p.Number} {p.LastName}";
+            return string.Create(CultureInfo.InvariantCulture, $"#{p.Number} {p.LastName}");
         }
 
         // The longest name on the home roster and an overtime goal, so the capture shows both fit
@@ -83,7 +84,7 @@ public sealed class StartScene : IScene
         [
             new GoalLine(Side.Home, "1", "4:12", Shooter(setup.Home, 0)),
             new GoalLine(Side.Away, "1", "15:40", Shooter(setup.Away, 2)),
-            new GoalLine(Side.Home, "2", "1:09", $"#{longest.Number} {longest.LastName}"),
+            new GoalLine(Side.Home, "2", "1:09", string.Create(CultureInfo.InvariantCulture, $"#{longest.Number} {longest.LastName}")),
             new GoalLine(Side.Away, "2", "8:03", Shooter(setup.Away, 0)),
             new GoalLine(Side.Away, "3", "11:37", Shooter(setup.Away, 4)),
             new GoalLine(Side.Home, "3", "18:51", Shooter(setup.Home, 3)),

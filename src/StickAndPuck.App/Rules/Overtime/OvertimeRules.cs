@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using static Raylib_cs.Raylib;
@@ -89,7 +90,11 @@ internal sealed partial class OvertimeRules : ISystem
 
     static string Key(World world, GameAction action)
     {
-        return ShootoutOrder.HomeHuman(world.Setup) is InputDevice.KeyboardMouse ? KeyBindings.Of(world.Settings, action).Key.ToString().ToUpperInvariant() : Text.Get(action == GameAction.Shoot ? K.ChoiceShoot : K.ChoicePass);
+        if (ShootoutOrder.HomeHuman(world.Setup) is InputDevice.KeyboardMouse)
+            return KeyBindings.Of(world.Settings, action).Key.ToString().ToUpperInvariant();
+
+        string choice = action == GameAction.Shoot ? K.ChoiceShoot : K.ChoicePass;
+        return Text.Get(choice);
     }
 
     /// <summary>The break after a tied period: the format's skaters each, then the overtime faceoff of the next period.</summary>
@@ -103,7 +108,7 @@ internal sealed partial class OvertimeRules : ISystem
             int skaters = OvertimeFormat.Of(world.Setup).Skaters;
             KeepSkaters(world, skaters);
             int number = world.Match.Period - world.Setup.Periods + 1;
-            Log(world, $"overtime{(number > 1 ? $" {number}" : "")}, {skaters} on {skaters}");
+            Log(world, $"overtime{(number > 1 ? string.Create(CultureInfo.InvariantCulture, $" {number}") : "")}, {skaters} on {skaters}");
         }
 
         s.Timer -= dt;
@@ -157,6 +162,6 @@ internal sealed partial class OvertimeRules : ISystem
     {
         if (!MatchFlow.State(world).Log) return;
         var m = world.Match;
-        Console.WriteLine($"SAP: {what}: {world.Setup.Home.ShortName} {m.Score[0]}-{m.Score[1]} {world.Setup.Away.ShortName}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: {what}: {world.Setup.Home.ShortName} {m.Score[0]}-{m.Score[1]} {world.Setup.Away.ShortName}"));
     }
 }

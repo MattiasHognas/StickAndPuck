@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -45,9 +46,9 @@ public sealed class PregameTests : CheckedTest
             }
         });
         Check(w.Match.Phase == MatchPhase.Intro && Warmup.IsWarmingUp(w), "after 12 s with nobody pressing start the match is still in its intro");
-        Check(skaters.All(p => travelled[p.Id] > 30f), $"every skater has skated at least 30 m (least {travelled.Values.Min():0} m: {string.Join(" ", skaters.Select(p => $"{p.Data.Position}{travelled[p.Id]:0}"))})");
+        Check(skaters.All(p => travelled[p.Id] > 30f), string.Create(CultureInfo.InvariantCulture, $"every skater has skated at least 30 m (least {travelled.Values.Min():0} m: {string.Join(" ", skaters.Select(p => $"{p.Data.Position}{travelled[p.Id]:0}"))})"));
         Check(stayedHome, "nobody crossed centre during the warm-up");
-        Check(topSpeed > 3f, $"the warm-up is skated at a real pace (top {topSpeed:0.0} m/s)");
+        Check(topSpeed > 3f, string.Create(CultureInfo.InvariantCulture, $"the warm-up is skated at a real pace (top {topSpeed:0.0} m/s)"));
         Check(w.Players.Where(p => p.IsGoalie).All(p => MathF.Abs(p.Position.X) > RinkSpec.GoalLineX - 4f), "both goalies stay by their nets");
 
         Check(Warmup.Start(w), "start is taken while warming up");

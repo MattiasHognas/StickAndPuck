@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
@@ -42,8 +43,8 @@ public sealed class RenderInterpolationTests : CheckedTest
                 Check(WorldChecksum.Of(world) == checksum, "sampling leaves simulation and checksums untouched");
                 previous = shown.X;
             }
-            Check(Math.Abs(ticks - 120) <= 1, $"{refresh} Hz rendering retains 60 Hz simulation");
-            if (refresh > 60) Check(intermediate > 0, $"{refresh} Hz rendering shows intermediate poses");
+            Check(Math.Abs(ticks - 120) <= 1, string.Create(CultureInfo.InvariantCulture, $"{refresh} Hz rendering retains 60 Hz simulation"));
+            if (refresh > 60) Check(intermediate > 0, string.Create(CultureInfo.InvariantCulture, $"{refresh} Hz rendering shows intermediate poses"));
         }
     }
 

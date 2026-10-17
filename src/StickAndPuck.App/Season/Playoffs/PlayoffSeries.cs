@@ -48,7 +48,23 @@ public sealed class PlayoffSeries
 
     /// <summary>Gets the winner's club id, or None while the series is open.</summary>
     [JsonIgnore]
-    public Maybe<string> Winner => HighWins >= WinsNeeded ? High : LowWins >= WinsNeeded ? Low : Maybe<string>.None;
+    public Maybe<string> Winner
+    {
+        get
+        {
+            if (HighWins >= WinsNeeded)
+            {
+                return High;
+            }
+
+            if (LowWins >= WinsNeeded)
+            {
+                return Low;
+            }
+
+            return Maybe<string>.None;
+        }
+    }
 
     /// <summary>Gets a value indicating whether one club has won the series.</summary>
     [JsonIgnore]
@@ -71,7 +87,17 @@ public sealed class PlayoffSeries
     /// <summary>Gets the seed a club has in this series.</summary>
     public int SeedOf(string clubId)
     {
-        return Same(High, clubId) ? HighSeed : Same(Low, clubId) ? LowSeed : 0;
+        if (Same(High, clubId))
+        {
+            return HighSeed;
+        }
+
+        if (Same(Low, clubId))
+        {
+            return LowSeed;
+        }
+
+        return 0;
     }
 
     /// <summary>Gets a value indicating whether the higher seed is at home in a game.</summary>

@@ -77,13 +77,10 @@ public static class ResourceLoader
     public static ModelAnimation[] Animations(string path) => LoadModelAnimations(Extract(path)).ToArray();
 
     /// <summary>Decodes a bundled image; the caller releases it with UnloadImage.</summary>
-    public static unsafe Image Image(string path)
+    public static Image Image(string path)
     {
         byte[] bytes = ReadBytes(path);
-        byte[] extension = System.Text.Encoding.UTF8.GetBytes(Path.GetExtension(path) + "\0");
-        fixed (byte* data = bytes)
-        fixed (byte* ext = extension)
-            return LoadImageFromMemory((sbyte*)ext, data, bytes.Length);
+        return LoadImageFromMemory(Path.GetExtension(path), bytes);
     }
 
     /// <summary>Loads a bundled texture and releases the intermediate CPU image.</summary>
@@ -94,18 +91,11 @@ public static class ResourceLoader
         finally { UnloadImage(image); }
     }
 
-    /// <summary>Loads a bundled WAV sound and releases the decoded wave.</summary>
-    public static unsafe Sound Sound(string path)
+    /// <summary>Loads a bundled WAV sound from the extraction cache.</summary>
+    public static Sound Sound(string path)
     {
-        byte[] bytes = ReadBytes(path);
-        byte[] extension = System.Text.Encoding.UTF8.GetBytes(".wav\0");
-        fixed (byte* data = bytes)
-        fixed (byte* ext = extension)
-        {
-            var wave = LoadWaveFromMemory((sbyte*)ext, data, bytes.Length);
-            try { return LoadSoundFromWave(wave); }
-            finally { UnloadWave(wave); }
-        }
+        var sound = LoadSound(Extract(path));
+        return IsSoundValid(sound) ? sound : throw new InvalidDataException($"raylib could not load bundled sound: {path}");
     }
 
     /// <summary>Streams a bundled track from the cache, without retaining pinned managed buffers.</summary>

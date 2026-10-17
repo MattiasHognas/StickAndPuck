@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
@@ -65,7 +66,7 @@ internal sealed class LineCallsDemo
     /// <summary>Prints a call to the console while the demo runs.</summary>
     public static void Log(World world, string call, Side side, Vector3 at, Vector3 dot)
     {
-        if (world.Dev.LineCalls.TryGet(out var demo)) Console.WriteLine($"SAP: {call} by {side} at ({at.X:0.0}, {at.Z:0.0}), faceoff at ({dot.X}, {dot.Z}), play {demo.play}");
+        if (world.Dev.LineCalls.TryGet(out var demo)) Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: {call} by {side} at ({at.X:0.0}, {at.Z:0.0}), faceoff at ({dot.X}, {dot.Z}), play {demo.play}"));
     }
 
     static int Attacks(World world)

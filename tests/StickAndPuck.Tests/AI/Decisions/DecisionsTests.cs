@@ -9,6 +9,7 @@ using StickAndPuck.Tests.Support;
 using TUnit.Core.Enums;
 using AiDecisions = StickAndPuck.App.AI.Decisions;
 using StickAndPuck.App.AI.Dev;
+using System.Globalization;
 
 namespace StickAndPuck.Tests;
 
@@ -44,7 +45,7 @@ public sealed class DecisionsTests : CheckedTest
         (Vector2, float)[] wide = [(new Vector2(5f, 8f), 7f)];
         float covered = Choices.LaneSuccess(Vector2.Zero, new Vector2(10f, 0), 12f, inLane, 80);
         float open = Choices.LaneSuccess(Vector2.Zero, new Vector2(10f, 0), 12f, wide, 80);
-        Check(covered < 0.2f && open > 0.8f, $"a defender in the lane spoils a pass, one far off does not ({covered:F2} vs {open:F2})");
+        Check(covered < 0.2f && open > 0.8f, string.Create(CultureInfo.InvariantCulture, $"a defender in the lane spoils a pass, one far off does not ({covered:F2} vs {open:F2})"));
         (Vector2, float)[] near = [(new Vector2(5f, 2.6f), 7f)];
         float smartSees = Choices.LaneSuccess(Vector2.Zero, new Vector2(10f, 0), 12f, near, 90);
         float poorSees = Choices.LaneSuccess(Vector2.Zero, new Vector2(10f, 0), 12f, near, 15);

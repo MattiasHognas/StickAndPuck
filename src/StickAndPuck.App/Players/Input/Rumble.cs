@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using StickAndPuck.App.Core;
 
@@ -44,9 +45,12 @@ internal sealed partial class Rumble(Gamepads pads)
         if (string.Equals(opened[index], name, StringComparison.Ordinal)) return rumblers[index];
         if (rumblers[index].TryGet(out var old)) old.Dispose();
         opened[index] = name;
-        rumblers[index] = OperatingSystem.IsLinux() ? Evdev.Open(index, name)
-            : OperatingSystem.IsWindows() ? Maybe.Some<IRumbler>(new XInput(index))
-            : Maybe<IRumbler>.None;
+        if (OperatingSystem.IsLinux())
+            rumblers[index] = Evdev.Open(index, name);
+        else if (OperatingSystem.IsWindows())
+            rumblers[index] = Maybe.Some<IRumbler>(new XInput(index));
+        else
+            rumblers[index] = Maybe<IRumbler>.None;
         if (!rumblers[index].HasValue) Console.WriteLine($"SAP: rumble: {name} has no rumble here");
         return rumblers[index];
     }
@@ -86,38 +90,38 @@ internal sealed partial class Rumble(Gamepads pads)
             var found = pads.FirstOrNone(p => Matches(p.Name, name));
             if (!found.HasValue && index < pads.Count) found = pads[index];
             if (!found.TryGet(out var pick)) return Maybe<IRumbler>.None;
-            int fd = open(pick.Path, OpenWrite);
-            if (fd < 0)
+            int handle = open(pick.Path, OpenWrite);
+            if (handle < 0)
             {
                 Console.WriteLine($"SAP: rumble: cannot open {pick.Path} for {name} (no write access)");
                 return Maybe<IRumbler>.None;
             }
             Console.WriteLine($"SAP: rumble: {name} on {pick.Path} ({pick.Name})");
-            return Maybe.Some<IRumbler>(new Evdev(fd));
+            return Maybe.Some<IRumbler>(new Evdev(handle));
         }
 
-        public unsafe void Start(float strong, float weak, float seconds)
+        public void Start(float strong, float weak, float seconds)
         {
-            byte* e = stackalloc byte[48];
-            new Span<byte>(e, 48).Clear();
-            *(ushort*)e = FfRumble;
-            *(short*)(e + 2) = effect;                                       // -1 uploads a new one, else replaces it
-            *(ushort*)(e + 10) = (ushort)Math.Clamp(seconds * 1000, 1, 5000);   // replay.length in ms
-            *(ushort*)(e + 16) = (ushort)(strong * ushort.MaxValue);
-            *(ushort*)(e + 18) = (ushort)(weak * ushort.MaxValue);
-            if (ioctl(fd, SetEffect, e) < 0)
+            byte[] ff = new byte[48];
+            Array.Clear(ff, 0, ff.Length);
+            BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(0, 2), FfRumble);
+            BinaryPrimitives.WriteInt16LittleEndian(ff.AsSpan(2, 2), effect); // -1 uploads a new one, else replaces it
+            BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(10, 2), (ushort)Math.Clamp(seconds * 1000, 1, 5000)); // replay.length in ms
+            BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(16, 2), (ushort)(strong * ushort.MaxValue));
+            BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(18, 2), (ushort)(weak * ushort.MaxValue));
+            if (ioctl(fd, SetEffect, ff) < 0)
             {
                 effect = -1;
                 return;
             }
-            effect = *(short*)(e + 2);
+            effect = BinaryPrimitives.ReadInt16LittleEndian(ff.AsSpan(2, 2));
 
-            byte* play = stackalloc byte[24];
-            new Span<byte>(play, 24).Clear();
-            *(ushort*)(play + 16) = EvFf;
-            *(ushort*)(play + 18) = (ushort)effect;
-            *(int*)(play + 20) = 1;
-            _ = write(fd, play, 24);
+            byte[] play = new byte[24];
+            Array.Clear(play, 0, play.Length);
+            BinaryPrimitives.WriteUInt16LittleEndian(play.AsSpan(16, 2), EvFf);
+            BinaryPrimitives.WriteInt16LittleEndian(play.AsSpan(18, 2), effect);
+            BinaryPrimitives.WriteInt32LittleEndian(play.AsSpan(20, 4), 1);
+            _ = write(fd, play, (nuint)play.Length);
         }
 
         public void Tick(float dt)
@@ -166,10 +170,10 @@ internal sealed partial class Rumble(Gamepads pads)
         private static partial int open(string path, int flags);
 
         [LibraryImport("libc", EntryPoint = "ioctl")]
-        private static unsafe partial int ioctl(int fd, nuint request, void* arg);
+        private static partial int ioctl(int fd, nuint request, byte[] arg);
 
         [LibraryImport("libc", EntryPoint = "write")]
-        private static unsafe partial nint write(int fd, void* buffer, nuint count);
+        private static partial nint write(int fd, byte[] buffer, nuint count);
 
         [LibraryImport("libc", EntryPoint = "close")]
         private static partial int close(int fd);

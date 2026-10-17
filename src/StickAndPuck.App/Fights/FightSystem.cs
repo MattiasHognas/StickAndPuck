@@ -177,12 +177,14 @@ internal sealed partial class FightSystem : ISystem, IDisposable
     {
         foreach (var p in world.Players)
         {
-            if (!p.OnIce || p.IsGoalie || fight.Of(p.Id).HasValue) continue;
+            if (!p.OnIce || p.IsGoalie || fight.Of(p.Id).HasValue)
+                continue;
             var away = p.Position - fight.Spot;
             away.Y = 0;
             float d = away.Length();
             if (d >= FightTuning.Room) continue;
-            var dir = d > 0.01f ? away / d : new Vector3(p.Side == Side.Home ? -1 : 1, 0, 0);
+            float homeDir = p.Side == Side.Home ? -1f : 1f;
+            var dir = d > 0.01f ? away / d : new Vector3(homeDir, 0, 0);
             // undo any skating in toward the fight this step, then glide out
             float inward = Math.Max(0, -Vector3.Dot(p.Velocity, dir));
             float step = Math.Min(FightTuning.Room - d, (FightTuning.BackOffSpeed + inward) * dt);

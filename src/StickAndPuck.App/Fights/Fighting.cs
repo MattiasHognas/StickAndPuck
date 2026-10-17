@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules;
@@ -291,6 +292,6 @@ internal sealed class FightState
     {
         if (!MatchFlow.State(world).Log) return;
         var m = world.Match;
-        Console.WriteLine($"FIGHT: {what}; P{m.Period} {MatchFlow.ClockText(m.Clock)}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"FIGHT: {what}; P{m.Period} {MatchFlow.ClockText(m.Clock)}"));
     }
 }

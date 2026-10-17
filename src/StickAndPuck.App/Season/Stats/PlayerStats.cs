@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
 using K = StickAndPuck.App.Core.Text.Keys;
@@ -54,7 +55,7 @@ public sealed class PlayerStats
 
     /// <summary>Gets "#NR NAME".</summary>
     [JsonIgnore]
-    public string Label => $"#{Number} {Name}";
+    public string Label => string.Create(CultureInfo.InvariantCulture, $"#{Number} {Name}");
 
     /// <summary>Gets a value indicating whether this line is for the given player.</summary>
     public bool Is(string club, int number)
@@ -121,7 +122,7 @@ public sealed class MatchStatLine
     public bool IsGoalie => Position == PlayingPosition.G;
 
     /// <summary>Gets "#NR NAME".</summary>
-    public string Label => $"#{Number} {Name}";
+    public string Label => string.Create(CultureInfo.InvariantCulture, $"#{Number} {Name}");
 
     /// <summary>A line for a roster player, nothing done yet.</summary>
     public static MatchStatLine For(string club, Side side, PlayerData player)

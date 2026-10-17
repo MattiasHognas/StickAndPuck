@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Season;
@@ -12,6 +13,6 @@ internal sealed class AutosaveSystem : ISystem
         if (!world.App.Season.Unsaved || !world.App.Season.Current.TryGet(out var season)) return;
         SeasonSave.Write(season, world.App.Season.SavePath);
         world.App.Season.Unsaved = false;
-        Console.WriteLine($"SAP: season saved to {world.App.Season.SavePath}, round {Math.Min(season.CurrentRound + 1, season.Rounds)} of {season.Rounds} next");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: season saved to {world.App.Season.SavePath}, round {Math.Min(season.CurrentRound + 1, season.Rounds)} of {season.Rounds} next"));
     }
 }

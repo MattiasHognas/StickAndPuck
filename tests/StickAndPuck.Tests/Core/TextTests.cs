@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using StickAndPuck.App.Core;
@@ -95,7 +96,7 @@ public sealed partial class TextTests : CheckedTest
             if (name.EndsWith("Scenes.cs", StringComparison.Ordinal) || name.EndsWith("Scene.cs", StringComparison.Ordinal) || DebugOnly.Contains(name)) continue;
             string[] lines = File.ReadAllLines(file);
             for (int i = 0; i < lines.Length; i++)
-                if (DrawnLiteral().Match(lines[i]) is { Success: true } m && HasWords(m.Groups["text"].Value)) offenders.Add($"{Path.GetRelativePath(root, file)}:{i + 1}");
+                if (DrawnLiteral().Match(lines[i]) is { Success: true } m && HasWords(m.Groups["text"].Value)) offenders.Add(string.Create(CultureInfo.InvariantCulture, $"{Path.GetRelativePath(root, file)}:{i + 1}"));
         }
         Check(offenders.Count == 0, $"text draw calls get their text from Text (literals at: {string.Join(", ", offenders)})");
     }
@@ -113,7 +114,7 @@ public sealed partial class TextTests : CheckedTest
     [GeneratedRegex(@"\{[^}]*\}")]
     private static partial Regex Hole();
 
-    static string Holes(string text) => string.Join(",", PlaceholderPattern().Matches(text).Select(m => m.Value).Distinct().Order(StringComparer.Ordinal));
+    static string Holes(string text) => string.Join(",", PlaceholderPattern().Matches(text).Select(m => m.Value).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
 
     [GeneratedRegex(@"\{\d+\}")]
     private static partial Regex PlaceholderPattern();

@@ -31,7 +31,7 @@ internal sealed class FrameRecorder
     public bool Save(World world)
     {
         var image = LoadImageFromScreen();
-        ExportImage(image, Path.Combine(folder, $"{world.Tick:D5}.png"));
+        ExportImage(image, Path.Combine(folder, string.Create(CultureInfo.InvariantCulture, $"{world.Tick:D5}.png")));
         UnloadImage(image);
         return world.Time >= seconds;
     }

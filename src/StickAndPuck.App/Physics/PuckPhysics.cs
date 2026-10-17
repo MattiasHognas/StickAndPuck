@@ -90,7 +90,12 @@ internal sealed class PuckPhysics : ISystem, IDisposable
         var p = pk.Position;
         if (!lastPosition.TryGet(out var last) || Vector3.Distance(last, p) > PuckTuning.TeleportDistance)
         {
-            inNet = PuckMotion.InsideNet(p, 1) ? 1 : PuckMotion.InsideNet(p, -1) ? -1 : 0;
+            int end = 0;
+            if (PuckMotion.InsideNet(p, 1))
+                end = 1;
+            else if (PuckMotion.InsideNet(p, -1))
+                end = -1;
+            inNet = end;
             return;
         }
         if (last == p) return;

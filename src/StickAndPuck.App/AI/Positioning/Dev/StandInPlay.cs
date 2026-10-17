@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Camera;
@@ -166,7 +167,7 @@ internal sealed class StandInPlay
         bool rules = MatchFlow.IsRunning(world);
         int[] goals = rules ? world.Match.Score : standIn.Goals;
         string clock = MatchFlow.ClockText(rules ? world.Match.Clock : standIn.Clock);
-        string text = $"{world.Setup.Home.ShortName} {goals[0]} - {goals[1]} {world.Setup.Away.ShortName}   {clock}   SHOTS {Decisions.Tally(world, Side.Home).Shots}-{Decisions.Tally(world, Side.Away).Shots}   PASSES {Pct(world, Side.Home)}-{Pct(world, Side.Away)}";
+        string text = string.Create(CultureInfo.InvariantCulture, $"{world.Setup.Home.ShortName} {goals[0]} - {goals[1]} {world.Setup.Away.ShortName}   {clock}   SHOTS {Decisions.Tally(world, Side.Home).Shots}-{Decisions.Tally(world, Side.Away).Shots}   PASSES {Pct(world, Side.Home)}-{Pct(world, Side.Away)}");
         DrawText(text, 6, 6, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }
 

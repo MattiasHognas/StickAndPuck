@@ -106,8 +106,8 @@ internal sealed class ScreenArt
         foreach (char c in text.ToUpperInvariant())
         {
             if (c < 128 || "ÅÄÖÉÜ".Contains(c, StringComparison.Ordinal)) { sb.Append(c); continue; }
-            foreach (char d in c.ToString().Normalize(System.Text.NormalizationForm.FormD))
-                if (d < 128) sb.Append(d);
+            foreach (char d in c.ToString().Normalize(System.Text.NormalizationForm.FormD).Where(d => d < 128))
+                sb.Append(d);
         }
         return sb.ToString();
     }
@@ -130,7 +130,13 @@ internal sealed class ScreenArt
             var item = items[i];
             int y = top + (i * Row);
             bool on = i == selected;
-            var ink = !item.Enabled ? Muted : on ? Gold : Text;
+            Color ink;
+            if (!item.Enabled)
+                ink = Muted;
+            else if (on)
+                ink = Gold;
+            else
+                ink = Text;
             if (on) Hud.DrawIcon("arrow_right", x + 6, y + 2);
             Left(item.Label, x + 18, y, ink);
             if (item.Value.HasValue)

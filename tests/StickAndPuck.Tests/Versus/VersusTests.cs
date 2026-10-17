@@ -8,6 +8,7 @@ using StickAndPuck.App.Rules;
 using StickAndPuck.App.Screens;
 using StickAndPuck.Tests.Support;
 using StickAndPuck.App.Versus;
+using System.Globalization;
 
 namespace StickAndPuck.Tests;
 
@@ -30,7 +31,7 @@ public sealed class VersusTests : CheckedTest
     {
         var modes = GameModes.All(app);
         int versus = modes.ToList().FindIndex(m => m is VersusMode);
-        Check(versus > 0, $"player vs player is on the new game list, after exhibition (place {versus + 1} of {modes.Count})");
+        Check(versus > 0, string.Create(CultureInfo.InvariantCulture, $"player vs player is on the new game list, after exhibition (place {versus + 1} of {modes.Count})"));
         var mode = new VersusMode();
         Check(mode.ClubPicks == 2 && mode.PickHeading(app, 0).Contains("PLAYER 1", StringComparison.Ordinal) && mode.PickHeading(app, 1).Contains("PLAYER 2", StringComparison.Ordinal),
             "each player picks a club under their own heading");
@@ -97,7 +98,7 @@ public sealed class VersusTests : CheckedTest
         }
 
         var (crossed, overwritten, moved, carried, shots) = (run.Crossed, run.Overwritten, run.Moved, run.Carried, run.Shots);
-        Console.WriteLine($"      match: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, player one carried {carried[0]} steps and shot {shots[0]}, player two carried {carried[1]} steps and shot {shots[1]}, moved {moved[0]:F1} m and {moved[1]:F1} m");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"      match: {world.Match.Score[0]}-{world.Match.Score[1]}, shots on goal {world.Match.Shots[0]}-{world.Match.Shots[1]}, player one carried {carried[0]} steps and shot {shots[0]}, player two carried {carried[1]} steps and shot {shots[1]}, moved {moved[0]:F1} m and {moved[1]:F1} m"));
         Check(world.Match.Phase == MatchPhase.Final, "a one-period versus match plays out to the final");
         Check(moved[0] > 5f && moved[1] > 5f, "both humans skate their own player where their stick points");
         Check(!overwritten, "the AI never overwrites a human's command");

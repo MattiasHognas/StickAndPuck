@@ -275,7 +275,13 @@ internal sealed partial class DecisionSystem : ISystem
         if (rng.NextSingle() >= odds) return false;
 
         // up the boards on his side, a little off them so the puck runs along the wall, never at the far net
-        float side = MathF.Abs(at.Y) > 1f ? MathF.Sign(at.Y) : rng.NextSingle() < 0.5f ? -1f : 1f;
+        float side;
+        if (MathF.Abs(at.Y) > 1f)
+            side = MathF.Sign(at.Y);
+        else if (rng.NextSingle() < 0.5f)
+            side = -1f;
+        else
+            side = 1f;
         var aim = Vector2.Normalize(new Vector2(end, side * (0.12f + 0.2f * rng.NextSingle())));
         AiCommand.Shoot(world, p, AiLayer.Decisions, aim, 3, "clear");   // a quick snap, a wrist shot's speed: plenty to go the length
         var tally = Decisions.Tally(world, p.Side);
@@ -315,7 +321,19 @@ internal sealed partial class DecisionSystem : ISystem
         if (world.Time > brain.HoldUntil) return;
 
         // curl across the ice a couple of metres short of the line
-        float across = MathF.Abs(at.Y) > 6f ? -MathF.Sign(at.Y) : at.Y >= 0 ? 1f : -1f;
+        float across;
+        if (MathF.Abs(at.Y) > 6f)
+        {
+            across = -MathF.Sign(at.Y);
+        }
+        else if (at.Y >= 0f)
+        {
+            across = 1f;
+        }
+        else
+        {
+            across = -1f;
+        }
         var spot = TeamShape.Inside(new Vector2(end * (RinkSpec.BlueLineX - 2.2f), at.Y + across * 4f), 1.5f);
         AiCommand.Steer(world, p, AiLayer.Decisions, new PlayerCommand { Move = Steering.Toward(p, spot, 1f).Move }, "hold up at the line");
     }

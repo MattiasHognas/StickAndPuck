@@ -23,11 +23,11 @@ public sealed class ArcadeScene : IScene
         bool human = !Env.Is("SAP_HUMAN", "0");
         if (app.Arcade.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup })
         {
-            Console.WriteLine($"SAP: the arcade run is over ({(run.Champion ? "champions" : $"{run.Stage} club(s) beaten")}); SAP_ARCADE=new starts another");
+            Console.WriteLine($"SAP: the arcade run is over ({(run.Champion ? "champions" : string.Create(CultureInfo.InvariantCulture, $"{run.Stage} club(s) beaten"))}); SAP_ARCADE=new starts another");
             return ArcadeScenes.SummaryWorld(clubs, settings);
         }
 
-        Console.WriteLine($"SAP: arcade stage {run.Stage + 1} of {run.Opponents.Count}, {run.LivesLeft} of {run.StartLives} lives: {setup.Home.Name} vs {setup.Away.Name}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: arcade stage {run.Stage + 1} of {run.Opponents.Count}, {run.LivesLeft} of {run.StartLives} lives: {setup.Home.Name} vs {setup.Away.Name}"));
         if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
         var world = new World(setup, settings);
         if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) world.Switches.OvertimeSeconds = ot;

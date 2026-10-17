@@ -69,7 +69,15 @@ internal sealed partial class GoalieSystem
         if (mine > GoalieTuning.PlayTouch) return true;
 
         var mate = OpenMate(world, g, end);
-        var dir = mate.TryGet(out var to) ? Flat(to.Position - pk.Position) : Vector3.Normalize(new Vector3(-end * 0.6f, 0, pk.Position.Z < 0 ? -1 : 1));
+        Vector3 dir;
+        if (mate.TryGet(out var to))
+        {
+            dir = Flat(to.Position - pk.Position);
+        }
+        else
+        {
+            dir = Vector3.Normalize(new Vector3(-end * 0.6f, 0, pk.Position.Z < 0 ? -1 : 1));
+        }
         Release(world, g, state, Flat(pk.Position), dir, g.Data.Traits.GoaliePuckHandling, pass: mate.HasValue);
         state.Playing = false;
         state.PassedOut = mate.HasValue;

@@ -124,10 +124,24 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
         art.Menu(items.Skip(first).Take(shown).ToList(), Selected - first, x, PanelW, top);
         if (first + shown < items.Count) art.Centred(Text.Get(K.More), Game.Width / 2, top + (shown * ScreenArt.Row) + 1, ScreenArt.Muted);
         bool onGpu = Selected < items.Count && string.Equals(items[Selected].Label, Text.Get(K.GraphicsCard), StringComparison.Ordinal);
-        art.Hint(GpuLaunch.Unconfirmed.HasValue ? Text.Format(K.GpuKeep, (KeepSteps - keepWait + 59) / 60)
-            : !onGpu ? Text.Get(K.HintSettings)
-            : gpu.HasValue && GpuLaunch.CanSwitch && !string.Equals(Card().Id, GpuLaunch.Running.Id, StringComparison.Ordinal) ? Text.Format(K.GpuRestart, Card().Name)
-            : Text.Format(K.GpuRunning, GpuCards.ShortRenderer(GpuCards.Renderer)));
+        string hint;
+        if (GpuLaunch.Unconfirmed.HasValue)
+        {
+            hint = Text.Format(K.GpuKeep, (KeepSteps - keepWait + 59) / 60);
+        }
+        else if (!onGpu)
+        {
+            hint = Text.Get(K.HintSettings);
+        }
+        else if (gpu.HasValue && GpuLaunch.CanSwitch && !string.Equals(Card().Id, GpuLaunch.Running.Id, StringComparison.Ordinal))
+        {
+            hint = Text.Format(K.GpuRestart, Card().Name);
+        }
+        else
+        {
+            hint = Text.Format(K.GpuRunning, GpuCards.ShortRenderer(GpuCards.Renderer));
+        }
+        art.Hint(hint);
     }
 
     /// <inheritdoc/>

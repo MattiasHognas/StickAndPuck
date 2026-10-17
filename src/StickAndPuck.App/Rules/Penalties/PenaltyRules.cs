@@ -1,6 +1,7 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
 using System.Collections.Immutable;
+using System.Globalization;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Rules;
@@ -114,14 +115,14 @@ internal sealed class PenaltyRules : ISystem, IDisposable
             {
                 if (!Lines.Bench.SendOn(world, side, Lines.Group.Forwards, onTheFly: false).TryGet(out var added)) break;
                 changed = true;
-                book.Log(world, $"{Penalties.Name(world, added)} comes on, {target} skaters");
+                book.Log(world, string.Create(CultureInfo.InvariantCulture, $"{Penalties.Name(world, added)} comes on, {target} skaters"));
             }
             for (; on > target; on--)
             {
                 if (!Lines.Bench.Surplus(world, side, target).TryGet(out var off)) break;
                 Lines.Bench.SendOff(world, off);
                 changed = true;
-                book.Log(world, $"{Penalties.Name(world, off)} goes off, {target} skaters");
+                book.Log(world, string.Create(CultureInfo.InvariantCulture, $"{Penalties.Name(world, off)} goes off, {target} skaters"));
             }
         }
         if (changed) FaceoffFormation.Place(world, MatchFlow.FaceoffDot(world));

@@ -24,7 +24,7 @@ public sealed class SeasonScene : IScene
         if (app.Season.NextSetup(human ? InputDevice.KeyboardMouse : InputDevice.None) is not NextMatch.Play { Setup: var setup } || !app.Season.Playing.TryGet(out var game))
             return PlayoffScenes.Play(app, clubs, settings, human);
 
-        Console.WriteLine($"SAP: season game {game.Number + 1} of {season.Games.Count}, round {game.Round + 1} of {season.Rounds}: {setup.Home.Name} vs {setup.Away.Name}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: season game {game.Number + 1} of {season.Games.Count}, round {game.Round + 1} of {season.Rounds}: {setup.Home.Name} vs {setup.Away.Name}"));
         if (SeasonScenes.Seconds("SAP_PERIOD").TryGet(out float period)) setup = setup with { PeriodSeconds = period };
         var world = new World(setup, settings);
         if (SeasonScenes.Seconds("SAP_OT").TryGet(out float ot)) world.Switches.OvertimeSeconds = ot;
@@ -66,7 +66,7 @@ internal static class SeasonScenes
         string club = Env.Get("SAP_CLUB") is { Length: > 0 } c ? c : Scenes.DefaultSetup(clubs).Home.Id;
         var seed = int.TryParse(Env.Get("SAP_SEED"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int s) ? Maybe.Some(s) : Maybe<int>.None;
         var season = app.Season.StartNew(clubs, club, seed);
-        Console.WriteLine($"SAP: new season for {club}, {season.Games.Count} games in {season.Rounds} rounds, saved to {app.Season.SavePath}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: new season for {club}, {season.Games.Count} games in {season.Rounds} rounds, saved to {app.Season.SavePath}"));
         return season;
     }
 

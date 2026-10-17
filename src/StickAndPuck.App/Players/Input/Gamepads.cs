@@ -1,3 +1,4 @@
+using System.Globalization;
 using Raylib_cs;
 using StickAndPuck.App.Core;
 using static Raylib_cs.Raylib;
@@ -81,11 +82,11 @@ public sealed class Gamepads
         Refresh();
         for (int slot = 0; slot < MaxSlots; slot++)
         {
-            if (!IsGamepadAvailable(slot)) { Console.WriteLine($"SAP: pad slot {slot}: none"); continue; }
+            if (!IsGamepadAvailable(slot)) { Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: pad slot {slot}: none")); continue; }
             int axes = GetGamepadAxisCount(slot);
             string axisText = string.Join(" ", Enumerable.Range(0, axes).Select(a => GetGamepadAxisMovement(slot, (GamepadAxis)a).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)));
             string held = string.Join(" ", Enum.GetValues<GamepadButton>().Where(b => b != GamepadButton.Unknown && IsGamepadButtonDown(slot, b)));
-            Console.WriteLine($"SAP: pad slot {slot}: {SlotName(slot)}, {axes} axes [{axisText}], held [{held}], last pressed {GetGamepadButtonPressed()}");
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: pad slot {slot}: {SlotName(slot)}, {axes} axes [{axisText}], held [{held}], last pressed {GetGamepadButtonPressed()}"));
         }
     }
 
@@ -113,7 +114,7 @@ public sealed class Gamepads
         var sources = new List<(string From, string Text)> { ("the game", BuiltInMappings) };
         if (Env.Get("SDL_GAMECONTROLLERCONFIG") is { Length: > 0 } env) sources.Add(("SDL_GAMECONTROLLERCONFIG", env));
         string config = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StickAndPuck");
-        foreach (string folder in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory(), config }.Distinct())
+        foreach (string folder in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory(), config }.Distinct(StringComparer.Ordinal))
         {
             string file = Path.Combine(folder, "gamecontrollerdb.txt");
             if (File.Exists(file)) sources.Add((file, File.ReadAllText(file)));

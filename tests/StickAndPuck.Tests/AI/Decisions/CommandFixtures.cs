@@ -4,6 +4,7 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Players;
 using StickAndPuck.Tests.Support;
 using StickAndPuck.App.AI.Dev;
+using System.Globalization;
 
 namespace StickAndPuck.Tests;
 
@@ -124,7 +125,7 @@ internal static class CommandFixtures
                 if (!before.SequenceEqual(Snapshot(world))) touched++;
             }
         });
-        check(weighed >= 50 && touched == 0, $"weighing every pass leaves all player state untouched ({weighed} carriers weighed, {touched} changed)");
+        check(weighed >= 50 && touched == 0, string.Create(CultureInfo.InvariantCulture, $"weighing every pass leaves all player state untouched ({weighed} carriers weighed, {touched} changed)"));
         check(picks >= 1000 && differ == 0, $"the pure receiver pick matches puck handling's for the same stick ({picks} picks, {differ} different)");
     }
 

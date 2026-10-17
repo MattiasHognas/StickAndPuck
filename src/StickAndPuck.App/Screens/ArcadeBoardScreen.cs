@@ -55,7 +55,12 @@ internal sealed class ArcadeBoardScreen(AppState app) : MenuScreen(app)
     /// <summary>The board: the open run's, else the save's; the place is the run just finished, or 0.</summary>
     static (IReadOnlyList<ArcadeRecord> Records, int Place) Board(AppState app)
     {
-        var open = app.Arcade.Current.HasValue ? app.Arcade.Current : ArcadeSave.Read(app.Arcade.SavePath.Length > 0 ? app.Arcade.SavePath : ArcadeSave.DefaultPath);
+        var path = app.Arcade.SavePath.Length > 0
+            ? app.Arcade.SavePath
+            : ArcadeSave.DefaultPath;
+        var open = app.Arcade.Current.HasValue
+            ? app.Arcade.Current
+            : ArcadeSave.Read(path);
         if (!open.TryGet(out var run)) return ([], 0);
         return (run.Records, run.IsOver ? run.Place : 0);
     }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season;
 
@@ -45,7 +46,7 @@ internal static class PolishScenes
         app.Season.StartNew(clubs, Club(clubs), Seed(), path);
         int settled = 0;
         while (settled < games && app.Season.SimCurrentGame().HasValue) settled++;    // one at a time, as "sim this game" does
-        Console.WriteLine($"SAP: screens: test season in {path}, {app.Season.Current.Select(s => s.Games.Count(g => g.Played)).Or(0)} games played");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: screens: test season in {path}, {app.Season.Current.Select(s => s.Games.Count(g => g.Played)).Or(0)} games played"));
     }
 
     /// <summary>A fresh test season settled on paper to the end of the playoffs, so there is a champion.</summary>
@@ -66,7 +67,7 @@ internal static class PolishScenes
         Run(app, clubs, others[2 % others.Count], ArcadeRule.SuddenDeath, path, 3);
         Run(app, clubs, others[5 % others.Count], ArcadeRule.ThreeLives, path, 9);
         var run = Run(app, clubs, club, ArcadeRule.ThreeLives, path, int.MaxValue);
-        Console.WriteLine($"SAP: screens: test arcade board in {path}, {run.Records.Count} runs, this one place {run.Place}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: screens: test arcade board in {path}, {run.Records.Count} runs, this one place {run.Place}"));
         return run;
     }
 

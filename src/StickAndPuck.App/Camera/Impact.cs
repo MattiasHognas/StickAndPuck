@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
@@ -93,7 +94,7 @@ internal sealed class Impact
             .Where(p => p.Side != e.Side && p.OnIce)
             .MinBy(p => Vector3.DistanceSquared(p.Position, e.Position));
         if (victim is { }) Pulse(world, victim.Slot, 0.75f + (0.25f * over), 0.8f, 0.24f + (0.12f * over));
-        Console.WriteLine($"SAP: impact: hard check {e.Strength.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}, hold {holdSteps} steps");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: impact: hard check {e.Strength.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}, hold {holdSteps} steps"));
     }
 
     void Goal(World world, GoalScored e)

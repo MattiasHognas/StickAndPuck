@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Camera;
@@ -96,7 +97,7 @@ internal sealed class GoalieDemo
     public static void DrawHud(World world)
     {
         if (!world.Dev.Goalie.TryGet(out var demo)) return;
-        string who = world.Players.Find(p => p.IsGoalie) is not { Data.Traits: { } t } g ? "" : $"{g.Data.LastName.ToUpperInvariant()} REF {t.GoalieReflexes} POS {t.HockeyIq} GLV {t.GoalieGlove} BLK {t.GoalieBlocker} REB {t.GoalieReboundControl} PH {t.GoaliePuckHandling}";
+        string who = world.Players.Find(p => p.IsGoalie) is not { Data.Traits: { } t } g ? "" : string.Create(CultureInfo.InvariantCulture, $"{g.Data.LastName.ToUpperInvariant()} REF {t.GoalieReflexes} POS {t.HockeyIq} GLV {t.GoalieGlove} BLK {t.GoalieBlocker} REB {t.GoalieReboundControl} PH {t.GoaliePuckHandling}");
         DrawText(who, 6, 6, 10, new Color(0xef, 0xe0, 0xc2, 255));
         DrawText($"SHOTS {demo.shots}  SAVES {demo.saves}  REBOUNDS {demo.rebounds}  GOALS {demo.goals}", 6, 18, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }

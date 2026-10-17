@@ -39,7 +39,7 @@ internal static class SeasonTable
             string name = clubs.FirstOrNone(c => string.Equals(c.Id, r.ClubId, StringComparison.Ordinal)).Select(c => c.Name).Or(r.ClubId);
             art.DrawText(Num(i + 1), x + Pad + 4, top, ink);
             art.DrawText(name, x + Pad + 22, top, ink);
-            string[] cells = [Num(r.Played), Num(r.Wins), Num(r.OvertimeWins), Num(r.OvertimeLosses), Num(r.Losses), $"{r.GoalsFor}-{r.GoalsAgainst}", Num(r.Points)];
+            string[] cells = [Num(r.Played), Num(r.Wins), Num(r.OvertimeWins), Num(r.OvertimeLosses), Num(r.Losses), string.Create(CultureInfo.InvariantCulture, $"{r.GoalsFor}-{r.GoalsAgainst}"), Num(r.Points)];
             for (int c = 0; c < cells.Length; c++) art.DrawText(cells[c], x + Columns[c].X, top, ink);
         }
     }

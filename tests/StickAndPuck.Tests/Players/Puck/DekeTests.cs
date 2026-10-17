@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
@@ -103,8 +104,8 @@ public sealed class DekeTests : CheckedTest
         int none = Beats(float.NaN), timed = Beats(2.0f), early = Beats(3.45f);
         int auto = Beats(float.NaN, auto: true), autoAi = Beats(float.NaN, auto: true, human: false);
         int clumsy = Beats(2.0f, puckControl: 5);
-        Check(none <= Trials / 10, $"with no deke the defender's check wins the puck ({Trials - none}/{Trials} lost)");
-        Check(timed >= Trials * 3 / 4, $"a deke pressed in the sweet spot beats the defender ({timed}/{Trials})");
+        Check(none <= Trials / 10, string.Create(CultureInfo.InvariantCulture, $"with no deke the defender's check wins the puck ({Trials - none}/{Trials} lost)"));
+        Check(timed >= Trials * 3 / 4, string.Create(CultureInfo.InvariantCulture, $"a deke pressed in the sweet spot beats the defender ({timed}/{Trials})"));
         Check(early < timed / 2, $"a deke pressed too early mostly fails ({early}/{Trials} vs {timed} timed)");
         Check(clumsy < timed, $"puck control matters: a clumsy carrier's timed deke beats them less ({clumsy} vs {timed}/{Trials})");
         Check(auto >= Trials / 8 && auto <= timed - Trials / 5, $"auto-deke works but fails more often than a timed press ({auto} vs {timed}/{Trials})");

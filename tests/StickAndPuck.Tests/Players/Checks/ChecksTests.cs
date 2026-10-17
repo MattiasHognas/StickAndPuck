@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
@@ -106,8 +107,8 @@ public sealed class ChecksTests : CheckedTest
             if (events.Any(e => e is CheckLanded { Strength: >= CheckingModel.HardHit })) down++;
             slid &= carrier.Position.X > 1.5f;
         }
-        Check(hits == 10, $"a check from behind lands exactly once each time ({hits}/10)");
-        Check(down >= 9, $"a strong checker at speed hits hard ({down}/10 hard hits)");
+        Check(hits == 10, string.Create(CultureInfo.InvariantCulture, $"a check from behind lands exactly once each time ({hits}/10)"));
+        Check(down >= 9, string.Create(CultureInfo.InvariantCulture, $"a strong checker at speed hits hard ({down}/10 hard hits)"));
         Check(won >= 8, $"and knocks a weak carrier off the puck ({won}/10)");
         Check(slid, "the hit carrier is shoved up ice");
     }

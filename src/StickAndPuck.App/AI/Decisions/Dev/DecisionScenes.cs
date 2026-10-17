@@ -63,8 +63,9 @@ internal static class DecisionScenes
         if (!world.Switches.DecisionLine) return;
         var h = Decisions.Tally(world, Side.Home);
         var a = Decisions.Tally(world, Side.Away);
-        string text = $"{world.Setup.Home.ShortName} PASS {h.Completed}/{h.Passes} SH {h.Shots} HIT {h.Checks}   "
-            + $"{world.Setup.Away.ShortName} PASS {a.Completed}/{a.Passes} SH {a.Shots} HIT {a.Checks}";
+        string text = string.Create(CultureInfo.InvariantCulture, $"{world.Setup.Home.ShortName} PASS {h.Completed}/{h.Passes} SH {h.Shots} HIT {h.Checks}   "
+)
+            + string.Create(CultureInfo.InvariantCulture, $"{world.Setup.Away.ShortName} PASS {a.Completed}/{a.Passes} SH {a.Shots} HIT {a.Checks}");
         DrawText(text, 6, 258, 10, new Color(0xef, 0xe0, 0xc2, 255));
     }
 }

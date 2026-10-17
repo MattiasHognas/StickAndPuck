@@ -11,6 +11,8 @@ using TUnit.Core.Enums;
 
 namespace StickAndPuck.Tests;
 
+using System.Globalization;
+
 // inside the namespace, so these win over the test namespaces of the same names (this one, and Tests.Referee)
 using StickAndPuck.App.Referee;
 using Penalties = StickAndPuck.App.Rules.Penalties;
@@ -163,7 +165,7 @@ public sealed class PenaltyTests : CheckedTest
         Check(Math.Abs(left - (Penalties.MinorSeconds(w) - 20)) < 0.02f, $"the penalty clock runs with the game clock ({MatchFlow.ClockText(left)} left after 0:20)");
         Run(w, x => !Penalties.InBox(x, d.Id), Watch, 120);
         float released = w.Match.Clock;
-        Check(Math.Abs(start - released - Penalties.MinorSeconds(w)) < Game.Step * 1.5f, $"served exactly {MatchFlow.ClockText(Penalties.MinorSeconds(w))} of game time ({start - released:0.00} s)");
+        Check(Math.Abs(start - released - Penalties.MinorSeconds(w)) < Game.Step * 1.5f, string.Create(CultureInfo.InvariantCulture, $"served exactly {MatchFlow.ClockText(Penalties.MinorSeconds(w))} of game time ({start - released:0.00} s)"));
         Check(!boxedOn && !extra && changes > 3, "the bench changes during the kill but never sends him on or a fifth skater");
         Check(d.OnIce && Skaters(w, Side.Home) == 5 && w.Match.Penalties.Count == 0 && Vector3.Distance(d.Position, Penalties.BoxDoor(Side.Home)) < 1, "he comes back through the box door: five on five");
     }
@@ -753,7 +755,7 @@ public sealed class PenaltyTests : CheckedTest
     {
         var setup = WorldBuilder.DefaultSetup with { PeriodSeconds = Period };
         var (calls, broken, served) = Match(setup with { PeriodSeconds = 240 }, 8f, 1);
-        Check(calls >= 4 && broken == 0 && served, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step in play");
+        Check(calls >= 4 && broken == 0 && served, string.Create(CultureInfo.InvariantCulture, $"AI match with a strict referee: {calls} calls, every club at exactly its strength (penalties, pulled goalie) at every step in play"));
     }
 
     /// <summary>Gets the normal referee's matches, shared by the class's tests.</summary>

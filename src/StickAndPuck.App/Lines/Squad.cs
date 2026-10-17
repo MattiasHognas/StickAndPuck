@@ -3,29 +3,6 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Lines;
 
-/// <summary>Which half of the skaters a unit belongs to; forwards and defence change separately.</summary>
-public enum Group
-{
-    /// <summary>Centres and wings.</summary>
-    Forwards,
-
-    /// <summary>Defencemen.</summary>
-    Defence,
-}
-
-/// <summary>A forward line (left wing, centre, right wing) or a defence pair.</summary>
-/// <param name="Group">Forwards or defence.</param>
-/// <param name="Number">1 for the first line or pair.</param>
-/// <param name="Members">The players, in the order they fill spots: C, LW, RW for a line; left, right for a pair.</param>
-public sealed record Unit(Group Group, int Number, IReadOnlyList<Player> Members)
-{
-    /// <summary>Gets the unit's name as a bench boss says it: L2 or P1.</summary>
-    public string Name => $"{(Group == Group.Forwards ? "L" : "P")}{Number}";
-
-    /// <summary>Gets the members' mean energy.</summary>
-    public float Energy => Members.Count == 0 ? 0 : Members.Average(p => p.Energy);
-}
-
 /// <summary>One club's match squad: four forward lines, three defence pairs and two goalies, all of them in <see cref="World.Players"/>.</summary>
 public sealed class Squad
 {
@@ -92,7 +69,7 @@ public sealed class Squad
         var lefts = Queue(players, PlayingPosition.LW);
         var rights = Queue(players, PlayingPosition.RW);
         var defence = Queue(players, PlayingPosition.D);
-        var lines = new List<Unit>();
+        var forwardLines = new List<Unit>();
         for (int i = 0; i < 4; i++)
         {
             var members = new List<Player>();
@@ -101,18 +78,18 @@ public sealed class Squad
                 var from = q.Count > 0 ? q : Spare(centres, lefts, rights);
                 if (from.TryGet(out var queue)) members.Add(queue.Dequeue());
             }
-            if (members.Count > 0) lines.Add(new Unit(Group.Forwards, i + 1, members));
+            if (members.Count > 0) forwardLines.Add(new Unit(Group.Forwards, i + 1, members));
         }
-        var pairs = new List<Unit>();
+        var defencePairs = new List<Unit>();
         for (int i = 0; i < 3 && defence.Count > 0; i++)
         {
             var members = new List<Player> { defence.Dequeue() };
             if (defence.Count > 0) members.Add(defence.Dequeue());
             if (members.Count == 2 && members[0].Data.Shoots == Hand.Right && members[1].Data.Shoots == Hand.Left) members.Reverse();
-            pairs.Add(new Unit(Group.Defence, i + 1, members));
+            defencePairs.Add(new Unit(Group.Defence, i + 1, members));
         }
         var goalies = players.Where(p => p.IsGoalie).OrderByDescending(p => p.OnIce).ToList();
-        return new Squad(side, lines, pairs, goalies);
+        return new Squad(side, forwardLines, defencePairs, goalies);
     }
 
     /// <summary>Gets the unit a player belongs to, if any.</summary>

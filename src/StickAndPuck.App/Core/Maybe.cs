@@ -75,9 +75,7 @@ public static class Maybe
     public static Maybe<T> FirstOrNone<T>(this IEnumerable<T> source, Func<T, bool> test)
         where T : notnull
     {
-        foreach (var item in source)
-            if (test(item)) return item;
-        return Maybe<T>.None;
+        return source.Where(test).FirstOrNone();
     }
 
     /// <summary>Gets the first item, in place of FirstOrDefault.</summary>

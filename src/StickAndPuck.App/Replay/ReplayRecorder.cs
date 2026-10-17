@@ -63,7 +63,7 @@ public sealed class ReplayRecorder
     /// <summary>Starts recording with a given header and start frame (a take-over keeps the replay's own).</summary>
     public static ReplayRecorder Begin(ReplayHeader header, InputFrame start, string path)
     {
-        Console.WriteLine($"SAP: replay: recording seed {header.Seed} to {path}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: replay: recording seed {header.Seed} to {path}"));
         return new ReplayRecorder(new ReplayFile { Header = header, Start = start }, path);
     }
 
@@ -90,7 +90,7 @@ public sealed class ReplayRecorder
         file.Checks[file.LastTick] = WorldChecksum.Of(world);
         if (file.End.Length == 0) file.End = ReplayFile.EndLine(world);
         file.Write(path);
-        Console.WriteLine($"SAP: replay: {file.LastTick + 1} steps, {file.Events.Count} events, {file.Inputs.Count} input changes, final {file.End.Split(' ')[1]} written to {path}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: replay: {file.LastTick + 1} steps, {file.Events.Count} events, {file.Inputs.Count} input changes, final {file.End.Split(' ')[1]} written to {path}"));
         if (string.Equals(Path.GetDirectoryName(path) ?? "", Folder, StringComparison.Ordinal)) Prune();
     }
 

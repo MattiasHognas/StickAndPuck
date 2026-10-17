@@ -5,6 +5,7 @@ using StickAndPuck.App.Players;
 using StickAndPuck.App.Rules;
 using System.Collections.Immutable;
 using static Raylib_cs.Raylib;
+using System.Globalization;
 
 namespace StickAndPuck.App.Lines;
 
@@ -175,7 +176,7 @@ internal sealed partial class LinesSystem : ISystem
                 {
                     Put(on, backup, onTheFly: false);
                     world.Events.Publish(new LineChanged(world.Time, side, backup.Id, backup.Position));
-                    b.Last[s] = ($"G{backup.Data.Number}", world.Time);
+                    b.Last[s] = (string.Create(CultureInfo.InvariantCulture, $"G{backup.Data.Number}"), world.Time);
                     Log(world, $"{world.Setup.Club(side).ShortName} backup goalie {backup.Data.LastName} comes in");
                 }
             }
@@ -292,13 +293,17 @@ internal sealed partial class LinesSystem : ISystem
                 float energy = Bench.OnIceEnergy(world, side, group);
                 DrawText(name, cx, y, 10, cream);
                 DrawRectangle(cx + 14, y + 2, 30, 5, new Color(0x4a, 0x3a, 0x52, 255));
-                var bar = energy > LinesTuning.FaceoffBelow ? new Color(0x7a, 0xa8, 0x5c, 255)
-                    : energy > LinesTuning.ChangeBelow ? new Color(0xe0, 0xa8, 0x48, 255)
-                    : new Color(0xc8, 0x57, 0x4a, 255);
+                Color bar;
+                if (energy > LinesTuning.FaceoffBelow)
+                    bar = new Color(0x7a, 0xa8, 0x5c, 255);
+                else if (energy > LinesTuning.ChangeBelow)
+                    bar = new Color(0xe0, 0xa8, 0x48, 255);
+                else
+                    bar = new Color(0xc8, 0x57, 0x4a, 255);
                 DrawRectangle(cx + 14, y + 2, (int)MathF.Round(30 * energy), 5, bar);
                 cx += 48;
             }
-            if (world.OnIce(side).FirstOrDefault(p => p.IsGoalie) is { } g) DrawText($"G{g.Data.Number}", cx, y, 10, cream);
+            if (world.OnIce(side).FirstOrDefault(p => p.IsGoalie) is { } g) DrawText(string.Create(CultureInfo.InvariantCulture, $"G{g.Data.Number}"), cx, y, 10, cream);
             var (what, at) = b.Last[(int)side];
             if (world.Time - at < 2.5f) DrawText($"CHANGE {what}", x, y - 14, 10, cream);
         }

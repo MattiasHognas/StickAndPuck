@@ -51,13 +51,17 @@ internal sealed class ZamboniRenderer : IDisposable
         loaded = false;
     }
 
+#pragma warning disable S6640 // Unsafe code blocks should not be used
     unsafe void UnloadOwnTexture(int material)
+#pragma warning restore S6640 // Unsafe code blocks should not be used
     {
         var texture = model.Materials[material].Maps[(int)MaterialMapIndex.Albedo].Texture;
         if (texture.Id != 0 && texture.Id != Rlgl.GetTextureIdDefault()) UnloadTexture(texture);
     }
 
+#pragma warning disable S6640 // Unsafe code blocks should not be used
     unsafe void SetShader(int material, Shader shader)
+#pragma warning restore S6640 // Unsafe code blocks should not be used
     {
         model.Materials[material].Shader = shader;
     }

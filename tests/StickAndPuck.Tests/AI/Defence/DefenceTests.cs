@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -37,7 +38,7 @@ public sealed class DefenceTests : CheckedTest
         var carrier = new Vector2(-22f, 9f);
         var slot = new Vector2(-20f, 0f);
         var mark = Coverage.MarkSpot(DefenceZone.Own, net, carrier, slot);
-        Check(Vector2.Distance(mark, net) < Vector2.Distance(slot, net), $"the mark on the slot man is goal side of him ({mark.X:F1}, {mark.Y:F1})");
+        Check(Vector2.Distance(mark, net) < Vector2.Distance(slot, net), string.Create(CultureInfo.InvariantCulture, $"the mark on the slot man is goal side of him ({mark.X:F1}, {mark.Y:F1})"));
         Check(Coverage.LaneCovered(carrier, slot, [mark]), "and covers the lane from the carrier to him");
         var point = new Vector2(-12f, -6f);
         var pointMark = Coverage.MarkSpot(DefenceZone.Own, net, carrier, point);

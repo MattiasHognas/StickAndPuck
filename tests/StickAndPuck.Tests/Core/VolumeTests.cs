@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Audio;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Screens;
@@ -12,7 +13,7 @@ namespace StickAndPuck.Tests;
 /// </summary>
 public sealed class VolumeTests : CheckedTest
 {
-    readonly string dir = Path.Combine(Path.GetTempPath(), $"sap_volumetest_{Environment.ProcessId}_{Guid.NewGuid():N}");
+    readonly string dir = Path.Combine(Path.GetTempPath(), string.Create(CultureInfo.InvariantCulture, $"sap_volumetest_{Environment.ProcessId}_{Guid.NewGuid():N}"));
 
     [Before(Test)]
     public void MakeFolder() => Directory.CreateDirectory(dir);
@@ -28,7 +29,7 @@ public sealed class VolumeTests : CheckedTest
         string path = Path.Combine(dir, "settings.json");
         File.WriteAllText(path, "{ \"settings\": { \"volume\": 0.3, \"fights\": false }, \"periodMinutes\": 5 }");
         var read = ScreenPrefsFile.Read(path).Settings;
-        Check(Near(read.EffectsVolume, 0.3f), $"an old settings.json's volume is the effects volume ({read.EffectsVolume})");
+        Check(Near(read.EffectsVolume, 0.3f), string.Create(CultureInfo.InvariantCulture, $"an old settings.json's volume is the effects volume ({read.EffectsVolume})"));
         Check(Near(read.OverallVolume, 1f) && Near(read.MusicVolume, new Settings().MusicVolume), "the overall and music volumes start at their defaults");
         Check(!read.Fights, "the rest of the old settings still load");
 

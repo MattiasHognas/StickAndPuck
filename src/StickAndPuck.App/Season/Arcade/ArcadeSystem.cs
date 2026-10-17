@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
 
@@ -38,10 +39,37 @@ internal sealed class ArcadeSystem : ISystem, IDisposable
         if (!world.Events.Of<MatchEnded>().Any()) return;
 
         var m = world.Match;
-        var kind = sawShootout ? ResultKind.Shootout : m.Period > world.Setup.Periods ? ResultKind.Overtime : ResultKind.Regulation;
+        ResultKind kind;
+        if (sawShootout)
+        {
+            kind = ResultKind.Shootout;
+        }
+        else if (m.Period > world.Setup.Periods)
+        {
+            kind = ResultKind.Overtime;
+        }
+        else
+        {
+            kind = ResultKind.Regulation;
+        }
+
         if (!world.App.Arcade.Finish(new FixtureResult(m.Score[(int)Side.Home], m.Score[(int)Side.Away], kind)).TryGet(out var game) || !world.App.Arcade.Current.TryGet(out var run)) return;
         finishedAt = world.Time;
-        string outcome = run.Champion ? "champions, every club beaten" : run.Lost ? $"run over after {run.Stage} win(s)" : $"{run.LivesLeft} live(s) left, next {run.NextOpponent.Or("")}";
+
+        string outcome;
+        if (run.Champion)
+        {
+            outcome = "champions, every club beaten";
+        }
+        else if (run.Lost)
+        {
+            outcome = string.Create(CultureInfo.InvariantCulture, $"run over after {run.Stage} win(s)");
+        }
+        else
+        {
+            outcome = string.Create(CultureInfo.InvariantCulture, $"{run.LivesLeft} live(s) left, next {run.NextOpponent.Or("")}");
+        }
+
         Console.WriteLine($"SAP: arcade stage {game.Stage + 1}: {(game.Won ? "won" : "lost")} {game.GoalsFor}-{game.GoalsAgainst} against {game.Opponent} ({kind}); {outcome}; saved to {world.App.Arcade.SavePath}");
     }
 

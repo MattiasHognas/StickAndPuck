@@ -1,3 +1,4 @@
+using System.Globalization;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Rules;
@@ -65,7 +66,7 @@ internal sealed class PenaltyBook
     {
         if (!MatchFlow.State(world).Log) return;
         var m = world.Match;
-        Console.WriteLine($"PENALTY: {what}; P{m.Period} {MatchFlow.ClockText(m.Clock)}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"PENALTY: {what}; P{m.Period} {MatchFlow.ClockText(m.Clock)}"));
     }
 }
 

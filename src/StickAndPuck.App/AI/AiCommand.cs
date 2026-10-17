@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 
@@ -156,6 +157,6 @@ public static class AiCommand
         var printed = world.AiIntentsPrinted.Get(() => []);
         if (printed.TryGetValue(p.Id, out var was) && was.Owner == now.Owner && string.Equals(was.Reason, now.Reason, StringComparison.Ordinal)) return;
         printed[p.Id] = now;
-        Console.WriteLine($"AI {now.Tick} #{p.Id} {p.Side} {now.Owner}: {now.Reason}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"AI {now.Tick} #{p.Id} {p.Side} {now.Owner}: {now.Reason}"));
     }
 }

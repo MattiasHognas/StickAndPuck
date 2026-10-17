@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -104,8 +105,8 @@ public sealed class AimedPassTests : CheckedTest
             if (Vector2.Distance(b.Command.Move, stick) < 1e-3f) held++;
         });
         Check(b.Slot == 0 && a.Slot == -1, "control follows the pass to the receiver");
-        Check(got > 0 && (got - PassAt) * Game.Step < 2.5f, $"the receiver of a human pass meets it and has the puck ({(got - PassAt) * Game.Step:0.00} s after the pass)");
-        Check(steered > 5 && away == 0 && held == 0, $"while it comes he stays on its line or skates to it, never away along the held stick ({steered} steps, {away} away from it, {held} on the stick)");
+        Check(got > 0 && (got - PassAt) * Game.Step < 2.5f, string.Create(CultureInfo.InvariantCulture, $"the receiver of a human pass meets it and has the puck ({(got - PassAt) * Game.Step:0.00} s after the pass)"));
+        Check(steered > 5 && away == 0 && held == 0, string.Create(CultureInfo.InvariantCulture, $"while it comes he stays on its line or skates to it, never away along the held stick ({steered} steps, {away} away from it, {held} on the stick)"));
 
     }
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -202,7 +203,7 @@ public sealed class FightTests : CheckedTest
         s.AiBlocks = false;
         var fight = StartFight(w);
         var events = Run(w, x => !Current(x).HasValue, Human(0.5f), 20);
-        Check(fight.Knockdown && fight.LoserId == them.Id && fight.Exchange <= 3, $"punches timed in the middle of the bar knock the other fighter down (in {fight.Exchange + 1} exchanges, {fight.Victim.Landed} landed)");
+        Check(fight.Knockdown && fight.LoserId == them.Id && fight.Exchange <= 3, string.Create(CultureInfo.InvariantCulture, $"punches timed in the middle of the bar knock the other fighter down (in {fight.Exchange + 1} exchanges, {fight.Victim.Landed} landed)"));
 
         var call = w.Match.Penalties.FirstOrNone(p => p.PlayerId == them.Id);
         Check(call.Is(c => string.Equals(c.Infraction, FightTuning.Infraction, StringComparison.Ordinal) && Math.Abs(c.SecondsLeft - Penalties.MinorSeconds(w)) < 0.01f) && Penalties.OnTheWay(w, them.Id) && Penalties.InBox(w, them.Id),

@@ -114,7 +114,18 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
 
     Texture2D Kit(World world, Player p)
     {
-        var side = swapKits ? (p.Side == Side.Home ? Side.Away : Side.Home) : p.Side;
+        Side side;
+        if (swapKits)
+        {
+            side = p.Side == Side.Home
+                ? Side.Away
+                : Side.Home;
+        }
+        else
+        {
+            side = p.Side;
+        }
+
         string path = Assets.KitAtlas(world.Setup.Club(p.Side).Id, side, "skater", p.Data.Number);
         if (!kits.TryGetValue(path, out var tex))
         {

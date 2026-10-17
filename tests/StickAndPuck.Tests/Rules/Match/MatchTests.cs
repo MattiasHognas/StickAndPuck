@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
@@ -92,7 +93,7 @@ public sealed class MatchTests : CheckedTest
 
         var m = w.Match;
         Check(m.Phase == MatchPhase.Final, "a full match reaches the final");
-        Check(m.Score[0] == 3 && m.Score[1] == 1, $"the score is 3-1 (got {m.Score[0]}-{m.Score[1]})");
+        Check(m.Score[0] == 3 && m.Score[1] == 1, string.Create(CultureInfo.InvariantCulture, $"the score is 3-1 (got {m.Score[0]}-{m.Score[1]})"));
         Check(m.Period == 3 && m.Clock == 0, "it ends in period 3 with the clock at 0:00");
         Check(events.Count(e => e is GoalScored) == 4, "four goals published");
         Check(events.Count(e => e is PeriodEnded) == 3, "three period ends");

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI;
 using StickAndPuck.App.Core;
@@ -52,7 +53,7 @@ public sealed class SpecialTeamsTests : CheckedTest
         var one31 = Formations.Spots(Formation.OneThreeOne, 5, 1, new Vector2(18f, 0));
         int high = umbrella.Count(s => s.X < RinkSpec.GoalLineX - 10f);
         int middle = one31.Count(s => s.X is > RinkSpec.GoalLineX - 10f and < RinkSpec.GoalLineX - 7.5f);
-        Check(high == 3 && middle == 3, $"the umbrella has three high, the 1-3-1 three across the middle ({high}, {middle})");
+        Check(high == 3 && middle == 3, string.Create(CultureInfo.InvariantCulture, $"the umbrella has three high, the 1-3-1 three across the middle ({high}, {middle})"));
         var box = Formations.Spots(Formation.Box, 4, 1, new Vector2(18f, 0));
         var diamond = Formations.Spots(Formation.Diamond, 4, 1, new Vector2(18f, 0));
         Check(box.Count(s => MathF.Abs(s.Y) > 2f) == 4 && diamond.Count(s => MathF.Abs(s.Y) < 0.5f) == 2, "the box has two low and two high, the diamond one at each tip");

@@ -6,6 +6,7 @@ using StickAndPuck.App.Goalie;
 using StickAndPuck.App.Physics;
 using StickAndPuck.Tests.Support;
 using StickAndPuck.App.Goalie.Dev;
+using System.Globalization;
 
 namespace StickAndPuck.Tests;
 
@@ -31,9 +32,9 @@ public sealed class GoalieTests : CheckedTest
     {
         var straight = Batch(Make(), 50, StraightShot);
         Console.WriteLine($"      straight shots, reflexes 50: {straight}");
-        Check(straight.SavePct >= 0.85f, $"stops most straight shots ({straight.SavePct:P0})");
+        Check(straight.SavePct >= 0.85f, string.Create(CultureInfo.InvariantCulture, $"stops most straight shots ({straight.SavePct:P0})"));
         float reboundShare = (float)straight.Rebounds / Math.Max(1, straight.Saves);
-        Check(reboundShare is > 0.15f and < 0.75f, $"leaves some rebounds ({reboundShare:P0} of saves)");
+        Check(reboundShare is > 0.15f and < 0.75f, string.Create(CultureInfo.InvariantCulture, $"leaves some rebounds ({reboundShare:P0} of saves)"));
         Check(straight.StayedInCrease, "stays in the crease");
     }
 
