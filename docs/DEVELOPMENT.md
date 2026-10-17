@@ -4,7 +4,7 @@
 
 ## Build and run
 
-Run commands from the repository root. Install a .NET SDK compatible with [global.json](../global.json), currently `11.0.100-rc.1.26425.128` (prerelease allowed, `latestFeature` roll-forward). The solution targets .NET 11 and C# 15. A graphical session with OpenGL is needed to play; [Testing](TESTING.md) covers running under Xvfb.
+Run commands from the repository root. Install a .NET SDK compatible with [global.json](../global.json), currently `11.0.100-rc.2.26504.105` (prerelease allowed, `latestFeature` roll-forward). The solution targets .NET 11 and C# 15. A graphical session with OpenGL is needed to play; [Testing](TESTING.md) covers running under Xvfb.
 
 ```sh
 dotnet build
@@ -90,3 +90,28 @@ The entry scripts describe their expected inputs: `build_player.py`, `anim.py`, 
 - Every merge to main builds, tags and publishes a GitHub Release automatically; `[milestone]` in the squash title (or a `milestone` PR label) bumps the minor version instead of the patch. Pull requests run both the build/publish check and the Release test suite.
 
 The .NET runtime, raylib and all assets are packed inside and unpacked on first start, so the executable runs from any folder. The two output paths are `publish/linux-x64/StickAndPuck` and `publish/win-x64/StickAndPuck.exe`.
+
+### Browser build and storage
+
+With the .NET SDK in `global.json` and the `wasm-tools` workload installed:
+
+```sh
+tools/publish.sh browser-wasm
+python -m http.server 8000 --directory publish/browser-wasm/wwwroot
+```
+
+Open `http://localhost:8000`, wait for loading, then click Start game. The browser launcher opens the start menu; `?scene=practice` runs one controllable skater with the puck and `?scene=skating` opens the movement fixture. The launcher and fingerprinted runtime resource manifest are generated/copied by the WebAssembly SDK on each publish. Serve the entire `wwwroot` folder over HTTP.
+
+JavaScript owns `requestAnimationFrame`. `BrowserHost.Start` initializes a `Game.Session` synchronously in the Start click so Web Audio can initialize during a user gesture; `Frame(timestamp)` advances the existing fixed 60 Hz accumulator and draws once; `Stop` releases resources. A resumed background tab catches up at most 0.25 seconds. Desktop `Game.Run` drives the same session in its existing loop. Browser frames avoid raylib 6.0's `WindowShouldClose`, which calls `emscripten_sleep`.
+
+The bundled raylib ES2 renderer uses WebGL 1 and GLSL ES 1.00 variants in `shaders/web`. `ResourceLoader` selects those shaders and extracts filename-only assets into the runtime's shared Emscripten filesystem; GLBs, animation clips, fonts and music require no separate resource download list. Language tables also load from bundled resources. `ModelPose` temporarily corrects raylib 6.0's animated normal upload buffer index in browser builds. Revisit that workaround when upgrading raylib.
+
+GPU detection/relaunch, GPU selection and native rumble are skipped in the browser. Keyboard taps are queued until a simulation step consumes them; mouse clicks retain one step even when both pointer events fall between animation frames. Standard browser gamepads use raylib's browser Gamepad API mapping, without loading desktop SDL mappings.
+
+`SavedFiles` keeps settings, seasons and arcade progress in synchronous `localStorage` entries under `stickandpuck:v1:/saves/`. Saves are independent of the build's asset extraction folder, available immediately after reload, and isolated by site origin. Storage failures appear beside the canvas; an unsuccessful write leaves the previous saved value intact. Desktop saves still use atomic file replacement. Replays cannot write or delete progress.
+
+The launcher offers Stop, replay upload, playback, download and verification. Download during a match produces a snapshot while recording continues. Replay files live in the runtime filesystem during the page session; download them to keep them after closing the page. Upload validates the gzip format/version before replacing an existing file. Verify runs fixed steps in batches with audio unopened, reports the result/events/checksums, and retains every step's checksum for diagnostics. Normal Start/Play initializes audio in the click handler.
+
+Browser publishing enables trimming. `DiscoveryGenerator` generates direct constructor registrations for all concrete `IScene` and `IGameMode` implementations, including inherited arcade modes; runtime type scanning and `Activator` are no longer needed. `DiscoveryTests` compares the registry with all source implementations in the desktop test build.
+
+Simulation interpolation and stick-blade rotation use explicit fused rounding and `SimMath` trigonometry so desktop and WASM agree. This corrects small platform-dependent differences; older recordings can consequently report checksum differences on the corrected simulation. The replay file format remains compatible.

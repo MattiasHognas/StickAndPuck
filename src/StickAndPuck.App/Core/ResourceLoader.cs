@@ -66,7 +66,12 @@ public static class ResourceLoader
     }
 
     /// <summary>Loads a model from its bundled GLB.</summary>
-    public static Model Model(string path) => LoadModel(Extract(path));
+    public static Model Model(string path)
+    {
+        var model = LoadModel(Extract(path));
+        // raylib 6.0's IsModelValid also checks GPU-only bone VBOs on CPU-skinned models.
+        return model.MeshCount > 0 && model.MaterialCount > 0 ? model : throw new InvalidDataException($"raylib could not load bundled model: {path}");
+    }
 
     /// <summary>Loads animation clips from the same bundled GLB as the model.</summary>
     public static ModelAnimation[] Animations(string path) => LoadModelAnimations(Extract(path)).ToArray();
@@ -104,22 +109,29 @@ public static class ResourceLoader
     }
 
     /// <summary>Streams a bundled track from the cache, without retaining pinned managed buffers.</summary>
-    public static Music Music(string path) => LoadMusicStream(Extract(path));
+    public static Music Music(string path)
+    {
+        var music = LoadMusicStream(Extract(path));
+        return IsMusicValid(music) ? music : throw new InvalidDataException($"raylib could not load bundled music: {path}");
+    }
 
     /// <summary>Loads a BMFont and its PNG page together, preserving their relative filenames.</summary>
     public static Font Font(string path)
     {
         Extract(Path.ChangeExtension(path, ".png"));
-        return LoadFont(Extract(path));
+        var font = LoadFont(Extract(path));
+        return IsFontValid(font) ? font : throw new InvalidDataException($"raylib could not load bundled font: {path}");
     }
 
+    static string ShaderPath(string path) => OperatingSystem.IsBrowser() ? path.Replace("shaders/", "shaders/web/", StringComparison.Ordinal) : path;
+
     /// <summary>Loads a shader pair from bundled sources.</summary>
-    public static Shader Shader(string vertex, string fragment) => LoadShaderFromMemory(ReadText(vertex), ReadText(fragment));
+    public static Shader Shader(string vertex, string fragment) => LoadShaderFromMemory(ReadText(ShaderPath(vertex)), ReadText(ShaderPath(fragment)));
 
     /// <summary>Loads a bundled fragment shader with raylib's default vertex shader.</summary>
     public static unsafe Shader FragmentShader(string path)
     {
-        byte[] source = System.Text.Encoding.UTF8.GetBytes(ReadText(path) + "\0");
+        byte[] source = System.Text.Encoding.UTF8.GetBytes(ReadText(ShaderPath(path)) + "\0");
         fixed (byte* fs = source) return LoadShaderFromMemory((sbyte*)0, (sbyte*)fs);
     }
 }

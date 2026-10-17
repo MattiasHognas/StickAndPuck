@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.AI;
 using StickAndPuck.App.Rules;
 
 namespace StickAndPuck.App.Replays;
@@ -30,6 +31,15 @@ public static class StateDump
         foreach (var e in world.Events.Current)
             b.AppendLine(c, $"STATE event {ReplayFile.EventText(e)}");
         return b.ToString().TrimEnd();
+    }
+
+    /// <summary>Writes exact floating-point values for diagnosing a cross-platform replay difference.</summary>
+    public static string Exact(World world)
+    {
+        var c = CultureInfo.InvariantCulture;
+        return string.Join('\n', world.Players.Select(p => string.Create(c,
+            $"EXACT {p.Id} position {p.Position.X:R},{p.Position.Y:R},{p.Position.Z:R} velocity {p.Velocity.X:R},{p.Velocity.Y:R},{p.Velocity.Z:R} heading {p.Heading:R} action {p.ActionTime:R} energy {p.Energy:R} move {p.Command.Move.X:R},{p.Command.Move.Y:R} target {Positioning.TargetOf(world, p).X:R},{Positioning.TargetOf(world, p).Y:R} intent {AiCommand.IntentOf(world, p).Owner} {AiCommand.IntentOf(world, p).Reason}")))
+            + string.Create(c, $"\nEXACT puck {world.Puck.Position.X:R},{world.Puck.Position.Y:R},{world.Puck.Position.Z:R} velocity {world.Puck.Velocity.X:R},{world.Puck.Velocity.Y:R},{world.Puck.Velocity.Z:R}");
     }
 
     static string V(Vector3 v) => string.Create(CultureInfo.InvariantCulture, $"({v.X:0.000}, {v.Y:0.000}, {v.Z:0.000})");

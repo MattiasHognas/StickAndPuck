@@ -109,7 +109,7 @@ public sealed class Gamepads
 
     static void LoadMappings()
     {
-        if (Env.Is("SAP_PAD_MAPPINGS", "0")) return;
+        if (OperatingSystem.IsBrowser() || Env.Is("SAP_PAD_MAPPINGS", "0")) return;
         var sources = new List<(string From, string Text)> { ("the game", BuiltInMappings) };
         if (Env.Get("SDL_GAMECONTROLLERCONFIG") is { Length: > 0 } env) sources.Add(("SDL_GAMECONTROLLERCONFIG", env));
         string config = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StickAndPuck");

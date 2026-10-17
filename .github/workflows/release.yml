@@ -38,7 +38,40 @@ jobs:
       - name: Test
         run: dotnet test --project tests/StickAndPuck.Tests -c Release
 
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tools/browser/package-lock.json
+      - name: Install browser toolchains
+        run: |
+          dotnet workload install wasm-tools
+          npm ci --prefix tools/browser
+          cd tools/browser
+          npx playwright install --with-deps chromium firefox
+      - name: Verify browser publish and desktop replay parity
+        run: xvfb-run -a tools/verify-browser.sh
+      - name: Upload browser site
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-site
+          path: publish/browser-wasm/wwwroot
+      - name: Upload browser verification reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-verification
+          path: TestResults/browser
+
   build:
+    needs: [test, browser]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

@@ -23,7 +23,7 @@ public static class Clubs
         var clubs = new List<ClubData>();
         foreach (string resourceName in ResourceLoader.List(folder, ".json"))
         {
-            var club = JsonSerializer.Deserialize<ClubData>(ResourceLoader.ReadText(resourceName), Json)
+            var club = JsonSerializer.Deserialize(ResourceLoader.ReadText(resourceName), ClubJsonContext.Default.ClubData)
                 ?? throw new InvalidDataException($"{resourceName} is empty");
             if (string.IsNullOrWhiteSpace(club.Id))
                 club = club with { Id = resourceName.Split('.')[^2] };

@@ -37,7 +37,7 @@ internal static class ScreenPrefsFile
     public static string DefaultPath =>
         Env.Get("SAP_SETTINGS") is { Length: > 0 } p
             ? Path.GetFullPath(p)
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "StickAndPuck", "settings.json");
+            : SavedFiles.DefaultPath("settings.json");
 
     /// <summary>Reads the saved settings from <see cref="DefaultPath"/>, or the defaults when there is no readable file.</summary>
     public static ScreenPrefs Read() => Read(DefaultPath);
@@ -47,7 +47,7 @@ internal static class ScreenPrefsFile
     {
         try
         {
-            if (File.Exists(path) && FromJson(File.ReadAllText(path)) is var prefs)
+            if (SavedFiles.Exists(path) && FromJson(SavedFiles.ReadText(path)) is var prefs)
                 return prefs with { PeriodMinutes = Math.Clamp(prefs.PeriodMinutes, 1, 20) };
         }
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
@@ -96,8 +96,7 @@ internal static class ScreenPrefsFile
         if (DeviceInput.Playing) return;    // a replay's menus never touch the saved settings
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllText(path, JsonSerializer.Serialize(prefs, SaveJsonContext.Default.ScreenPrefs));
+            SavedFiles.WriteText(path, JsonSerializer.Serialize(prefs, SaveJsonContext.Default.ScreenPrefs));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

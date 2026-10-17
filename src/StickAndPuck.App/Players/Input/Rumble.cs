@@ -11,7 +11,7 @@ internal sealed partial class Rumble(Gamepads pads)
 {
     const int Pads = 2;
 
-    static readonly bool Off = Env.Is("SAP_RUMBLE", "0");
+    static readonly bool Off = OperatingSystem.IsBrowser() || Env.Is("SAP_RUMBLE", "0");
     readonly Maybe<IRumbler>[] rumblers = new Maybe<IRumbler>[Pads];
     readonly string[] opened = [.. Enumerable.Repeat(string.Empty, Pads)];   // "" for none: a pad's name is never empty
 

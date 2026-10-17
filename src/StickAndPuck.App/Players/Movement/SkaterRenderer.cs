@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Render;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Players;
@@ -108,7 +109,7 @@ internal sealed unsafe class SkaterRenderer : ISystem, IDisposable
         var (clip, frame) = poses.GetValueOrDefault(p.Id, (-1, 0f));
         if (clip < 0) return;
         int count = clips[clip].KeyFrameCount;
-        UpdateModelAnimation(model, clips[clip], Math.Min((int)frame, count - 1) % count);   // whole frames only: the poses are held, never blended
+        ModelPose.Apply(model, clips[clip], Math.Min((int)frame, count - 1) % count);   // whole frames only: the poses are held, never blended
     }
 
     Texture2D Kit(World world, Player p)

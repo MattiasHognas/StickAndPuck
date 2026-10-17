@@ -72,10 +72,7 @@ internal static class GameModes
     /// <summary>Gets every mode available now, in list order.</summary>
     public static IReadOnlyList<IGameMode> All(AppState app)
     {
-        return typeof(GameModes).Assembly.GetTypes()
-            .Where(t => typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false }
-                && t.GetConstructor(Type.EmptyTypes) is { })
-            .Select(t => (IGameMode)Activator.CreateInstance(t))
+        return DiscoveryRegistry.Modes()
             .Where(m => m.Available(app))
             .OrderBy(m => m.Order)
             .ThenBy(m => m.Title, StringComparer.Ordinal)
@@ -85,8 +82,6 @@ internal static class GameModes
     /// <summary>Gets a fresh mode by its type name, as a replay names it.</summary>
     public static Maybe<IGameMode> Named(string typeName)
     {
-        var type = typeof(GameModes).Assembly.GetTypes().FirstOrDefault(t => string.Equals(t.Name, typeName, StringComparison.Ordinal)
-            && typeof(IGameMode).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false } && t.GetConstructor(Type.EmptyTypes) is { });
-        return type is { } found ? Maybe.Some((IGameMode)Activator.CreateInstance(found)) : Maybe<IGameMode>.None;
+        return DiscoveryRegistry.Modes().FirstOrNone(mode => string.Equals(mode.GetType().Name, typeName, StringComparison.Ordinal));
     }
 }

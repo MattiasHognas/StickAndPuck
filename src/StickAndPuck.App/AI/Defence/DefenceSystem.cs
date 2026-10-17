@@ -176,7 +176,7 @@ internal sealed class DefenceSystem : ISystem
             plan.Watching = rng.NextSingle() < 0.3f * (1f - iq);
             plan.ErrorUntil = world.Time + 2.5f + rng.NextSingle() * 3f;
         }
-        if (plan.Watching) spot = Vector2.Lerp(spot, carrier, 0.4f);
+        if (plan.Watching) spot = SimMath.Lerp(spot, carrier, 0.4f);
         float follow = Math.Min(1f, (2f + 6f * iq) * dt);
         var read = plan.Read.TryGet(out var r) && world.Tick - plan.ReadTick <= 2 ? r : Flat(p.Position);
         read += (spot - read) * follow;

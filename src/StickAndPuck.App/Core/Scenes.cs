@@ -23,10 +23,7 @@ public static class Scenes
     /// <summary>Gets every scene in the game, by name.</summary>
     public static IReadOnlyDictionary<string, IScene> All()
     {
-        return typeof(Scenes).Assembly.GetTypes()
-            .Where(t => typeof(IScene).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false }
-                && t.GetConstructor(Type.EmptyTypes) is { })
-            .Select(t => (IScene)Activator.CreateInstance(t))
+        return DiscoveryRegistry.Scenes()
             .ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
     }
 

@@ -128,6 +128,7 @@ public sealed class ReplayPlayer
             Reached = true;
             Console.WriteLine($"SAP: replay: at {at} (step {tick})");
             Console.WriteLine(StateDump.Of(world));
+            Console.WriteLine(StateDump.Exact(world));
             return ReplayStep.Target;
         }
         if (tick >= file.LastTick)

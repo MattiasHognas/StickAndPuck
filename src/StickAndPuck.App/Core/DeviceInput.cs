@@ -23,6 +23,7 @@ public static class DeviceInput
 
     static readonly KeyboardKey[] AllKeys = [.. Enum.GetValues<KeyboardKey>().Where(k => k != KeyboardKey.Null).Distinct()];
     static readonly HashSet<int> PendingKeys = [];
+    static byte pendingMouse;
     static readonly uint[] PendingButtons = new uint[Pads];
 
     /// <summary>Gets the frame the current step reads.</summary>
@@ -48,12 +49,26 @@ public static class DeviceInput
         Playing = false;
     }
 
+    /// <summary>Clears devices and replay state before starting another browser session.</summary>
+    public static void Reset()
+    {
+        StopPlaying();
+        Current = InputFrame.Empty;
+        PendingKeys.Clear();
+        pendingMouse = 0;
+        Array.Clear(PendingButtons);
+    }
+
     /// <summary>Notes this drawn frame's presses, so the next step sees them even when this frame runs no step.</summary>
     public static void Poll()
     {
         if (Playing || !IsWindowReady()) return;
+        int queued;
+        while ((queued = GetKeyPressed()) != 0) PendingKeys.Add(queued);
         foreach (var k in AllKeys)
             if (IsKeyPressed(k)) PendingKeys.Add((int)k);
+        for (int button = 0; button < 3; button++)
+            if (IsMouseButtonPressed((MouseButton)button)) NoteMousePress(button);
         for (int pad = 0; pad < Pads; pad++)
         {
             if (!IsGamepadAvailable(pad)) continue;
@@ -79,7 +94,7 @@ public static class DeviceInput
 
         int[] keys = AllKeys.Where(k => IsKeyDown(k)).Select(k => (int)k).Distinct().Order().ToArray();
         int[] pressed = PendingKeys.Order().ToArray();
-        byte mouse = 0;
+        byte mouse = pendingMouse;
         for (int b = 0; b < 3; b++)
             if (IsMouseButtonDown((MouseButton)b)) mouse |= (byte)(1 << b);
         var pads = new PadFrame[Pads];
@@ -98,8 +113,15 @@ public static class DeviceInput
             pads[pad] = new PadFrame(true, held, PendingButtons[pad], axes);
         }
         PendingKeys.Clear();
+        pendingMouse = 0;
         Array.Clear(PendingButtons);
         Current = new InputFrame(keys, pressed, mouse, pads, MenuPress: "");
+    }
+
+    /// <summary>Keeps a browser mouse tap until a simulation step consumes it.</summary>
+    public static void NoteMousePress(int button)
+    {
+        if (!Playing && button is >= 0 and < 3) pendingMouse |= (byte)(1 << button);
     }
 
     /// <summary>Starts from a given frame, for a replay's first step and for the frame a replay was recorded from.</summary>
@@ -114,8 +136,8 @@ public static class DeviceInput
         Current = Current with { MenuPress = button };
     }
 
-    /// <summary>Whether a key is held.</summary>
-    public static bool KeyDown(KeyboardKey key) => Array.BinarySearch(Current.Keys, (int)key) >= 0;
+    /// <summary>Whether a key is held or was tapped since the last step.</summary>
+    public static bool KeyDown(KeyboardKey key) => Array.BinarySearch(Current.Keys, (int)key) >= 0 || KeyPressed(key);
 
     /// <summary>Whether a key went down since the last step.</summary>
     public static bool KeyPressed(KeyboardKey key) => Array.BinarySearch(Current.Pressed, (int)key) >= 0;

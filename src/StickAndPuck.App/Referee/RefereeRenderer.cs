@@ -87,7 +87,7 @@ internal sealed unsafe class RefereeRenderer : IDisposable
         if (clip < 0) return;
         // The loader's final sample is the rest pose; the set stance must stay crouched across its loop.
         int count = clip == set ? Math.Max(1, clips[clip].KeyFrameCount - 1) : clips[clip].KeyFrameCount;
-        UpdateModelAnimation(model, clips[clip], (int)frame % count);   // whole frames only
+        ModelPose.Apply(model, clips[clip], (int)frame % count);   // whole frames only
     }
 
     public void DrawScene(Referee r, RenderContext render)

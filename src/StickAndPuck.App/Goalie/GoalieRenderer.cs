@@ -64,7 +64,7 @@ internal sealed unsafe class GoalieRenderer : IDisposable
         var (clip, frame) = poses.GetValueOrDefault(g.Id, (-1, 0f));
         if (clip < 0) return;
         int count = clips[clip].KeyFrameCount;
-        UpdateModelAnimation(model, clips[clip], (int)frame % count);   // whole frames only: the poses are held, never blended
+        ModelPose.Apply(model, clips[clip], (int)frame % count);   // whole frames only: the poses are held, never blended
     }
 
     Texture2D Kit(World world, Player g)

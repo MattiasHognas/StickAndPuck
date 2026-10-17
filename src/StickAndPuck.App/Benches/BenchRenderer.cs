@@ -202,7 +202,7 @@ internal sealed unsafe class BenchRenderer : ISystem, IDisposable
             var model = models[m];
             for (int frame = 0; frame < clips[m][c].KeyFrameCount; frame++)
             {
-                UpdateModelAnimation(model, clips[m][c], frame);
+                ModelPose.Apply(model, clips[m][c], frame);
                 var meshes = (Mesh*)NativeMemory.Alloc((nuint)model.MeshCount, (nuint)sizeof(Mesh));
                 for (int k = 0; k < model.MeshCount; k++) meshes[k] = Bake(model.Meshes[k]);
                 baked[(m, c, frame)] = (nint)meshes;

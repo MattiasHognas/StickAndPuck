@@ -68,13 +68,16 @@ internal sealed class SettingsScreen(AppState app) : MenuScreen(app)
             new MenuItem(Text.Get(K.EffectsVolume), value: Tenths(s.EffectsVolume), change: d => Set(s with { EffectsVolume = Step(s.EffectsVolume, d) })),
             new MenuItem(Text.Get(K.MusicVolume), value: Tenths(s.MusicVolume), change: d => Set(s with { MusicVolume = Step(s.MusicVolume, d) })),
             new MenuItem(Text.Get(K.Language), value: Text.NameOf(s.Language), change: d => Set(s with { Language = Cycle(s.Language, d) })),
-            new MenuItem(Text.Get(K.GraphicsCard), value: Card().Name, change: Gpu),
+            .. GraphicsCardRows(),
             new MenuItem(Text.Get(K.FpsLine), value: OnOff(s.FpsLine), change: _ => Set(s with { FpsLine = !s.FpsLine })),
             new MenuItem(Text.Get(K.MatchDebugLine), value: OnOff(s.MatchDebug), change: _ => Set(s with { MatchDebug = !s.MatchDebug })),
             new MenuItem(Text.Get(K.LinesPanel), value: OnOff(s.LinesDebug), change: _ => Set(s with { LinesDebug = !s.LinesDebug })),
             new MenuItem(Text.Get(K.Back), Back),
         ];
     }
+
+    IEnumerable<MenuItem> GraphicsCardRows() => OperatingSystem.IsBrowser() ? []
+        : [new MenuItem(Text.Get(K.GraphicsCard), value: Card().Name, change: Gpu)];
 
     /// <inheritdoc/>
     public override void Update(World world, IReadOnlySet<MenuButton> press)
