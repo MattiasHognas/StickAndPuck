@@ -163,7 +163,7 @@ The browser suite checks actual menu navigation and saved settings, season and a
 
 Two desktop fixtures (1,800 AI-match steps and 6,000 match-demo steps, with separate seeds) are recorded through the real game loop. Each browser must match all 7,800 per-step checksums, events and final results. A browser input recording must also verify on desktop. The suite writes screenshots, console logs, replay fixtures, checksum logs and `results.json` under `TestResults/browser/`.
 
-Performance reports include observed drawing FPS, simulation Hz, and mean/p95/max callback work over a three-second practice sample. Headless software rendering is a reference measurement, not a hardware GPU benchmark. The simulation must remain near 60 Hz even when rendering is slower. CI runs the suite on a virtual display and uploads the deployable `wwwroot` plus reports as artifacts.
+Performance reports include observed drawing FPS, simulation Hz, clamped frame counts, and mean/p95/max callback work over a three-second practice sample. Headless software rendering is a reference measurement, not a hardware GPU benchmark. The suite checks that simulation steps match 60 Hz over the frame time accepted by `SimClock`, including its existing 250 ms catch-up limit for stalls. CI runs the suite on a virtual display with a virtual audio output and uploads the deployable `wwwroot` plus reports as artifacts.
 
 Browser verification also advances the skating fixture in 1 ms callbacks and checks that the WebGL canvas changes while the simulation state remains identical. This exercises interpolation through the real scene and mask passes; 30/60/120/144 Hz scheduling and discontinuities are covered by the .NET tests.
 

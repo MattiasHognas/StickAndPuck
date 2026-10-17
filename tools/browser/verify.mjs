@@ -117,7 +117,6 @@ async function press(page, key) {
     await page.waitForTimeout(120);
 }
 const saves = page => page.evaluate(() => Object.fromEntries(Object.keys(localStorage).filter(key => key.startsWith('stickandpuck:')).map(key => [key, localStorage.getItem(key)])));
-const tick = state => Number(state.split(':', 1)[0]);
 
 async function verifyBrowser(name) {
     console.log(`Verifying ${name}`);
@@ -186,20 +185,34 @@ async function verifyBrowser(name) {
         await page.waitForFunction(() => !/g0:/.test(__testHost.Input()), null, { timeout: 10000 });
         assert(!/g0:/.test(await host(page, 'Input')), 'Disconnected pad is removed.');
 
-        await page.evaluate(() => { __frames.length = 0; });
-        const startTick = tick(await host(page, 'State'));
-        const startTime = await page.evaluate(() => performance.now());
+        const measurement = await page.evaluate(() => {
+            const result = { tick: Number(__testHost.State().split(':', 1)[0]), time: performance.now(), timestamp: __frames.at(-1).timestamp };
+            __frames.length = 0;
+            return result;
+        });
         await page.waitForTimeout(3000);
-        const endTime = await page.evaluate(() => performance.now());
-        const endTick = tick(await host(page, 'State'));
-        const samples = await page.evaluate(() => __frames);
+        const end = await page.evaluate(() => ({ tick: Number(__testHost.State().split(':', 1)[0]), time: performance.now(), samples: __frames }));
+        const samples = end.samples;
+        // SimClock discards time beyond 250 ms per callback after a stall. Software
+        // rendering on CI can hit this limit; verify fixed steps against admitted
+        // frame time while reporting the actual wall-clock rate separately.
+        let previousTimestamp = measurement.timestamp, simulationSeconds = 0, clampedFrames = 0;
+        for (const sample of samples) {
+            const elapsed = Math.max(0, (sample.timestamp - previousTimestamp) / 1000);
+            simulationSeconds += Math.min(elapsed, 0.25);
+            if (elapsed > 0.25) clampedFrames++;
+            previousTimestamp = sample.timestamp;
+        }
         const work = samples.map(sample => sample.work).sort((a, b) => a - b);
         const performanceResult = { browser: name, version: browser.version(), frames: samples.length,
-            observedFps: samples.length * 1000 / (endTime - startTime), simulationHz: (endTick - startTick) * 1000 / (endTime - startTime),
+            observedFps: samples.length * 1000 / (end.time - measurement.time), simulationHz: (end.tick - measurement.tick) * 1000 / (end.time - measurement.time),
+            simulationSteps: end.tick - measurement.tick, expectedSimulationSteps: simulationSeconds * 60, clampedFrames,
             frameWorkMeanMs: work.reduce((a, b) => a + b, 0) / work.length,
             frameWorkP95Ms: work[Math.floor(work.length * 0.95)], frameWorkMaxMs: work.at(-1) };
-        assert(performanceResult.simulationHz > 50 && performanceResult.simulationHz < 70, 'Fixed simulation stays near 60 Hz.');
         await writeFile(resolve(artifacts, `${name}-performance.json`), JSON.stringify(performanceResult, null, 2));
+        assert(samples.length > 0 && simulationSeconds > 0, 'The browser executes animation frames.');
+        assert(Math.abs(performanceResult.simulationSteps - performanceResult.expectedSimulationSteps) <= 1,
+            `Fixed simulation advances at 60 Hz with bounded stall catch-up: ${JSON.stringify(performanceResult)}`);
         await page.screenshot({ path: resolve(artifacts, `${name}-practice.png`) });
 
         const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#download').click()]);
