@@ -157,6 +157,8 @@ npm ci --prefix tools/browser
 
 Run `tools/verify-browser.sh` with a working desktop display, or `xvfb-run -a tools/verify-browser.sh` on a headless Linux machine. The script builds desktop Release, publishes a fresh trimmed browser site, checks storage failure behavior, and tests Chromium and Firefox. `BROWSERS=chromium` selects one installed engine; `SITE_ROOT` can point to another published `wwwroot`.
 
+Web Audio verification also needs a working audio output. On a headless Ubuntu runner, install `pulseaudio`, start it with `pulseaudio --start --exit-idle-time=-1`, then run `pactl load-module module-null-sink sink_name=browser_test` and `pactl set-default-sink browser_test`. This provides an audio device while retaining the check that the game produces nonzero PCM samples.
+
 The browser suite checks actual menu navigation and saved settings, season and arcade reloads, native asset/animation/font/music loading, nonzero Web Audio PCM after Start, keyboard movement, mouse input, and simulated standard gamepad connect/buttons/axes/disconnect. Physical controller/driver behavior still needs hardware testing. It exercises replay downloads during a running recording, uploads, invalid-file rejection and verification without changing saves.
 
 Two desktop fixtures (1,800 AI-match steps and 6,000 match-demo steps, with separate seeds) are recorded through the real game loop. Each browser must match all 7,800 per-step checksums, events and final results. A browser input recording must also verify on desktop. The suite writes screenshots, console logs, replay fixtures, checksum logs and `results.json` under `TestResults/browser/`.

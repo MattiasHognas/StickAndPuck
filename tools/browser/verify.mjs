@@ -92,6 +92,16 @@ async function host(page, method, ...args) {
         return api[method](...args);
     }, { method, args });
 }
+async function waitForInput(page, pattern) {
+    await page.evaluate(async () => {
+        window.__testHost = (await getDotnetRuntime(0).getAssemblyExports('StickAndPuck.dll')).StickAndPuck.App.Core.BrowserHost;
+    });
+    const observed = await page.waitForFunction(source => {
+        const input = __testHost.Input();
+        return new RegExp(source).test(input) ? input : false;
+    }, pattern.source, { timeout: 10000, polling: 50 });
+    return observed.jsonValue();
+}
 async function open(page, scene = 'start') {
     await page.goto(`${origin}/?scene=${scene}`);
     await page.waitForFunction(() => !document.querySelector('#start').disabled || document.querySelector('#status').textContent.includes('failed'), { timeout: 60000 });
@@ -127,9 +137,7 @@ async function verifyBrowser(name) {
         await open(page);
         assert.equal(await page.evaluate(() => __audio.length), 0, 'Audio starts only after Start.');
         await start(page);
-        await page.waitForTimeout(1200);
-        assert(await page.evaluate(() => __audio.some(audio => audio.state === 'running')), 'Web Audio is running after Start.');
-        assert(await page.evaluate(() => __audioEnergy > 0), 'Menu music produces nonzero PCM samples.');
+        await page.waitForFunction(() => __audio.some(audio => audio.state === 'running') && __audioEnergy > 0, null, { timeout: 10000 });
         assert(logs.some(line => line.includes('3 music tracks loaded')), 'All music loads from shared virtual files.');
         assert(logs.some(line => line.includes('font.fnt] Font loaded successfully')), 'BMFont resolves its adjacent PNG.');
         assert(logs.some(line => line.includes('Loaded animation: skater_')), 'Skater animation clips load.');
@@ -167,15 +175,15 @@ async function verifyBrowser(name) {
             Object.defineProperty(connected, 'gamepad', { value: __pad }); dispatchEvent(connected);
             __pad.axes[0] = 0.75; __pad.buttons[0] = { pressed: true, touched: true, value: 1 }; __pad.timestamp++;
         });
-        await page.waitForTimeout(200);
-        assert.match(await host(page, 'Input'), /g0:80\/\d*\/3072,/, 'Browser gamepad button and axis reach the simulation.');
+        const gamepadInput = await waitForInput(page, /g0:80\/[\da-f]+\/3072,/);
+        assert.match(gamepadInput, /g0:80\/[\da-f]+\/3072,/, 'Browser gamepad button and axis reach the simulation.');
         await page.evaluate(() => {
             __pad.connected = false;
             const disconnected = new Event('gamepaddisconnected');
             Object.defineProperty(disconnected, 'gamepad', { value: __pad }); dispatchEvent(disconnected);
             navigator.getGamepads = () => [null, null, null, null];
         });
-        await page.waitForTimeout(100);
+        await page.waitForFunction(() => !/g0:/.test(__testHost.Input()), null, { timeout: 10000 });
         assert(!/g0:/.test(await host(page, 'Input')), 'Disconnected pad is removed.');
 
         await page.evaluate(() => { __frames.length = 0; });
@@ -251,6 +259,12 @@ async function verifyBrowser(name) {
         console.log(`PASS ${name}: storage, inputs, audio, replay transfer and ${results.at(-1).checksumsCompared} desktop checksums`);
         console.log(JSON.stringify(performanceResult));
     } catch (error) {
+        const diagnostics = await page.evaluate(async () => {
+            const api = (await getDotnetRuntime(0).getAssemblyExports('StickAndPuck.dll')).StickAndPuck.App.Core.BrowserHost;
+            return { input: api.Input(), audio: __audio.map(audio => audio.state), audioEnergy: __audioEnergy,
+                frames: __frames.length, pad: __pad };
+        }).catch(error => ({ error: String(error) }));
+        await writeFile(resolve(artifacts, `${name}-failure.json`), JSON.stringify(diagnostics, null, 2));
         failures.push({ browser: name, error: error.stack });
         console.error(`FAIL ${name}: ${error.stack}`);
         await page.screenshot({ path: resolve(artifacts, `${name}-failure.png`) }).catch(() => {});

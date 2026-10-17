@@ -94,6 +94,13 @@ jobs:
           npm ci --prefix tools/browser
           cd tools/browser
           npx playwright install --with-deps chromium firefox
+      - name: Start virtual audio output
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=browser_test
+          pactl set-default-sink browser_test
       - name: Verify browser publish and desktop replay parity
         run: xvfb-run -a tools/verify-browser.sh
       - name: Upload browser site
