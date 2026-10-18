@@ -85,6 +85,7 @@ namespace StickAndPuck.App.Core
                 new SkaterRenderer(), // skater models and clips
                 new Benches.BenchRenderer(), // both benches' players behind the far boards
                 new HudSystem(), // scorebug, clock, messages
+                new Network.NetworkSystem(), // network match overlay: waiting, leaving
             ];
         }
     }

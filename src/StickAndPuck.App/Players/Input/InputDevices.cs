@@ -7,7 +7,8 @@ namespace StickAndPuck.App.Players.Input
     /// <summary>Reads keyboard, mouse and gamepads into <see cref="DeviceState"/>.</summary>
     internal static class InputDevices
     {
-        private const float StickDeadZone = 0.2f;
+        /// <summary>The round dead zone of a stick, as a fraction of its reach.</summary>
+        internal const float StickDeadZone = 0.2f;
 
         /// <summary>The keyboard and mouse through the key bindings; by default arrows or WASD skate, shift sprints, space or left click shoots, E or right click passes, Q checks, C switches, L changes line, ctrl blocks, F accepts a fight, P pauses. The mouse buttons stay on shoot and pass.</summary>
         public static DeviceState KeyboardMouse(Settings settings)

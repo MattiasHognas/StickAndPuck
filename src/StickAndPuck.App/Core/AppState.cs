@@ -31,6 +31,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets the SAP_SCREEN_KEYS presses that drive the menus, when set.</summary>
         internal Screens.MenuScript MenuScript { get; } = new();
 
+        /// <summary>Gets the network match, when one is being set up or played.</summary>
+        internal Network.NetPlay Network { get; } = new();
+
         /// <summary>Gets the connected gamepads.</summary>
         public Players.Input.Gamepads Pads { get; } = new();
 

@@ -104,7 +104,7 @@ namespace StickAndPuck.App.Screens
                 return;
             }
 
-            if (press.Contains(MenuButton.Pause))
+            if (press.Contains(MenuButton.Pause) && !world.App.Network.Owns(world)) // a network match never pauses: one side's menu would split the two
             {
                 Console.WriteLine("SAP: screens: paused");
                 world.App.Screens.Push(new PauseScreen(world.App));

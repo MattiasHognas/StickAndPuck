@@ -6,7 +6,16 @@
 
 Download the Linux or Windows executable from [Releases](https://github.com/MattiasHognas/StickAndPuck/releases/latest). The game bundles .NET, raylib and its assets; you do not need the SDK to play. On Linux, make the downloaded file executable with `chmod +x StickAndPuck-vX.Y.Z-linux-x64`, then run it. On Windows, run `StickAndPuck-vX.Y.Z-win-x64.exe`. Replace `vX.Y.Z` with the downloaded version.
 
-Choose a new season, an exhibition, an arcade run or local versus from the start screen. Seasons autosave after matches; Continue resumes your run. Each club has a team morale (0–100, MOR on the standings) that rises with wins and streaks and falls with losses; a club in good spirits starts its games with some momentum and does better in simulated games. The rules page turns it off or makes it milder or stronger. English and Swedish are available in settings.
+Choose a new season, an exhibition, an arcade run, local versus or online versus from the start screen. Seasons autosave after matches; Continue resumes your run. Each club has a team morale (0–100, MOR on the standings) that rises with wins and streaks and falls with losses; a club in good spirits starts its games with some momentum and does better in simulated games. The rules page turns it off or makes it milder or stronger. English and Swedish are available in settings.
+
+## Online versus
+
+Online versus plays one person on each of two computers (desktop only; the browser build has no network play). Both need the same game version and club files. In NEW GAME, pick ONLINE VERSUS:
+
+- The host picks HOST A MATCH, then their club (they play home) and the opponent's club, and waits. The waiting screen shows the port and this computer's address. The host's rules, period length and gameplay settings are used for the match.
+- The other player types the host's address and port on the lobby's ADDRESS and PORT rows (digits and dots; backspace erases), then picks JOIN A MATCH.
+
+The default port is 7777 (TCP); the host must accept connections on it. INPUT DELAY (default 4 steps, 67 ms) sets how far ahead each press is sent; raise it on a slow connection if the "waiting for the opponent" banner shows often. Each player uses their own controls and key bindings. A network match cannot be paused: press Esc, P or Start twice to leave it. If the two computers ever disagree about the match, it ends with an "out of sync" message; it also ends when the opponent leaves or the connection is lost.
 
 ## Controls
 

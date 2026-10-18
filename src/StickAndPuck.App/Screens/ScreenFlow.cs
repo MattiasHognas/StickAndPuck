@@ -14,6 +14,7 @@ namespace StickAndPuck.App.Screens
     {
         private readonly List<Screen> stack = [];
         private Maybe<World> next;
+        private Maybe<ScreenPrefs> matchPrefs;
 
         /// <summary>Gets a value indicating whether the screens run (the start scene was picked).</summary>
         public bool Active { get; private set; }
@@ -301,12 +302,51 @@ namespace StickAndPuck.App.Screens
             return world;
         }
 
-        private void Start(MatchSetup setup, MatchPlan plan)
+        /// <summary>Gives a mode's setup the period length from the settings and the rules the plan plays, as every match the screens start gets them.</summary>
+        public MatchSetup Prepare(MatchSetup setup, MatchPlan plan)
         {
-            setup = (setup with { PeriodSeconds = PeriodSeconds() }).WithRules(
+            return (setup with { PeriodSeconds = PeriodSeconds() }).WithRules(
                 RulePicks.For(app, plan)
             );
+        }
+
+        /// <summary>Starts a match whose setup, seed and settings came from elsewhere (the host of a network
+        /// match): built as <see cref="Start"/> builds one, but with <paramref name="settings"/> in place of this
+        /// machine's, and <paramref name="recorded"/> written to its replay so the replay plays it the same.
+        /// This machine's own settings stay as saved.</summary>
+        public World StartShared(
+            MatchSetup setup,
+            MatchPlan plan,
+            int seed,
+            Settings settings,
+            ScreenPrefs recorded
+        )
+        {
+            EndSessions();
+            World world = Build(setup, seed, settings);
+            Playing = plan;
+            Backdrop = setup;
+            Started = setup;
+            matchPrefs = recorded;
+            stack.Clear();
+            next = world;
+            Console.WriteLine(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"SAP: screens: shared match {setup.Home.Id} vs {setup.Away.Id}, {setup.PeriodSeconds:0} s periods, seed {seed}, {world.Settings}, {setup.Rules}"
+                )
+            );
+            return world;
+        }
+
+        /// <summary>Gets the settings the match being played records in its replay: the shared ones of a network match, else the saved ones.</summary>
+        public ScreenPrefs RecordedPrefs => matchPrefs.Or(Prefs);
+
+        private void Start(MatchSetup setup, MatchPlan plan)
+        {
+            setup = Prepare(setup, plan);
             World world = Build(setup, Seeds.NewMatch()); // every match has a seed, written to its replay
+            matchPrefs = Maybe.None<ScreenPrefs>();
             Playing = plan;
             Backdrop = setup;
             Started = setup;
@@ -338,6 +378,7 @@ namespace StickAndPuck.App.Screens
             Prefs = prefs;
             stack.Clear();
             World world = Build(setup, seed);
+            matchPrefs = Maybe.None<ScreenPrefs>();
             Playing = new MatchPlan(GameModes.Named(mode), [setup.Home, setup.Away]); // the results screen offers what it offered in the match
             Backdrop = setup;
             Started = setup;
@@ -346,7 +387,12 @@ namespace StickAndPuck.App.Screens
 
         private World Build(MatchSetup setup, int seed)
         {
-            World world = new(setup, Settings) { Seed = seed, App = app };
+            return Build(setup, seed, Settings);
+        }
+
+        private World Build(MatchSetup setup, int seed, Settings settings)
+        {
+            World world = new(setup, settings) { Seed = seed, App = app };
             Apply(world, world.Settings);
             Scenes.AddStarters(world);
             for (int slot = 0; slot < setup.Inputs.Count; slot++)
