@@ -1,6 +1,6 @@
 # TODO
 
-Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setting with SHL, Arcade and NHL defaults.
+Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setting with SHL, Arcade and NHL defaults. Each Milestone 10 task is a setting (on/off and strength) with league presets, and adds its English and Swedish strings.
 
 | ID | Task | Wave | Milestone | Context |
 | --- | --- | --- | --- | --- |
@@ -37,3 +37,19 @@ Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setti
 | W121 | Home and away chants | 2 | M9 crowd and atmosphere | Chants for the home club, with a smaller away section that cheers the visitors, so playing away the crowd is against you; new chant sounds in Audio/SfxTable.cs and Audio/SoundCues.cs, mixed with the Momentum crowd voices (needs W119 for the away section) |
 | A19 | Banners and tifo art | 2 | M9 crowd and atmosphere | Banners, scarves and a tifo per club, made from the crests and club colours (after A18, art runs one at a time) |
 | W120 | Home banners and tifo | 3 | M9 crowd and atmosphere | Home sections wave the home club's banners and scarves, and a tifo goes up at the start of the match and after home goals; builds on the Arena stands and the club colours and crests in the data (needs W119, A19) |
+| W122 | Dressing room screen | 1 | M10 season story | A screen after each season result and before the next game, with the coach's talk, news, injuries and a play button, replacing the jump to the standings |
+| W123 | Carry-over form | 1 | M10 season story | A hidden -5 to +5 trait nudge per player from recent games (points, plus/minus, saves, ice time), shown as an arrow next to the name |
+| W124 | Team morale | 1 | M10 season story | One 0-100 number per club that moves with results, streaks and events; it sets the momentum meter's start value and shifts QuickSim odds |
+| A20 | Dressing room and coach art | 1 | M10 season story | The dressing room backdrop and coach portrait for W122 |
+| W125 | Pre-game coach talk | 2 | M10 season story | A short coach talk, then you pick a tone (calm, fire them up, demand discipline), each with an effect on that match |
+| W126 | Intermission talk when trailing | 2 | M10 season story | When behind after period 1 or 2, a one-choice talk (push, stay patient) during the Zamboni break that changes shifts and aggression |
+| W127 | Coach post-game reaction | 2 | M10 season story | A post-game coach line picked from what happened (hat trick, blown lead, shutout, a lost fight) with the player's name filled in |
+| W128 | Injuries | 2 | M10 season story | Hard checks, blocked slap shots and fights can injure a player for 1 to 6 games, so lines change and depth players matter |
+| W129 | Suspensions | 2 | M10 season story | A second fight in a game or a match penalty sits the player out the next 1 to 3 games |
+| W130 | News events | 2 | M10 season story | A random event every few games from a weighted deck in a data file (flu, rookie call-up, contract dispute, travel delay, fan night) |
+| W131 | Rivalries | 2 | M10 season story | Rival pairs marked in data get a pre-game banner, more checking and fights, and a bigger morale swing |
+| W132 | Young player development | 2 | M10 season story | Young players gain a few trait points over the season from ice time and form, old ones may lose some; adds an age field to the club files |
+| W133 | Board expectation and hot seat | 3 | M10 season story | The board sets a season goal from the club's strength, the dressing room tracks it, and an optional hot seat fires you if you miss badly |
+| W134 | Mid-season milestones | 3 | M10 season story | Short three-game challenges from the coach ("win two of three") with a morale reward |
+| W135 | Trade deadline | 3 | M10 season story | Around game 35, one or two player-for-player trade offers from AI clubs to accept or decline |
+| W136 | Season recap | 3 | M10 season story | An end-of-season screen with the record by month, best game, top scorer, injuries, the board's verdict and generated headlines |
