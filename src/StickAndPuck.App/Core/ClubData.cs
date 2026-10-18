@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using StickAndPuck.App.AI.Tactics;
 
 namespace StickAndPuck.App.Core
@@ -13,6 +14,21 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets the three-letter name for the scorebug.</summary>
         public string ShortName { get; init; } = "";
+
+        /// <summary>Gets the league the club plays in. SHL (the default) is left out of the written JSON so
+        /// SHL club output, and the replay club fingerprint, stays unchanged.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public League League { get; init; } = League.Shl;
+
+        /// <summary>Gets the conference (for example "Western" in the NHL); none when the league has none, and
+        /// then left out of the written JSON.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Maybe<string> Conference { get; init; }
+
+        /// <summary>Gets the division (for example "Central" in the NHL); none when the league has none, and
+        /// then left out of the written JSON.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Maybe<string> Division { get; init; }
 
         /// <summary>Gets the home kit colours.</summary>
         public KitColours Home { get; init; } = new();
