@@ -47,6 +47,8 @@ namespace StickAndPuck.App.Core
                 "MinorsOnly" => Text.Get(K.RuleValueMinorsOnly),
                 "Substitute" => Text.Get(K.RuleValueSubstitute),
                 "FourOnFour" => Text.Get(K.RuleValueFourOnFour),
+                "Standard" => Text.Get(K.RuleValueStandard),
+                "Quick" => Text.Get(K.RuleValueQuick),
                 _ => value.ToUpperInvariant(),
             };
         }

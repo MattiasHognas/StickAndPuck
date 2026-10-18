@@ -579,10 +579,11 @@ namespace StickAndPuck.Tests.Rules.Overtime
                             and not MatchPhase.Goal
             );
             Check(
-                w.Match.Phase == MatchPhase.Overtime && w.Match.Period == 4,
-                "a scoreless overtime goes to another overtime, not a shootout"
+                (w.Match.Phase is MatchPhase.Overtime or MatchPhase.Intermission)
+                    && w.Match.Period == 4,
+                "a scoreless overtime goes to another overtime (after its break), not a shootout"
             );
-            _ = Run(w, x => x.Match.Phase == MatchPhase.Play, limit: 10);
+            _ = Run(w, x => x.Match.Phase == MatchPhase.Play, limit: 15);
             Check(
                 w.Match.Period == 5 && Skaters(Side.Home) == 5 && Skaters(Side.Away) == 5,
                 "period 5 drops 5 on 5 as well"

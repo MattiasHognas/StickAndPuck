@@ -15,7 +15,10 @@ namespace StickAndPuck.App.Intermission
     /// While it drives, the AI skaters wait at their bench doors, the camera pans after the machine and
     /// enter, space or the A button skips it. The match's intermission pause is held open until the Zamboni is
     /// gone, the same way the goal replay holds the restart. Runs after the camera system, so its
-    /// camera wins while the Zamboni is out and hands back smoothly before the faceoff.</summary>
+    /// camera wins while the Zamboni is out and hands back smoothly before the faceoff. The rules'
+    /// <see cref="RuleSet.Intermission"/> sets the length: Standard drives the whole route, Quick at double pace,
+    /// Off sends no Zamboni. The same break runs before a playoff overtime. While it drives, a tag in the
+    /// corner shows what follows, the time left and the skip button.</summary>
     /// <remarks>Initializes a new instance of the <see cref="IntermissionSystem"/> class with its own skip button, for the self test.</remarks>
     internal sealed class IntermissionSystem(Func<bool> skipPressed) : ISystem, IDisposable
     {
@@ -70,7 +73,10 @@ namespace StickAndPuck.App.Intermission
                 return;
             }
 
-            if (world.Match.Phase != MatchPhase.Intermission)
+            if (
+                world.Match.Phase != MatchPhase.Intermission
+                || world.Setup.Rules.Intermission == IntermissionLength.Off
+            )
             {
                 Current = Maybe.None<Drive>();
                 blend = 0;
@@ -89,6 +95,8 @@ namespace StickAndPuck.App.Intermission
                 {
                     Seconds = world.Switches.ZamboniStartAt,
                     Period = world.Match.Period,
+                    Rate = Pace(world.Setup.Rules.Intermission),
+                    IntoOvertime = flow.IntoOvertime,
                 };
                 Current = drive;
                 world.Switches.ZamboniStartAt = 0;
@@ -98,7 +106,7 @@ namespace StickAndPuck.App.Intermission
 
             if (!drive.Finished)
             {
-                drive.Seconds += dt;
+                drive.Seconds += dt * drive.Rate;
                 drive.Shown += dt;
                 if (drive.Shown >= SkipAfterSeconds && skipPressed())
                 {
@@ -119,6 +127,43 @@ namespace StickAndPuck.App.Intermission
             }
 
             Follow(world, drive, dt);
+        }
+
+        /// <summary>Gets how fast the Zamboni drives for an intermission length: Standard at its own speed, Quick at double.</summary>
+        internal static float Pace(IntermissionLength length)
+        {
+            return length switch
+            {
+                IntermissionLength.Standard => 1f,
+                IntermissionLength.Quick => 2f,
+                IntermissionLength.Off => 1f,
+                _ => throw new NotSupportedException("no Zamboni pace for " + length),
+            };
+        }
+
+        /// <summary>Gets the real seconds an intermission of this length holds the next period back, skip aside:
+        /// the whole drive at its pace and the pause after it, or the match flow's own short pause when Off.</summary>
+        internal static float BreakSeconds(IntermissionLength length)
+        {
+            return length == IntermissionLength.Off
+                ? MatchTuning.IntermissionSeconds
+                : (Route.Duration / Pace(length)) + AfterSeconds;
+        }
+
+        /// <summary>Gets the real seconds left before the next faceoff set-up, while the drive is under way.</summary>
+        internal static float Left(Drive drive)
+        {
+            return (Math.Max(0, Route.Duration - drive.Seconds) / drive.Rate) + AfterSeconds;
+        }
+
+        /// <summary>Gets the corner tag: what follows the break, the time left and the skip button.</summary>
+        internal static string Prompt(Drive drive)
+        {
+            string left = MatchFlow.ClockText(Left(drive));
+            string next = drive.IntoOvertime
+                ? Text.Format(K.IntermissionOvertime, left)
+                : Text.Format(K.IntermissionNext, drive.Period + 1, left);
+            return next + "   " + Text.Get(K.Skip);
         }
 
         /// <summary>Keeps the AI skaters lined up along the boards at their bench doors, out of the Zamboni's way.</summary>
@@ -221,7 +266,7 @@ namespace StickAndPuck.App.Intermission
                 return;
             }
 
-            string text = Text.Get(K.Skip);
+            string text = Prompt(drive);
             int w = MeasureText(text, 10) + 10;
             const int h = 13,
                 y = Game.Height - h - 6;
@@ -329,6 +374,12 @@ namespace StickAndPuck.App.Intermission
 
             /// <summary>Gets the period that just ended.</summary>
             public int Period { get; init; }
+
+            /// <summary>Gets how fast it drives, from the rules' intermission length: 1 for Standard, 2 for Quick.</summary>
+            public float Rate { get; init; } = 1f;
+
+            /// <summary>Gets a value indicating whether this is the break before a playoff overtime.</summary>
+            public bool IntoOvertime { get; init; }
 
             /// <summary>Gets or sets a value indicating whether it is done, driven out or skipped.</summary>
             public bool Finished { get; set; }

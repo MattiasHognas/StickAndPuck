@@ -203,6 +203,15 @@ namespace StickAndPuck.App.Core
                 r => r.IcingNoChange,
                 (r, v) => r with { IcingNoChange = v }
             ),
+            Choice(
+                nameof(RuleSet.Intermission),
+                K.RuleIntermission,
+                K.RuleGroupGame,
+                plays: true,
+                Enum.GetValues<IntermissionLength>(),
+                r => r.Intermission,
+                (r, v) => r with { Intermission = v }
+            ),
             Flag(
                 nameof(RuleSet.Fights),
                 K.RuleFights,

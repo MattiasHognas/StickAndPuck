@@ -74,7 +74,18 @@ namespace StickAndPuck.App.Rules.Match
 
                     break;
                 case MatchPhase.Intermission:
-                    if (Wait(s, dt))
+                    if (!Wait(s, dt))
+                    {
+                        break;
+                    }
+
+                    if (s.IntoOvertime)
+                    {
+                        // the break before a playoff overtime: the overtime rules set up and start it now
+                        s.IntoOvertime = false;
+                        m.Phase = MatchPhase.Overtime;
+                    }
+                    else
                     {
                         MatchFlow.StartPeriod(world, m.Period + 1, world.Setup.PeriodSeconds);
                     }
@@ -207,11 +218,27 @@ namespace StickAndPuck.App.Rules.Match
             {
                 // a tie: the overtime rules set up the overtime skaters and calls StartPeriod, or runs the shootout, as the mode's format says
                 m.Phase = next;
+                if (BreaksBeforeOvertime(world, next))
+                {
+                    // a playoff overtime waits for a Zamboni break first, like the intermissions
+                    m.Phase = MatchPhase.Intermission;
+                    s.Timer = MatchTuning.IntermissionSeconds;
+                    s.IntoOvertime = true;
+                }
             }
             else
             {
                 EndMatch(world, s);
             }
+        }
+
+        /// <summary>Gets a value indicating whether a tie going to <paramref name="next"/> gets an intermission first:
+        /// a playoff overtime (full periods until a goal) while the rules' intermission is not Off.</summary>
+        internal static bool BreaksBeforeOvertime(World world, MatchPhase next)
+        {
+            return next == MatchPhase.Overtime
+                && OvertimeFormat.Of(world.Setup).UntilGoal
+                && world.Setup.Rules.Intermission != IntermissionLength.Off;
         }
 
         /// <summary>The horn: MatchWon or MatchTied, then the celebration holds the final for a while, or the final at once after a tie.</summary>

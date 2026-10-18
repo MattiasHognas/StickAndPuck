@@ -157,6 +157,12 @@ namespace StickAndPuck.App.Core
             /// <summary>ENTER  SKIP</summary>
             public const string Skip = nameof(Skip);
 
+            /// <summary>PERIOD {0} IN {1}</summary>
+            public const string IntermissionNext = nameof(IntermissionNext);
+
+            /// <summary>OVERTIME IN {0}</summary>
+            public const string IntermissionOvertime = nameof(IntermissionOvertime);
+
             /// <summary>MOMENTUM</summary>
             public const string Momentum = nameof(Momentum);
 

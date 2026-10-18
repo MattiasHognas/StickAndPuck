@@ -59,7 +59,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `warmup`: full exhibition opened with the pre-game warm-up: the arena flyover (a high sweep, a close-up on the home squad, then the broadcast view; the first start press skips it) while both squads skate round their own ends until space, enter or a pad's A or start is pressed, then the opening faceoff.
 - `lineup`: both clubs' starters at the opening faceoff, you on the home centre.
 - `practice`: one home skater with the puck on an empty rink.
-- `overtime`: a match that ends 0-0, then 3 on 3 overtime and a shootout; `SAP_PLAYOFF=1` plays the SHL playoff format instead (5 on 5 periods until a goal, no shootout).
+- `overtime`: a match that ends 0-0, then 3 on 3 overtime and a shootout; `SAP_PLAYOFF=1` plays the SHL playoff format instead (5 on 5 periods until a goal, no shootout), each overtime after a Zamboni break; with `SAP_START=overtime` it opens in the break before the first, and `SAP_ZAMBONI_AT` starts that drive that many seconds in.
 - `penalty`: an AI exhibition where a home skater trips someone two seconds in: arm up, box, power play.
 - `fight`: an AI exhibition where the two centres drop the gloves shortly after the opening drop.
 - `offsidedemo`: scripted plays after each faceoff: an offside pass, a clean carry-in and an icing.
@@ -92,7 +92,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `camera-depth`: puck movement between the far and near boards; `SAP_PUCK_Z` fixes its starting depth in metres and `SAP_PUCK_VZ` sets its depth velocity in m/s.
 - `benches`: cycles through bench reactions to goals, penalties, fights, hits, stoppages and a tired line, with a close camera and draw-time logging.
 - `penaltybox`: box entry, sitting and release; `SAP_BOX=in` (default), `two` or `out` chooses the script.
-- `zamboni`: opens in the first intermission; `SAP_ZAMBONI_AT` starts the drive that many seconds in.
+- `zamboni`: opens in the first intermission; `SAP_ZAMBONI_AT` starts the drive that many seconds in. The corner tag shows the next period, the time left and the skip button; the rules' intermission length (Standard, Quick in Arcade, or Off) sets how long it lasts.
 
 `lineup` is a static starter layout rather than the timed faceoff flow; use `referee` or `faceoff` to inspect the crouch and drop. Scene implementations are discovered automatically through `IScene`; most live in their system's `Dev/` folder. General match and rendering overrides, including `SAP_TACTICS_LINE` and `SAP_ST_SPOTS`, are in [Development](DEVELOPMENT.md#visuals-sound-and-input).
 

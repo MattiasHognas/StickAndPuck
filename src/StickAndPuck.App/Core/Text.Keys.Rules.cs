@@ -147,6 +147,15 @@ namespace StickAndPuck.App.Core
             /// <summary>SPECIAL TEAMS</summary>
             public const string RuleSpecialTeams = nameof(RuleSpecialTeams);
 
+            /// <summary>INTERMISSION</summary>
+            public const string RuleIntermission = nameof(RuleIntermission);
+
+            /// <summary>STANDARD</summary>
+            public const string RuleValueStandard = nameof(RuleValueStandard);
+
+            /// <summary>QUICK</summary>
+            public const string RuleValueQuick = nameof(RuleValueQuick);
+
             /// <summary>FIGHTS</summary>
             public const string RuleFights = nameof(RuleFights);
 
