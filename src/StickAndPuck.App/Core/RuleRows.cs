@@ -81,6 +81,14 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { ShootoutFirst = v }
             ),
             Flag(
+                nameof(RuleSet.ShootoutRepeat),
+                K.RuleShootoutRepeat,
+                K.RuleGroupOvertime,
+                plays: true,
+                r => r.ShootoutRepeat,
+                (r, v) => r with { ShootoutRepeat = v }
+            ),
+            Flag(
                 nameof(RuleSet.Penalties),
                 K.RulePenalties,
                 K.RuleGroupPenalties,

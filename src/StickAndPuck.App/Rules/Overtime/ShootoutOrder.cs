@@ -6,7 +6,8 @@ namespace StickAndPuck.App.Rules.Overtime
     /// <summary>How many shooters each club sends and who shoots first, from the match's rules
     /// (<see cref="RuleSet.ShootoutShooters"/>, <see cref="RuleSet.ShootoutFirst"/>). SHL: three each,
     /// away first, and away also starts every sudden death round. NHL: three each, the home club chooses;
-    /// an AI home club shoots first, a human one picks with shoot (first) or pass (second).</summary>
+    /// an AI home club shoots first, a human one picks with shoot (first) or pass (second). In sudden death
+    /// the SHL sends its opening shooters again; the NHL lets nobody shoot twice until every skater has.</summary>
     public static class ShootoutOrder
     {
         /// <summary>A human home club that has not picked by then shoots first.</summary>
@@ -30,6 +31,18 @@ namespace StickAndPuck.App.Rules.Overtime
                 ShootoutFirst.Away => SideOrNone.Away,
                 _ => SideOrNone.Away,
             };
+        }
+
+        /// <summary>Gets the place in a club's shooting order of its next shooter, after <paramref name="taken"/>
+        /// shots from a club of <paramref name="skaters"/> skaters. With <see cref="RuleSet.ShootoutRepeat"/> (SHL,
+        /// Arcade) sudden death goes back to the opening shooters; without it (NHL) the order runs through
+        /// every skater before anybody shoots twice.</summary>
+        public static int Place(RuleSet rules, int taken, int skaters)
+        {
+            int pool = rules.ShootoutRepeat
+                ? Math.Min(skaters, Math.Max(1, rules.ShootoutShooters))
+                : skaters;
+            return pool <= 0 ? 0 : taken % pool;
         }
 
         /// <summary>Gets the club to shoot next: the first club whenever both have taken as many, so it also opens every sudden death round.</summary>

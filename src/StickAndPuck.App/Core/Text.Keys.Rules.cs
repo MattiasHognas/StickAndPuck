@@ -94,6 +94,9 @@ namespace StickAndPuck.App.Core
             /// <summary>SHOOTS FIRST</summary>
             public const string RuleShootoutFirst = nameof(RuleShootoutFirst);
 
+            /// <summary>SHOOTERS REPEAT</summary>
+            public const string RuleShootoutRepeat = nameof(RuleShootoutRepeat);
+
             /// <summary>PENALTIES</summary>
             public const string RulePenalties = nameof(RulePenalties);
 
