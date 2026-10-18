@@ -1,5 +1,6 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Rules.Penalties;
 
 namespace StickAndPuck.App.Rules.Match
 {
@@ -8,7 +9,13 @@ namespace StickAndPuck.App.Rules.Match
     /// A human press before the drop is a false start and hands the draw to the other club. An AI centre presses
     /// after a delay set by its hockey IQ, with a little luck. If nobody presses in the window, puck control
     /// and hockey IQ decide it on a roll. Until the draw is won the puck lies dead on the dot and the
-    /// phase stays <see cref="MatchPhase.Faceoff"/>; then play starts and the puck slides back to the winner.</summary>
+    /// phase stays <see cref="MatchPhase.Faceoff"/>; then play starts and the puck slides back to the winner.
+    /// Under <see cref="RuleSet.FaceoffViolations"/> moving early (a human press, or an AI centre jumping
+    /// the drop now and then, more often with less hockey IQ) is a violation instead: the centre is waved out
+    /// and a winger takes the draw (<see cref="FaceoffFormation.Place(World, Vector3, IReadOnlyCollection{int})"/>).
+    /// A club's second violation in the same faceoff is a delay-of-game minor under
+    /// <see cref="RuleSet.FaceoffViolationMinor"/>, with the faceoff moved to its own end-zone dot,
+    /// and otherwise a false start.</summary>
     internal static class FaceoffDraw
     {
         /// <summary>Clears the draw for a new faceoff; a button already held as it begins is not a press.</summary>
@@ -18,6 +25,14 @@ namespace StickAndPuck.App.Rules.Match
             d.Dropped = false;
             d.Since = 0;
             d.FalseStart = SideOrNone.None;
+            d.Waited = 0;
+            d.Violations[0] = d.Violations[1] = 0;
+            d.Kicked.Clear();
+            foreach (Side side in new[] { Side.Home, Side.Away })
+            {
+                d.JumpAt[(int)side] = RollJump(world, s, side);
+            }
+
             for (int slot = 0; slot < d.Down.Length; slot++)
             {
                 d.Down[slot] = world.Controlled(slot).Is(p => Pressing(p.Command));
@@ -32,7 +47,12 @@ namespace StickAndPuck.App.Rules.Match
             DrawState d = s.Draw;
             if (!d.Dropped)
             {
-                if (!d.FalseStart.IsSet() && pressed.Count > 0)
+                d.Waited += dt;
+                if (world.Setup.Rules.FaceoffViolations)
+                {
+                    Violations(world, s, pressed);
+                }
+                else if (!d.FalseStart.IsSet() && pressed.Count > 0)
                 {
                     d.FalseStart = Pick(world, s, pressed).OrNone();
                 }
@@ -111,6 +131,110 @@ namespace StickAndPuck.App.Rules.Match
         {
             return Centre(world, s.Dot, Side.Home).Is(p => p.Slot >= 0)
                 || Centre(world, s.Dot, Side.Away).Is(p => p.Slot >= 0);
+        }
+
+        /// <summary>The clubs that moved early this step, a human press or an AI centre's jump, each committing a violation.</summary>
+        private static void Violations(World world, FlowState s, List<Side> pressed)
+        {
+            DrawState d = s.Draw;
+            foreach (Side side in new[] { Side.Home, Side.Away })
+            {
+                bool jumped =
+                    d.JumpAt[(int)side] <= d.Waited
+                    && Centre(world, s.Dot, side).Is(p => p.Slot < 0);
+                if (!pressed.Contains(side) && !jumped)
+                {
+                    continue;
+                }
+
+                if (Violation(world, s, side))
+                {
+                    return;
+                }
+            }
+        }
+
+        /// <summary>A club's centre moved early: waved out for a winger, or on the club's second violation a minor or a false start.
+        /// Returns true when the faceoff moved (the minor), so nothing more is read this step.</summary>
+        private static bool Violation(World world, FlowState s, Side side)
+        {
+            DrawState d = s.Draw;
+            d.JumpAt[(int)side] = float.PositiveInfinity;
+            if (d.FalseStart.IsSet() || !Centre(world, s.Dot, side).TryGet(out Player centre))
+            {
+                return false;
+            }
+
+            d.Violations[(int)side]++;
+            if (d.Violations[(int)side] < 2)
+            {
+                _ = d.Kicked.Add(centre.Id);
+                // the drop keeps its time; with a referee he gets set again first (RefereeSystem)
+                FaceoffFormation.Place(world, s.Dot, d.Kicked);
+                Player taker = Centre(world, s.Dot, side).Or(centre);
+                world.Events.Publish(
+                    new FaceoffViolated(world.Time, side, centre.Id, s.Dot, taker.Id)
+                );
+                Log(world, s, $"faceoff violation by {Tag(centre)}, {Tag(taker)} takes the draw");
+                // the new man at the dot may jump it too, on his own roll
+                d.JumpAt[(int)side] = RollJump(world, s, side) + d.Waited;
+                return false;
+            }
+
+            world.Events.Publish(new FaceoffViolated(world.Time, side, centre.Id, s.Dot, -1));
+            if (world.Setup.Rules.FaceoffViolationMinor && world.Settings.Penalties)
+            {
+                Log(world, s, $"second faceoff violation by {Tag(centre)}: delay of game");
+                PenaltyCalls.Give(world, centre.Id, Infraction.DelayOfGame, Severity.Minor);
+                MatchFlow.Stop(world, PenaltyCalls.FaceoffDot(world, side));
+                return true;
+            }
+
+            Log(
+                world,
+                s,
+                $"second faceoff violation by {Tag(centre)}: the draw goes to the other club"
+            );
+            d.FalseStart = side.OrNone();
+            return false;
+        }
+
+        private static string Tag(Player p)
+        {
+            return string.Create(
+                System.Globalization.CultureInfo.InvariantCulture,
+                $"#{p.Data.Number} {p.Data.LastName} ({p.Data.Position})"
+            );
+        }
+
+        private static void Log(World world, FlowState s, string what)
+        {
+            if (s.Log)
+            {
+                Console.WriteLine(
+                    string.Create(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        $"SAP: {what}, P{world.Match.Period} {MatchFlow.ClockText(world.Match.Clock)}"
+                    )
+                );
+            }
+        }
+
+        /// <summary>Rolls whether and when a club's AI centre moves before the drop in this faceoff: rarer with more hockey IQ.
+        /// Rolled for both clubs, AI or not, so the stream stays the same; only an AI centre acts on it.</summary>
+        private static float RollJump(World world, FlowState s, Side side)
+        {
+            if (!world.Setup.Rules.FaceoffViolations)
+            {
+                return float.PositiveInfinity;
+            }
+
+            float roll = s.ViolationDice.NextSingle(),
+                at = s.ViolationDice.NextSingle();
+            float iq = Centre(world, s.Dot, side).Select(p => p.Data.Traits.Iq).Or(0.5f);
+            return roll < MatchTuning.ViolationChance * (1.25f - Math.Clamp(iq, 0f, 1f))
+                ? MatchTuning.JumpEarliest + (MatchTuning.JumpSpread * at)
+                : float.PositiveInfinity;
         }
 
         private static bool Pressing(PlayerCommand c)

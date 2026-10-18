@@ -33,6 +33,7 @@ namespace StickAndPuck.App.Audio
                 PuckHitBoards b => [new(Sfx.Boards, Hardness(b.Speed, 25))],
                 PuckHitPost p => [new(Sfx.Post, Hardness(p.Speed, 25))],
                 WhistleBlown => [new(Sfx.Whistle)],
+                FaceoffViolated => [new(Sfx.Whistle)],
                 _ => throw new UnreachableException($"no sound cues for {e.GetType().Name}"),
             };
         }
@@ -57,6 +58,7 @@ namespace StickAndPuck.App.Audio
                 PuckHitBoards b => b.Position,
                 PuckHitPost p => p.Position,
                 WhistleBlown w => w.Position,
+                FaceoffViolated f => f.Position,
                 _ => throw new UnreachableException($"no position for {e.GetType().Name}"),
             };
         }
@@ -82,6 +84,7 @@ namespace StickAndPuck.App.Audio
                 new PuckHitBoards(time, at, 0),
                 new PuckHitPost(time, at, 0),
                 new WhistleBlown(time, at),
+                new FaceoffViolated(time, Side.Home, 0, at, 1),
             ];
         }
 

@@ -32,7 +32,7 @@ Choose a new season, an exhibition, an arcade run or local versus from the start
 
 In one-player scenes the keyboard and the first gamepad both control your player. In `versus` the keyboard plays home and the first gamepad plays away.
 
-These are the default bindings; change them in the settings key-mapping page or reset them to defaults. Gamepad labels use Xbox-style names. During a faceoff, press shoot or pass after the drop; pressing early loses the draw. To arm a one-timer, press shoot after passing while the puck travels to the receiver.
+These are the default bindings; change them in the settings key-mapping page or reset them to defaults. Gamepad labels use Xbox-style names. During a faceoff, press shoot or pass after the drop. Pressing early is a faceoff violation: your centre is waved out and a winger takes the draw, and a second violation in the same faceoff loses the draw (a delay-of-game minor under NHL rules; in Arcade the first early press loses it). To arm a one-timer, press shoot after passing while the puck travels to the receiver.
 
 ## Settings and saves
 

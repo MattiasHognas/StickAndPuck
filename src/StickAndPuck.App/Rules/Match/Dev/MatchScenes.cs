@@ -13,6 +13,17 @@ namespace StickAndPuck.App.Rules.Match.Dev
             float periodSeconds
         )
         {
+            return Exhibition(clubs, settings, periodSeconds, Scenes.DefaultSetup(clubs).Rules);
+        }
+
+        /// <summary>Builds an exhibition as above, played by the given rules.</summary>
+        public static World Exhibition(
+            IReadOnlyList<ClubData> clubs,
+            Settings settings,
+            float periodSeconds,
+            RuleSet rules
+        )
+        {
             if (
                 float.TryParse(
                     Env.Get("SAP_PERIOD"),
@@ -26,7 +37,11 @@ namespace StickAndPuck.App.Rules.Match.Dev
                 periodSeconds = s;
             }
 
-            MatchSetup setup = Scenes.DefaultSetup(clubs) with { PeriodSeconds = periodSeconds };
+            MatchSetup setup = Scenes.DefaultSetup(clubs) with
+            {
+                PeriodSeconds = periodSeconds,
+                Rules = rules,
+            };
             World world = new(setup, settings);
             Scenes.AddStarters(world);
             MatchFlow.Begin(world);

@@ -12,9 +12,16 @@ namespace StickAndPuck.App.Rules.Match.Dev
         private float shotAt = float.NegativeInfinity;
         private float cameraX;
         private Side next = Side.Home;
+        private bool earlyDown;
 
         /// <summary>Gets the seconds after each drop the demo presses shoot for the human centre; below zero the demo fires shots instead.</summary>
         public float PressAfter { get; init; } = -1f;
+
+        /// <summary>Gets how many times per faceoff the demo presses shoot for the human centre before the drop, a faceoff violation each; 0 for none.</summary>
+        public int EarlyPresses { get; init; }
+
+        /// <summary>Seconds into a faceoff before each early press, times the violations so far plus one.</summary>
+        private const float EarlyAfter = 0.35f;
 
         /// <summary>Fires the next shot a moment after the puck drops or settles, and pans the camera to the puck.</summary>
         public static void Update(World world)
@@ -55,7 +62,7 @@ namespace StickAndPuck.App.Rules.Match.Dev
             shotAt = world.Time;
         }
 
-        /// <summary>Presses shoot for slot 0 <see cref="PressAfter"/> seconds after each drop, and whistles a new faceoff a while after each draw.</summary>
+        /// <summary>Presses shoot for slot 0 <see cref="PressAfter"/> seconds after each drop (and <see cref="EarlyPresses"/> times before it), and whistles a new faceoff a while after each draw.</summary>
         private void Faceoffs(World world)
         {
             DrawState draw = MatchFlow.State(world).Draw;
@@ -70,10 +77,21 @@ namespace StickAndPuck.App.Rules.Match.Dev
                 shotAt = world.Time;
             }
 
-            bool press =
+            // an early press, released the next step so each one is fresh
+            bool early =
                 world.Match.Phase == MatchPhase.Faceoff
-                && draw.Dropped
-                && world.Time - shotAt >= PressAfter;
+                && !draw.Dropped
+                && !earlyDown
+                && draw.Violations[(int)Side.Home] < EarlyPresses
+                && draw.Waited >= EarlyAfter * (draw.Violations[(int)Side.Home] + 1);
+            earlyDown = early;
+            bool press =
+                early
+                || (
+                    world.Match.Phase == MatchPhase.Faceoff
+                    && draw.Dropped
+                    && world.Time - shotAt >= PressAfter
+                );
             if (world.Controlled(0).TryGet(out Player me))
             {
                 me.Command = me.Command with { Shoot = press };

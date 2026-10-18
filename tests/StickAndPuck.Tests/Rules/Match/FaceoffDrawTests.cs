@@ -113,11 +113,11 @@ namespace StickAndPuck.Tests.Rules.Match
             );
         }
 
-        /// <summary>Pressing before the drop is a false start: the other club wins the moment the puck drops.</summary>
+        /// <summary>Pressing before the drop is a false start where violations are not called (Arcade): the other club wins the moment the puck drops.</summary>
         [Test]
         public void FalseStart()
         {
-            World w = new WorldBuilder().Human().Build();
+            World w = new WorldBuilder().Rules(RuleSet.Arcade).Human().Build();
             Check(Run(w, x => x.Match.Phase == MatchPhase.Faceoff), "the opening faceoff");
             _ = Run(
                 w,

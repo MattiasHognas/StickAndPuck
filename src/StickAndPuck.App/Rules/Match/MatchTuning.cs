@@ -24,6 +24,15 @@ namespace StickAndPuck.App.Rules.Match
         /// <summary>The most luck adds to an AI centre's press.</summary>
         public const float DrawJitter = 0.12f;
 
+        /// <summary>The chance an AI centre of middling hockey IQ moves before the drop, a faceoff violation; it scales with (1.25 - IQ).</summary>
+        public const float ViolationChance = 0.05f;
+
+        /// <summary>The earliest an AI centre moves too early, in seconds after the faceoff is set up.</summary>
+        public const float JumpEarliest = 0.3f;
+
+        /// <summary>The spread after <see cref="JumpEarliest"/> over which an AI centre moves too early.</summary>
+        public const float JumpSpread = 0.5f;
+
         /// <summary>Celebration after a goal before the centre faceoff (the replay fits in here).</summary>
         public const float GoalSeconds = 4f;
 

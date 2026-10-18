@@ -43,7 +43,7 @@ namespace StickAndPuck.App.Rules.Match
                     break;
                 case MatchPhase.Faceoff:
                     // players hold their spots until the puck drops
-                    FaceoffFormation.Place(world, s.Dot);
+                    FaceoffFormation.Place(world, s.Dot, s.Draw.Kicked);
                     FaceoffDraw.Step(world, s, dt);
                     if (!s.Draw.Dropped && !s.RefereeDrops && Wait(s, dt))
                     {
@@ -178,7 +178,7 @@ namespace StickAndPuck.App.Rules.Match
             EndPeriod(world, s);
         }
 
-        /// <summary>A goalie holding the puck long enough freezes it: whistle, faceoff at the nearest end-zone dot.</summary>
+        /// <summary>A goalie holding the puck long enough freezes it: whistle, faceoff at the dot <see cref="FaceoffSpots.After"/> picks.</summary>
         private static bool Frozen(World world, FlowState s, float dt)
         {
             Puck pk = world.Puck;
@@ -193,7 +193,11 @@ namespace StickAndPuck.App.Rules.Match
             }
 
             s.Held = 0;
-            return MatchFlow.Whistle(world, MatchFlow.NearestDot(pk.Position));
+            // the freezing goalie's club stopped play: under smart dots the draw stays in its own zone
+            return MatchFlow.Whistle(
+                world,
+                FaceoffSpots.After(world, world.Players[pk.Carrier].Side.OrNone(), pk.Position)
+            );
         }
 
         private static void EndPeriod(World world, FlowState s)

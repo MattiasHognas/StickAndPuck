@@ -11,7 +11,10 @@ namespace StickAndPuck.App.Rules.Offside
     /// referee to raise an arm. The pending offside is waved off when every attacker tags up at the
     /// line or the puck leaves the zone. It is called when an attacker touches the puck in the zone,
     /// or at once when the puck is shot at the net. A call publishes Offside (Side = offending club)
-    /// and whistles a faceoff at the neutral-zone dot outside that zone, on the puck's side.</summary>
+    /// and whistles a faceoff at the neutral-zone dot outside that zone, on the puck's side. Under
+    /// <see cref="RuleSet.IntentionalOffside"/> an intentional offside (the puck passed or dumped in, not
+    /// carried, while an attacker hangs <see cref="IntentionalDepth"/> or more past the line) moves the faceoff
+    /// to the offending club's own end-zone dot on the puck's side instead.</summary>
     internal sealed class OffsideRule : ISystem
     {
         /// <summary>Half the painted width of a blue line (30 cm).</summary>
@@ -19,6 +22,9 @@ namespace StickAndPuck.App.Rules.Offside
 
         /// <summary>How far past a player's centre the trailing skate reaches; a skate on the line keeps the player onside.</summary>
         public const float SkateReach = 0.2f;
+
+        /// <summary>How far past the blue line an attacker hangs for an offside on a pass or dump-in to be intentional: he made no effort to get back.</summary>
+        public const float IntentionalDepth = 9f;
 
         /// <summary>The x of the neutral-zone dots.</summary>
         public const float NeutralDotX = 6.1f;
@@ -104,6 +110,13 @@ namespace StickAndPuck.App.Rules.Offside
 
             s.PendingEnd = end;
             s.EntryTouch = pk.LastTouch;
+            s.Intentional =
+                pk.Carrier < 0
+                && world
+                    .OnIce(attacker)
+                    .Any(p =>
+                        !p.IsGoalie && end * p.Position.X > RinkSpec.BlueLineX + IntentionalDepth
+                    );
             Watch(world, s);
         }
 
@@ -134,14 +147,23 @@ namespace StickAndPuck.App.Rules.Offside
             Puck pk = world.Puck;
             Vector3 at = pk.Position;
             s.PendingEnd = 0;
-            Vector3 dot = FaceoffDot(end, at);
+            bool intentional = s.Intentional && world.Setup.Rules.IntentionalOffside;
+            Vector3 dot = intentional
+                ? FaceoffSpots.EndDot(world.Match, attacker, at.Z)
+                : FaceoffDot(end, at);
             if (!MatchFlow.Whistle(world, dot))
             {
                 return;
             }
 
             world.Events.Publish(new OffsideCalled(world.Time, attacker, at));
-            LineCallsDemo.Log(world, "Offside", attacker, at, dot);
+            LineCallsDemo.Log(
+                world,
+                intentional ? "Intentional offside" : "Offside",
+                attacker,
+                at,
+                dot
+            );
         }
 
         /// <summary>Gets a value indicating whether any attacker but the carrier is wholly inside the zone.</summary>

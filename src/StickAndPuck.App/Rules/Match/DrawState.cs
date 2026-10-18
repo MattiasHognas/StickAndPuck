@@ -20,6 +20,18 @@ namespace StickAndPuck.App.Rules.Match
         /// <summary>Gets each club's AI reaction after the drop, by side; infinite for a human centre.</summary>
         public float[] Delay { get; } = [float.PositiveInfinity, float.PositiveInfinity];
 
+        /// <summary>Gets or sets the seconds since this faceoff was set up, before the drop.</summary>
+        public float Waited { get; set; }
+
+        /// <summary>Gets each club's faceoff violations in this faceoff, by side.</summary>
+        public int[] Violations { get; } = new int[2];
+
+        /// <summary>Gets the skaters waved out of this faceoff, who may not take the draw.</summary>
+        public HashSet<int> Kicked { get; } = [];
+
+        /// <summary>Gets when, in <see cref="Waited"/> seconds, each club's AI centre moves too early; infinite for none.</summary>
+        public float[] JumpAt { get; } = [float.PositiveInfinity, float.PositiveInfinity];
+
         /// <summary>Gets whether each human slot held shoot or pass last step, so only a fresh press counts.</summary>
         public bool[] Down { get; } = new bool[MatchSetup.Slots];
     }

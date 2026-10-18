@@ -102,6 +102,10 @@ namespace StickAndPuck.App.Replay
                     $"{V(p.Position)} {p.Speed:R}"
                 ),
                 WhistleBlown w => V(w.Position),
+                FaceoffViolated f => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{f.Side} {f.PlayerId} {V(f.Position)} {f.TakerId}"
+                ),
                 _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
             };
             return string.Create(

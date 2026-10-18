@@ -3,7 +3,7 @@ using K = StickAndPuck.App.Core.Text.Keys;
 namespace StickAndPuck.App.Core
 {
     /// <summary>Every rule switch, in page order: Game (offside, icing, goalie pull), Overtime, Penalties,
-    /// Infractions, Fights, League (table points, tiebreak and playoff home ice) and Season (team morale). <see cref="RuleRow.Plays"/> says whether the game plays a row's rule.</summary>
+    /// Infractions, Faceoffs, Fights, League (table points, tiebreak and playoff home ice) and Season (team morale). <see cref="RuleRow.Plays"/> says whether the game plays a row's rule.</summary>
     public static class RuleRows
     {
         private const string On = "On",
@@ -211,6 +211,38 @@ namespace StickAndPuck.App.Core
                 Enum.GetValues<IntermissionLength>(),
                 r => r.Intermission,
                 (r, v) => r with { Intermission = v }
+            ),
+            Flag(
+                nameof(RuleSet.FaceoffViolations),
+                K.RuleFaceoffViolations,
+                K.RuleGroupFaceoffs,
+                plays: true,
+                r => r.FaceoffViolations,
+                (r, v) => r with { FaceoffViolations = v }
+            ),
+            Flag(
+                nameof(RuleSet.FaceoffViolationMinor),
+                K.RuleFaceoffViolationMinor,
+                K.RuleGroupFaceoffs,
+                plays: true,
+                r => r.FaceoffViolationMinor,
+                (r, v) => r with { FaceoffViolationMinor = v }
+            ),
+            Flag(
+                nameof(RuleSet.SmartDots),
+                K.RuleSmartDots,
+                K.RuleGroupFaceoffs,
+                plays: true,
+                r => r.SmartDots,
+                (r, v) => r with { SmartDots = v }
+            ),
+            Flag(
+                nameof(RuleSet.IntentionalOffside),
+                K.RuleIntentionalOffside,
+                K.RuleGroupFaceoffs,
+                plays: true,
+                r => r.IntentionalOffside,
+                (r, v) => r with { IntentionalOffside = v }
             ),
             Flag(
                 nameof(RuleSet.Fights),

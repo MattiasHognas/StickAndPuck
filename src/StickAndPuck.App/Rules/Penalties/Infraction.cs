@@ -36,6 +36,9 @@ namespace StickAndPuck.App.Rules.Penalties
         /// <summary>A hard hit from behind in open ice, a minor and misconduct or a major; called only with <see cref="PenaltySeverity.Full"/>.</summary>
         public const string CheckingFromBehind = "checking from behind";
 
+        /// <summary>Delay of game: a club's second faceoff violation in the same faceoff, under <see cref="RuleSet.FaceoffViolationMinor"/>.</summary>
+        public const string DelayOfGame = "delay of game";
+
         /// <summary>Gets an infraction's name as the penalty banner shows it, in the language shown.</summary>
         public static string Label(string infraction)
         {
@@ -52,6 +55,7 @@ namespace StickAndPuck.App.Rules.Penalties
                     Boarding => K.InfBoarding,
                     Roughing => K.InfRoughing,
                     CheckingFromBehind => K.InfCheckingFromBehind,
+                    DelayOfGame => K.InfDelayOfGame,
                     Fights.FightTuning.Infraction => K.InfFighting,
                     _ => K.InfPenalty,
                 }

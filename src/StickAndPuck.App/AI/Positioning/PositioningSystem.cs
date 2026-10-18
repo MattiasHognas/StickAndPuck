@@ -3,6 +3,7 @@ using StickAndPuck.App.AI.Decisions;
 using StickAndPuck.App.AI.Positioning.Dev;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Players.Puck;
+using StickAndPuck.App.Rules.Match;
 
 namespace StickAndPuck.App.AI.Positioning
 {
@@ -204,6 +205,8 @@ namespace StickAndPuck.App.AI.Positioning
             return plan.Job switch
             {
                 Job.Requested => plan.Request.Or(at), // Requested only with a request
+                // after a faceoff violation the formation, not the role, says who stands where
+                Job.Faceoff when MatchFlow.WavedOut(world, p.Side) => at,
                 Job.Faceoff => TeamShape.Faceoff(
                     plan.Role,
                     end,
