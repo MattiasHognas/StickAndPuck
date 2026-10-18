@@ -3,6 +3,7 @@ using System.Numerics;
 using StickAndPuck.App.AI.Positioning;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Goalie;
+using StickAndPuck.App.Lines;
 using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players.Movement;
 using StickAndPuck.App.Players.Puck;
@@ -742,6 +743,99 @@ namespace StickAndPuck.Tests.Rules.Overtime
                     && son.Shots[0].Side == Side.Home,
                 "NHL preset with an AI home club: home shoots first"
             );
+        }
+
+        /// <summary>Gets one club's shooters, in order, from a shootout where every shot is stopped dead
+        /// as it leaves the stick, so it runs <paramref name="shots"/> shots deep into sudden death; and the
+        /// club's dressed skaters (the lines dress the full lineup).</summary>
+        private static (List<int> Ids, int Skaters) LongShootout(
+            RuleSet rules,
+            int shots,
+            Side side
+        )
+        {
+            World w = new WorldBuilder()
+                .Setup(BaseSetup with { Overtime = OvertimeRule.ShootoutOnly, Rules = rules })
+                .Switches(s => s.OvertimeSeconds = Period)
+                .Then(x => new LinesSystem().Start(x))
+                .Build();
+            int skaters = w.Players.Count(p => p.Side == side && !p.IsGoalie);
+            _ = Run(
+                w,
+                x => So(x).Is(t => t.Shots.Count >= shots),
+                1,
+                x =>
+                {
+                    if (x.Match.Phase == MatchPhase.Shootout && x.Puck.Carrier < 0)
+                    {
+                        x.Puck.Velocity = Vector3.Zero;
+                    }
+                },
+                limit: shots * 30
+            );
+            return (
+                [.. Must(So(w)).Shots.Where(t => t.Side == side).Select(t => t.PlayerId)],
+                skaters
+            );
+        }
+
+        /// <summary>Shooter order in a long shootout: the NHL runs through every skater before anybody shoots twice,
+        /// the SHL and Arcade send their three opening shooters again in sudden death (W88).</summary>
+        [Test]
+        public void ShootoutRepeat()
+        {
+            Check(
+                RuleSet.Shl.ShootoutRepeat
+                    && RuleSet.Arcade.ShootoutRepeat
+                    && !RuleSet.Nhl.ShootoutRepeat,
+                "presets: SHL and Arcade let the opening shooters repeat, the NHL does not"
+            );
+            Check(
+                Enumerable
+                    .Range(0, 30)
+                    .Select(n => ShootoutOrder.Place(RuleSet.Nhl, n, 12))
+                    .SequenceEqual(Enumerable.Range(0, 30).Select(n => n % 12))
+                    && Enumerable
+                        .Range(0, 30)
+                        .Select(n => ShootoutOrder.Place(RuleSet.Shl, n, 12))
+                        .SequenceEqual(Enumerable.Range(0, 30).Select(n => n % 3))
+                    && ShootoutOrder.Place(RuleSet.Shl with { ShootoutShooters = 5 }, 7, 12) == 2
+                    && ShootoutOrder.Place(RuleSet.Shl, 4, 2) == 0,
+                "places: the NHL cycles all twelve skaters, the SHL its three (or five) opening shooters"
+            );
+
+            foreach (Side side in new[] { Side.Home, Side.Away })
+            {
+                (List<int> ids, int skaters) = LongShootout(RuleSet.Nhl, 100, side);
+                Check(
+                    skaters > 5
+                        && ids.Count >= 2 * skaters
+                        && ids.Take(skaters).Distinct().Take(skaters + 1).Count() == skaters
+                        && ids.Select((id, i) => id == ids[i % skaters]).All(b => b),
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"NHL {side}: {ids.Count} shots, all {skaters} skaters shoot before anybody shoots twice, then the order repeats"
+                    )
+                );
+            }
+
+            foreach (
+                (string name, RuleSet rules) in new[]
+                {
+                    ("SHL", RuleSet.Shl),
+                    ("Arcade", RuleSet.Arcade),
+                }
+            )
+            {
+                List<int> ids = LongShootout(rules, 20, Side.Away).Ids;
+                Check(
+                    ids.Count >= 10
+                        && ids.Take(3).Distinct().Take(4).Count() == 3
+                        && ids.Select((id, i) => id == ids[i % 3]).All(b => b),
+                    name
+                        + ": the three opening shooters shoot again, in order, through sudden death"
+                );
+            }
         }
 
         /// <summary>A human home club under NHL rules picks the order; nobody shoots until it does, and a home club that never picks shoots first.</summary>

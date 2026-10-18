@@ -161,7 +161,9 @@ namespace StickAndPuck.App.Rules.Overtime
                 return;
             }
 
-            Player shooter = order[s.Next[(int)side]++ % order.Count];
+            Player shooter = order[
+                ShootoutOrder.Place(world.Setup.Rules, s.Next[(int)side]++, order.Count)
+            ];
             so.ShooterId = shooter.Id;
             so.Shooting = side;
             shooter.OnIce = true;

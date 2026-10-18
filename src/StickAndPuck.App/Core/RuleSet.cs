@@ -35,11 +35,12 @@ namespace StickAndPuck.App.Core
             IcingNoChange = false,
         };
 
-        /// <summary>The NHL: SHL rules with home choosing the shootout order, a fight major without ejection and 4 on 4 coincidental minors.</summary>
+        /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection and 4 on 4 coincidental minors.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
             ShootoutFirst = ShootoutFirst.HomeChooses,
+            ShootoutRepeat = false,
             FightPenalty = FightPenalty.Major,
             CoincidentalMinors = CoincidentalMinors.FourOnFour,
         };
@@ -79,6 +80,10 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets who shoots first in the shootout.</summary>
         public ShootoutFirst ShootoutFirst { get; init; } = ShootoutFirst.Away;
+
+        /// <summary>Gets a value indicating whether the shootout's opening shooters may shoot again in sudden death
+        /// (SHL and Arcade); off, nobody shoots twice until every skater of the club has (NHL).</summary>
+        public bool ShootoutRepeat { get; init; } = true;
 
         /// <summary>Gets a value indicating whether penalties still running at the end of regulation carry into overtime.</summary>
         public bool PenaltiesCarryIntoOvertime { get; init; } = true;
