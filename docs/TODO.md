@@ -1,30 +1,20 @@
 # TODO
 
-Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setting with SHL, Arcade and NHL defaults. Each Milestone 10 task is a setting (on/off and strength) with league presets, and adds its English and Swedish strings.
+Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setting with SHL, Arcade and NHL defaults; its penalty chain shares Rules/Penalties, so those four run one after another. Each Milestone 10 task is a setting (on/off and strength) with league presets, and adds its English and Swedish strings.
 
 | ID | Task | Wave | Milestone | Context |
 | --- | --- | --- | --- | --- |
-| W70 | Time-out | 1 | M6 rules | One 30 s time-out per club; the human calls it at a stoppage, the AI calls it late in close games |
-| W71 | Penalty shot | 1 | M6 rules | Awarded for a foul from behind on a clean breakaway |
-| W72 | Trapezoid and goalie limits | 1 | M6 rules | Trapezoid markings behind the goals (needs arena art) and a delay-of-game minor for a goalie playing the puck outside it |
-| W73 | Puck over the glass | 1 | M6 rules | Clearing the puck over the glass from the defending zone is a minor |
-| W74 | Too many men | 1 | M6 rules | Bench minor when a manual line change comes on too early |
-| W75 | Playoff home order | 1 | M6 rules | Best-of-7 series played in a 2-2-1-1-1 home order |
-| W76 | Relegation Play Out | 1 | M6 rules | 13th v 14th best of 7; the loser is replaced by a promoted club (needs one more club in the data) |
-| W77 | Standings tiebreak | 1 | M6 rules | Ties broken by head-to-head after goals scored; NHL counts regulation wins first |
-| W78 | Points system per preset | 1 | M6 rules | 3-2-1-0 points for SHL, 2-2-1-0 for NHL |
-| W79 | Goal review banner | 1 | M6 rules | A review banner shows after a doubtful goal |
-| W80 | Coach's challenge | 1 | M6 rules | A coach can challenge a goal; NHL preset only |
-| W81 | Goalie interference | 1 | M6 rules | A goal is disallowed when an attacker interferes with the goalie |
-| W82 | Faceoff violations | 1 | M6 rules | Faceoff violations and the stick-down order at the dot |
-| W83 | Smart faceoff dots | 1 | M6 rules | After a stoppage the faceoff spot is chosen in favour of the non-offending club |
-| W84 | Intentional offside | 1 | M6 rules | An intentional offside moves the faceoff into the offender's zone |
-| W86 | Dressed roster | 1 | M6 rules | A dressed roster of 22, with spare players outside it |
-| W87 | Intermission length | 1 | M6 rules | Intermissions get a set length with a skippable timer |
-| W88 | Shootout repeat order | 1 | M6 rules | NHL order for shooters repeating after every skater has shot in a long shootout |
-| W91 | Special teams switch | 1 | M6 rules | A SpecialTeams switch on the rules page turns power plays and penalty kills on and off |
-| W85 | Diving | 2 | M6 rules | Diving penalties; needs players who can embellish first, which has no task yet |
-| W89 | Playoff overtime break | 2 | M6 rules | A break before playoff overtime, shown on the W87 intermission screen |
+| W75 | League table rules | 1 | M6 rules | One task for W75, W77 and W78: the 2-2-1-1-1 playoff home order, the head-to-head standings tiebreak (NHL counts regulation wins first) and points per preset (3-2-1-0 SHL, 2-2-1-0 NHL); all in Season/Schedule and Season/Playoffs. Size S |
+| W88 | Shootout repeat | 1 | M6 rules | NHL shootout order: nobody shoots twice until everyone has. Size XS |
+| W82 | Faceoff rules | 1 | M6 rules | One task for W82, W83 and W84: a faceoff violation kicks the centre out for a winger, a minor on the second violation in NHL, smart dots for the remaining stoppages, and intentional offside moving the draw to the offender's zone. Size S |
+| W87 | Intermission break | 1 | M6 rules | One task for W87 and W89: an intermission length key with skip on the existing Zamboni break, and a break before playoff overtime. Size S |
+| W91 | Special teams switch | 1 | M6 rules | A SpecialTeams switch on the rules page turns power-play and penalty-kill shapes on and off. Size XS |
+| W70 | Time-out | 2 | M6 rules | One 30 s time-out per club; the human calls it at a stoppage, the AI calls it late in close games, and it rests the skaters on the ice. Size S-M |
+| W73 | Puck over the glass | 2 (penalty chain, 1st) | M6 rules | The puck can leave the rink over the glass (today netting catches everything), with an out-of-play stoppage and a minor from the defending zone. Size M |
+| W74 | Too many men | 2 (penalty chain, 2nd) | M6 rules | Bench minor when a rushed human change steps on too early; lenient, and off in Arcade. Size M |
+| W72 | Trapezoid and goalie limits | 2 (penalty chain, 3rd) | M6 rules | Trapezoid markings (needs arena art) and a delay-of-game minor for the human goalie playing the puck outside it; the AI goalie never breaks it. Size M |
+| W71 | Penalty shot | 2 (penalty chain, 4th) | M6 rules | A foul from behind on a clean breakaway gives a penalty shot, reusing the shootout attempt. Size M |
+| W79 | Goal review | 3 | M6 rules | One task for W79, W81 and W80: a held-goal state before a goal counts, goalie interference disallowing a goal, the review banner, and the NHL coach's challenge as an optional last step. Size L |
 | W103 | Network play (online versus) | 1 | M7 network play | Online versus with lockstep input over the network, a host/join lobby, and desync detection from per-step checksums |
 | W115 | NHL clubs and rosters | 1 | M8 NHL league | Data files for the 32 NHL clubs: names, home and away colours, real rosters, and seeded traits for every player and goalie, built with the SHL data tools (lineups.py already reads the NHL API) |
 | A16 | NHL kits and crests | 1 | M8 NHL league | Home and away kits and crest art for all 32 clubs, built through make_kits.py; the 64-colour palette has too few free slots for 32 more clubs, so it has to grow |
@@ -55,8 +45,16 @@ Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setti
 | W134 | Mid-season milestones | 3 | M10 season story | Short three-game challenges from the coach ("win two of three") with a morale reward |
 | W135 | Trade deadline | 3 | M10 season story | Around game 35, one or two player-for-player trade offers from AI clubs to accept or decline |
 | W136 | Season recap | 3 | M10 season story | An end-of-season screen with the record by month, best game, top scorer, injuries, the board's verdict and generated headlines |
+| W76 | Relegation Play Out | 3 | M10 season story | 13th v 14th best of 7, with the loser replaced by a promoted club; moved from M6 because it needs a next season and a 15th club in data/clubs |
 | W138 | Arena flyover intro | 1 | M11 match intros and team playstyles | A camera flyover of the arena before each game, played during the existing warm-up phase in Pregame/ (PregameSystem, squads skating warm-up loops until Start) and skippable with Start; uses the Camera folder's broadcast and close-up cameras |
 | W140 | Distinct club playstyles | 1 | M11 match intros and team playstyles | Make clubs play noticeably differently, building on the tactics field in the club files (forecheck balanced/aggressive/trap, entry carry/dumpAndChase, powerPlay) and AI/Tactics/TacticsSystem: stronger versions of today's styles plus new ones such as physical, shoot-from-anywhere and defensive shell, checked against the TacticsTally stats |
 | A22 | Intro card art | 1 | M11 match intros and team playstyles | Art for the pre-game stats card: a versus panel with both crests, frames and stat icons in the HUD style |
 | W139 | Team stats card | 2 | M11 match intros and team playstyles | A card over the flyover comparing both clubs: crests, record and table place, the attack/defence/goalie/overall ratings from Screens/ClubStrengths.cs, how they play, top scorers and recent form (needs W138, A22) |
 | W141 | Coach scouting tip | 3 | M11 match intros and team playstyles | Before the game the coach says something useful about the opponent, such as their forecheck, entry style or best line, read from their real tactics and strengths so the tip is always true; fits into the W125 pre-game talk (needs W139, W140, W125) |
+
+## Parked
+
+| ID | Task | Reason |
+| --- | --- | --- |
+| W85 | Diving | Needs AI divers, a human dive input and a referee who judges dives; the biggest rules job and the most likely to frustrate |
+| W86 | Dressed roster of 22 | Every roster has exactly the 20 players the lines need; spares only matter with injuries or ejections, and it needs 28 more real players |
