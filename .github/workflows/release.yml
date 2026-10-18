@@ -136,14 +136,14 @@ jobs:
       - name: Verify browser publish and desktop replay parity
         run: xvfb-run -a tools/verify-browser.sh
       - name: Upload browser site
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-site
           path: publish/browser-wasm/wwwroot
           if-no-files-found: error
       - name: Upload browser verification reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-verification
           path: TestResults/browser
@@ -162,7 +162,7 @@ jobs:
           global-json-file: global.json
 
       - name: Download verified browser site
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: browser-site
           path: publish/browser-wasm/wwwroot
