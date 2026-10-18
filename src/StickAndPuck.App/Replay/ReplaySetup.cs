@@ -36,6 +36,9 @@ namespace StickAndPuck.App.Replay
             ClubData Club(string id)
             {
                 return clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))
+                    ?? Clubs
+                        .LoadNhl()
+                        .FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))
                     ?? throw new InvalidOperationException(
                         $"the replay's club {id} is not in data/clubs"
                     );

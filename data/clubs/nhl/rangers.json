@@ -1,0 +1,375 @@
+{
+  "id": "rangers",
+  "name": "New York Rangers",
+  "shortName": "NYR",
+  "league": "NHL",
+  "conference": "Eastern",
+  "division": "Metropolitan",
+  "home": {
+    "primary": "#0038a8",
+    "secondary": "#ce1126",
+    "accent": "#ffffff",
+    "helmet": "#0038a8"
+  },
+  "away": {
+    "primary": "#ffffff",
+    "secondary": "#0038a8",
+    "accent": "#ce1126",
+    "helmet": "#0038a8"
+  },
+  "tactics": {
+    "forecheck": "balanced",
+    "entry": "carry",
+    "powerPlay": "oneThreeOne"
+  },
+  "roster": [
+    {
+      "number": 33,
+      "firstName": "Dylan",
+      "lastName": "Garand",
+      "position": "G",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 35,
+        "topSpeed": 35,
+        "shotAccuracy": 25,
+        "shotPower": 30,
+        "checking": 25,
+        "puckControl": 40,
+        "hockeyIq": 87,
+        "goalieReflexes": 89,
+        "goalieGlove": 81,
+        "goalieBlocker": 92,
+        "goalieReboundControl": 88,
+        "goaliePuckHandling": 68
+      }
+    },
+    {
+      "number": 41,
+      "firstName": "Spencer",
+      "lastName": "Martin",
+      "position": "G",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 35,
+        "topSpeed": 35,
+        "shotAccuracy": 25,
+        "shotPower": 30,
+        "checking": 25,
+        "puckControl": 40,
+        "hockeyIq": 55,
+        "goalieReflexes": 54,
+        "goalieGlove": 44,
+        "goalieBlocker": 55,
+        "goalieReboundControl": 51,
+        "goaliePuckHandling": 61
+      }
+    },
+    {
+      "number": 93,
+      "firstName": "Mika",
+      "lastName": "Zibanejad",
+      "position": "C",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 63,
+        "topSpeed": 66,
+        "shotAccuracy": 85,
+        "shotPower": 79,
+        "checking": 68,
+        "puckControl": 90,
+        "hockeyIq": 95,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 13,
+      "firstName": "Alexis",
+      "lastName": "Lafrenière",
+      "position": "LW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 74,
+        "topSpeed": 79,
+        "shotAccuracy": 81,
+        "shotPower": 77,
+        "checking": 63,
+        "puckControl": 88,
+        "hockeyIq": 84,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 16,
+      "firstName": "Pavel",
+      "lastName": "Dorofeyev",
+      "position": "RW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 72,
+        "topSpeed": 72,
+        "shotAccuracy": 88,
+        "shotPower": 76,
+        "checking": 55,
+        "puckControl": 86,
+        "hockeyIq": 82,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 23,
+      "firstName": "Adam",
+      "lastName": "Fox",
+      "position": "D",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 68,
+        "topSpeed": 74,
+        "shotAccuracy": 75,
+        "shotPower": 80,
+        "checking": 66,
+        "puckControl": 85,
+        "hockeyIq": 94,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 44,
+      "firstName": "Vladislav",
+      "lastName": "Gavrikov",
+      "position": "D",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 69,
+        "topSpeed": 70,
+        "shotAccuracy": 76,
+        "shotPower": 83,
+        "checking": 74,
+        "puckControl": 74,
+        "hockeyIq": 78,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 10,
+      "firstName": "J.T.",
+      "lastName": "Miller",
+      "position": "C",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 60,
+        "topSpeed": 61,
+        "shotAccuracy": 73,
+        "shotPower": 71,
+        "checking": 64,
+        "puckControl": 75,
+        "hockeyIq": 83,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 50,
+      "firstName": "Will",
+      "lastName": "Cuylle",
+      "position": "LW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 64,
+        "topSpeed": 69,
+        "shotAccuracy": 73,
+        "shotPower": 72,
+        "checking": 78,
+        "puckControl": 71,
+        "hockeyIq": 72,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 94,
+      "firstName": "Gabe",
+      "lastName": "Perreault",
+      "position": "RW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 73,
+        "topSpeed": 73,
+        "shotAccuracy": 73,
+        "shotPower": 65,
+        "checking": 52,
+        "puckControl": 75,
+        "hockeyIq": 69,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 5,
+      "firstName": "Sean",
+      "lastName": "Durzi",
+      "position": "D",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 62,
+        "topSpeed": 69,
+        "shotAccuracy": 65,
+        "shotPower": 72,
+        "checking": 69,
+        "puckControl": 68,
+        "hockeyIq": 74,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 26,
+      "firstName": "Marcus",
+      "lastName": "Pettersson",
+      "position": "D",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 64,
+        "topSpeed": 66,
+        "shotAccuracy": 63,
+        "shotPower": 66,
+        "checking": 67,
+        "puckControl": 65,
+        "hockeyIq": 69,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 42,
+      "firstName": "Noah",
+      "lastName": "Laba",
+      "position": "C",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 60,
+        "topSpeed": 66,
+        "shotAccuracy": 63,
+        "shotPower": 59,
+        "checking": 61,
+        "puckControl": 66,
+        "hockeyIq": 63,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 24,
+      "firstName": "Tye",
+      "lastName": "Kartye",
+      "position": "LW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 61,
+        "topSpeed": 63,
+        "shotAccuracy": 59,
+        "shotPower": 50,
+        "checking": 64,
+        "puckControl": 66,
+        "hockeyIq": 60,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 17,
+      "firstName": "Eeli",
+      "lastName": "Tolvanen",
+      "position": "RW",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 62,
+        "topSpeed": 63,
+        "shotAccuracy": 61,
+        "shotPower": 56,
+        "checking": 63,
+        "puckControl": 61,
+        "hockeyIq": 61,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 4,
+      "firstName": "Braden",
+      "lastName": "Schneider",
+      "position": "D",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 55,
+        "topSpeed": 61,
+        "shotAccuracy": 51,
+        "shotPower": 68,
+        "checking": 77,
+        "puckControl": 60,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 12,
+      "firstName": "Alberts",
+      "lastName": "Smits",
+      "position": "D",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 64,
+        "topSpeed": 65,
+        "shotAccuracy": 51,
+        "shotPower": 62,
+        "checking": 69,
+        "puckControl": 57,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 37,
+      "firstName": "Justin",
+      "lastName": "Dowling",
+      "position": "C",
+      "shoots": "Left",
+      "traits": {
+        "acceleration": 46,
+        "topSpeed": 42,
+        "shotAccuracy": 47,
+        "shotPower": 40,
+        "checking": 56,
+        "puckControl": 56,
+        "hockeyIq": 60,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 14,
+      "firstName": "Taylor",
+      "lastName": "Raddysh",
+      "position": "LW",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 58,
+        "topSpeed": 59,
+        "shotAccuracy": 52,
+        "shotPower": 49,
+        "checking": 55,
+        "puckControl": 52,
+        "hockeyIq": 50,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 28,
+      "firstName": "Oliver",
+      "lastName": "Bjorkstrand",
+      "position": "RW",
+      "shoots": "Right",
+      "traits": {
+        "acceleration": 50,
+        "topSpeed": 53,
+        "shotAccuracy": 55,
+        "shotPower": 47,
+        "checking": 51,
+        "puckControl": 52,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    }
+  ]
+}
