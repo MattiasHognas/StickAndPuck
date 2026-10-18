@@ -27,6 +27,7 @@ concurrency:
 
 jobs:
   version:
+    name: Version
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.version.outputs.tag }}
@@ -61,7 +62,37 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
 
+  format:
+    name: Formatting and analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore tools and solution
+        run: |
+          dotnet tool restore
+          dotnet restore src.slnx
+
+      - name: Check CSharpier formatting
+        run: dotnet csharpier check .
+
+      # dotnet format does not build project-referenced source generators.
+      # DiscoveryRegistry must exist before unused-type analysis runs.
+      - name: Build analyzers and discovery generator
+        run: dotnet build analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj --no-restore
+
+      - name: Check Roslyn code style
+        run: dotnet format style src.slnx --no-restore --verify-no-changes
+
+      - name: Check analyzer fixes
+        run: dotnet format analyzers src.slnx --no-restore --verify-no-changes
+
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -74,6 +105,7 @@ jobs:
         run: dotnet test --project tests/StickAndPuck.Tests -c Release
 
   browser:
+    name: Browser test
     needs: version
     env:
       VERSION: ${{ needs.version.outputs.number }}
@@ -104,20 +136,21 @@ jobs:
       - name: Verify browser publish and desktop replay parity
         run: xvfb-run -a tools/verify-browser.sh
       - name: Upload browser site
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-site
           path: publish/browser-wasm/wwwroot
           if-no-files-found: error
       - name: Upload browser verification reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-verification
           path: TestResults/browser
 
   build:
-    needs: [test, browser, version]
+    name: Build
+    needs: [format, test, browser, version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -129,7 +162,7 @@ jobs:
           global-json-file: global.json
 
       - name: Download verified browser site
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: browser-site
           path: publish/browser-wasm/wwwroot

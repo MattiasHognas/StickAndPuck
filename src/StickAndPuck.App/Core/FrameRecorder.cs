@@ -1,38 +1,57 @@
 using System.Globalization;
+using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-namespace StickAndPuck.App.Core;
-
-/// <summary>SAP_RECORD=seconds saves every drawn frame as a numbered PNG in SAP_FRAMES (default frames/)
-/// for that much game time, then the game quits. The loop runs one step per frame while recording,
-/// so a slow renderer still gives smooth 60 Hz movies. tools/record.sh turns the frames into an mp4.</summary>
-internal sealed class FrameRecorder
+namespace StickAndPuck.App.Core
 {
-    readonly float seconds;
-    readonly string folder;
-
-    FrameRecorder(float seconds, string folder)
+    /// <summary>SAP_RECORD=seconds saves every drawn frame as a numbered PNG in SAP_FRAMES (default frames/)
+    /// for that much game time, then the game quits. The loop runs one step per frame while recording,
+    /// so a slow renderer still gives smooth 60 Hz movies. tools/record.sh turns the frames into an mp4.</summary>
+    internal sealed class FrameRecorder
     {
-        this.seconds = seconds;
-        this.folder = folder;
-        Directory.CreateDirectory(folder);
-    }
+        private readonly float seconds;
+        private readonly string folder;
 
-    /// <summary>Gets a recorder when SAP_RECORD is set to a positive number of seconds.</summary>
-    public static Maybe<FrameRecorder> FromEnvironment()
-    {
-        if (!float.TryParse(Env.Get("SAP_RECORD"), NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds) || seconds <= 0)
-            return Maybe<FrameRecorder>.None;
-        string folder = Env.Get("SAP_FRAMES") is { Length: > 0 } f ? f : "frames";
-        return new FrameRecorder(seconds, AssetRoot.Output(folder));
-    }
+        private FrameRecorder(float seconds, string folder)
+        {
+            this.seconds = seconds;
+            this.folder = folder;
+            _ = Directory.CreateDirectory(folder);
+        }
 
-    /// <summary>Saves the frame just drawn.</summary>
-    public bool Save(World world)
-    {
-        var image = LoadImageFromScreen();
-        ExportImage(image, Path.Combine(folder, $"{world.Tick:D5}.png"));
-        UnloadImage(image);
-        return world.Time >= seconds;
+        /// <summary>Gets a recorder when SAP_RECORD is set to a positive number of seconds.</summary>
+        public static Maybe<FrameRecorder> FromEnvironment()
+        {
+            if (
+                !float.TryParse(
+                    Env.Get("SAP_RECORD"),
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out float seconds
+                )
+                || seconds <= 0
+            )
+            {
+                return Maybe.None<FrameRecorder>();
+            }
+
+            string outputFolder = Env.Get("SAP_FRAMES") is { Length: > 0 } f ? f : "frames";
+            return new FrameRecorder(seconds, AssetRoot.Output(outputFolder));
+        }
+
+        /// <summary>Saves the frame just drawn.</summary>
+        public bool Save(World world)
+        {
+            Image image = LoadImageFromScreen();
+            _ = ExportImage(
+                image,
+                Path.Combine(
+                    folder,
+                    string.Create(CultureInfo.InvariantCulture, $"{world.Tick:D5}.png")
+                )
+            );
+            UnloadImage(image);
+            return world.Time >= seconds;
+        }
     }
 }

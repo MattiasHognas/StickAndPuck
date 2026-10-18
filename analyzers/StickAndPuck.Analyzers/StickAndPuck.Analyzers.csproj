@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <!-- Roslyn analyzers for the game project (SAP0001 nullable types, SAP0002 null literals).
        Loaded by the compiler, so it targets netstandard2.0 and never ships with the game. -->
   <PropertyGroup>
@@ -13,5 +12,4 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
   </ItemGroup>
-
 </Project>

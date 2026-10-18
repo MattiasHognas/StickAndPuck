@@ -1,106 +1,29 @@
-using System.Text.Json;
-using StickAndPuck.App.Core;
 using System.Collections.Immutable;
+using StickAndPuck.App.Core;
 
-namespace StickAndPuck.App.Screens;
-
-/// <summary>What the settings screen changes: the <see cref="Core.Settings"/> every match runs with, plus
-/// the period length and the humans' input devices, which go into each <see cref="MatchSetup"/>.</summary>
-internal sealed record ScreenPrefs
+namespace StickAndPuck.App.Screens
 {
-    /// <summary>Period lengths the settings screen offers, in minutes.</summary>
-    public static readonly ImmutableArray<int> PeriodChoices = [2, 3, 5, 10, 20];
-
-    public Settings Settings { get; init; } = new();
-
-    /// <summary>Gets the rule preset and the rules changed from it; <see cref="RuleChoice.Resolve"/> gives the rules a match plays.</summary>
-    public RuleChoice Rules { get; init; } = new();
-
-    /// <summary>Gets the period length in minutes of game clock.</summary>
-    public int PeriodMinutes { get; init; } = 5;
-
-    /// <summary>Gets the device the human plays with.</summary>
-    public InputDevice Controls { get; init; } = InputDevice.KeyboardMouse;
-
-    /// <summary>Gets player two's device in versus: <see cref="InputDevice.None"/> turns player two off
-    /// (the AI plays the visitors). When it is the same as <see cref="Controls"/>, versus falls
-    /// back to the other device as before. SAP_VERSUS_P2 overrides it.</summary>
-    public InputDevice Player2 { get; init; } = InputDevice.Gamepad1;
-}
-
-/// <summary>Reads and writes <see cref="ScreenPrefs"/> as settings.json next to the season save:
-/// ~/.config/StickAndPuck/settings.json on Linux, %APPDATA%\StickAndPuck\settings.json on Windows.
-/// SAP_SETTINGS=path overrides it.</summary>
-internal static class ScreenPrefsFile
-{
-    /// <summary>Gets the settings file path.</summary>
-    public static string DefaultPath =>
-        Env.Get("SAP_SETTINGS") is { Length: > 0 } p
-            ? Path.GetFullPath(p)
-            : SavedFiles.DefaultPath("settings.json");
-
-    /// <summary>Reads the saved settings from <see cref="DefaultPath"/>, or the defaults when there is no readable file.</summary>
-    public static ScreenPrefs Read() => Read(DefaultPath);
-
-    /// <summary>Reads the saved settings, or the defaults when there is no readable file.</summary>
-    public static ScreenPrefs Read(string path)
+    /// <summary>What the settings screen changes: the <see cref="Core.Settings"/> every match runs with, plus
+    /// the period length and the humans' input devices, which go into each <see cref="MatchSetup"/>.</summary>
+    internal sealed record ScreenPrefs
     {
-        try
-        {
-            if (SavedFiles.Exists(path) && FromJson(SavedFiles.ReadText(path)) is var prefs)
-                return prefs with { PeriodMinutes = Math.Clamp(prefs.PeriodMinutes, 1, 20) };
-        }
-        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
-        {
-            Console.WriteLine($"SAP: settings: {path} unreadable ({e.Message}), using defaults");
-        }
-        return new ScreenPrefs();
-    }
+        /// <summary>Period lengths the settings screen offers, in minutes.</summary>
+        public static readonly ImmutableArray<int> PeriodChoices = [2, 3, 5, 10, 20];
 
-    /// <summary>Gets the settings as the file stores them (a replay keeps them).</summary>
-    public static string ToJson(ScreenPrefs prefs) => JsonSerializer.Serialize(prefs, SaveJsonContext.Default.ScreenPrefs);
+        public Settings Settings { get; init; } = new();
 
-    /// <summary>Reads settings <see cref="ToJson"/> wrote.</summary>
-    public static ScreenPrefs FromJson(string json)
-    {
-        var prefs = JsonSerializer.Deserialize(json, SaveJsonContext.Default.ScreenPrefs) ?? new ScreenPrefs();
-        return OldVolume(json).TryGet(out float volume) ? prefs with { Settings = prefs.Settings with { EffectsVolume = volume } } : prefs;
-    }
+        /// <summary>Gets the rule preset and the rules changed from it; <see cref="RuleChoice.Resolve"/> gives the rules a match plays.</summary>
+        public RuleChoice Rules { get; init; } = new();
 
-    /// <summary>The single "volume" settings saved before the overall, effects and music volumes: it is the effects volume now.</summary>
-    static Maybe<float> OldVolume(string json)
-    {
-        using var doc = JsonDocument.Parse(json);
-        if (doc.RootElement.ValueKind != JsonValueKind.Object) return Maybe<float>.None;
-        var settings = doc.RootElement.EnumerateObject().Where(p => Named(p, "settings") && p.Value.ValueKind == JsonValueKind.Object).Select(p => p.Value).ToList();
-        if (settings.Count == 0 || settings[0].EnumerateObject().Any(p => Named(p, nameof(Settings.EffectsVolume)))) return Maybe<float>.None;
-        foreach (var p in settings[0].EnumerateObject())
-        {
-            if (Named(p, "volume") && p.Value.ValueKind == JsonValueKind.Number && p.Value.TryGetSingle(out float volume)) return Math.Clamp(volume, 0, 1);
-        }
-        return Maybe<float>.None;
-    }
+        /// <summary>Gets the period length in minutes of game clock.</summary>
+        public int PeriodMinutes { get; init; } = 5;
 
-    static bool Named(JsonProperty p, string name) => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase);
+        /// <summary>Gets the device the human plays with.</summary>
+        public InputDevice Controls { get; init; } = InputDevice.KeyboardMouse;
 
-    /// <summary>Writes the settings to <see cref="DefaultPath"/>; a failure is logged, never fatal.</summary>
-    public static void Write(ScreenPrefs prefs)
-    {
-        if (DeviceInput.Playing) return;    // a replay's menus never touch the saved settings (nor create the default folder)
-        Write(prefs, DefaultPath);
-    }
-
-    /// <summary>Writes the settings; a failure is logged, never fatal.</summary>
-    public static void Write(ScreenPrefs prefs, string path)
-    {
-        if (DeviceInput.Playing) return;    // a replay's menus never touch the saved settings
-        try
-        {
-            SavedFiles.WriteText(path, JsonSerializer.Serialize(prefs, SaveJsonContext.Default.ScreenPrefs));
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            Console.WriteLine($"SAP: settings: could not write {path} ({e.Message})");
-        }
+        /// <summary>Gets player two's device in versus: <see cref="InputDevice.None"/> turns player two off
+        /// (the AI plays the visitors). When it is the same as <see cref="Controls"/>, versus falls
+        /// back to the other device as before. SAP_VERSUS_P2 overrides it.</summary>
+        public InputDevice Player2 { get; init; } = InputDevice.Gamepad1;
     }
 }

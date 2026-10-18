@@ -1,51 +1,29 @@
 using StickAndPuck.App.Core;
 
-namespace StickAndPuck.App.Season;
-
-/// <summary>How a match was decided, which sets the SHL points.</summary>
-public enum ResultKind
+namespace StickAndPuck.App.Season.Schedule
 {
-    /// <summary>Decided in regulation: 3 points to the winner.</summary>
-    Regulation,
-
-    /// <summary>Decided in 3 on 3 overtime: 2 points to the winner, 1 to the loser.</summary>
-    Overtime,
-
-    /// <summary>Decided in the shootout: 2 points to the winner, 1 to the loser.</summary>
-    Shootout,
-}
-
-/// <summary>A played match's final score, shootout goal included, and how it was decided.</summary>
-public sealed record FixtureResult(int HomeGoals, int AwayGoals, ResultKind Kind)
-{
-    /// <summary>Gets the SHL points for the home club.</summary>
-    public int HomePoints => Points(HomeGoals, AwayGoals);
-
-    /// <summary>Gets the SHL points for the away club.</summary>
-    public int AwayPoints => Points(AwayGoals, HomeGoals);
-
-    int Points(int own, int other)
+    /// <summary>One game of the season, and its result once played.</summary>
+    /// <param name="Number">The game's index in the whole schedule, from 0.</param>
+    /// <param name="Round">The round, from 0; every club plays once a round.</param>
+    /// <param name="Home">The home club's id.</param>
+    /// <param name="Away">The away club's id.</param>
+    /// <param name="Result">The result, or None while unplayed.</param>
+    public sealed record Fixture(
+        int Number,
+        int Round,
+        string Home,
+        string Away,
+        Maybe<FixtureResult> Result = default
+    )
     {
-        if (own == other) return 1;
-        bool extra = Kind != ResultKind.Regulation;
-        return own > other ? (extra ? 2 : 3) : (extra ? 1 : 0);
-    }
-}
+        /// <summary>Gets a value indicating whether the game has a result.</summary>
+        public bool Played => Result.HasValue;
 
-/// <summary>One game of the season, and its result once played.</summary>
-/// <param name="Number">The game's index in the whole schedule, from 0.</param>
-/// <param name="Round">The round, from 0; every club plays once a round.</param>
-/// <param name="Home">The home club's id.</param>
-/// <param name="Away">The away club's id.</param>
-/// <param name="Result">The result, or None while unplayed.</param>
-public sealed record Fixture(int Number, int Round, string Home, string Away, Maybe<FixtureResult> Result = default)
-{
-    /// <summary>Gets a value indicating whether the game has a result.</summary>
-    public bool Played => Result.HasValue;
-
-    /// <summary>Gets a value indicating whether a club plays in this game.</summary>
-    public bool Involves(string clubId)
-    {
-        return string.Equals(Home, clubId, StringComparison.Ordinal) || string.Equals(Away, clubId, StringComparison.Ordinal);
+        /// <summary>Gets a value indicating whether a club plays in this game.</summary>
+        public bool Involves(string clubId)
+        {
+            return string.Equals(Home, clubId, StringComparison.Ordinal)
+                || string.Equals(Away, clubId, StringComparison.Ordinal);
+        }
     }
 }

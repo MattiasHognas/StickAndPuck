@@ -2,6 +2,8 @@
 
 [Back to the game](../README.md) · [Playing](PLAYING.md) · [Development](DEVELOPMENT.md) · [Testing](TESTING.md) · [Architecture](ARCHITECTURE.md)
 
+Before running tests, see [Formatting and static analysis](DEVELOPMENT.md#formatting-and-static-analysis) for the formatter sequence, analyzer precedence, and checks that leave files unchanged. Release builds also check CSharpier formatting, and analyzer warnings fail the build.
+
 ## Automated tests
 
 ```sh

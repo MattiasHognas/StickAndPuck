@@ -1,201 +1,204 @@
-namespace StickAndPuck.App.Core;
-
-/// <content>The string table keys.</content>
-public static partial class Text
+namespace StickAndPuck.App.Core
 {
-    /// <summary>Every key in the language files; each is documented with its English text.</summary>
-    public static partial class Keys
+    /// <content>The string table keys.</content>
+#pragma warning disable MA0048 // File name must match type name
+    public static partial class Text
+#pragma warning restore MA0048 // File name must match type name
     {
-        /// <summary>ENGLISH</summary>
-        public const string LanguageName = nameof(LanguageName);
+        /// <summary>Every key in the language files; each is documented with its English text.</summary>
+        public static partial class Keys
+        {
+            /// <summary>ENGLISH</summary>
+            public const string LanguageName = nameof(LanguageName);
 
-        /// <summary>RULES</summary>
-        public const string Rules = nameof(Rules);
+            /// <summary>RULES</summary>
+            public const string Rules = nameof(Rules);
 
-        /// <summary>CONTROL SWITCHING</summary>
-        public const string ControlSwitching = nameof(ControlSwitching);
+            /// <summary>CONTROL SWITCHING</summary>
+            public const string ControlSwitching = nameof(ControlSwitching);
 
-        /// <summary>AUTO</summary>
-        public const string SwitchAuto = nameof(SwitchAuto);
+            /// <summary>AUTO</summary>
+            public const string SwitchAuto = nameof(SwitchAuto);
 
-        /// <summary>PASSES ONLY</summary>
-        public const string SwitchPassesOnly = nameof(SwitchPassesOnly);
+            /// <summary>PASSES ONLY</summary>
+            public const string SwitchPassesOnly = nameof(SwitchPassesOnly);
 
-        /// <summary>MANUAL</summary>
-        public const string SwitchManual = nameof(SwitchManual);
+            /// <summary>MANUAL</summary>
+            public const string SwitchManual = nameof(SwitchManual);
 
-        /// <summary>LINE CHANGES</summary>
-        public const string LineChanges = nameof(LineChanges);
+            /// <summary>LINE CHANGES</summary>
+            public const string LineChanges = nameof(LineChanges);
 
-        /// <summary>AUTOMATIC</summary>
-        public const string LinesAutomatic = nameof(LinesAutomatic);
+            /// <summary>AUTOMATIC</summary>
+            public const string LinesAutomatic = nameof(LinesAutomatic);
 
-        /// <summary>MANUAL</summary>
-        public const string LinesManual = nameof(LinesManual);
+            /// <summary>MANUAL</summary>
+            public const string LinesManual = nameof(LinesManual);
 
-        /// <summary>DIFFICULTY</summary>
-        public const string Difficulty = nameof(Difficulty);
+            /// <summary>DIFFICULTY</summary>
+            public const string Difficulty = nameof(Difficulty);
 
-        /// <summary>EASY</summary>
-        public const string DifficultyEasy = nameof(DifficultyEasy);
+            /// <summary>EASY</summary>
+            public const string DifficultyEasy = nameof(DifficultyEasy);
 
-        /// <summary>NORMAL</summary>
-        public const string DifficultyNormal = nameof(DifficultyNormal);
+            /// <summary>NORMAL</summary>
+            public const string DifficultyNormal = nameof(DifficultyNormal);
 
-        /// <summary>HARD</summary>
-        public const string DifficultyHard = nameof(DifficultyHard);
+            /// <summary>HARD</summary>
+            public const string DifficultyHard = nameof(DifficultyHard);
 
-        /// <summary>PERIOD LENGTH</summary>
-        public const string PeriodLength = nameof(PeriodLength);
+            /// <summary>PERIOD LENGTH</summary>
+            public const string PeriodLength = nameof(PeriodLength);
 
-        /// <summary>{0} MIN</summary>
-        public const string PeriodMinutes = nameof(PeriodMinutes);
+            /// <summary>{0} MIN</summary>
+            public const string PeriodMinutes = nameof(PeriodMinutes);
 
-        /// <summary>SIM THIS GAME</summary>
-        public const string SimThisGame = nameof(SimThisGame);
+            /// <summary>SIM THIS GAME</summary>
+            public const string SimThisGame = nameof(SimThisGame);
 
-        /// <summary>AUTO DEKE</summary>
-        public const string AutoDeke = nameof(AutoDeke);
+            /// <summary>AUTO DEKE</summary>
+            public const string AutoDeke = nameof(AutoDeke);
 
-        /// <summary>ONE-TIMERS</summary>
-        public const string OneTimers = nameof(OneTimers);
+            /// <summary>ONE-TIMERS</summary>
+            public const string OneTimers = nameof(OneTimers);
 
-        /// <summary>CONTROLS</summary>
-        public const string Controls = nameof(Controls);
+            /// <summary>CONTROLS</summary>
+            public const string Controls = nameof(Controls);
 
-        /// <summary>PLAYER 2 CONTROLS</summary>
-        public const string Player2Controls = nameof(Player2Controls);
+            /// <summary>PLAYER 2 CONTROLS</summary>
+            public const string Player2Controls = nameof(Player2Controls);
 
-        /// <summary>KEY MAPPING</summary>
-        public const string KeyMapping = nameof(KeyMapping);
+            /// <summary>KEY MAPPING</summary>
+            public const string KeyMapping = nameof(KeyMapping);
 
-        /// <summary>CONTROL MARKER</summary>
-        public const string ControlMarker = nameof(ControlMarker);
+            /// <summary>CONTROL MARKER</summary>
+            public const string ControlMarker = nameof(ControlMarker);
 
-        /// <summary>CAMERA ZOOM</summary>
-        public const string CameraZoom = nameof(CameraZoom);
+            /// <summary>CAMERA ZOOM</summary>
+            public const string CameraZoom = nameof(CameraZoom);
 
-        /// <summary>LIGHTING</summary>
-        public const string Lighting = nameof(Lighting);
+            /// <summary>LIGHTING</summary>
+            public const string Lighting = nameof(Lighting);
 
-        /// <summary>RANDOM</summary>
-        public const string LightingRandom = nameof(LightingRandom);
+            /// <summary>RANDOM</summary>
+            public const string LightingRandom = nameof(LightingRandom);
 
-        /// <summary>EARLY</summary>
-        public const string LightingEarly = nameof(LightingEarly);
+            /// <summary>EARLY</summary>
+            public const string LightingEarly = nameof(LightingEarly);
 
-        /// <summary>AFTERNOON</summary>
-        public const string LightingAfternoon = nameof(LightingAfternoon);
+            /// <summary>AFTERNOON</summary>
+            public const string LightingAfternoon = nameof(LightingAfternoon);
 
-        /// <summary>LATE</summary>
-        public const string LightingLate = nameof(LightingLate);
+            /// <summary>LATE</summary>
+            public const string LightingLate = nameof(LightingLate);
 
-        /// <summary>SWAP KITS</summary>
-        public const string SwapKits = nameof(SwapKits);
+            /// <summary>SWAP KITS</summary>
+            public const string SwapKits = nameof(SwapKits);
 
-        /// <summary>BENCHES</summary>
-        public const string Benches = nameof(Benches);
+            /// <summary>BENCHES</summary>
+            public const string Benches = nameof(Benches);
 
-        /// <summary>OVERALL VOLUME</summary>
-        public const string OverallVolume = nameof(OverallVolume);
+            /// <summary>OVERALL VOLUME</summary>
+            public const string OverallVolume = nameof(OverallVolume);
 
-        /// <summary>EFFECTS VOLUME</summary>
-        public const string EffectsVolume = nameof(EffectsVolume);
+            /// <summary>EFFECTS VOLUME</summary>
+            public const string EffectsVolume = nameof(EffectsVolume);
 
-        /// <summary>MUSIC VOLUME</summary>
-        public const string MusicVolume = nameof(MusicVolume);
+            /// <summary>MUSIC VOLUME</summary>
+            public const string MusicVolume = nameof(MusicVolume);
 
-        /// <summary>LANGUAGE</summary>
-        public const string Language = nameof(Language);
+            /// <summary>LANGUAGE</summary>
+            public const string Language = nameof(Language);
 
-        /// <summary>FPS LINE</summary>
-        public const string FpsLine = nameof(FpsLine);
+            /// <summary>FPS LINE</summary>
+            public const string FpsLine = nameof(FpsLine);
 
-        /// <summary>MATCH DEBUG LINE</summary>
-        public const string MatchDebugLine = nameof(MatchDebugLine);
+            /// <summary>MATCH DEBUG LINE</summary>
+            public const string MatchDebugLine = nameof(MatchDebugLine);
 
-        /// <summary>LINES PANEL</summary>
-        public const string LinesPanel = nameof(LinesPanel);
+            /// <summary>LINES PANEL</summary>
+            public const string LinesPanel = nameof(LinesPanel);
 
-        /// <summary>GRAPHICS CARD</summary>
-        public const string GraphicsCard = nameof(GraphicsCard);
+            /// <summary>GRAPHICS CARD</summary>
+            public const string GraphicsCard = nameof(GraphicsCard);
 
-        /// <summary>RUNNING ON {0}</summary>
-        public const string GpuRunning = nameof(GpuRunning);
+            /// <summary>RUNNING ON {0}</summary>
+            public const string GpuRunning = nameof(GpuRunning);
 
-        /// <summary>ESC RESTARTS THE GAME ON {0}</summary>
-        public const string GpuRestart = nameof(GpuRestart);
+            /// <summary>ESC RESTARTS THE GAME ON {0}</summary>
+            public const string GpuRestart = nameof(GpuRestart);
 
-        /// <summary>KEEP THIS CARD?   ENTER KEEPS   BACK IN {0}</summary>
-        public const string GpuKeep = nameof(GpuKeep);
+            /// <summary>KEEP THIS CARD?   ENTER KEEPS   BACK IN {0}</summary>
+            public const string GpuKeep = nameof(GpuKeep);
 
-        /// <summary>BACK</summary>
-        public const string Back = nameof(Back);
+            /// <summary>BACK</summary>
+            public const string Back = nameof(Back);
 
-        /// <summary>SETTINGS</summary>
-        public const string Settings = nameof(Settings);
+            /// <summary>SETTINGS</summary>
+            public const string Settings = nameof(Settings);
 
-        /// <summary>- MORE -</summary>
-        public const string More = nameof(More);
+            /// <summary>- MORE -</summary>
+            public const string More = nameof(More);
 
-        /// <summary>LEFT RIGHT CHANGES   ESC BACK</summary>
-        public const string HintSettings = nameof(HintSettings);
+            /// <summary>LEFT RIGHT CHANGES   ESC BACK</summary>
+            public const string HintSettings = nameof(HintSettings);
 
-        /// <summary>ON</summary>
-        public const string On = nameof(On);
+            /// <summary>ON</summary>
+            public const string On = nameof(On);
 
-        /// <summary>OFF</summary>
-        public const string Off = nameof(Off);
+            /// <summary>OFF</summary>
+            public const string Off = nameof(Off);
 
-        /// <summary>CONTINUE SEASON</summary>
-        public const string ContinueSeason = nameof(ContinueSeason);
+            /// <summary>CONTINUE SEASON</summary>
+            public const string ContinueSeason = nameof(ContinueSeason);
 
-        /// <summary>SIM NEXT GAME</summary>
-        public const string SimNextGame = nameof(SimNextGame);
+            /// <summary>SIM NEXT GAME</summary>
+            public const string SimNextGame = nameof(SimNextGame);
 
-        /// <summary>NEW SEASON</summary>
-        public const string NewSeason = nameof(NewSeason);
+            /// <summary>NEW SEASON</summary>
+            public const string NewSeason = nameof(NewSeason);
 
-        /// <summary>NEW GAME</summary>
-        public const string NewGame = nameof(NewGame);
+            /// <summary>NEW GAME</summary>
+            public const string NewGame = nameof(NewGame);
 
-        /// <summary>STANDINGS</summary>
-        public const string Standings = nameof(Standings);
+            /// <summary>STANDINGS</summary>
+            public const string Standings = nameof(Standings);
 
-        /// <summary>QUIT</summary>
-        public const string Quit = nameof(Quit);
+            /// <summary>QUIT</summary>
+            public const string Quit = nameof(Quit);
 
-        /// <summary>{0} - GAME {1} OF {2}</summary>
-        public const string StartGameOf = nameof(StartGameOf);
+            /// <summary>{0} - GAME {1} OF {2}</summary>
+            public const string StartGameOf = nameof(StartGameOf);
 
-        /// <summary>{0} - SEASON OVER</summary>
-        public const string StartSeasonOver = nameof(StartSeasonOver);
+            /// <summary>{0} - SEASON OVER</summary>
+            public const string StartSeasonOver = nameof(StartSeasonOver);
 
-        /// <summary>{0} - PLAYOFFS</summary>
-        public const string StartPlayoffs = nameof(StartPlayoffs);
+            /// <summary>{0} - PLAYOFFS</summary>
+            public const string StartPlayoffs = nameof(StartPlayoffs);
 
-        /// <summary>ARROWS MOVE   ENTER PICKS   ESC BACK</summary>
-        public const string HintMenu = nameof(HintMenu);
+            /// <summary>ARROWS MOVE   ENTER PICKS   ESC BACK</summary>
+            public const string HintMenu = nameof(HintMenu);
 
-        /// <summary>PICK YOUR CLUB</summary>
-        public const string PickYourClub = nameof(PickYourClub);
+            /// <summary>PICK YOUR CLUB</summary>
+            public const string PickYourClub = nameof(PickYourClub);
 
-        /// <summary>PICK THE OPPONENT</summary>
-        public const string PickOpponent = nameof(PickOpponent);
+            /// <summary>PICK THE OPPONENT</summary>
+            public const string PickOpponent = nameof(PickOpponent);
 
-        /// <summary>REPLACE THE SAVED SEASON?</summary>
-        public const string ReplaceSave = nameof(ReplaceSave);
+            /// <summary>REPLACE THE SAVED SEASON?</summary>
+            public const string ReplaceSave = nameof(ReplaceSave);
 
-        /// <summary>RESUME</summary>
-        public const string Resume = nameof(Resume);
+            /// <summary>RESUME</summary>
+            public const string Resume = nameof(Resume);
 
-        /// <summary>QUIT TO MENU</summary>
-        public const string QuitToMenu = nameof(QuitToMenu);
+            /// <summary>QUIT TO MENU</summary>
+            public const string QuitToMenu = nameof(QuitToMenu);
 
-        /// <summary>LEAVE THIS MATCH?</summary>
-        public const string LeaveMatch = nameof(LeaveMatch);
+            /// <summary>LEAVE THIS MATCH?</summary>
+            public const string LeaveMatch = nameof(LeaveMatch);
 
-        /// <summary>PAUSED</summary>
-        public const string Paused = nameof(Paused);
+            /// <summary>PAUSED</summary>
+            public const string Paused = nameof(Paused);
+        }
     }
 }

@@ -1,243 +1,340 @@
 using System.Numerics;
 using Raylib_cs;
-using StickAndPuck.App.AI;
+using StickAndPuck.App.AI.Positioning;
 using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
-using StickAndPuck.App.Rules;
+using StickAndPuck.App.Rules.Match;
 using static Raylib_cs.Raylib;
 using K = StickAndPuck.App.Core.Text.Keys;
 
-namespace StickAndPuck.App.Intermission;
-
-/// <summary>Between periods the Zamboni comes out through the gate in the far boards, laps the ice
-/// spiralling in toward the centre and drives back out, and the next period's faceoff follows.
-/// While it drives, the AI skaters wait at their bench doors, the camera pans after the machine and
-/// enter, space or the A button skips it. The match's intermission pause is held open until the Zamboni is
-/// gone, the same way the goal replay holds the restart. Runs after the camera system, so its
-/// camera wins while the Zamboni is out and hands back smoothly before the faceoff.</summary>
-internal sealed class IntermissionSystem : ISystem, IDisposable
+namespace StickAndPuck.App.Intermission
 {
-    /// <summary>Seconds of the intermission pause kept in hand while the Zamboni drives.</summary>
-    const float HoldSeconds = 0.5f;
-
-    /// <summary>The pause between the Zamboni leaving (or the skip) and the faceoff set-up.</summary>
-    const float AfterSeconds = 1.2f;
-
-    /// <summary>Skips are ignored for this long, so the button that ended the period does not skip it too.</summary>
-    const float SkipAfterSeconds = 0.5f;
-
-    /// <summary>How long the camera takes to swing over to the Zamboni and back.</summary>
-    const float BlendSeconds = 1.2f;
-
-    /// <summary>How far apart the waiting skaters stand along the boards.</summary>
-    const float WaitSpacing = 1.1f;
-
-    static readonly Color TagText = new(0xef, 0xe0, 0xc2, 255);
-    static readonly Color TagBack = new(0x18, 0x13, 0x1f, 255);
-
-    readonly Func<bool> skipPressed;
-    readonly ZamboniRenderer renderer = new();
-    float cameraX, cameraVx, blend;
-
-    /// <summary>Initializes a new instance of the <see cref="IntermissionSystem"/> class that reads the skip from the keyboard and gamepads.</summary>
-    public IntermissionSystem()
-        : this(SkipPressed)
+    /// <summary>Between periods the Zamboni comes out through the gate in the far boards, laps the ice
+    /// spiralling in toward the centre and drives back out, and the next period's faceoff follows.
+    /// While it drives, the AI skaters wait at their bench doors, the camera pans after the machine and
+    /// enter, space or the A button skips it. The match's intermission pause is held open until the Zamboni is
+    /// gone, the same way the goal replay holds the restart. Runs after the camera system, so its
+    /// camera wins while the Zamboni is out and hands back smoothly before the faceoff.</summary>
+    /// <remarks>Initializes a new instance of the <see cref="IntermissionSystem"/> class with its own skip button, for the self test.</remarks>
+    internal sealed class IntermissionSystem(Func<bool> skipPressed) : ISystem, IDisposable
     {
-    }
+        /// <summary>Seconds of the intermission pause kept in hand while the Zamboni drives.</summary>
+        private const float HoldSeconds = 0.5f;
 
-    /// <summary>Initializes a new instance of the <see cref="IntermissionSystem"/> class with its own skip button, for the self test.</summary>
-    public IntermissionSystem(Func<bool> skipPressed)
-    {
-        this.skipPressed = skipPressed;
-    }
+        /// <summary>The pause between the Zamboni leaving (or the skip) and the faceoff set-up.</summary>
+        private const float AfterSeconds = 1.2f;
 
-    /// <summary>Gets the route every Zamboni drive follows.</summary>
-    public static ZamboniRoute Route { get; } = new();
+        /// <summary>Skips are ignored for this long, so the button that ended the period does not skip it too.</summary>
+        private const float SkipAfterSeconds = 0.5f;
 
-    /// <summary>Gets or sets the seconds into its drive the next Zamboni starts at. SAP_ZAMBONI_AT sets it for
-    /// headless screenshots of a chosen moment; the scene sets it back to 0 once used.</summary>
+        /// <summary>How long the camera takes to swing over to the Zamboni and back.</summary>
+        private const float BlendSeconds = 1.2f;
 
-    /// <summary>Gets the Zamboni's drive in this world while one is under way, or None.</summary>
-    public Maybe<Drive> Current { get; private set; }
+        /// <summary>How far apart the waiting skaters stand along the boards.</summary>
+        private const float WaitSpacing = 1.1f;
 
-    public void Start(World world)
-    {
-        if (MatchFlow.IsRunning(world)) renderer.Load();
-    }
+        private static readonly Color TagText = new(0xef, 0xe0, 0xc2, 255);
+        private static readonly Color TagBack = new(0x18, 0x13, 0x1f, 255);
 
-    public void Update(World world, float dt)
-    {
-        if (!MatchFlow.IsRunning(world)) return;
-        if (world.Match.Phase != MatchPhase.Intermission)
+        private readonly Func<bool> skipPressed = skipPressed;
+        private readonly ZamboniRenderer renderer = new();
+        private float cameraX,
+            cameraVx,
+            blend;
+
+        /// <summary>Initializes a new instance of the <see cref="IntermissionSystem"/> class that reads the skip from the keyboard and gamepads.</summary>
+        public IntermissionSystem()
+            : this(SkipPressed) { }
+
+        /// <summary>Gets the route every Zamboni drive follows.</summary>
+        public static ZamboniRoute Route { get; } = new();
+
+        /// <summary>Gets or sets the seconds into its drive the next Zamboni starts at. SAP_ZAMBONI_AT sets it for
+        /// headless screenshots of a chosen moment; the scene sets it back to 0 once used.</summary>
+        /// <summary>Gets the Zamboni's drive in this world while one is under way, or None.</summary>
+        public Maybe<Drive> Current { get; private set; }
+
+        public void Start(World world)
         {
-            Current = Maybe<Drive>.None;
-            blend = 0;
-            return;
-        }
-
-        var flow = MatchFlow.State(world);
-        if (!Current.TryGet(out var drive))
-        {
-            if (flow.Timer <= 0) return;   // the next period is starting this step
-            drive = new Drive { Seconds = world.Switches.ZamboniStartAt, Period = world.Match.Period };
-            Current = drive;
-            world.Switches.ZamboniStartAt = 0;
-            cameraX = Route.At(Route.Distance(drive.Seconds)).X;
-            cameraVx = 0;
-        }
-
-        if (!drive.Finished)
-        {
-            drive.Seconds += dt;
-            drive.Shown += dt;
-            if (drive.Shown >= SkipAfterSeconds && skipPressed())
+            if (MatchFlow.IsRunning(world))
             {
-                drive.Skipped = true;
-                drive.Finished = true;
+                renderer.Load();
             }
-            else if (drive.Seconds >= Route.Duration)
+        }
+
+        public void Update(World world, float dt)
+        {
+            if (!MatchFlow.IsRunning(world))
             {
-                drive.Finished = true;
+                return;
             }
 
-            if (drive.Finished) flow.Timer = AfterSeconds;
-            else flow.Timer = Math.Max(flow.Timer, HoldSeconds);
+            if (world.Match.Phase != MatchPhase.Intermission)
+            {
+                Current = Maybe.None<Drive>();
+                blend = 0;
+                return;
+            }
+
+            FlowState flow = MatchFlow.State(world);
+            if (!Current.TryGet(out Drive drive))
+            {
+                if (flow.Timer <= 0)
+                {
+                    return; // the next period is starting this step
+                }
+
+                drive = new Drive
+                {
+                    Seconds = world.Switches.ZamboniStartAt,
+                    Period = world.Match.Period,
+                };
+                Current = drive;
+                world.Switches.ZamboniStartAt = 0;
+                cameraX = Route.At(Route.Distance(drive.Seconds)).X;
+                cameraVx = 0;
+            }
+
+            if (!drive.Finished)
+            {
+                drive.Seconds += dt;
+                drive.Shown += dt;
+                if (drive.Shown >= SkipAfterSeconds && skipPressed())
+                {
+                    drive.Skipped = true;
+                    drive.Finished = true;
+                }
+                else if (drive.Seconds >= Route.Duration)
+                {
+                    drive.Finished = true;
+                }
+
+                flow.Timer = drive.Finished ? AfterSeconds : Math.Max(flow.Timer, HoldSeconds);
+            }
+
+            if (!drive.Finished)
+            {
+                Wait(world);
+            }
+
+            Follow(world, drive, dt);
         }
 
-        if (!drive.Finished) Wait(world);
-        Follow(world, drive, dt);
-    }
-
-    /// <summary>Keeps the AI skaters lined up along the boards at their bench doors, out of the Zamboni's way.</summary>
-    static void Wait(World world)
-    {
-        foreach (var (p, spot) in WaitSpots(world)) Positioning.Request(world, p, spot);
-    }
-
-    /// <summary>Gets where each AI skater on the ice waits: spread along the boards either side of the bench door.</summary>
-    internal static IEnumerable<(Player Player, Vector2 Spot)> WaitSpots(World world)
-    {
-        foreach (var side in new[] { Side.Home, Side.Away })
+        /// <summary>Keeps the AI skaters lined up along the boards at their bench doors, out of the Zamboni's way.</summary>
+        private static void Wait(World world)
         {
-            var door = Squad.Door(side);
-            var skaters = world.Players.Where(p => p.Side == side && p.OnIce && !p.IsGoalie && p.Slot < 0).ToList();
-            for (int i = 0; i < skaters.Count; i++)
-                yield return (skaters[i], new Vector2(door.X + (i - (skaters.Count - 1) / 2f) * WaitSpacing, door.Y));
+            foreach ((Player p, Vector2 spot) in WaitSpots(world))
+            {
+                PositioningModel.Request(world, p, spot);
+            }
         }
-    }
 
-    /// <summary>Pans the gameplay camera after the Zamboni, swinging over from the follow camera and back.</summary>
-    void Follow(World world, Drive drive, float dt)
-    {
-        if (world.ReplayPlaying) return;
-        var at = Route.At(Route.Distance(drive.Seconds));
-        float wanted = drive.Finished || !Route.OnIce(Route.Distance(drive.Seconds)) && drive.Seconds > Route.Duration / 2 ? 0 : 1;
-        blend = Math.Clamp(blend + Math.Sign(wanted - blend) * dt / BlendSeconds, 0, 1);
-        if (wanted == 0 && blend == 0) return;
+        /// <summary>Gets where each AI skater on the ice waits: spread along the boards either side of the bench door.</summary>
+        internal static IEnumerable<(Player Player, Vector2 Spot)> WaitSpots(World world)
+        {
+            foreach (Side side in new[] { Side.Home, Side.Away })
+            {
+                Vector2 door = Squad.Door(side);
+                List<Player> skaters =
+                [
+                    .. world.Players.Where(p =>
+                        p.Side == side && p.OnIce && !p.IsGoalie && p.Slot < 0
+                    ),
+                ];
+                for (int i = 0; i < skaters.Count; i++)
+                {
+                    yield return (
+                        skaters[i],
+                        new Vector2(
+                            door.X + ((i - ((skaters.Count - 1) / 2f)) * WaitSpacing),
+                            door.Y
+                        )
+                    );
+                }
+            }
+        }
 
-        Spring(ref cameraX, ref cameraVx, Math.Clamp(at.X, -MaxX(), MaxX()), dt);
-        var own = BroadcastCamera.Straight(cameraX, BroadcastCamera.Back, BroadcastCamera.FovY);
-        var follow = world.Camera;
-        float w = blend * blend * (3 - 2 * blend);
-        float x = Snap(follow.Position.X + (own.Position.X - follow.Position.X) * w);
-        world.Camera = follow with { Position = follow.Position with { X = x }, Target = follow.Target with { X = x } };
-    }
+        /// <summary>Pans the gameplay camera after the Zamboni, swinging over from the follow camera and back.</summary>
+        private void Follow(World world, Drive drive, float dt)
+        {
+            if (world.ReplayPlaying)
+            {
+                return;
+            }
 
-    public void DrawScene(World world, RenderContext render)
-    {
-        if (Showing().TryGet(out float d)) renderer.DrawScene(Route.At(d), Route.HeadingAt(d), render);
-    }
+            Vector2 at = Route.At(Route.Distance(drive.Seconds));
+            float wanted =
+                drive.Finished
+                || (
+                    !Route.OnIce(Route.Distance(drive.Seconds))
+                    && drive.Seconds > Route.Duration / 2
+                )
+                    ? 0
+                    : 1;
+            blend = Math.Clamp(blend + (Math.Sign(wanted - blend) * dt / BlendSeconds), 0, 1);
+            if (wanted == 0 && blend == 0)
+            {
+                return;
+            }
 
-    public void DrawMask(World world, RenderContext render)
-    {
-        if (Showing().TryGet(out float d)) renderer.DrawMask(Route.At(d), Route.HeadingAt(d), render);
-    }
+            Spring(ref cameraX, ref cameraVx, Math.Clamp(at.X, -MaxX(), MaxX()), dt);
+            Camera3D own = BroadcastCamera.Straight(
+                cameraX,
+                BroadcastCamera.Back,
+                BroadcastCamera.FovY
+            );
+            Camera3D follow = world.Camera;
+            float w = blend * blend * (3 - (2 * blend));
+            float x = Snap(follow.Position.X + ((own.Position.X - follow.Position.X) * w));
+            world.Camera = follow with
+            {
+                Position = follow.Position with { X = x },
+                Target = follow.Target with { X = x },
+            };
+        }
 
-    public void DrawHud(World world, RenderContext render)
-    {
-        if (!Current.TryGet(out var drive) || drive.Finished || drive.Shown < SkipAfterSeconds) return;
-        string text = Text.Get(K.Skip);
-        int w = MeasureText(text, 10) + 10;
-        const int h = 13, y = Game.Height - h - 6;
-        int x = Game.Width - w - 6;
-        DrawRectangle(x, y, w, h, TagBack);
-        DrawText(text, x + 5, y + 2, 10, TagText);
-    }
+        public void DrawScene(World world, RenderContext render)
+        {
+            if (Showing().TryGet(out float d))
+            {
+                renderer.DrawScene(Route.At(d), Route.HeadingAt(d), render);
+            }
+        }
 
-    public void Dispose()
-    {
-        renderer.Dispose();
-    }
+        public void DrawMask(World world, RenderContext render)
+        {
+            if (Showing().TryGet(out float d))
+            {
+                renderer.DrawMask(Route.At(d), Route.HeadingAt(d), render);
+            }
+        }
 
-    /// <summary>Gets the distance along the route to draw at, or None while the Zamboni is out of sight behind the boards or gone.</summary>
-    Maybe<float> Showing()
-    {
-        if (!Current.TryGet(out var drive) || drive.Skipped) return Maybe<float>.None;
-        float d = Route.Distance(drive.Seconds);
-        return d > 0 && d < Route.Length ? d : Maybe<float>.None;
-    }
+        public void DrawHud(World world, RenderContext render)
+        {
+            if (
+                !Current.TryGet(out Drive drive)
+                || drive.Finished
+                || drive.Shown < SkipAfterSeconds
+            )
+            {
+                return;
+            }
 
-    static bool SkipPressed()
-    {
-        if (!IsWindowReady()) return false;
-        if (DeviceInput.KeyPressed(KeyboardKey.Enter) || DeviceInput.KeyPressed(KeyboardKey.KpEnter) || DeviceInput.KeyPressed(KeyboardKey.Space)) return true;
-        for (int pad = 0; pad < 2; pad++)
-            if (DeviceInput.PadAvailable(pad) && DeviceInput.PadPressed(pad, GamepadButton.RightFaceDown)) return true;
-        return false;
-    }
+            string text = Text.Get(K.Skip);
+            int w = MeasureText(text, 10) + 10;
+            const int h = 13,
+                y = Game.Height - h - 6;
+            int x = Game.Width - w - 6;
+            DrawRectangle(x, y, w, h, TagBack);
+            DrawText(text, x + 5, y + 2, 10, TagText);
+        }
 
-    /// <summary>The farthest the camera pans, as the follow camera keeps it: the end boards at the frame edge at centre ice, plus a margin.</summary>
-    static float MaxX()
-    {
-        var forward = BroadcastCamera.Forward;
-        float depth = Vector3.Dot(new Vector3(0, -BroadcastCamera.Height, -BroadcastCamera.Back), forward);
-        float half = depth * HalfTan();
-        return Math.Max(0, RinkSpec.HalfLength + 1.5f - half);
-    }
+        public void Dispose()
+        {
+            renderer.Dispose();
+        }
 
-    /// <summary>Rounds a camera x to whole pixels at the far boards, like the follow camera, so the ad boards never shimmer.</summary>
-    static float Snap(float x)
-    {
-        var forward = BroadcastCamera.Forward;
-        var board = new Vector3(0, RinkSpec.BoardHeight / 2, -RinkSpec.HalfWidth);
-        float depth = Vector3.Dot(board - new Vector3(0, BroadcastCamera.Height, BroadcastCamera.Back), forward);
-        float step = 2 * depth * HalfTan() / Game.Width;
-        return MathF.Round(x / step) * step;
-    }
+        /// <summary>Gets the distance along the route to draw at, or None while the Zamboni is out of sight behind the boards or gone.</summary>
+        private Maybe<float> Showing()
+        {
+            if (!Current.TryGet(out Drive drive) || drive.Skipped)
+            {
+                return Maybe.None<float>();
+            }
 
-    static float HalfTan()
-    {
-        return MathF.Tan(BroadcastCamera.FovY * MathF.PI / 360f) * Game.Width / Game.Height;
-    }
+            float d = Route.Distance(drive.Seconds);
+            return d > 0 && d < Route.Length ? d : Maybe.None<float>();
+        }
 
-    /// <summary>A critically damped spring that settles in about a second.</summary>
-    static void Spring(ref float value, ref float velocity, float target, float dt)
-    {
-        const float omega = 4f / 1.1f;
-        float e = MathF.Exp(-omega * dt);
-        float diff = value - target;
-        float temp = (velocity + omega * diff) * dt;
-        velocity = (velocity - omega * temp) * e;
-        value = target + (diff + temp) * e;
-    }
+        private static bool SkipPressed()
+        {
+            if (!IsWindowReady())
+            {
+                return false;
+            }
 
-    /// <summary>One Zamboni drive.</summary>
-    internal sealed class Drive
-    {
-        /// <summary>Gets or sets the seconds since it set off.</summary>
-        public float Seconds { get; set; }
+            if (
+                DeviceInput.KeyPressed(KeyboardKey.Enter)
+                || DeviceInput.KeyPressed(KeyboardKey.KpEnter)
+                || DeviceInput.KeyPressed(KeyboardKey.Space)
+            )
+            {
+                return true;
+            }
 
-        /// <summary>Gets or sets the seconds it has been on show, for the skip guard.</summary>
-        public float Shown { get; set; }
+            for (int pad = 0; pad < 2; pad++)
+            {
+                if (
+                    DeviceInput.PadAvailable(pad)
+                    && DeviceInput.PadPressed(pad, GamepadButton.RightFaceDown)
+                )
+                {
+                    return true;
+                }
+            }
 
-        /// <summary>Gets the period that just ended.</summary>
-        public int Period { get; init; }
+            return false;
+        }
 
-        /// <summary>Gets or sets a value indicating whether it is done, driven out or skipped.</summary>
-        public bool Finished { get; set; }
+        /// <summary>The farthest the camera pans, as the follow camera keeps it: the end boards at the frame edge at centre ice, plus a margin.</summary>
+        private static float MaxX()
+        {
+            Vector3 forward = BroadcastCamera.Forward;
+            float depth = Vector3.Dot(
+                new Vector3(0, -BroadcastCamera.Height, -BroadcastCamera.Back),
+                forward
+            );
+            float half = depth * HalfTan();
+            return Math.Max(0, RinkSpec.HalfLength + 1.5f - half);
+        }
 
-        /// <summary>Gets or sets a value indicating whether it was skipped; it then disappears at once.</summary>
-        public bool Skipped { get; set; }
+        /// <summary>Rounds a camera x to whole pixels at the far boards, like the follow camera, so the ad boards never shimmer.</summary>
+        private static float Snap(float x)
+        {
+            Vector3 forward = BroadcastCamera.Forward;
+            Vector3 board = new(0, RinkSpec.BoardHeight / 2, -RinkSpec.HalfWidth);
+            float depth = Vector3.Dot(
+                board - new Vector3(0, BroadcastCamera.Height, BroadcastCamera.Back),
+                forward
+            );
+            float step = 2 * depth * HalfTan() / Game.Width;
+            return MathF.Round(x / step, MidpointRounding.ToEven) * step;
+        }
+
+        private static float HalfTan()
+        {
+            return MathF.Tan(BroadcastCamera.FovY * MathF.PI / 360f) * Game.Width / Game.Height;
+        }
+
+        /// <summary>A critically damped spring that settles in about a second.</summary>
+        private static void Spring(ref float value, ref float velocity, float target, float dt)
+        {
+            const float omega = 4f / 1.1f;
+            float e = MathF.Exp(-omega * dt);
+            float diff = value - target;
+            float temp = (velocity + (omega * diff)) * dt;
+            velocity = (velocity - (omega * temp)) * e;
+            value = target + ((diff + temp) * e);
+        }
+
+        /// <summary>One Zamboni drive.</summary>
+        internal sealed class Drive
+        {
+            /// <summary>Gets or sets the seconds since it set off.</summary>
+            public float Seconds { get; set; }
+
+            /// <summary>Gets or sets the seconds it has been on show, for the skip guard.</summary>
+            public float Shown { get; set; }
+
+            /// <summary>Gets the period that just ended.</summary>
+            public int Period { get; init; }
+
+            /// <summary>Gets or sets a value indicating whether it is done, driven out or skipped.</summary>
+            public bool Finished { get; set; }
+
+            /// <summary>Gets or sets a value indicating whether it was skipped; it then disappears at once.</summary>
+            public bool Skipped { get; set; }
+        }
     }
 }

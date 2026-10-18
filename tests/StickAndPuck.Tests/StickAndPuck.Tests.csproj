@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <!-- The former SAP_SCENE self-tests, run with dotnet test (TUnit on Microsoft.Testing.Platform) -->
   <PropertyGroup>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
@@ -15,7 +14,10 @@
   <ItemGroup>
     <ProjectReference Include="$(RepoRoot)src/StickAndPuck.App/StickAndPuck.App.csproj" />
     <!-- SAP0001/SAP0002/SAP0003: no nullable types, null literals or patterns on Maybe in the tests either -->
-    <ProjectReference Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference
+      Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false"
+    />
   </ItemGroup>
-
 </Project>

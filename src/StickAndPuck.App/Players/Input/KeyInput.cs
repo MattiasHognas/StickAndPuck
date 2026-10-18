@@ -1,33 +1,52 @@
 using Raylib_cs;
 using StickAndPuck.App.Core;
 
-namespace StickAndPuck.App.Players;
-
-/// <summary>The bound key and pad button of one action, for code outside the input system that reads a
-/// single action itself: kit swap, camera zoom and the pause button.</summary>
-internal static class KeyInput
+namespace StickAndPuck.App.Players.Input
 {
-    /// <summary>Whether the action's key or pad button (on any pad) went down this frame.</summary>
-    public static bool Pressed(Settings settings, GameAction action)
+    /// <summary>The bound key and pad button of one action, for code outside the input system that reads a
+    /// single action itself: kit swap, camera zoom and the pause button.</summary>
+    internal static class KeyInput
     {
-        var b = KeyBindings.Of(settings, action);
-        if ((b.Key != KeyboardKey.Null && DeviceInput.KeyPressed(b.Key)) || (b.Alt != KeyboardKey.Null && DeviceInput.KeyPressed(b.Alt))) return true;
-        if (b.Button == GamepadButton.Unknown) return false;
-        for (int pad = 0; pad < Gamepads.MaxSlots; pad++)    // any slot a pad landed in
-            if (DeviceInput.PadAvailable(pad) && DeviceInput.PadPressed(pad, b.Button)) return true;
-        return false;
-    }
+        /// <summary>Whether the action's key or pad button (on any pad) went down this frame.</summary>
+        public static bool Pressed(Settings settings, GameAction action)
+        {
+            KeyBinding b = KeyBindings.Of(settings, action);
+            if (
+                (b.Key != KeyboardKey.Null && DeviceInput.KeyPressed(b.Key))
+                || (b.Alt != KeyboardKey.Null && DeviceInput.KeyPressed(b.Alt))
+            )
+            {
+                return true;
+            }
 
-    /// <summary>Whether the action's key is held.</summary>
-    public static bool KeyDown(Settings settings, GameAction action)
-    {
-        var b = KeyBindings.Of(settings, action);
-        return (b.Key != KeyboardKey.Null && DeviceInput.KeyDown(b.Key)) || (b.Alt != KeyboardKey.Null && DeviceInput.KeyDown(b.Alt));
-    }
+            if (b.Button == GamepadButton.Unknown)
+            {
+                return false;
+            }
 
-    /// <summary>Whether the action's button is held on this pad.</summary>
-    public static bool PadDown(Settings settings, GameAction action, int pad)
-    {
-        return InputDevices.PadDown(pad, KeyBindings.Of(settings, action).Button);
+            for (int pad = 0; pad < Gamepads.MaxSlots; pad++) // any slot a pad landed in
+            {
+                if (DeviceInput.PadAvailable(pad) && DeviceInput.PadPressed(pad, b.Button))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Whether the action's key is held.</summary>
+        public static bool KeyDown(Settings settings, GameAction action)
+        {
+            KeyBinding b = KeyBindings.Of(settings, action);
+            return (b.Key != KeyboardKey.Null && DeviceInput.KeyDown(b.Key))
+                || (b.Alt != KeyboardKey.Null && DeviceInput.KeyDown(b.Alt));
+        }
+
+        /// <summary>Whether the action's button is held on this pad.</summary>
+        public static bool PadDown(Settings settings, GameAction action, int pad)
+        {
+            return InputDevices.PadDown(pad, KeyBindings.Of(settings, action).Button);
+        }
     }
 }

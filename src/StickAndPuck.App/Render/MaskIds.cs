@@ -1,20 +1,26 @@
 using Raylib_cs;
 
-namespace StickAndPuck.App.Render;
-
-/// <summary>The mask pass colour for each player. The id goes straight into the red channel, so every
-/// player on the ice (1 to 255) gets its own exact value and the post pass outlines each one
-/// separately, even where two players overlap. Draw the model with <c>render.Mask</c> as its
-/// shader and this colour as the tint.</summary>
-public static class MaskIds
+namespace StickAndPuck.App.Render
 {
-    /// <summary>The most ids the mask holds; 0 means no player.</summary>
-    public const int Max = 255;
-
-    /// <summary>The mask colour for a player.</summary>
-    public static Color For(int maskId)
+    /// <summary>The mask pass colour for each player. The id goes straight into the red channel, so every
+    /// player on the ice (1 to 255) gets its own exact value and the post pass outlines each one
+    /// separately, even where two players overlap. Draw the model with <c language="csharp">render.Mask</c> as its
+    /// shader and this colour as the tint.</summary>
+    public static class MaskIds
     {
-        if (maskId is < 1 or > Max) throw new ArgumentOutOfRangeException(nameof(maskId), maskId, $"mask ids run from 1 to {Max}");
-        return new Color((byte)maskId, (byte)0, (byte)0, (byte)255);
+        /// <summary>The most ids the mask holds; 0 means no player.</summary>
+        public const int Max = 255;
+
+        /// <summary>The mask colour for a player.</summary>
+        public static Color For(int maskId)
+        {
+            return maskId is < 1 or > Max
+                ? throw new ArgumentOutOfRangeException(
+                    nameof(maskId),
+                    maskId,
+                    $"mask ids run from 1 to {Max}"
+                )
+                : new Color((byte)maskId, (byte)0, (byte)0, (byte)255);
+        }
     }
 }

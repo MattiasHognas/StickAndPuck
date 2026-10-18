@@ -17,6 +17,53 @@ Development overrides are environment variables in front of the command, for exa
 
 Environment variables override saved settings for the run. `SAP_SETTINGS=path` chooses a different settings JSON file; leaving it unset uses the platform default. They also work with the downloaded release executable. See [Playing](PLAYING.md) for settings and save locations, and [Testing](TESTING.md#visual-scenes-sap_scene) for every scene.
 
+## Formatting and static analysis
+
+CSharpier owns C# and XML whitespace formatting. Analyzer conflicts follow this
+precedence: **CSharpier > Roslyn (IDE/CA) > Sonar > Meziantou**. The
+[`.editorconfig`](../.editorconfig) documents confirmed overlaps and disables the
+lower-priority rule; unrelated rules retain their defaults. Analyzer diagnostics
+are promoted to warnings, and `Directory.Build.props` treats warnings as errors
+and enforces code style during builds.
+
+Restore the pinned local tools, apply code-style and analyzer fixes, then format:
+
+```sh
+dotnet tool restore
+dotnet build analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj
+dotnet format style src.slnx
+dotnet format analyzers src.slnx
+dotnet csharpier format .
+```
+
+Build the analyzer project first on a fresh checkout. `dotnet format` does not
+build project-referenced source generators; without the discovery generator,
+unused-type analysis can incorrectly flag modes referenced by the generated
+registry. The default Debug build supplies the generator used by these commands.
+
+Use the `style` and `analyzers` subcommands instead of plain `dotnet format`.
+The plain command also runs Roslyn's whitespace formatter, which can change
+CSharpier's output even though IDE0055 is disabled. CSharpier does not offer a
+switch to disable its whitespace formatting. Review automated code fixes for
+behavior changes before committing.
+
+After the tool restoration and analyzer build above, check without applying changes:
+
+```sh
+dotnet format style src.slnx --verify-no-changes
+dotnet format analyzers src.slnx --verify-no-changes
+dotnet csharpier check .
+```
+
+The CI formatting job runs these checks on pull requests and releases, using the
+pinned SDK and restored local tools. Publishing requires this job to pass.
+
+The matching `CSharpier.MsBuild` package formats project sources during Debug
+builds and checks formatting during Release builds. Install the recommended
+CSharpier VS Code extension to use the workspace's format-on-save settings;
+builds and the CLI work without the extension. Keep the tool and package versions
+in sync when upgrading.
+
 ## Match settings
 
 - `SAP_HOME`, `SAP_AWAY`: club ids, one of `bjorkloven brynas djurgarden farjestad frolunda hv71 linkoping lulea malmo orebro rogle skelleftea timra vaxjo`. Default: the first two clubs alphabetically.

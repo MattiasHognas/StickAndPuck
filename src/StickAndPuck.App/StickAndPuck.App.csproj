@@ -5,8 +5,16 @@
     <BaseOutputPath>bin/browser/</BaseOutputPath>
   </PropertyGroup>
 
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(RuntimeIdentifier)' != 'browser-wasm'" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk.WebAssembly" Condition="'$(RuntimeIdentifier)' == 'browser-wasm'" />
+  <Import
+    Project="Sdk.props"
+    Sdk="Microsoft.NET.Sdk"
+    Condition="'$(RuntimeIdentifier)' != 'browser-wasm'"
+  />
+  <Import
+    Project="Sdk.props"
+    Sdk="Microsoft.NET.Sdk.WebAssembly"
+    Condition="'$(RuntimeIdentifier)' == 'browser-wasm'"
+  />
 
   <PropertyGroup>
     <DefaultItemExcludes>$(DefaultItemExcludes);obj/**</DefaultItemExcludes>
@@ -46,8 +54,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj"
-                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference
+      Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false"
+    />
   </ItemGroup>
 
   <ItemGroup>
@@ -56,19 +67,36 @@
 
   <ItemGroup>
     <EmbeddedResource Include="$(RepoRoot)shaders/**" LinkBase="shaders" />
-    <EmbeddedResource Include="$(RepoRoot)art/player/*.glb;$(RepoRoot)art/player/*_64.png" LinkBase="art/player" />
+    <EmbeddedResource
+      Include="$(RepoRoot)art/player/*.glb;$(RepoRoot)art/player/*_64.png"
+      LinkBase="art/player"
+    />
     <EmbeddedResource Include="$(RepoRoot)art/ads/*.png" LinkBase="art/ads" />
     <EmbeddedResource Include="$(RepoRoot)art/kits/*.png" LinkBase="art/kits" />
     <EmbeddedResource Include="$(RepoRoot)art/kits/numbers/*.png" LinkBase="art/kits/numbers" />
-    <EmbeddedResource Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json" LinkBase="art/scene" />
+    <EmbeddedResource
+      Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json"
+      LinkBase="art/scene"
+    />
     <EmbeddedResource Include="$(RepoRoot)art/zamboni/*.glb" LinkBase="art/zamboni" />
     <EmbeddedResource Include="$(RepoRoot)art/palette/*.gpl" LinkBase="art/palette" />
-    <EmbeddedResource Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json" LinkBase="art/ui" />
+    <EmbeddedResource
+      Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json"
+      LinkBase="art/ui"
+    />
     <EmbeddedResource Include="$(RepoRoot)art/audio/effects/*.wav" LinkBase="art/audio/effects" />
     <EmbeddedResource Include="$(RepoRoot)art/audio/music/*.wav" LinkBase="art/audio/music" />
     <EmbeddedResource Include="$(RepoRoot)data/**/*.json" LinkBase="data" />
   </ItemGroup>
 
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition="'$(RuntimeIdentifier)' != 'browser-wasm'" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.WebAssembly" Condition="'$(RuntimeIdentifier)' == 'browser-wasm'" />
+  <Import
+    Project="Sdk.targets"
+    Sdk="Microsoft.NET.Sdk"
+    Condition="'$(RuntimeIdentifier)' != 'browser-wasm'"
+  />
+  <Import
+    Project="Sdk.targets"
+    Sdk="Microsoft.NET.Sdk.WebAssembly"
+    Condition="'$(RuntimeIdentifier)' == 'browser-wasm'"
+  />
 </Project>
