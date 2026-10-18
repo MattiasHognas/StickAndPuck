@@ -228,6 +228,12 @@ namespace StickAndPuck.App.Core
             /// <summary>STRONG</summary>
             public const string RuleValueStrong = nameof(RuleValueStrong);
 
+            /// <summary>CARRY-OVER FORM</summary>
+            public const string RuleForm = nameof(RuleForm);
+
+            /// <summary>FORM STRENGTH</summary>
+            public const string RuleFormStrength = nameof(RuleFormStrength);
+
             /// <summary>PRESET</summary>
             public const string Preset = nameof(Preset);
 

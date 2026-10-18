@@ -42,6 +42,12 @@ namespace StickAndPuck.App.Season.Stats
         /// <summary>Gets or sets the saves, for goalies.</summary>
         public int Saves { get; set; }
 
+        /// <summary>Gets or sets the plus/minus, for skaters: +1 on the ice for a goal for, -1 for a goal against, power-play goals aside.</summary>
+        public int PlusMinus { get; set; }
+
+        /// <summary>Gets or sets the seconds on the ice with the puck in play; 0 in a sheet from before it was kept.</summary>
+        public float IceTime { get; set; }
+
         /// <summary>Gets the points.</summary>
         public int Points => Goals + Assists;
 

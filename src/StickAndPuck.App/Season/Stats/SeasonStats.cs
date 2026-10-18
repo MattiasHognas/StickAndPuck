@@ -22,6 +22,9 @@ namespace StickAndPuck.App.Season.Stats
         /// <summary>Gets or sets every player of the game so far, oldest first.</summary>
         public IList<PlayerOfGameAward> Awards { get; set; } = [];
 
+        /// <summary>Gets or sets every player's carry-over form, moved by each game credited.</summary>
+        public FormTable Form { get; set; } = new();
+
         /// <summary>Gets or sets the keys of the games credited: "g12" for season game 13, "p0.1.2" for playoff round 1 series 2 game 3.</summary>
         public ISet<string> Credited { get; set; } = new HashSet<string>(StringComparer.Ordinal);
 
@@ -56,6 +59,7 @@ namespace StickAndPuck.App.Season.Stats
             }
 
             (key.StartsWith('p', StringComparison.Ordinal) ? Playoffs : Regular).Add(sheet);
+            Form.Add(sheet);
             if (sheet.Award(key).TryGet(out PlayerOfGameAward award))
             {
                 Awards.Add(award);

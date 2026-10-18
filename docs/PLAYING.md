@@ -8,6 +8,8 @@ Download the Linux or Windows executable from [Releases](https://github.com/Matt
 
 Choose a new season, an exhibition, an arcade run or local versus from the start screen. Seasons autosave after matches; Continue resumes your run. Each club has a team morale (0–100, MOR on the standings) that rises with wins and streaks and falls with losses; a club in good spirits starts its games with some momentum and does better in simulated games. The rules page turns it off or makes it milder or stronger. English and Swedish are available in settings.
 
+In a season, players carry their form from game to game: points, plus/minus and ice time (a goalie's save percentage) nudge every trait by up to 5 points either way. The stats page shows it as a green arrow up or a red arrow down by the name. The rules page's Season group turns it off or sets its strength (mild, normal, strong; Arcade plays strong).
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |

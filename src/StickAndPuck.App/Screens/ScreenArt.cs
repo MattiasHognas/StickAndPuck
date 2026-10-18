@@ -16,6 +16,9 @@ namespace StickAndPuck.App.Screens
         /// <summary>Muted text for items that cannot be picked (palette grey).</summary>
         public static readonly Color Muted = new(0x8a, 0x87, 0x90, 0xff);
 
+        private static readonly Color FormUp = new(0x56, 0x96, 0x5c, 0xff);
+        private static readonly Color FormDown = new(0xe9, 0x6f, 0x5d, 0xff);
+
         // the HUD target blends alpha into itself, so this reads as about half dark over the rink
         private static readonly Color Shade = new(0x18, 0x13, 0x1f, 0xd8);
         private static readonly Color Band = new(0x18, 0x13, 0x1f, 0xff);
@@ -95,6 +98,28 @@ namespace StickAndPuck.App.Screens
                 }
             }
             return "";
+        }
+
+        /// <summary>Draws a season player's form arrow with its left edge on a column: a green arrow up for a
+        /// positive nudge, a red one down for a negative, nothing when level. Returns its width.</summary>
+        public static int FormArrow(int nudge, int x, int y)
+        {
+            if (nudge == 0)
+            {
+                return 0;
+            }
+
+            if (nudge > 0)
+            {
+                DrawTriangle(new(x + 3, y), new(x, y + 4), new(x + 6, y + 4), FormUp);
+                DrawRectangle(x + 2, y + 4, 3, 3, FormUp);
+            }
+            else
+            {
+                DrawRectangle(x + 2, y, 3, 3, FormDown);
+                DrawTriangle(new(x, y + 3), new(x + 3, y + 7), new(x + 6, y + 3), FormDown);
+            }
+            return 7;
         }
 
         /// <summary>Draws a 0 to 100 rating as a bar with its number on the right.</summary>
