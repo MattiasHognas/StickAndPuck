@@ -1312,7 +1312,7 @@ namespace StickAndPuck.Tests.Rules.Penalties
         /// <summary>Gets the normal referee's matches, one a seed.</summary>
         public static IEnumerable<int> NormalMatchNumbers()
         {
-            return Enumerable.Range(0, Seeds.Length);
+            return Enumerable.Range(0, MatchSeeds.Length);
         }
 
         /// <summary>One full AI match with a normal referee; <see cref="NormalReferee"/> judges them.</summary>
@@ -1323,7 +1323,7 @@ namespace StickAndPuck.Tests.Rules.Penalties
         {
             NormalPlayed.Add(
                 i,
-                Match(WorldBuilder.DefaultSetup with { PeriodSeconds = 600 }, 1f, Seeds[i])
+                Match(WorldBuilder.DefaultSetup with { PeriodSeconds = 600 }, 1f, MatchSeeds[i])
             );
         }
 
@@ -1334,17 +1334,17 @@ namespace StickAndPuck.Tests.Rules.Penalties
         {
             int normal = 0,
                 broken2 = 0;
-            foreach ((int n, int b, bool _) in NormalPlayed.All(Seeds.Length))
+            foreach ((int n, int b, bool _) in NormalPlayed.All(MatchSeeds.Length))
             {
                 normal += n;
                 broken2 += b;
             }
-            float per60 = normal / (30f * Seeds.Length) * 60;
+            float per60 = normal / (30f * MatchSeeds.Length) * 60;
             Check(
                 per60 is >= 4 and <= 16 && broken2 == 0,
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"AI match of 3 x 10:00 with a normal referee: {normal / (float)Seeds.Length:0.0} calls a match ({per60:0.0} per 60 minutes, 4 to 16 wanted)"
+                    $"AI match of 3 x 10:00 with a normal referee: {normal / (float)MatchSeeds.Length:0.0} calls a match ({per60:0.0} per 60 minutes, 4 to 16 wanted)"
                 )
             );
         }
@@ -1352,7 +1352,7 @@ namespace StickAndPuck.Tests.Rules.Penalties
         /// <summary>What one full match came to: the calls, steps a club was not at its strength, and whether every penalty was served.</summary>
         public sealed record RefereeCalls(int Calls, int Broken, bool Served);
 
-        private static readonly int[] Seeds = [2, 3, 4, 5];
+        private static readonly int[] MatchSeeds = [2, 3, 4, 5];
 
         private static RefereeCalls Match(MatchSetup setup, float strictness, int seed)
         {
@@ -1453,17 +1453,16 @@ namespace StickAndPuck.Tests.Rules.Penalties
                 )
                 .Build();
             w.Switches.PenaltyStrictness = strictness;
-#pragma warning disable S2245 // fixed seeds so the checks repeat
-            PenaltyCalls.Book(w).Rng = new Random(seed);
+            PenaltyCalls.Book(w).Rng = Seeds.Dice(seed);
             systems =
             [
-                new PositioningSystem(new Random(seed)),
-                new DecisionSystem(new Random(seed)),
+                new PositioningSystem(Seeds.Dice(seed)),
+                new DecisionSystem(Seeds.Dice(seed)),
                 new LinesSystem(),
                 new SkatingSystem(),
-                new CheckingSystem(new Random(seed)),
-                new PuckHandlingSystem(new Random(seed)),
-                new GoalieSystem { Dice = new Random(seed) },
+                new CheckingSystem(Seeds.Dice(seed)),
+                new PuckHandlingSystem(Seeds.Dice(seed)),
+                new GoalieSystem { Dice = Seeds.Dice(seed) },
                 new PuckPhysics(),
                 new MatchRules(),
                 new OffsideRule(),
@@ -1471,7 +1470,6 @@ namespace StickAndPuck.Tests.Rules.Penalties
                 new PenaltyRules(),
                 new RefereeSystem(),
             ];
-#pragma warning restore S2245
             foreach (
                 ISystem s in systems.Where(s =>
                     s

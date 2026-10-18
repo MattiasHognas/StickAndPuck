@@ -42,15 +42,13 @@ namespace StickAndPuck.Tests.Players.Puck
 
         private List<MatchEvent> Run(World w, float seconds, Action<int> each)
         {
-#pragma warning disable S2245 // a fixed seed per run so the checks repeat
             ISystem[] systems =
             [
                 new SkatingSystem(),
-                new CheckingSystem(new Random(seed)),
-                new PuckHandlingSystem(new Random(seed + 1000)),
+                new CheckingSystem(Seeds.Dice(seed)),
+                new PuckHandlingSystem(Seeds.Dice(seed + 1000)),
                 new PuckPhysics(),
             ];
-#pragma warning restore S2245
             seed++;
             foreach (ISystem s in systems.Where(s => s is not PuckPhysics))
             {

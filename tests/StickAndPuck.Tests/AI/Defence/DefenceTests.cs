@@ -406,24 +406,22 @@ namespace StickAndPuck.Tests.AI.Defence
 
         private static ISystem[] Systems(World world, int seed, bool defence)
         {
-#pragma warning disable S2245 // fixed seeds so the checks repeat
             List<ISystem> systems =
             [
-                new PositioningSystem(new Random(seed)),
-                new DecisionSystem(new Random(seed)),
+                new PositioningSystem(Seeds.Dice(seed)),
+                new DecisionSystem(Seeds.Dice(seed)),
                 new SkatingSystem(),
-                new CheckingSystem(new Random(seed)),
-                new PuckHandlingSystem(new Random(seed)),
-                new GoalieSystem { Dice = new Random(seed) },
+                new CheckingSystem(Seeds.Dice(seed)),
+                new PuckHandlingSystem(Seeds.Dice(seed)),
+                new GoalieSystem { Dice = Seeds.Dice(seed) },
                 new PuckPhysics(),
                 new MatchRules(),
                 new OvertimeRules(),
             ];
             if (defence)
             {
-                systems.Insert(1, new DefenceSystem(new Random(seed)));
+                systems.Insert(1, new DefenceSystem(Seeds.Dice(seed)));
             }
-#pragma warning restore S2245
             foreach (ISystem s in systems.Where(s => s is not (PuckPhysics or GoalieSystem)))
             {
                 s.Start(world);

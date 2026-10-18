@@ -327,9 +327,7 @@ namespace StickAndPuck.Tests.Physics
         public void Fuzz()
         {
             // many random shots: the puck never leaves the rink, never gets into a net except through the mouth
-#pragma warning disable S2245 // a fixed seed so every run fuzzes the same shots
-            Random rng = new(7);
-#pragma warning restore S2245
+            Random rng = Seeds.Dice(7);
             int escapes = 0,
                 sneaky = 0,
                 goals = 0;

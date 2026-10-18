@@ -27,9 +27,7 @@ namespace StickAndPuck.App.AI.Positioning.Dev
 
         private StandInPlay(int seed, float clock)
         {
-#pragma warning disable S2245 // gameplay variation, not security
-            dice = new Random(seed);
-#pragma warning restore S2245
+            dice = Seeds.Dice(seed);
             Clock = clock;
         }
 

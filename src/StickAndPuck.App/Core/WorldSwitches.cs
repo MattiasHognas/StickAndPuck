@@ -12,7 +12,7 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets or sets how much faster than normal skaters tire and rest; demo scenes and SAP_FATIGUE raise it.</summary>
         public float FatiguePace { get; set; } =
-            Env.GetFloat("SAP_FATIGUE").TryGet(out float pace) && pace > 0 ? pace : 1f;
+            Env.GetNumber("SAP_FATIGUE").TryGet(out float pace) && pace > 0 ? pace : 1f;
 
         /// <summary>Gets or sets where the next zamboni run starts along its route, in seconds; the intermission scene's SAP_ZAMBONI_AT sets it, and the run resets it to 0.</summary>
         public float ZamboniStartAt { get; set; }

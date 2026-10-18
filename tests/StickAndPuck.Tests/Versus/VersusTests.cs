@@ -141,21 +141,19 @@ namespace StickAndPuck.Tests.Versus
             );
             MatchFlow.Begin(world, log: false);
 
-#pragma warning disable S2245 // fixed seeds so the checks repeat
             ISystem[] systems =
             [
-                new PositioningSystem(new Random(17)),
-                new DecisionSystem(new Random(17)),
+                new PositioningSystem(Seeds.Dice(17)),
+                new DecisionSystem(Seeds.Dice(17)),
                 new SwitchingSystem(),
                 new SkatingSystem(),
-                new CheckingSystem(new Random(17)),
-                new PuckHandlingSystem(new Random(17)),
-                new GoalieSystem { Dice = new Random(17) },
+                new CheckingSystem(Seeds.Dice(17)),
+                new PuckHandlingSystem(Seeds.Dice(17)),
+                new GoalieSystem { Dice = Seeds.Dice(17) },
                 new PuckPhysics(),
                 new MatchRules(),
                 new OvertimeRules(),
             ];
-#pragma warning restore S2245
             foreach (ISystem s in systems.Where(s => s is not (PuckPhysics or GoalieSystem)))
             {
                 s.Start(world);

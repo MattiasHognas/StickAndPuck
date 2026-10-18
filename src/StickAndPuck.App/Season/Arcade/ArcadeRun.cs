@@ -89,9 +89,7 @@ namespace StickAndPuck.App.Season.Arcade
             {
                 throw new ArgumentException($"{userClub} is not a club", nameof(userClub));
             }
-#pragma warning disable S2245 // seeded order, not security
-            Random dice = new(seed);
-#pragma warning restore S2245
+            Random dice = Seeds.Dice(seed);
             List<string> order =
             [
                 .. clubs

@@ -35,9 +35,7 @@ namespace StickAndPuck.App.Fights
         public bool AiPunches { get; set; } = true;
 
         /// <summary>Gets or sets the dice; scenes and tests seed them.</summary>
-#pragma warning disable S2245 // gameplay dice, not security
-        public Random Rng { get; set; } = new(15);
-#pragma warning restore S2245
+        public Random Rng { get; set; } = Seeds.Dice(15);
 
         /// <summary>Gets or sets when the fight scene offers its scripted fight (seconds of play), or NaN.</summary>
         public float ScriptAfterDrop { get; set; } = float.NaN;

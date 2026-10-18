@@ -1,9 +1,7 @@
 namespace StickAndPuck.App.Core
 {
     /// <content>The string table keys.</content>
-#pragma warning disable MA0048 // File name must match type name
     public static partial class Text
-#pragma warning restore MA0048 // File name must match type name
     {
         /// <summary>Every key in the language files; each is documented with its English text.</summary>
         public static partial class Keys

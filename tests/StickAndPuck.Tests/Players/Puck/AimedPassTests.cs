@@ -64,15 +64,13 @@ namespace StickAndPuck.Tests.Players.Puck
             Action<int> seen
         )
         {
-#pragma warning disable S2245 // fixed seeds so the checks repeat
             ISystem[] systems =
             [
-                new DecisionSystem(new Random(1)),
+                new DecisionSystem(Seeds.Dice(1)),
                 new SkatingSystem(),
-                new PuckHandlingSystem(new Random(1)),
+                new PuckHandlingSystem(Seeds.Dice(1)),
                 new PuckPhysics(),
             ];
-#pragma warning restore S2245
             foreach (ISystem s in systems.Where(s => s is not PuckPhysics))
             {
                 s.Start(w);

@@ -27,9 +27,10 @@ namespace StickAndPuck.App.Core
         public static void Run()
         {
             using Session session = new();
-#pragma warning disable S108 // Nested blocks of code should not be left empty
-            while (session.Frame()) { }
-#pragma warning restore S108 // Nested blocks of code should not be left empty
+            while (session.Frame())
+            {
+                // Frame advances and renders the game; keep running until it requests shutdown.
+            }
         }
 
         /// <summary>A running game, driven by the desktop loop or one browser animation frame at a time.</summary>

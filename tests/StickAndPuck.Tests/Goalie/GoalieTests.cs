@@ -1,5 +1,3 @@
-#pragma warning disable S2245 // game dice with fixed seeds, so every run fires the same shots
-
 using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.Core;
@@ -156,9 +154,9 @@ namespace StickAndPuck.Tests.Goalie
         private static Tally Batch(World world, int reflexes, Action<World, Random> shot)
         {
             Player g = AddGoalie(world, reflexes);
-            using GoalieSystem goalie = new() { Dice = new Random(3) };
+            using GoalieSystem goalie = new() { Dice = Seeds.Dice(3) };
             using PuckPhysics physics = new();
-            Random dice = new(7);
+            Random dice = Seeds.Dice(7);
             int saves = 0,
                 rebounds = 0,
                 goals = 0;
@@ -212,7 +210,7 @@ namespace StickAndPuck.Tests.Goalie
         {
             World world = Make();
             Player g = AddGoalie(world, 50);
-            using GoalieSystem goalie = new() { Dice = new Random(1) };
+            using GoalieSystem goalie = new() { Dice = Seeds.Dice(1) };
             using PuckPhysics physics = new();
             _ = Run(world, goalie, physics, 0.5f);
             GoalieDemo.Fire(
@@ -300,9 +298,9 @@ namespace StickAndPuck.Tests.Goalie
         {
             Player g = AddGoalie(world, traits);
             int side = gloveOrBlocker * GoalieModel.GloveSide(g.Data, 1);
-            using GoalieSystem goalie = new() { Dice = new Random(3) };
+            using GoalieSystem goalie = new() { Dice = Seeds.Dice(3) };
             using PuckPhysics physics = new();
-            Random dice = new(7);
+            Random dice = Seeds.Dice(7);
             int saves = 0,
                 goals = 0;
             for (int i = 0; i < 100; i++)
@@ -388,9 +386,9 @@ namespace StickAndPuck.Tests.Goalie
                 world,
                 new Traits { GoalieReboundControl = control, GoaliePuckHandling = 0 }
             );
-            using GoalieSystem goalie = new() { Dice = new Random(3) };
+            using GoalieSystem goalie = new() { Dice = Seeds.Dice(3) };
             using PuckPhysics physics = new();
-            Random dice = new(7);
+            Random dice = Seeds.Dice(7);
             int saves = 0,
                 held = 0,
                 slot = 0;
@@ -485,7 +483,7 @@ namespace StickAndPuck.Tests.Goalie
                     new PlayerData { Position = PlayingPosition.D },
                     new Vector3(RinkSpec.GoalLineX - 9, 0, 4)
                 );
-                using GoalieSystem goalie = new() { Dice = new Random(100 + i) };
+                using GoalieSystem goalie = new() { Dice = Seeds.Dice(100 + i) };
                 using PuckPhysics physics = new();
                 _ = Run(world, goalie, physics, 0.3f);
                 world.Puck.Live = true;

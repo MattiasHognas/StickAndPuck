@@ -15,9 +15,7 @@ namespace StickAndPuck.App.Season.Schedule
         /// <summary>Plays one game on paper.</summary>
         public static FixtureResult Play(ClubData home, ClubData away, int seed)
         {
-#pragma warning disable S2245 // seeded so a game always plays out the same, not security
-            Random dice = new(seed);
-#pragma warning restore S2245
+            Random dice = Seeds.Dice(seed);
             double h = GoalsPerSide * HomeEdge * Ratio(home, away);
             double a = GoalsPerSide / HomeEdge * Ratio(away, home);
             int hg = Poisson(dice, h),

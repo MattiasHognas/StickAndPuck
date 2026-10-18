@@ -21,7 +21,7 @@ namespace StickAndPuck.App.Rules.Penalties.Dev
         /// <inheritdoc/>
         public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
         {
-            float period = Env.GetFloat("SAP_PERIOD").TryGet(out float s) && s > 0 ? s : 20 * 60;
+            float period = Env.GetNumber("SAP_PERIOD").TryGet(out float s) && s > 0 ? s : 20 * 60;
             World world = new(Scenes.DefaultSetup(clubs) with { PeriodSeconds = period }, settings);
             Scenes.AddStarters(world);
             if (
@@ -33,7 +33,7 @@ namespace StickAndPuck.App.Rules.Penalties.Dev
                 centre.Slot = 0;
             }
 
-            if (Env.GetFloat("SAP_PENALTY_STRICT").TryGet(out float strict) && strict >= 0)
+            if (Env.GetNumber("SAP_PENALTY_STRICT").TryGet(out float strict) && strict >= 0)
             {
                 world.Switches.PenaltyStrictness = strict;
             }
@@ -62,7 +62,7 @@ namespace StickAndPuck.App.Rules.Penalties.Dev
                 );
             }
 
-            if (Env.GetFloat("SAP_PENALTY_SKIP").TryGet(out float skip) && skip > 0)
+            if (Env.GetNumber("SAP_PENALTY_SKIP").TryGet(out float skip) && skip > 0)
             {
                 PenaltyScenes.FastForward(world, skip);
             }

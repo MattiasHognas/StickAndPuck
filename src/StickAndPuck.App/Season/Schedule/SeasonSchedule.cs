@@ -1,3 +1,5 @@
+using StickAndPuck.App.Core;
+
 namespace StickAndPuck.App.Season.Schedule
 {
     /// <summary>Builds the SHL double round robin twice over: every club meets every other club four times,
@@ -15,9 +17,7 @@ namespace StickAndPuck.App.Season.Schedule
             {
                 throw new ArgumentException("a season needs at least two clubs", nameof(clubIds));
             }
-#pragma warning disable S2245 // seeded schedule order, not security
-            Random dice = new(seed);
-#pragma warning restore S2245
+            Random dice = Seeds.Dice(seed);
             List<string> order = [.. clubIds.OrderBy(_ => dice.Next())];
             if (order.Count % 2 == 1)
             {

@@ -50,16 +50,14 @@ namespace StickAndPuck.Tests.Players.Checks
         /// <summary>Runs the systems for some seconds; <paramref name="each"/> sets commands before each step.</summary>
         private List<MatchEvent> Run(World world, float seconds, Action<World, int> each)
         {
-#pragma warning disable S2245 // a fixed seed per run so the checks repeat
             ISystem[] systems =
             [
                 new SwitchingSystem(),
                 new SkatingSystem(),
-                new CheckingSystem(new Random(seed)),
-                new PuckHandlingSystem(new Random(seed)),
+                new CheckingSystem(Seeds.Dice(seed)),
+                new PuckHandlingSystem(Seeds.Dice(seed)),
                 new PuckPhysics(),
             ];
-#pragma warning restore S2245
             seed++;
             foreach (ISystem s in systems.Where(s => s is not PuckPhysics))
             {

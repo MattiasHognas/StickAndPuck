@@ -174,15 +174,13 @@ namespace StickAndPuck.Tests.AI.Positioning
         {
             World world = Make();
             Scenes.AddStarters(world);
-#pragma warning disable S2245 // fixed seed so the check repeats
             // checking ends the lunge of a defender an AI carrier dekes, as in a match
             ISystem[] systems = Systems(
                 world,
                 7,
-                new CheckingSystem(new Random(7)),
+                new CheckingSystem(Seeds.Dice(7)),
                 new MatchRules()
             );
-#pragma warning restore S2245
             _ = StandInPlay.Start(world, 7);
             MatchFlow.Begin(world, log: false);
             PeriodTally t = new();
@@ -516,18 +514,16 @@ namespace StickAndPuck.Tests.AI.Positioning
 
         private static ISystem[] Systems(World world, int seed, params ISystem[] more)
         {
-#pragma warning disable S2245 // fixed seeds so the checks repeat
             ISystem[] systems =
             [
-                new PositioningSystem(new Random(seed)),
-                new DecisionSystem(new Random(seed)),
+                new PositioningSystem(Seeds.Dice(seed)),
+                new DecisionSystem(Seeds.Dice(seed)),
                 new SkatingSystem(),
-                new PuckHandlingSystem(new Random(seed)),
-                new GoalieSystem { Dice = new Random(seed) },
+                new PuckHandlingSystem(Seeds.Dice(seed)),
+                new GoalieSystem { Dice = Seeds.Dice(seed) },
                 new PuckPhysics(),
                 .. more,
             ];
-#pragma warning restore S2245
             foreach (ISystem s in systems.Where(s => s is not (PuckPhysics or GoalieSystem)))
             {
                 s.Start(world);

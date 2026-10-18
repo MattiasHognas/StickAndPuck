@@ -726,7 +726,7 @@ namespace StickAndPuck.Tests.Fights
         /// <summary>Gets the matches: every seed under each preset in turn.</summary>
         public static IEnumerable<int> MatchNumbers()
         {
-            return Enumerable.Range(0, Presets.Length * Seeds.Length);
+            return Enumerable.Range(0, Presets.Length * MatchSeeds.Length);
         }
 
         /// <summary>One full AI match under a preset, with the referee at full strictness; <see cref="FullMatches"/> judges them.</summary>
@@ -738,11 +738,11 @@ namespace StickAndPuck.Tests.Fights
             FullMatchesPlayed.Add(
                 i,
                 Match(
-                    WorldBuilder.DefaultSetup.WithRules(Presets[i / Seeds.Length]) with
+                    WorldBuilder.DefaultSetup.WithRules(Presets[i / MatchSeeds.Length]) with
                     {
                         PeriodSeconds = 600,
                     },
-                    Seeds[i % Seeds.Length]
+                    MatchSeeds[i % MatchSeeds.Length]
                 )
             );
         }
@@ -752,7 +752,7 @@ namespace StickAndPuck.Tests.Fights
         [DependsOn(nameof(PlayMatch), [typeof(int)])]
         public void FullMatches()
         {
-            FightCount[] played = FullMatchesPlayed.All(Presets.Length * Seeds.Length);
+            FightCount[] played = FullMatchesPlayed.All(Presets.Length * MatchSeeds.Length);
             for (int r = 0; r < Presets.Length; r++)
             {
                 MatchSetup setup = WorldBuilder.DefaultSetup.WithRules(Presets[r]);
@@ -762,7 +762,9 @@ namespace StickAndPuck.Tests.Fights
                     broken = 0,
                     open = 0;
                 foreach (
-                    (int f, int b, int x, int o) in played.Skip(r * Seeds.Length).Take(Seeds.Length)
+                    (int f, int b, int x, int o) in played
+                        .Skip(r * MatchSeeds.Length)
+                        .Take(MatchSeeds.Length)
                 )
                 {
                     fights += f;
@@ -774,7 +776,7 @@ namespace StickAndPuck.Tests.Fights
                     fights >= 1 && boxed == fights * perFight && broken == 0 && open == 0,
                     string.Create(
                         CultureInfo.InvariantCulture,
-                        $"{setup.Rules.Preset}: AI matches of 3 x 10:00: {fights} fight(s) in {Seeds.Length} matches, {boxed} fighting penalties ({perFight} a fight), clubs short by exactly their penalties"
+                        $"{setup.Rules.Preset}: AI matches of 3 x 10:00: {fights} fight(s) in {MatchSeeds.Length} matches, {boxed} fighting penalties ({perFight} a fight), clubs short by exactly their penalties"
                     )
                 );
             }
@@ -783,7 +785,7 @@ namespace StickAndPuck.Tests.Fights
         /// <summary>What one full match came to: its fights, the fighting penalties, steps a club was not at its strength, and penalties left open.</summary>
         public sealed record FightCount(int Fights, int Boxed, int Broken, int Open);
 
-        private static readonly int[] Seeds = [2, 3, 4, 5];
+        private static readonly int[] MatchSeeds = [2, 3, 4, 5];
 
         private static FightCount Match(MatchSetup setup, int seed)
         {
@@ -799,18 +801,17 @@ namespace StickAndPuck.Tests.Fights
                     }
                 )
                 .Build();
-#pragma warning disable S2245 // fixed seeds so the checks repeat
-            PenaltyCalls.Book(w).Rng = new Random(seed);
-            Fighting.State(w).Rng = new Random(seed);
+            PenaltyCalls.Book(w).Rng = Seeds.Dice(seed);
+            Fighting.State(w).Rng = Seeds.Dice(seed);
             ISystem[] systems =
             [
-                new PositioningSystem(new Random(seed)),
-                new DecisionSystem(new Random(seed)),
+                new PositioningSystem(Seeds.Dice(seed)),
+                new DecisionSystem(Seeds.Dice(seed)),
                 new LinesSystem(),
                 new SkatingSystem(),
-                new CheckingSystem(new Random(seed)),
-                new PuckHandlingSystem(new Random(seed)),
-                new GoalieSystem { Dice = new Random(seed) },
+                new CheckingSystem(Seeds.Dice(seed)),
+                new PuckHandlingSystem(Seeds.Dice(seed)),
+                new GoalieSystem { Dice = Seeds.Dice(seed) },
                 new PuckPhysics(),
                 new MatchRules(),
                 new OffsideRule(),
@@ -819,7 +820,6 @@ namespace StickAndPuck.Tests.Fights
                 new FightSystem(),
                 new RefereeSystem(),
             ];
-#pragma warning restore S2245
             foreach (
                 ISystem s in systems.Where(s =>
                     s

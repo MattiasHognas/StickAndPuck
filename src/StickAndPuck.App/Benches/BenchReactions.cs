@@ -8,7 +8,7 @@ namespace StickAndPuck.App.Benches
     /// and the trainer react too, and at a stoppage walk to a player to talk. Render only: it reads the
     /// world and the events and never changes them, and its dice are its own, from the benches' seed.</summary>
     /// <remarks>Initializes a new instance of the <see cref="BenchReactions"/> class.</remarks>
-    /// <param name="dice">The benches' own dice (<see cref="Seeds.Dice"/> of the match seed's "bench" stream), never a match system's.</param>
+    /// <param name="dice">The benches' own dice (<see cref="Seeds.Dice(int, string, int)"/> of the match seed's "bench" stream), never a match system's.</param>
     public sealed class BenchReactions(Random dice)
     {
         /// <summary>The longest a figure waits after the cause before he reacts (s).</summary>
