@@ -48,12 +48,18 @@ namespace StickAndPuck.App.Core
             return (int)(z & 0x7FFFFFFF);
         }
 
+        /// <summary>Creates an independent random stream from an exact seed for repeatable gameplay and tests.</summary>
+        public static Random Dice(int seed)
+        {
+#pragma warning disable S2245 // Gameplay and test randomness must repeat from the seed; never use this for secrets.
+            return new Random(seed);
+#pragma warning restore S2245
+        }
+
         /// <summary>Gets one system's dice.</summary>
         public static Random Dice(int matchSeed, string stream, int fallback)
         {
-#pragma warning disable S2245 // gameplay dice, seeded on purpose so matches replay
-            return new Random(For(matchSeed, stream, fallback));
-#pragma warning restore S2245
+            return Dice(For(matchSeed, stream, fallback));
         }
     }
 }

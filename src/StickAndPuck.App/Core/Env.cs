@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace StickAndPuck.App.Core
@@ -30,12 +29,7 @@ namespace StickAndPuck.App.Core
         }
 
         /// <summary>Reads a number.</summary>
-        [SuppressMessage(
-            "Naming",
-            "CA1720",
-            Justification = "The method intentionally names the float parsing API in a clear, domain-specific way."
-        )]
-        public static Maybe<float> GetFloat(string name)
+        public static Maybe<float> GetNumber(string name)
         {
             return float.TryParse(
                 Get(name),

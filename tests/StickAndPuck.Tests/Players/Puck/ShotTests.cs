@@ -56,14 +56,12 @@ namespace StickAndPuck.Tests.Players.Puck
             p.Heading = atNet ? MathF.PI / 2 : -MathF.PI / 2;
             w.Puck.Carrier = p.Id;
             w.Puck.Position = PuckHandling.Blade(p);
-#pragma warning disable S2245 // a fixed seed per run so the checks repeat
             ISystem[] systems =
             [
                 new SkatingSystem(),
-                new PuckHandlingSystem(new Random(seed++)),
+                new PuckHandlingSystem(Seeds.Dice(seed++)),
                 new PuckPhysics(),
             ];
-#pragma warning restore S2245
             foreach (ISystem s in systems.Where(s => s is not PuckPhysics))
             {
                 s.Start(w);
@@ -162,9 +160,7 @@ namespace StickAndPuck.Tests.Players.Puck
         {
             static float Spread(int accuracy)
             {
-#pragma warning disable S2245 // a fixed seed so the check repeats
-                Random rng = new(7);
-#pragma warning restore S2245
+                Random rng = Seeds.Dice(7);
                 List<float> h =
                 [
                     .. Enumerable.Range(0, 400).Select(_ => ShotHeight.AtNet(0.8f, accuracy, rng)),

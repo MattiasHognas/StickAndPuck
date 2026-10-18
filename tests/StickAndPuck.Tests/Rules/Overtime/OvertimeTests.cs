@@ -82,7 +82,6 @@ namespace StickAndPuck.Tests.Rules.Overtime
         }
 
         /// <summary>Runs the systems a shootout needs, step by step, and returns every event.</summary>
-#pragma warning disable S2245 // seeded randomness so the checks repeat
         private static List<MatchEvent> Run(
             World world,
             Func<World, bool> until,
@@ -101,16 +100,16 @@ namespace StickAndPuck.Tests.Rules.Overtime
             float limit = 900
         )
         {
-            using GoalieSystem goalie = new() { Dice = new Random(seed) };
+            using GoalieSystem goalie = new() { Dice = Seeds.Dice(seed) };
             ISystem[] systems =
             [
                 new PositioningSystem(),
                 new SkatingSystem(),
-                new PuckHandlingSystem(new Random(seed)),
+                new PuckHandlingSystem(Seeds.Dice(seed)),
                 goalie,
                 new PuckPhysics(),
                 new MatchRules(),
-                new OvertimeRules(new Random(seed)),
+                new OvertimeRules(Seeds.Dice(seed)),
             ];
             List<MatchEvent> events = [];
             for (int i = 0; i < limit / Game.Step && !until(world); i++)
@@ -128,7 +127,6 @@ namespace StickAndPuck.Tests.Rules.Overtime
             }
             return events;
         }
-#pragma warning restore S2245
 
         /// <summary>A tie after regulation: three skaters a side, the human's control on one of them, then a sudden death faceoff at centre.</summary>
         [Test]

@@ -53,21 +53,19 @@ namespace StickAndPuck.App.AI.SpecialTeams
         /// <summary>The AI, skating, puck and rules systems of a special teams match, started on the world.</summary>
         internal static ISystem[] Systems(World world, int seed, bool special, bool rules = false)
         {
-#pragma warning disable S2245 // The AI simulation RNGs are not security-sensitive and are required by the game systems.
             ISystem[] systems =
             [
-                new PositioningSystem(new Random(seed)),
-                new DefenceSystem(new Random(seed)),
-                new SpecialTeamsSystem(new Random(seed), special),
-                new DecisionSystem(new Random(seed)),
+                new PositioningSystem(Seeds.Dice(seed)),
+                new DefenceSystem(Seeds.Dice(seed)),
+                new SpecialTeamsSystem(Seeds.Dice(seed), special),
+                new DecisionSystem(Seeds.Dice(seed)),
                 new SkatingSystem(),
-                new CheckingSystem(new Random(seed)),
-                new PuckHandlingSystem(new Random(seed)),
-                new GoalieSystem { Dice = new Random(seed) },
+                new CheckingSystem(Seeds.Dice(seed)),
+                new PuckHandlingSystem(Seeds.Dice(seed)),
+                new GoalieSystem { Dice = Seeds.Dice(seed) },
                 new PuckPhysics(),
                 new MatchRules(),
             ];
-#pragma warning restore S2245
             foreach (ISystem s in systems.Where(s => s is not (PuckPhysics or GoalieSystem)))
             {
                 s.Start(world);

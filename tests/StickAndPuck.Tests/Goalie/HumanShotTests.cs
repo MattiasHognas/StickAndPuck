@@ -1,5 +1,3 @@
-#pragma warning disable S2245 // game dice with fixed seeds, so every run fires the same shots
-
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -229,9 +227,9 @@ namespace StickAndPuck.Tests.Goalie
                 },
                 new Vector3(0, 0, 0)
             );
-            using GoalieSystem goalie = new() { Dice = new Random(3) };
+            using GoalieSystem goalie = new() { Dice = Seeds.Dice(3) };
             using PuckPhysics physics = new();
-            Random dice = new(7);
+            Random dice = Seeds.Dice(7);
             int saves = 0,
                 caught = 0,
                 goals = 0,

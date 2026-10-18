@@ -17,7 +17,7 @@ namespace StickAndPuck.App.Fights.Dev
         /// <inheritdoc/>
         public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
         {
-            float period = Env.GetFloat("SAP_PERIOD").TryGet(out float p) && p > 0 ? p : 20 * 60;
+            float period = Env.GetNumber("SAP_PERIOD").TryGet(out float p) && p > 0 ? p : 20 * 60;
             World world = new(
                 Scenes.DefaultSetup(clubs) with
                 {
@@ -43,7 +43,7 @@ namespace StickAndPuck.App.Fights.Dev
             _ = MatchFlow.Drop(world);
             FightState s = Fighting.State(world);
             s.ScriptAfterDrop = 0.25f;
-            if (Env.GetFloat("SAP_FIGHT_CHANCE").TryGet(out float chance) && chance >= 0)
+            if (Env.GetNumber("SAP_FIGHT_CHANCE").TryGet(out float chance) && chance >= 0)
             {
                 s.OfferChance = chance;
             }

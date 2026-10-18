@@ -8,7 +8,7 @@ namespace StickAndPuck.App.Rules.Match.Dev
     /// <summary>The shot loop and camera behind <see cref="MatchDemoScene"/>.</summary>
     internal sealed class MatchDemo
     {
-        private readonly Random dice = new(7);
+        private readonly Random dice = Seeds.Dice(7);
         private float shotAt = float.NegativeInfinity;
         private float cameraX;
         private Side next = Side.Home;

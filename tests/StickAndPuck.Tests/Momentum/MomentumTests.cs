@@ -330,24 +330,22 @@ namespace StickAndPuck.Tests.Momentum
                     }
                 )
                 .Build();
-#pragma warning disable S2245 // fixed seed so the match repeats
             ISystem[] systems =
             [
-                new PositioningSystem(new Random(1)),
-                new DefenceSystem(new Random(1)),
-                new SpecialTeamsSystem(new Random(1)),
-                new DecisionSystem(new Random(1)),
+                new PositioningSystem(Seeds.Dice(1)),
+                new DefenceSystem(Seeds.Dice(1)),
+                new SpecialTeamsSystem(Seeds.Dice(1)),
+                new DecisionSystem(Seeds.Dice(1)),
                 new LinesSystem(),
                 new SkatingSystem(),
-                new CheckingSystem(new Random(1)),
-                new PuckHandlingSystem(new Random(1)),
-                new GoalieSystem { Dice = new Random(1) },
+                new CheckingSystem(Seeds.Dice(1)),
+                new PuckHandlingSystem(Seeds.Dice(1)),
+                new GoalieSystem { Dice = Seeds.Dice(1) },
                 new PuckPhysics(),
                 new MatchRules(),
                 new OvertimeRules(),
                 new MomentumSystem(),
             ];
-#pragma warning restore S2245
             foreach (ISystem s in systems.Where(s => s is not (PuckPhysics or GoalieSystem)))
             {
                 s.Start(world);

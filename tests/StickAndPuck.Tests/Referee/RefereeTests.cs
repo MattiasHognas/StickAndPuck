@@ -160,9 +160,7 @@ namespace StickAndPuck.Tests.Referee
             const int seed = 11;
             static List<float> Holds(World w)
             {
-#pragma warning disable S2245 // a fixed seed so the check repeats
-                RefereeSystem referee = new(new Random(seed));
-#pragma warning restore S2245
+                RefereeSystem referee = new(Seeds.Dice(seed));
                 RefereeState r = RefereeState.Of(w);
                 List<float> holds = [];
                 void Record(World x)

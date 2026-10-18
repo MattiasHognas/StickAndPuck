@@ -530,9 +530,7 @@ namespace StickAndPuck.Tests.Physics
         {
             // random shots from behind and beside both nets, aimed at the cage: none may score or get inside
             // unless it rebounded off the boards and came back in through the mouth
-#pragma warning disable S2245 // a fixed seed so every run fuzzes the same shots
-            Random rng = new(11);
-#pragma warning restore S2245
+            Random rng = Seeds.Dice(11);
             int sneaky = 0,
                 inside = 0,
                 total = 0,

@@ -19,9 +19,7 @@ namespace StickAndPuck.App.Season.Stats
             int seed
         )
         {
-#pragma warning disable S2245 // seeded so a game always gives the same lines, not security
-            Random dice = new(unchecked(seed ^ 0x51A7));
-#pragma warning restore S2245
+            Random dice = Seeds.Dice(unchecked(seed ^ 0x51A7));
             MatchStatSheet sheet = new()
             {
                 Home = home.Id,

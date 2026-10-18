@@ -1,8 +1,6 @@
 namespace StickAndPuck.App.Core
 {
-#pragma warning disable MA0048 // File name must match type name
     public static partial class Text
-#pragma warning restore MA0048 // File name must match type name
     {
         public static partial class Keys
         {

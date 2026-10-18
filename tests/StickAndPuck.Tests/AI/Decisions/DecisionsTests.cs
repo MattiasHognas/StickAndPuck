@@ -88,9 +88,7 @@ namespace StickAndPuck.Tests.AI.Decisions
         [Test]
         public void JitterMaths()
         {
-#pragma warning disable S2245 // fixed seed so the check repeats
-            Random rng = new(7);
-#pragma warning restore S2245
+            Random rng = Seeds.Dice(7);
             (float Fumble, float Lucky) Share(int iq)
             {
                 int fumbles = 0,
@@ -732,23 +730,21 @@ namespace StickAndPuck.Tests.AI.Decisions
 
         private static ISystem[] Systems(World world, int seed)
         {
-#pragma warning disable S2245 // fixed seeds so the checks repeat
             ISystem[] systems =
             [
-                new PositioningSystem(new Random(seed)),
-                new DefenceSystem(new Random(seed)),
-                new SpecialTeamsSystem(new Random(seed)),
-                new TacticsSystem(new Random(seed)),
-                new DecisionSystem(new Random(seed)),
+                new PositioningSystem(Seeds.Dice(seed)),
+                new DefenceSystem(Seeds.Dice(seed)),
+                new SpecialTeamsSystem(Seeds.Dice(seed)),
+                new TacticsSystem(Seeds.Dice(seed)),
+                new DecisionSystem(Seeds.Dice(seed)),
                 new SkatingSystem(),
-                new CheckingSystem(new Random(seed)),
-                new PuckHandlingSystem(new Random(seed)),
-                new GoalieSystem { Dice = new Random(seed) },
+                new CheckingSystem(Seeds.Dice(seed)),
+                new PuckHandlingSystem(Seeds.Dice(seed)),
+                new GoalieSystem { Dice = Seeds.Dice(seed) },
                 new PuckPhysics(),
                 new MatchRules(),
                 new OvertimeRules(),
             ];
-#pragma warning restore S2245
             foreach (ISystem s in systems.Where(s => s is not (PuckPhysics or GoalieSystem)))
             {
                 s.Start(world);

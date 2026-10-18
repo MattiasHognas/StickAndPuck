@@ -11,7 +11,7 @@ namespace StickAndPuck.App.Goalie.Dev
     /// <summary>The shot loop and tally behind <see cref="GoalieScene"/>.</summary>
     internal sealed class GoalieDemo
     {
-        private readonly Random dice = new(11);
+        private readonly Random dice = Seeds.Dice(11);
         private float shotAt = float.NegativeInfinity;
         private bool scored;
         private int shots,

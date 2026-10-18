@@ -33,7 +33,7 @@ namespace StickAndPuck.App.Camera
             GoalShakeSeconds = 0.5f;
 
         private readonly ReplayBuffer.Frame held = new();
-        private readonly Random rng = new(30);
+        private readonly Random rng = Seeds.Dice(30);
         private float shake,
             shakeLeft,
             shakeSeconds;

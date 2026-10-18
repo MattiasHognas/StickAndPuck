@@ -151,16 +151,14 @@ namespace StickAndPuck.Tests.Pregame
             Action<World> each
         )
         {
-#pragma warning disable S2245 // a fixed seed, so the test repeats
             ISystem[] systems =
             [
-                new PositioningSystem(new Random(28)),
+                new PositioningSystem(Seeds.Dice(28)),
                 new PregameSystem(),
                 new SkatingSystem(),
                 new PuckPhysics(),
                 new MatchRules(),
             ];
-#pragma warning restore S2245
             for (int i = 0; i < limit / Game.Step && !until(world); i++)
             {
                 world.Events.Clear();
