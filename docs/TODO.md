@@ -26,3 +26,9 @@ Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setti
 | W85 | Diving | 2 | M6 rules | Diving penalties; needs players who can embellish first, which has no task yet |
 | W89 | Playoff overtime break | 2 | M6 rules | A break before playoff overtime, shown on the W87 intermission screen |
 | W103 | Network play (online versus) | 1 | M7 network play | Online versus with lockstep input over the network, a host/join lobby, and desync detection from per-step checksums |
+| W115 | NHL clubs and rosters | 1 | M8 NHL league | Data files for the 32 NHL clubs: names, home and away colours, real rosters, and seeded traits for every player and goalie |
+| A16 | NHL kits and crests | 1 | M8 NHL league | Home and away kits and crest art for all 32 clubs, built through the art scripts like the SHL kits |
+| W116 | NHL season and playoffs | 2 | M8 NHL league | An NHL season played with the NHL rule preset: conferences and divisions, 82 games, and a 16-club playoff (needs W115) |
+| W117 | League choice | 2 | M8 NHL league | Pick SHL or NHL when starting a season, arcade or versus game, with saves kept per league (needs W115) |
+| A17 | NHL arena graphics | 2 | M8 NHL league | NHL centre ice, board ads and arena dressing, swapped in when an NHL match is played (after A16, art runs one at a time) |
+| W118 | NHL presentation | 3 | M8 NHL league | Scorebug, lineup and standings screens showing NHL crests and names, with English and Swedish strings (needs W116, A16) |
