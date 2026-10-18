@@ -165,6 +165,39 @@ namespace StickAndPuck.App.Core
             /// <summary>FIGHT PENALTY</summary>
             public const string RuleFightPenalty = nameof(RuleFightPenalty);
 
+            /// <summary>LEAGUE</summary>
+            public const string RuleGroupLeague = nameof(RuleGroupLeague);
+
+            /// <summary>TABLE POINTS</summary>
+            public const string RuleTablePoints = nameof(RuleTablePoints);
+
+            /// <summary>LEVEL ON POINTS</summary>
+            public const string RuleTiebreak = nameof(RuleTiebreak);
+
+            /// <summary>PLAYOFF HOME ICE</summary>
+            public const string RulePlayoffHomeIce = nameof(RulePlayoffHomeIce);
+
+            /// <summary>3-2-1-0</summary>
+            public const string RuleValueThreeTwoOne = nameof(RuleValueThreeTwoOne);
+
+            /// <summary>2-2-1-0</summary>
+            public const string RuleValueTwoTwoOne = nameof(RuleValueTwoTwoOne);
+
+            /// <summary>GOAL DIFF</summary>
+            public const string RuleValueGoalDifference = nameof(RuleValueGoalDifference);
+
+            /// <summary>REG. WINS</summary>
+            public const string RuleValueRegulationWins = nameof(RuleValueRegulationWins);
+
+            /// <summary>HEAD TO HEAD</summary>
+            public const string RuleValueHeadToHead = nameof(RuleValueHeadToHead);
+
+            /// <summary>ALTERNATING</summary>
+            public const string RuleValueAlternating = nameof(RuleValueAlternating);
+
+            /// <summary>2-2-1-1-1</summary>
+            public const string RuleValueTwoTwoOneOneOne = nameof(RuleValueTwoTwoOneOneOne);
+
             /// <summary>PRESET</summary>
             public const string Preset = nameof(Preset);
 

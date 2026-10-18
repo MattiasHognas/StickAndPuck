@@ -7,7 +7,7 @@ using StickAndPuck.App.Season.Schedule;
 
 namespace StickAndPuck.App.Screens
 {
-    /// <summary>The saves behind the headless captures of the polished screens (SAP_SCREEN=stats, sim,
+    /// <summary>The saves behind the headless captures of the polished screens (SAP_SCREEN=stats, table, sim,
     /// trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
     /// player's season and arcade saves are left alone.</summary>
     internal static class PolishScenes
@@ -24,6 +24,10 @@ namespace StickAndPuck.App.Screens
                             Env.Get("SAP_STATS_VIEW") is { Length: > 0 } view ? view : "POINTS"
                         )
                     );
+                    break;
+                case "table":
+                    Season(app, clubs, "table-test.json", 20);
+                    app.Screens.Push(new StandingsScreen(app));
                     break;
                 case "sim":
                     Season(app, clubs, "sim-test.json", 5);
@@ -55,7 +59,8 @@ namespace StickAndPuck.App.Screens
         )
         {
             string path = TestPath(SeasonSave.DefaultPath, name);
-            _ = app.Season.StartNew(clubs, Club(clubs), Seed(), path);
+            SeasonState season = app.Season.StartNew(clubs, Club(clubs), Seed(), path);
+            season.Rules = RulePicks.Choice(app).Resolve(); // as the first played game would store them
             int settled = 0;
             while (settled < games && app.Season.SimCurrentGame().HasValue)
             {

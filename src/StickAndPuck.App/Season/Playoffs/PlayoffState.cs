@@ -37,6 +37,9 @@ namespace StickAndPuck.App.Season.Playoffs
         /// <summary>Gets or sets every club in final table order: the seeds, best first.</summary>
         public IReadOnlyList<string> Seeds { get; set; } = [];
 
+        /// <summary>Gets or sets which games of a best of seven the higher seed hosts, from the season's rules when the playoffs start.</summary>
+        public PlayoffHomeIce HomeIce { get; set; } = PlayoffHomeIce.Alternating;
+
         /// <summary>Gets or sets the rounds started so far; the last one is being played.</summary>
         public IList<PlayoffRound> Rounds { get; set; } = [];
 
@@ -101,6 +104,7 @@ namespace StickAndPuck.App.Season.Playoffs
                 Seed = unchecked((season.Seed * 31) + 2_027),
                 UserClub = season.UserClub,
                 Seeds = [.. season.Table.Select(r => r.ClubId)],
+                HomeIce = season.Rules.Or(RuleSet.Shl).PlayoffHomeIce,
             };
             state.Rounds.Add(state.Pair(0, Enumerable.Range(Direct + 1, LastPlayIn - Direct)));
             return state;
@@ -237,6 +241,7 @@ namespace StickAndPuck.App.Season.Playoffs
                         High = Seeds[high - 1],
                         Low = Seeds[low - 1],
                         BestOf = bestOf,
+                        HomeIce = HomeIce,
                     }
                 );
             }

@@ -126,6 +126,7 @@ Use these with `SAP_SCENE=start` (the default scene). Values are case-insensitiv
 | `bracket` | The playoff test season's bracket. |
 | `leaders` | Alias of `stats`. |
 | `stats` | Season statistics and player of the game from a fresh test season with 12 user games simulated. |
+| `table` | The standings of a fresh test season with 20 user games simulated, played by the `SAP_RULES` preset's table points and tiebreak (SHL 3-2-1-0, NHL 2-2-1-0). |
 | `sim` | A test season with five user games simulated, then “sim this game”. |
 | `trophy` | The season champion after a test season and playoffs. |
 | `arcadetrophy` | The trophy for a completed three-lives arcade run. |

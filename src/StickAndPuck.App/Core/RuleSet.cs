@@ -36,7 +36,8 @@ namespace StickAndPuck.App.Core
             Intermission = IntermissionLength.Quick,
         };
 
-        /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection and 4 on 4 coincidental minors.</summary>
+        /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
+        /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points and 2-2-1-1-1 playoff home ice.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -44,6 +45,9 @@ namespace StickAndPuck.App.Core
             ShootoutRepeat = false,
             FightPenalty = FightPenalty.Major,
             CoincidentalMinors = CoincidentalMinors.FourOnFour,
+            TablePoints = TablePoints.TwoTwoOne,
+            Tiebreak = TableTiebreak.RegulationWins,
+            PlayoffHomeIce = PlayoffHomeIce.TwoTwoOneOneOne,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -127,6 +131,15 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets how long the Zamboni break between periods lasts; anything but Off also breaks before a playoff overtime.</summary>
         public IntermissionLength Intermission { get; init; } = IntermissionLength.Standard;
+
+        /// <summary>Gets the points a league game gives in the standings.</summary>
+        public TablePoints TablePoints { get; init; } = TablePoints.ThreeTwoOne;
+
+        /// <summary>Gets how clubs level on points are ordered in the standings.</summary>
+        public TableTiebreak Tiebreak { get; init; } = TableTiebreak.GoalDifference;
+
+        /// <summary>Gets which games of a best of seven playoff series the higher seed hosts.</summary>
+        public PlayoffHomeIce PlayoffHomeIce { get; init; } = PlayoffHomeIce.Alternating;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

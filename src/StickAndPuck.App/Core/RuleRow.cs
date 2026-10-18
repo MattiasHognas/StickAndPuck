@@ -49,6 +49,13 @@ namespace StickAndPuck.App.Core
                 "FourOnFour" => Text.Get(K.RuleValueFourOnFour),
                 "Standard" => Text.Get(K.RuleValueStandard),
                 "Quick" => Text.Get(K.RuleValueQuick),
+                "ThreeTwoOne" => Text.Get(K.RuleValueThreeTwoOne),
+                "TwoTwoOne" => Text.Get(K.RuleValueTwoTwoOne),
+                "GoalDifference" => Text.Get(K.RuleValueGoalDifference),
+                "RegulationWins" => Text.Get(K.RuleValueRegulationWins),
+                "HeadToHead" => Text.Get(K.RuleValueHeadToHead),
+                "Alternating" => Text.Get(K.RuleValueAlternating),
+                "TwoTwoOneOneOne" => Text.Get(K.RuleValueTwoTwoOneOneOne),
                 _ => value.ToUpperInvariant(),
             };
         }

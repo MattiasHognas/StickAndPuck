@@ -76,12 +76,18 @@ namespace StickAndPuck.App.Screens
                     world.Match.Phase = MatchPhase.Play;
                     app.Screens.Push(new PauseScreen(app));
                     break;
-                case "leaders" or "stats" or "sim" or "trophy" or "arcadetrophy" or "bestruns":
+                case "leaders"
+                or "stats"
+                or "table"
+                or "sim"
+                or "trophy"
+                or "arcadetrophy"
+                or "bestruns":
                     PolishScenes.Open(app, screen, clubs);
                     break;
                 default:
                     throw new InvalidOperationException(
-                        $"SAP_SCREEN={screen}: use start, settings, modes, teams, pause, results, standings, stats, sim, trophy, arcadetrophy, bestruns or bracket"
+                        $"SAP_SCREEN={screen}: use start, settings, modes, teams, pause, results, standings, table, stats, sim, trophy, arcadetrophy, bestruns or bracket"
                     );
             }
             Console.WriteLine($"SAP: screens: {screen}");
