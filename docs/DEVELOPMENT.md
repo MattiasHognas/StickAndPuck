@@ -15,15 +15,45 @@ For a Release build, add `-c Release`. The executable is still named `StickAndPu
 
 Development overrides are environment variables in front of the command, for example `SAP_SCENE=match SAP_HOME=frolunda SAP_AWAY=djurgarden dotnet run --project src/StickAndPuck.App`. On Windows PowerShell: `$env:SAP_SCENE="match"; dotnet run --project src/StickAndPuck.App`.
 
-CSharpier formats C# and XML. Restore the pinned local tool with `dotnet tool restore`,
-then use `dotnet csharpier format src tests analyzers` to format the solution or
-`dotnet csharpier check src tests analyzers` to check it. The matching
-`CSharpier.MsBuild` package formats project files during Debug builds and checks
-formatting during Release builds. Install the recommended CSharpier VS Code
-extension to use the workspace's format-on-save settings; builds and the CLI work
-without the extension. Keep the tool and package versions in sync when upgrading.
-
 Environment variables override saved settings for the run. `SAP_SETTINGS=path` chooses a different settings JSON file; leaving it unset uses the platform default. They also work with the downloaded release executable. See [Playing](PLAYING.md) for settings and save locations, and [Testing](TESTING.md#visual-scenes-sap_scene) for every scene.
+
+## Formatting and static analysis
+
+CSharpier owns C# and XML whitespace formatting. Analyzer conflicts follow this
+precedence: **CSharpier > Roslyn (IDE/CA) > Sonar > Meziantou**. The
+[`.editorconfig`](../.editorconfig) documents confirmed overlaps and disables the
+lower-priority rule; unrelated rules retain their defaults. Analyzer diagnostics
+are promoted to warnings, and `Directory.Build.props` treats warnings as errors
+and enforces code style during builds.
+
+Restore the pinned local tools, apply code-style and analyzer fixes, then format:
+
+```sh
+dotnet tool restore
+dotnet format style src.slnx
+dotnet format analyzers src.slnx
+dotnet csharpier format .
+```
+
+Use the `style` and `analyzers` subcommands instead of plain `dotnet format`.
+The plain command also runs Roslyn's whitespace formatter, which can change
+CSharpier's output even though IDE0055 is disabled. CSharpier does not offer a
+switch to disable its whitespace formatting. Review automated code fixes for
+behavior changes before committing.
+
+To check without applying changes:
+
+```sh
+dotnet format style src.slnx --verify-no-changes
+dotnet format analyzers src.slnx --verify-no-changes
+dotnet csharpier check .
+```
+
+The matching `CSharpier.MsBuild` package formats project sources during Debug
+builds and checks formatting during Release builds. Install the recommended
+CSharpier VS Code extension to use the workspace's format-on-save settings;
+builds and the CLI work without the extension. Keep the tool and package versions
+in sync when upgrading.
 
 ## Match settings
 
