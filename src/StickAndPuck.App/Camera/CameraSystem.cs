@@ -17,6 +17,7 @@ namespace StickAndPuck.App.Camera
         private readonly Replay replay = new();
         private readonly Impact impact = new();
         private readonly CloseUp closeUp = new();
+        private readonly Flyover flyover = new();
         private int scale = 1;
 
         public bool RunsWhilePaused => true;
@@ -67,8 +68,12 @@ namespace StickAndPuck.App.Camera
                 return;
             }
 
+            flyover.Update(world, dt);
             follow.Update(world, dt);
-            world.Camera = impact.Apply(closeUp.Apply(follow.Camera), follow.PixelStep);
+            world.Camera = flyover.Apply(
+                world,
+                impact.Apply(closeUp.Apply(follow.Camera), follow.PixelStep)
+            );
             if (closeUp.Weight > 0)
             {
                 (world.Camera, scale) = PixelGrid.SnapScaled(world.Camera, scale);

@@ -38,7 +38,7 @@ Stick and puck is a C# game using Raylib_cs. Simulation runs at a fixed 60 Hz; t
 | `Physics/`, `Goalie/` | Puck and body collisions, nets, goalie positioning and saves. |
 | `Rules/`, `Referee/` | Match flow, faceoffs, clock, offside, icing, penalties, overtime/shootouts and referee movement/signals. |
 | `Lines/`, `Fights/`, `Momentum/` | Fatigue and changes, goalie replacement/pull, fights and short team boosts. |
-| `Pregame/`, `Intermission/`, `Benches/` | Warm-up, Zamboni, bench and penalty-box presentation. |
+| `Pregame/`, `Intermission/`, `Benches/` | Warm-up and its arena flyover, Zamboni, bench and penalty-box presentation. |
 | `Camera/`, `Render/`, `Arena/`, `Lighting/` | Broadcast/close-up cameras, visual goal replay, pixel pipeline, rink and lighting moods. |
 | `Hud/`, `Screens/`, `Audio/` | Scorebug/messages, menus and mode flow, generated effects and streamed music. |
 | `Season/`, `Versus/` | Schedule, standings, stats, saves, playoffs, arcade and local two-player setup. |

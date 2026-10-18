@@ -20,6 +20,9 @@ namespace StickAndPuck.App.Pregame
         /// <summary>Gets or sets a value indicating whether every start button has been seen released, so a press held over from a menu does not count.</summary>
         public bool Armed { get; set; }
 
+        /// <summary>Gets or sets a value indicating whether start was pressed during the arena flyover, which skips it.</summary>
+        public bool FlyoverSkipped { get; set; }
+
         /// <summary>Gets the route of each skater, by player id.</summary>
         public Dictionary<int, WarmupRoute> Routes { get; } = [];
     }

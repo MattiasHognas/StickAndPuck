@@ -12,7 +12,8 @@ namespace StickAndPuck.App.Pregame
     /// intro open and skates both squads round their own ends on <see cref="WarmupRoute"/>s, using
     /// the skating and the AI's steering so everyone moves at their own pace with the skate clip. A
     /// human's skater joins the loops until the human moves the stick. Space, enter, or A or start on a
-    /// pad ends the warm-up (<see cref="PregameFlow.Start"/>): the skaters gather inside their blue line
+    /// pad first skips the arena flyover (<see cref="ArenaFlyover"/>) if it is still playing, then ends
+    /// the warm-up (<see cref="PregameFlow.Start"/>): the skaters gather inside their blue line
     /// and the opening faceoff follows. Runs after the AI and before skating, so its commands win.</summary>
     internal sealed class PregameSystem : ISystem
     {
@@ -39,9 +40,14 @@ namespace StickAndPuck.App.Pregame
             if (!s.Started)
             {
                 flow.Timer = GatherSeconds; // hold the intro
-                if (StartPressed(s) || s.Elapsed >= PregameFlow.AutoStartSeconds)
+                if (s.Elapsed >= PregameFlow.AutoStartSeconds)
                 {
                     _ = PregameFlow.Start(world);
+                }
+                else if (StartPressed(s))
+                {
+                    s.Armed = false; // a press that skips the flyover must be let go before the next one starts the game
+                    _ = PregameFlow.Press(world);
                 }
             }
 
