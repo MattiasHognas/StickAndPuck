@@ -49,6 +49,9 @@ dotnet format analyzers src.slnx --verify-no-changes
 dotnet csharpier check .
 ```
 
+The CI formatting job runs these checks on pull requests and releases, using the
+pinned SDK and restored local tools. Publishing requires this job to pass.
+
 The matching `CSharpier.MsBuild` package formats project sources during Debug
 builds and checks formatting during Release builds. Install the recommended
 CSharpier VS Code extension to use the workspace's format-on-save settings;

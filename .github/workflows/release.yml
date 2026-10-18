@@ -61,6 +61,30 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
 
+  format:
+    name: Formatting and analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore tools and solution
+        run: |
+          dotnet tool restore
+          dotnet restore src.slnx
+
+      - name: Check CSharpier formatting
+        run: dotnet csharpier check .
+
+      - name: Check Roslyn code style
+        run: dotnet format style src.slnx --no-restore --verify-no-changes
+
+      - name: Check analyzer fixes
+        run: dotnet format analyzers src.slnx --no-restore --verify-no-changes
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -117,7 +141,7 @@ jobs:
           path: TestResults/browser
 
   build:
-    needs: [test, browser, version]
+    needs: [format, test, browser, version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
