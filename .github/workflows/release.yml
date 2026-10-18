@@ -79,6 +79,11 @@ jobs:
       - name: Check CSharpier formatting
         run: dotnet csharpier check .
 
+      # dotnet format does not build project-referenced source generators.
+      # DiscoveryRegistry must exist before unused-type analysis runs.
+      - name: Build analyzers and discovery generator
+        run: dotnet build analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj --no-restore
+
       - name: Check Roslyn code style
         run: dotnet format style src.slnx --no-restore --verify-no-changes
 

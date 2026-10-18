@@ -30,10 +30,16 @@ Restore the pinned local tools, apply code-style and analyzer fixes, then format
 
 ```sh
 dotnet tool restore
+dotnet build analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj
 dotnet format style src.slnx
 dotnet format analyzers src.slnx
 dotnet csharpier format .
 ```
+
+Build the analyzer project first on a fresh checkout. `dotnet format` does not
+build project-referenced source generators; without the discovery generator,
+unused-type analysis can incorrectly flag modes referenced by the generated
+registry. The default Debug build supplies the generator used by these commands.
 
 Use the `style` and `analyzers` subcommands instead of plain `dotnet format`.
 The plain command also runs Roslyn's whitespace formatter, which can change
@@ -41,7 +47,7 @@ CSharpier's output even though IDE0055 is disabled. CSharpier does not offer a
 switch to disable its whitespace formatting. Review automated code fixes for
 behavior changes before committing.
 
-To check without applying changes:
+After the tool restoration and analyzer build above, check without applying changes:
 
 ```sh
 dotnet format style src.slnx --verify-no-changes
