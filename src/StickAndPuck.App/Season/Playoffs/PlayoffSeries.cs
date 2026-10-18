@@ -4,7 +4,8 @@ using StickAndPuck.App.Core;
 namespace StickAndPuck.App.Season.Playoffs
 {
     /// <summary>One playoff series between a higher and a lower seed. In a best of seven the higher seed is at
-    /// home in games 1, 3, 5 and 7; in the best of three play-in the lower seed hosts game 1 and the
+    /// home in games 1, 3, 5 and 7, or 1, 2, 5 and 7 under <see cref="PlayoffHomeIce.TwoTwoOneOneOne"/>
+    /// (NHL); in the best of three play-in the lower seed hosts game 1 and the
     /// higher seed games 2 and 3, as in the SHL.</summary>
     public sealed class PlayoffSeries
     {
@@ -22,6 +23,9 @@ namespace StickAndPuck.App.Season.Playoffs
 
         /// <summary>Gets or sets the most games the series can take: 3 or 7.</summary>
         public int BestOf { get; set; }
+
+        /// <summary>Gets or sets which games of a best of seven the higher seed hosts, from the season's rules.</summary>
+        public PlayoffHomeIce HomeIce { get; set; } = PlayoffHomeIce.Alternating;
 
         /// <summary>Gets or sets the games played so far.</summary>
         public IList<PlayoffGame> Games { get; set; } = [];
@@ -69,10 +73,12 @@ namespace StickAndPuck.App.Season.Playoffs
             return Same(High, clubId) ? HighSeed : (Same(Low, clubId) ? LowSeed : 0);
         }
 
-        /// <summary>Gets a value indicating whether the higher seed is at home in a game.</summary>
+        /// <summary>Gets a value indicating whether the higher seed is at home in a game, from 0.</summary>
         public bool HighHosts(int game)
         {
-            return BestOf == 3 ? game != 0 : game % 2 == 0;
+            return BestOf == 3 ? game != 0
+                : HomeIce == PlayoffHomeIce.TwoTwoOneOneOne ? game is 0 or 1 or 4 or 6
+                : game % 2 == 0;
         }
 
         private static bool Same(string a, string b)

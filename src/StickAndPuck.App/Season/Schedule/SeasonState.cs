@@ -57,8 +57,9 @@ namespace StickAndPuck.App.Season.Schedule
         public int CurrentRound =>
             Games.FirstOrNone(g => !g.Played).TryGet(out Fixture open) ? open.Round : Rounds;
 
-        /// <summary>Gets the current table, best first.</summary>
-        public IReadOnlyList<StandingRow> Table => Standings.Compute(Clubs, Games);
+        /// <summary>Gets the current table, best first, under the season's rules (SHL until they are stored).</summary>
+        public IReadOnlyList<StandingRow> Table =>
+            Standings.Compute(Clubs, Games, Rules.Or(RuleSet.Shl));
 
         /// <summary>Starts a new season for every club, with the human on one of them.</summary>
         public static SeasonState New(IReadOnlyList<ClubData> clubs, string userClub, int seed)
