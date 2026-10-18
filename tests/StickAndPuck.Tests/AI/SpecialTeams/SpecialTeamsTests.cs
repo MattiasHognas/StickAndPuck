@@ -150,6 +150,109 @@ namespace StickAndPuck.Tests.AI.SpecialTeams
         }
 
         /// <summary>
+        /// The SpecialTeams rule off: during a power play the AI plays exactly as the even-strength AI does
+        /// (the same match as special teams switched off in the system, step for step), no shape is set,
+        /// while the same match with the rule on does set up its shapes.
+        /// </summary>
+        [Test]
+        public void RuleOffKeepsEvenStrength()
+        {
+            RuleSet off = RuleSet.Shl with { SpecialTeams = false, Custom = true };
+            Check(
+                RuleSet.Shl.SpecialTeams && RuleSet.Arcade.SpecialTeams && RuleSet.Nhl.SpecialTeams,
+                "special teams are on in SHL, Arcade and NHL"
+            );
+            RuleRow row = RuleRows.Shown.Single(r =>
+                string.Equals(r.Key, nameof(RuleSet.SpecialTeams), StringComparison.Ordinal)
+            );
+            Check(
+                new RuleChoice().With(row, "Off").Resolve()
+                    is { SpecialTeams: false, Custom: true },
+                "the rules page row turns special teams off as a custom rule"
+            );
+
+            World ruleOff = SpecialTeamsSetup.ShortHanded(
+                WorldBuilder.Clubs,
+                new Settings(),
+                Side.Away,
+                off
+            );
+            World even = SpecialTeamsSetup.ShortHanded(
+                WorldBuilder.Clubs,
+                new Settings(),
+                Side.Away
+            );
+            World ruleOn = SpecialTeamsSetup.ShortHanded(
+                WorldBuilder.Clubs,
+                new Settings(),
+                Side.Away
+            );
+            ISystem[] offSystems = SpecialTeamsSetup.Systems(
+                ruleOff,
+                Seed,
+                special: true,
+                rules: true
+            );
+            ISystem[] evenSystems = SpecialTeamsSetup.Systems(
+                even,
+                Seed,
+                special: false,
+                rules: true
+            );
+            ISystem[] onSystems = SpecialTeamsSetup.Systems(
+                ruleOn,
+                Seed,
+                special: true,
+                rules: true
+            );
+
+            bool same = true,
+                noShape = true,
+                onShape = false;
+            int powerPlaySteps = 0;
+            for (int i = 0; i < (int)(120 / Game.Step); i++)
+            {
+                Step(ruleOff, offSystems);
+                Step(even, evenSystems);
+                Step(ruleOn, onSystems);
+                if (App.Rules.Penalties.PenaltyCalls.PowerPlay(ruleOff).TryGetSide(out _))
+                {
+                    powerPlaySteps++;
+                }
+
+                same &=
+                    ruleOff
+                        .Players.Zip(even.Players)
+                        .All(p => p.First.Position == p.Second.Position)
+                    && ruleOff.Puck.Position == even.Puck.Position;
+                noShape &=
+                    SpecialTeamsState.FormationOf(ruleOff, Side.Home) == Formation.None
+                    && SpecialTeamsState.FormationOf(ruleOff, Side.Away) == Formation.None;
+                onShape |= SpecialTeamsState.FormationOf(ruleOn, Side.Home) != Formation.None;
+            }
+
+            Check(powerPlaySteps > 0, "home is on the power play");
+            Check(
+                same,
+                "with the rule off every skater and the puck move exactly as with even-strength AI"
+            );
+            Check(noShape, "with the rule off no power-play or kill shape is set");
+            Check(onShape, "with the rule on the power play sets up its shape");
+        }
+
+        private static void Step(World world, ISystem[] systems)
+        {
+            world.Events.Clear();
+            foreach (ISystem s in systems)
+            {
+                s.Update(world, Game.Step);
+            }
+
+            world.Time += Game.Step;
+            world.Tick++;
+        }
+
+        /// <summary>
         /// Plays power plays with special teams on and off, each club on the power play in turn, and
         /// checks the shapes and the clears. Used by <see cref="PowerPlayAndKill"/> and by aimatchtest.
         /// </summary>

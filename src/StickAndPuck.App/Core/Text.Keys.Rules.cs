@@ -141,6 +141,9 @@ namespace StickAndPuck.App.Core
             /// <summary>NO CHANGE AFTER ICING</summary>
             public const string RuleIcingNoChange = nameof(RuleIcingNoChange);
 
+            /// <summary>SPECIAL TEAMS</summary>
+            public const string RuleSpecialTeams = nameof(RuleSpecialTeams);
+
             /// <summary>FIGHTS</summary>
             public const string RuleFights = nameof(RuleFights);
 

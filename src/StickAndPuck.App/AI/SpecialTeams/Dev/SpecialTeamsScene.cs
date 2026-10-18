@@ -7,7 +7,8 @@ namespace StickAndPuck.App.AI.SpecialTeams.Dev
     /// home plays a power play the whole first period, with each skater's spot drawn on the ice and the shapes and clears
     /// on the bottom line. SAP_ST_KILL=home puts the home club a man short instead. SAP_ST_WAIT=1 plays
     /// off screen until the power play has held its shape in the zone for a couple of seconds, for a
-    /// headless screenshot (SAP_SCREENSHOT=1) of the shape.</summary>
+    /// headless screenshot (SAP_SCREENSHOT=1) of the shape. SAP_ST_RULE=off plays it with the SpecialTeams rule off, so
+    /// the AI keeps its even-strength positioning a man up.</summary>
     public sealed class SpecialTeamsScene : IScene
     {
         /// <inheritdoc/>
@@ -23,7 +24,14 @@ namespace StickAndPuck.App.AI.SpecialTeams.Dev
             )
                 ? Side.Home
                 : Side.Away;
-            World world = SpecialTeamsSetup.ShortHanded(clubs, settings, kill);
+            RuleSet rules = Env.Is("SAP_ST_RULE", "off")
+                ? RuleSet.Shl with
+                {
+                    SpecialTeams = false,
+                    Custom = true,
+                }
+                : RuleSet.Shl;
+            World world = SpecialTeamsSetup.ShortHanded(clubs, settings, kill, rules);
             world.Switches.SpecialTeamsSpots = true;
             if (Env.Is("SAP_ST_WAIT", "1"))
             {

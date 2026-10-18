@@ -132,6 +132,14 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { PenaltySeverity = v }
             ),
             Flag(
+                nameof(RuleSet.SpecialTeams),
+                K.RuleSpecialTeams,
+                K.RuleGroupPenalties,
+                plays: true,
+                r => r.SpecialTeams,
+                (r, v) => r with { SpecialTeams = v }
+            ),
+            Flag(
                 nameof(RuleSet.Interference),
                 K.RuleInterference,
                 K.RuleGroupInfractions,
