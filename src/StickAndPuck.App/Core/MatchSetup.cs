@@ -37,6 +37,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets the rules the match is played by, resolved when it starts; systems read their switches here.</summary>
         public RuleSet Rules { get; init; } = RuleSet.Shl;
 
+        /// <summary>Gets both clubs' team morale as a season game starts, or None outside a season; the momentum meter starts from it.</summary>
+        public Maybe<MatchMorale> Morale { get; init; }
+
         /// <summary>This setup played by a rule set: the set goes on <see cref="Rules"/>, and its overtime
         /// switch picks the format. A setup whose mode pinned its own <see cref="OvertimeFormat"/> is a
         /// playoff game and takes <see cref="RuleSet.PlayoffOvertime"/>, keeping the mode's own

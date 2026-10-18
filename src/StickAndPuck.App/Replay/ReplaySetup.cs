@@ -12,7 +12,8 @@ namespace StickAndPuck.App.Replay
         int Periods,
         OvertimeRule Overtime,
         Maybe<OvertimeFormat> OvertimeFormat,
-        RuleSet Rules
+        RuleSet Rules,
+        Maybe<MatchMorale> Morale = default
     )
     {
         /// <summary>Gets the stored form of a setup.</summary>
@@ -26,7 +27,8 @@ namespace StickAndPuck.App.Replay
                 s.Periods,
                 s.Overtime,
                 s.OvertimeFormat,
-                s.Rules
+                s.Rules,
+                s.Morale
             );
         }
 
@@ -54,6 +56,7 @@ namespace StickAndPuck.App.Replay
                 Overtime = Overtime,
                 OvertimeFormat = OvertimeFormat,
                 Rules = Rules,
+                Morale = Morale,
             };
         }
     }

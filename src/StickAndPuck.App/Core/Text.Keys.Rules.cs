@@ -198,6 +198,21 @@ namespace StickAndPuck.App.Core
             /// <summary>2-2-1-1-1</summary>
             public const string RuleValueTwoTwoOneOneOne = nameof(RuleValueTwoTwoOneOneOne);
 
+            /// <summary>SEASON</summary>
+            public const string RuleGroupSeason = nameof(RuleGroupSeason);
+
+            /// <summary>TEAM MORALE</summary>
+            public const string RuleMorale = nameof(RuleMorale);
+
+            /// <summary>MORALE STRENGTH</summary>
+            public const string RuleMoraleStrength = nameof(RuleMoraleStrength);
+
+            /// <summary>MILD</summary>
+            public const string RuleValueMild = nameof(RuleValueMild);
+
+            /// <summary>STRONG</summary>
+            public const string RuleValueStrong = nameof(RuleValueStrong);
+
             /// <summary>PRESET</summary>
             public const string Preset = nameof(Preset);
 

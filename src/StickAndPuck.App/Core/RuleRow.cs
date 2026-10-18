@@ -56,6 +56,8 @@ namespace StickAndPuck.App.Core
                 "HeadToHead" => Text.Get(K.RuleValueHeadToHead),
                 "Alternating" => Text.Get(K.RuleValueAlternating),
                 "TwoTwoOneOneOne" => Text.Get(K.RuleValueTwoTwoOneOneOne),
+                "Mild" => Text.Get(K.RuleValueMild),
+                "Strong" => Text.Get(K.RuleValueStrong),
                 _ => value.ToUpperInvariant(),
             };
         }

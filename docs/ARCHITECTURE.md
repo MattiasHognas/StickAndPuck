@@ -41,7 +41,7 @@ Stick and puck is a C# game using Raylib_cs. Simulation runs at a fixed 60 Hz; t
 | `Pregame/`, `Intermission/`, `Benches/` | Warm-up and its arena flyover, Zamboni, bench and penalty-box presentation. |
 | `Camera/`, `Render/`, `Arena/`, `Lighting/` | Broadcast/close-up cameras, visual goal replay, pixel pipeline, rink and lighting moods. |
 | `Hud/`, `Screens/`, `Audio/` | Scorebug/messages, menus and mode flow, generated effects and streamed music. |
-| `Season/`, `Versus/` | Schedule, standings, stats, saves, playoffs, arcade and local two-player setup. |
+| `Season/`, `Versus/` | Schedule, standings, stats, team morale, saves, playoffs, arcade and local two-player setup. |
 | `Replay/` | Input-log recording, replay execution, scrubbing, state dumps and checksums. |
 
 `MatchEvents` is the current step's typed event list. The simulation publishes goals, calls, saves and other outcomes; readers react during that step. AI command ownership and merge rules live in `AI/AiCommand.cs` and the AI layers, so evaluating a candidate pass does not mutate committed player intent.

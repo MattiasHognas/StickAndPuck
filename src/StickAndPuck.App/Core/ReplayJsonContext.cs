@@ -14,11 +14,13 @@ namespace StickAndPuck.App.Core
             typeof(MaybeJsonConverter<ReplaySetup>),
             typeof(MaybeJsonConverter<OvertimeFormat>),
             typeof(MaybeJsonConverter<float>),
+            typeof(MaybeJsonConverter<MatchMorale>),
         ]
     )]
     [JsonSerializable(typeof(ReplayHeader))]
     [JsonSerializable(typeof(ReplaySetup))]
     [JsonSerializable(typeof(OvertimeFormat))]
     [JsonSerializable(typeof(float))]
+    [JsonSerializable(typeof(MatchMorale))]
     internal sealed partial class ReplayJsonContext : JsonSerializerContext;
 }
