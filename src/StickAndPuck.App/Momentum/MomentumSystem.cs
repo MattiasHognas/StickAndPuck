@@ -3,157 +3,206 @@ using StickAndPuck.App.Audio;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Fights;
 using StickAndPuck.App.Hud;
-using StickAndPuck.App.Rules;
+using StickAndPuck.App.Rules.Match;
 using static Raylib_cs.Raylib;
-using K = StickAndPuck.App.Core.Text.Keys;
 
-namespace StickAndPuck.App.Momentum;
-
-/// <summary>Reads this step's goals, checks and fights, gives the club a boost, drains it during live play
-/// and tops up the energy of its skaters on the ice meanwhile. Swells the crowd (its own copies of
-/// the crowd sound, louder the bigger the boost) and draws a momentum bar under the scorebug.</summary>
-internal sealed class MomentumSystem : ISystem, IDisposable
+namespace StickAndPuck.App.Momentum
 {
-    const int Voices = 3;
-
-    readonly Sound[] crowd = new Sound[Voices];
-    Maybe<Fight> credited;
-    Maybe<HudArt> art;
-    bool sound;
-    int voice;
-    float swell;
-
-    /// <inheritdoc/>
-    public void Start(World world)
+    /// <summary>Reads this step's goals, checks and fights, gives the club a boost, drains it during live play
+    /// and tops up the energy of its skaters on the ice meanwhile. Swells the crowd (its own copies of
+    /// the crowd sound, louder the bigger the boost) and draws a momentum bar under the scorebug.</summary>
+    internal sealed class MomentumSystem : ISystem, IDisposable
     {
-        Momentum.State(world);
-        if (IsAudioDeviceReady())
+        private const int Voices = 3;
+
+        private readonly Sound[] crowd = new Sound[Voices];
+        private Maybe<Fight> credited;
+        private Maybe<HudArt> art;
+        private bool sound;
+        private int voice;
+        private float swell;
+
+        /// <inheritdoc/>
+        public void Start(World world)
         {
-            string filename = SfxTable.Info(Sfx.Crowd).File;
-            var first = ResourceLoader.Sound($"{SfxTable.ResourcePath}.{filename}");
-            if (IsSoundValid(first))
+            _ = MomentumMeter.State(world);
+            if (IsAudioDeviceReady())
             {
-                crowd[0] = first;
-                sound = true;
-                for (int i = 1; i < Voices; i++) crowd[i] = LoadSoundAlias(first);
+                string filename = SfxTable.Info(Sfx.Crowd).File;
+                Sound first = ResourceLoader.Sound($"{SfxTable.ResourcePath}.{filename}");
+                if (IsSoundValid(first))
+                {
+                    crowd[0] = first;
+                    sound = true;
+                    for (int i = 1; i < Voices; i++)
+                    {
+                        crowd[i] = LoadSoundAlias(first);
+                    }
+                }
+            }
+            if (IsWindowReady())
+            {
+                art = HudArt.Load();
             }
         }
-        if (IsWindowReady()) art = HudArt.Load();
-    }
 
-    /// <inheritdoc/>
-    public void Update(World world, float dt)
-    {
-        Read(world);
-        var s = Momentum.State(world);
-        foreach (var side in new[] { Side.Home, Side.Away })
+        /// <inheritdoc/>
+        public void Update(World world, float dt)
         {
-            int i = (int)side;
-            if (s.Level[i] <= 0f) continue;
-            if (world.Puck.Live) s.Level[i] = Math.Max(0f, s.Level[i] - (dt / MomentumTuning.Seconds));
-            foreach (var p in world.OnIce(side))
+            Read(world);
+            MomentumState s = MomentumMeter.State(world);
+            foreach (Side side in new[] { Side.Home, Side.Away })
             {
-                if (p.IsGoalie || p.Energy >= 1f) continue;
-                float gain = Math.Min(1f - p.Energy, MomentumTuning.Recover * s.Level[i] * dt);
-                p.Energy += gain;
-                s.Energy[i] += gain;
+                int i = (int)side;
+                if (s.Level[i] <= 0f)
+                {
+                    continue;
+                }
+
+                if (world.Puck.Live)
+                {
+                    s.Level[i] = Math.Max(0f, s.Level[i] - (dt / MomentumTuning.Seconds));
+                }
+
+                foreach (Player p in world.OnIce(side))
+                {
+                    if (p.IsGoalie || p.Energy >= 1f)
+                    {
+                        continue;
+                    }
+
+                    float gain = Math.Min(1f - p.Energy, MomentumTuning.Recover * s.Level[i] * dt);
+                    p.Energy += gain;
+                    s.Energy[i] += gain;
+                }
+            }
+            Swell(world, dt);
+        }
+
+        /// <inheritdoc/>
+        public void DrawHud(World world, RenderContext render)
+        {
+            if (
+                !art.TryGet(out HudArt hud)
+                || !MatchFlow.IsRunning(world)
+                || world.Match.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final
+            )
+            {
+                return;
+            }
+
+            if (!MomentumMeter.Leader(world).TryGetSide(out Side side))
+            {
+                return;
+            }
+
+            float level = MomentumMeter.Of(world, side);
+            MomentumBar.Draw(world, hud, side, level);
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            if (art.TryGet(out HudArt hud))
+            {
+                hud.Unload();
+            }
+
+            art = Maybe.None<HudArt>();
+            if (!sound)
+            {
+                return;
+            }
+
+            sound = false;
+            if (!IsAudioDeviceReady())
+            {
+                return; // closes the device first; then raylib has freed the sounds
+            }
+
+            for (int i = 1; i < Voices; i++)
+            {
+                UnloadSoundAlias(crowd[i]);
+            }
+
+            UnloadSound(crowd[0]);
+        }
+
+        private void Read(World world)
+        {
+            foreach (MatchEvent e in world.Events.Current)
+            {
+                if (e is GoalScored goal)
+                {
+                    Boost(world, goal.Side, MomentumCause.Goal);
+                }
+                else if (
+                    e is CheckLanded check
+                    && check.Strength >= MomentumTuning.BigHitStrength
+                    && !Fighting.Current(world).HasValue
+                )
+                {
+                    Boost(world, check.Side, MomentumCause.BigHit);
+                }
+            }
+
+            if (
+                Fighting.Current(world).TryGet(out Fight fight)
+                && fight.LoserId >= 0
+                && !credited.Is(c => ReferenceEquals(c, fight))
+            )
+            {
+                credited = fight;
+                Fighter won = fight.Of(fight.LoserId).TryGet(out Fighter loser)
+                    ? fight.Other(loser)
+                    : fight.Checker;
+                Boost(world, world.Players[won.PlayerId].Side, MomentumCause.FightWon);
             }
         }
-        Swell(world, dt);
-    }
 
-    /// <inheritdoc/>
-    public void DrawHud(World world, RenderContext render)
-    {
-        if (!art.TryGet(out var hud) || !MatchFlow.IsRunning(world) || world.Match.Phase is MatchPhase.Intro or MatchPhase.Shootout or MatchPhase.Final) return;
-        if (!Momentum.Leader(world).TryGetSide(out var side)) return;
-        float level = Momentum.Of(world, side);
-        MomentumBar.Draw(world, hud, side, level);
-    }
-
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        if (art.TryGet(out var hud)) hud.Unload();
-        art = Maybe<HudArt>.None;
-        if (!sound) return;
-        sound = false;
-        if (!IsAudioDeviceReady()) return;     // closes the device first; then raylib has freed the sounds
-        for (int i = 1; i < Voices; i++) UnloadSoundAlias(crowd[i]);
-        UnloadSound(crowd[0]);
-    }
-
-    void Read(World world)
-    {
-        foreach (var e in world.Events.Current)
+        private void Boost(World world, Side side, MomentumCause cause)
         {
-            if (e is GoalScored goal) Boost(world, goal.Side, MomentumCause.Goal);
-            else if (e is CheckLanded check && check.Strength >= MomentumTuning.BigHitStrength && !Fighting.Current(world).HasValue) Boost(world, check.Side, MomentumCause.BigHit);
+            MomentumMeter.Boost(world, side, cause);
+            swell = 0f; // the crowd answers at once
         }
 
-        if (Fighting.Current(world).TryGet(out var fight) && fight.LoserId >= 0 && !credited.Is(c => ReferenceEquals(c, fight)))
+        /// <summary>Gets the crowd's volume for a boost: louder the bigger the boost, and at a full one well over the crowd after a goal.</summary>
+        public static float CrowdVolume(float level, float volume)
         {
-            credited = fight;
-            var won = fight.Of(fight.LoserId).TryGet(out var loser) ? fight.Other(loser) : fight.Checker;
-            Boost(world, world.Players[won.PlayerId].Side, MomentumCause.FightWon);
+            return Math.Clamp(volume * MomentumTuning.CrowdVolume * level, 0f, 1f);
         }
-    }
 
-    void Boost(World world, Side side, MomentumCause cause)
-    {
-        Momentum.Boost(world, side, cause);
-        swell = 0f;     // the crowd answers at once
-    }
+        // while a club has a boost the crowd keeps rising, louder the bigger the boost
+        private void Swell(World world, float dt)
+        {
+            swell -= dt;
+            if (swell > 0f)
+            {
+                return;
+            }
 
-    /// <summary>Gets the crowd's volume for a boost: louder the bigger the boost, and at a full one well over the crowd after a goal.</summary>
-    public static float CrowdVolume(float level, float volume)
-    {
-        return Math.Clamp(volume * MomentumTuning.CrowdVolume * level, 0f, 1f);
-    }
+            float level = MomentumMeter.Leader(world).TryGetSide(out Side side)
+                ? MomentumMeter.Of(world, side)
+                : 0f;
+            if (level < MomentumTuning.SwellBelow)
+            {
+                return;
+            }
 
-    // while a club has a boost the crowd keeps rising, louder the bigger the boost
-    void Swell(World world, float dt)
-    {
-        swell -= dt;
-        if (swell > 0f) return;
-        float level = Momentum.Leader(world).TryGetSide(out var side) ? Momentum.Of(world, side) : 0f;
-        if (level < MomentumTuning.SwellBelow) return;
-        swell = MomentumTuning.SwellGap;
-        var state = Momentum.State(world);
-        state.Swells++;
-        state.CrowdVolume = CrowdVolume(level, world.Settings.EffectsVolume);
-        if (!sound) return;
-        var s = crowd[voice];
-        voice = (voice + 1) % Voices;
-        SetSoundVolume(s, state.CrowdVolume);
-        SetSoundPitch(s, 0.9f + (0.15f * level));
-        PlaySound(s);
-    }
-}
+            swell = MomentumTuning.SwellGap;
+            MomentumState state = MomentumMeter.State(world);
+            state.Swells++;
+            state.CrowdVolume = CrowdVolume(level, world.Settings.EffectsVolume);
+            if (!sound)
+            {
+                return;
+            }
 
-/// <summary>The momentum bar under the scorebug and any penalty rows: the boosted club's crest and a bar in its colour that drains with the boost.</summary>
-internal static class MomentumBar
-{
-    /// <summary>Draws the bar.</summary>
-    public static void Draw(World world, HudArt art, Side side, float level)
-    {
-        const int pad = 3, crest = 16, gap = 4, barH = 4;
-        string label = Text.Get(K.Momentum);
-        int x = art.BugPosition.X;
-        // below the penalty box rows (20 px and a 1 px gap each), which share the spot under the scorebug
-        int rows = world.Match.Penalties.Count + Penalties.Waiting(world).Count + Penalties.Misconducts(world).Count + Penalties.Delayed(world).Count
-            + (Lines.GoaliePull.IsPulled(world, Side.Home) ? 1 : 0) + (Lines.GoaliePull.IsPulled(world, Side.Away) ? 1 : 0);
-        int y = Math.Max(art.BugPosition.Y + art.BugSize.H + 3, HudSystem.PenaltyTop + (rows * 21) + (rows > 0 ? 2 : 0));
-        int w = pad + crest + gap + art.Measure(label) + pad + 1;
-        int h = crest + (pad * 2);
-        bool fresh = world.Time - Momentum.State(world).Since[(int)side] < 1.5f && ((int)(world.Time * 6) % 2 == 0);
-        art.DrawPanel(fresh ? "panel_gold" : "panel", x, y, w, h);
-        art.DrawCrest(world.Setup.Club(side).Id, x + pad, y + pad);
-        int tx = x + pad + crest + gap;
-        art.DrawText(label, tx, y + pad - 2, fresh ? art.Text : art.Score);
-        int barW = art.Measure(label);
-        int by = y + h - pad - barH;
-        DrawRectangle(tx, by, barW, barH, new Color(20, 18, 28, 255));
-        DrawRectangle(tx, by, (int)MathF.Ceiling(barW * Math.Clamp(level, 0f, 1f)), barH, HudSystem.StripeColour(world, side));
+            Sound s = crowd[voice];
+            voice = (voice + 1) % Voices;
+            SetSoundVolume(s, state.CrowdVolume);
+            SetSoundPitch(s, 0.9f + (0.15f * level));
+            PlaySound(s);
+        }
     }
 }

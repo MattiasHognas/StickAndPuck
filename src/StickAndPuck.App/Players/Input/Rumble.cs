@@ -2,224 +2,320 @@ using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using StickAndPuck.App.Core;
 
-namespace StickAndPuck.App.Players;
-
-/// <summary>Gamepad rumble. Raylib's desktop build has no rumble (its SetGamepadVibration only logs a
-/// warning there), so this talks to the system directly: on Linux a force-feedback rumble effect on
-/// the pad's /dev/input event device, on Windows XInput. A pad or driver with no rumble is noted
-/// once in the log and left quiet. SAP_RUMBLE=0 turns it off.</summary>
-internal sealed partial class Rumble(Gamepads pads)
+namespace StickAndPuck.App.Players.Input
 {
-    const int Pads = 2;
-
-    static readonly bool Off = OperatingSystem.IsBrowser() || Env.Is("SAP_RUMBLE", "0");
-    readonly Maybe<IRumbler>[] rumblers = new Maybe<IRumbler>[Pads];
-    readonly string[] opened = [.. Enumerable.Repeat(string.Empty, Pads)];   // "" for none: a pad's name is never empty
-
-    interface IRumbler : IDisposable
+    /// <summary>Gamepad rumble. Raylib's desktop build has no rumble (its SetGamepadVibration only logs a
+    /// warning there), so this talks to the system directly: on Linux a force-feedback rumble effect on
+    /// the pad's /dev/input event device, on Windows XInput. A pad or driver with no rumble is noted
+    /// once in the log and left quiet. SAP_RUMBLE=0 turns it off.</summary>
+    internal sealed partial class Rumble(Gamepads pads)
     {
-        void Start(float strong, float weak, float seconds);
+        private const int Pads = 2;
 
-        void Tick(float dt);
-    }
+        private static readonly bool Off = OperatingSystem.IsBrowser() || Env.Is("SAP_RUMBLE", "0");
+        private readonly Maybe<IRumbler>[] rumblers = new Maybe<IRumbler>[Pads];
+        private readonly string[] opened = [.. Enumerable.Repeat(string.Empty, Pads)]; // "" for none: a pad's name is never empty
 
-    /// <summary>Rumbles the pad a device names; keyboard and none do nothing.</summary>
-    public void Pulse(InputDevice device, float strong, float weak, float seconds)
-    {
-        int index = device switch { InputDevice.Gamepad1 => 0, InputDevice.Gamepad2 => 1, _ => -1 };
-        if (index < 0 || Off) return;
-        if (Rumbler(index).TryGet(out var r)) r.Start(Math.Clamp(strong, 0, 1), Math.Clamp(weak, 0, 1), seconds);
-    }
-
-    /// <summary>Stops rumbles whose time is up, where the system does not time them itself. Call every step.</summary>
-    public void Update(float dt)
-    {
-        foreach (var r in rumblers)
-            if (r.TryGet(out var rumbler)) rumbler.Tick(dt);
-    }
-
-    /// <summary>Finds or reopens the rumble for the n-th pad; a different pad in that place gets a fresh one.</summary>
-    Maybe<IRumbler> Rumbler(int index)
-    {
-        if (!pads.Name(index).TryGet(out string name)) return Maybe<IRumbler>.None;
-        if (string.Equals(opened[index], name, StringComparison.Ordinal)) return rumblers[index];
-        if (rumblers[index].TryGet(out var old)) old.Dispose();
-        opened[index] = name;
-        if (OperatingSystem.IsLinux())
-            rumblers[index] = Evdev.Open(index, name);
-        else if (OperatingSystem.IsWindows())
-            rumblers[index] = Maybe.Some<IRumbler>(new XInput(index));
-        else
-            rumblers[index] = Maybe<IRumbler>.None;
-        if (!rumblers[index].HasValue) Console.WriteLine($"SAP: rumble: {name} has no rumble here");
-        return rumblers[index];
-    }
-
-    /// <summary>Linux: a rumble effect uploaded to the pad's event device and played; the kernel stops it after its length.</summary>
-    sealed partial class Evdev : IRumbler
-    {
-        const int OpenWrite = 1;            // O_WRONLY
-        const ushort FfRumble = 0x50, EvFf = 0x15;
-        const int FfRumbleBit = 0x50;
-
-        // _IOW('E', 0x80, struct ff_effect), with sizeof(struct ff_effect) 48 on 64-bit
-        const uint SetEffect = 0x40304580;
-
-        readonly int fd;
-        short effect = -1;
-
-        Evdev(int fd)
+        private interface IRumbler : IDisposable
         {
-            this.fd = fd;
+            void Start(float strong, float weak, float seconds);
+
+            void Tick(float dt);
         }
 
-        /// <summary>Opens the event device of the n-th pad that can rumble, preferring one whose name matches.</summary>
-        public static Maybe<IRumbler> Open(int index, string name)
+        /// <summary>Rumbles the pad a device names; keyboard and none do nothing.</summary>
+        public void Pulse(InputDevice device, float strong, float weak, float seconds)
         {
-            var pads = new List<(string Path, string Name)>();
-            foreach (string dir in Directory.Exists("/sys/class/input") ? Directory.GetDirectories("/sys/class/input", "event*").Order(StringComparer.Ordinal) : Enumerable.Empty<string>())
+            int index = device switch
             {
-                string device = Path.Combine(dir, "device");
-                // a joystick has a jsN handler next to its event device; mice and keyboards do not
-                if (!Directory.Exists(device) || !Directory.GetDirectories(device, "js*").Any()) continue;
-                if (!CanRumble(Path.Combine(device, "capabilities", "ff"))) continue;
-                string devName = Read(Path.Combine(device, "name"));
-                pads.Add(("/dev/input/" + Path.GetFileName(dir), devName));
-            }
-
-            var found = pads.FirstOrNone(p => Matches(p.Name, name));
-            if (!found.HasValue && index < pads.Count) found = pads[index];
-            if (!found.TryGet(out var pick)) return Maybe<IRumbler>.None;
-            int handle = open(pick.Path, OpenWrite);
-            if (handle < 0)
+                InputDevice.Gamepad1 => 0,
+                InputDevice.Gamepad2 => 1,
+                InputDevice.None or InputDevice.KeyboardMouse => -1,
+                _ => throw new NotSupportedException("Unhandled input device " + device),
+            };
+            if (index < 0 || Off)
             {
-                Console.WriteLine($"SAP: rumble: cannot open {pick.Path} for {name} (no write access)");
-                return Maybe<IRumbler>.None;
-            }
-            Console.WriteLine($"SAP: rumble: {name} on {pick.Path} ({pick.Name})");
-            return Maybe.Some<IRumbler>(new Evdev(handle));
-        }
-
-        public void Start(float strong, float weak, float seconds)
-        {
-            byte[] ff = new byte[48];
-            Array.Clear(ff, 0, ff.Length);
-            BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(0, 2), FfRumble);
-            BinaryPrimitives.WriteInt16LittleEndian(ff.AsSpan(2, 2), effect); // -1 uploads a new one, else replaces it
-            BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(10, 2), (ushort)Math.Clamp(seconds * 1000, 1, 5000)); // replay.length in ms
-            BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(16, 2), (ushort)(strong * ushort.MaxValue));
-            BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(18, 2), (ushort)(weak * ushort.MaxValue));
-            if (ioctl(fd, SetEffect, ff) < 0)
-            {
-                effect = -1;
                 return;
             }
-            effect = BinaryPrimitives.ReadInt16LittleEndian(ff.AsSpan(2, 2));
 
-            byte[] play = new byte[24];
-            Array.Clear(play, 0, play.Length);
-            BinaryPrimitives.WriteUInt16LittleEndian(play.AsSpan(16, 2), EvFf);
-            BinaryPrimitives.WriteInt16LittleEndian(play.AsSpan(18, 2), effect);
-            BinaryPrimitives.WriteInt32LittleEndian(play.AsSpan(20, 4), 1);
-            _ = write(fd, play, (nuint)play.Length);
-        }
-
-        public void Tick(float dt)
-        {
-            // the kernel ends the effect after its length
-        }
-
-        public void Dispose()
-        {
-            _ = close(fd);
-        }
-
-        /// <summary>The ff capability bitmap is hex words, most significant first; FF_RUMBLE is bit 0x50.</summary>
-        static bool CanRumble(string file)
-        {
-            string[] words = Read(file).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            int word = FfRumbleBit / 64, bit = FfRumbleBit % 64;
-            if (word >= words.Length) return false;
-            return ulong.TryParse(words[words.Length - 1 - word], System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out ulong bits)
-                && (bits & (1UL << bit)) != 0;
-        }
-
-        static bool Matches(string kernelName, string padName)
-        {
-            return kernelName.Length > 0
-                && (kernelName.Contains(padName, StringComparison.OrdinalIgnoreCase) || padName.Contains(kernelName, StringComparison.OrdinalIgnoreCase));
-        }
-
-        static string Read(string file)
-        {
-            try
+            if (Rumbler(index).TryGet(out IRumbler r))
             {
-                return File.Exists(file) ? File.ReadAllText(file).Trim() : string.Empty;
-            }
-            catch (IOException)
-            {
-                return string.Empty;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return string.Empty;
+                r.Start(Math.Clamp(strong, 0, 1), Math.Clamp(weak, 0, 1), seconds);
             }
         }
 
-        [LibraryImport("libc", EntryPoint = "open", StringMarshalling = StringMarshalling.Utf8)]
-        private static partial int open(string path, int flags);
-
-        [LibraryImport("libc", EntryPoint = "ioctl")]
-        private static partial int ioctl(int fd, nuint request, byte[] arg);
-
-        [LibraryImport("libc", EntryPoint = "write")]
-        private static partial nint write(int fd, byte[] buffer, nuint count);
-
-        [LibraryImport("libc", EntryPoint = "close")]
-        private static partial int close(int fd);
-    }
-
-    /// <summary>Windows: XInput motors, switched off again when the time is up.</summary>
-    sealed partial class XInput(int index) : IRumbler
-    {
-        float left;
-
-        public void Start(float strong, float weak, float seconds)
+        /// <summary>Stops rumbles whose time is up, where the system does not time them itself. Call every step.</summary>
+        public void Update(float dt)
         {
-            left = seconds;
-            Set(strong, weak);
-        }
-
-        public void Tick(float dt)
-        {
-            if (left <= 0) return;
-            left -= dt;
-            if (left <= 0) Set(0, 0);
-        }
-
-        public void Dispose()
-        {
-            if (left > 0) Set(0, 0);
-        }
-
-        void Set(float strong, float weak)
-        {
-            try
+            foreach (Maybe<IRumbler> r in rumblers)
             {
-                uint motors = (uint)(strong * ushort.MaxValue) | ((uint)(weak * ushort.MaxValue) << 16);
-                _ = XInputSetState((uint)index, ref motors);
-            }
-            catch (DllNotFoundException)
-            {
-                left = 0;
-            }
-            catch (EntryPointNotFoundException)
-            {
-                left = 0;
+                if (r.TryGet(out IRumbler rumbler))
+                {
+                    rumbler.Tick(dt);
+                }
             }
         }
 
-        [LibraryImport("xinput1_4.dll")]
-        private static partial uint XInputSetState(uint userIndex, ref uint vibration);
+        /// <summary>Finds or reopens the rumble for the n-th pad; a different pad in that place gets a fresh one.</summary>
+        private Maybe<IRumbler> Rumbler(int index)
+        {
+            if (!pads.Name(index).TryGet(out string name))
+            {
+                return Maybe.None<IRumbler>();
+            }
+
+            if (string.Equals(opened[index], name, StringComparison.Ordinal))
+            {
+                return rumblers[index];
+            }
+
+            if (rumblers[index].TryGet(out IRumbler old))
+            {
+                old.Dispose();
+            }
+
+            opened[index] = name;
+            rumblers[index] = OperatingSystem.IsLinux()
+                ? Evdev.Open(index, name)
+                : (
+                    OperatingSystem.IsWindows()
+                        ? Maybe.Some<IRumbler>(new XInput(index))
+                        : Maybe.None<IRumbler>()
+                );
+
+            if (!rumblers[index].HasValue)
+            {
+                Console.WriteLine($"SAP: rumble: {name} has no rumble here");
+            }
+
+            return rumblers[index];
+        }
+
+        /// <summary>Linux: a rumble effect uploaded to the pad's event device and played; the kernel stops it after its length.</summary>
+        private sealed partial class Evdev : IRumbler
+        {
+            private const int OpenWrite = 1; // O_WRONLY
+            private const ushort FfRumble = 0x50,
+                EvFf = 0x15;
+            private const int FfRumbleBit = 0x50;
+
+            // _IOW('E', 0x80, struct ff_effect), with sizeof(struct ff_effect) 48 on 64-bit
+            private const uint SetEffect = 0x40304580;
+
+            private readonly int fd;
+            private short effect = -1;
+
+            private Evdev(int fd)
+            {
+                this.fd = fd;
+            }
+
+            /// <summary>Opens the event device of the n-th pad that can rumble, preferring one whose name matches.</summary>
+            public static Maybe<IRumbler> Open(int index, string name)
+            {
+                List<(string Path, string Name)> pads = [];
+                foreach (
+                    string dir in Directory.Exists("/sys/class/input")
+                        ? Directory
+                            .GetDirectories("/sys/class/input", "event*")
+                            .Order(StringComparer.Ordinal)
+                        : Enumerable.Empty<string>()
+                )
+                {
+                    string device = Path.Combine(dir, "device");
+                    // a joystick has a jsN handler next to its event device; mice and keyboards do not
+                    if (
+                        !Directory.Exists(device)
+                        || Directory.GetDirectories(device, "js*").Length == 0
+                    )
+                    {
+                        continue;
+                    }
+
+                    if (!CanRumble(Path.Combine(device, "capabilities", "ff")))
+                    {
+                        continue;
+                    }
+
+                    string devName = Read(Path.Combine(device, "name"));
+                    pads.Add(("/dev/input/" + Path.GetFileName(dir), devName));
+                }
+
+                Maybe<(string Path, string Name)> found = pads.FirstOrNone(p =>
+                    Matches(p.Name, name)
+                );
+                if (!found.HasValue && index < pads.Count)
+                {
+                    found = pads[index];
+                }
+
+                if (!found.TryGet(out (string Path, string Name) pick))
+                {
+                    return Maybe.None<IRumbler>();
+                }
+
+                int handle = open(pick.Path, OpenWrite);
+                if (handle < 0)
+                {
+                    Console.WriteLine(
+                        $"SAP: rumble: cannot open {pick.Path} for {name} (no write access)"
+                    );
+                    return Maybe.None<IRumbler>();
+                }
+                Console.WriteLine($"SAP: rumble: {name} on {pick.Path} ({pick.Name})");
+                return Maybe.Some<IRumbler>(new Evdev(handle));
+            }
+
+            public void Start(float strong, float weak, float seconds)
+            {
+                byte[] ff = new byte[48];
+                Array.Clear(ff, 0, ff.Length);
+                BinaryPrimitives.WriteUInt16LittleEndian(ff.AsSpan(0, 2), FfRumble);
+                BinaryPrimitives.WriteInt16LittleEndian(ff.AsSpan(2, 2), effect); // -1 uploads a new one, else replaces it
+                BinaryPrimitives.WriteUInt16LittleEndian(
+                    ff.AsSpan(10, 2),
+                    (ushort)Math.Clamp(seconds * 1000, 1, 5000)
+                ); // replay.length in ms
+                BinaryPrimitives.WriteUInt16LittleEndian(
+                    ff.AsSpan(16, 2),
+                    (ushort)(strong * ushort.MaxValue)
+                );
+                BinaryPrimitives.WriteUInt16LittleEndian(
+                    ff.AsSpan(18, 2),
+                    (ushort)(weak * ushort.MaxValue)
+                );
+                if (ioctl(fd, SetEffect, ff) < 0)
+                {
+                    effect = -1;
+                    return;
+                }
+                effect = BinaryPrimitives.ReadInt16LittleEndian(ff.AsSpan(2, 2));
+
+                byte[] play = new byte[24];
+                Array.Clear(play, 0, play.Length);
+                BinaryPrimitives.WriteUInt16LittleEndian(play.AsSpan(16, 2), EvFf);
+                BinaryPrimitives.WriteInt16LittleEndian(play.AsSpan(18, 2), effect);
+                BinaryPrimitives.WriteInt32LittleEndian(play.AsSpan(20, 4), 1);
+                _ = write(fd, play, (nuint)play.Length);
+            }
+
+            public void Tick(float dt)
+            {
+                // the kernel ends the effect after its length
+            }
+
+            public void Dispose()
+            {
+                _ = close(fd);
+            }
+
+            /// <summary>The ff capability bitmap is hex words, most significant first; FF_RUMBLE is bit 0x50.</summary>
+            private static bool CanRumble(string file)
+            {
+                string[] words = Read(file).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                int word = FfRumbleBit / 64,
+                    bit = FfRumbleBit % 64;
+                return word < words.Length
+                    && ulong.TryParse(
+                        words[words.Length - 1 - word],
+                        System.Globalization.NumberStyles.HexNumber,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out ulong bits
+                    )
+                    && (bits & (1UL << bit)) != 0;
+            }
+
+            private static bool Matches(string kernelName, string padName)
+            {
+                return kernelName.Length > 0
+                    && (
+                        kernelName.Contains(padName, StringComparison.OrdinalIgnoreCase)
+                        || padName.Contains(kernelName, StringComparison.OrdinalIgnoreCase)
+                    );
+            }
+
+            private static string Read(string file)
+            {
+                try
+                {
+                    return File.Exists(file) ? File.ReadAllText(file).Trim() : string.Empty;
+                }
+                catch (IOException)
+                {
+                    return string.Empty;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return string.Empty;
+                }
+            }
+
+            [LibraryImport("libc", EntryPoint = "open", StringMarshalling = StringMarshalling.Utf8)]
+            private static partial int open(string path, int flags);
+
+            [LibraryImport("libc", EntryPoint = "ioctl")]
+            private static partial int ioctl(int fd, nuint request, [In] byte[] arg);
+
+            [LibraryImport("libc", EntryPoint = "write")]
+            private static partial nint write(int fd, [In] byte[] buffer, nuint count);
+
+            [LibraryImport("libc", EntryPoint = "close")]
+            private static partial int close(int fd);
+        }
+
+        /// <summary>Windows: XInput motors, switched off again when the time is up.</summary>
+        private sealed partial class XInput(int index) : IRumbler
+        {
+            private float left;
+
+            public void Start(float strong, float weak, float seconds)
+            {
+                left = seconds;
+                Set(strong, weak);
+            }
+
+            public void Tick(float dt)
+            {
+                if (left <= 0)
+                {
+                    return;
+                }
+
+                left -= dt;
+                if (left <= 0)
+                {
+                    Set(0, 0);
+                }
+            }
+
+            public void Dispose()
+            {
+                if (left > 0)
+                {
+                    Set(0, 0);
+                }
+            }
+
+            private void Set(float strong, float weak)
+            {
+                try
+                {
+                    uint motors =
+                        (uint)(strong * ushort.MaxValue) | ((uint)(weak * ushort.MaxValue) << 16);
+                    _ = XInputSetState((uint)index, ref motors);
+                }
+                catch (DllNotFoundException)
+                {
+                    left = 0;
+                }
+                catch (EntryPointNotFoundException)
+                {
+                    left = 0;
+                }
+            }
+
+            [LibraryImport("xinput1_4.dll")]
+            private static partial uint XInputSetState(uint userIndex, ref uint vibration);
+        }
     }
 }

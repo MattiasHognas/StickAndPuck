@@ -2,83 +2,121 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Screens;
 using K = StickAndPuck.App.Core.Text.Keys;
 
-namespace StickAndPuck.App.Versus;
-
-/// <summary>Player vs player, the "new game" entry for two people in the same room. Player one plays
-/// with the device from the settings (keyboard and mouse by default) and picks the home club,
-/// player two plays with the first gamepad (or the keyboard when player one holds that pad) and
-/// picks the visiting club. Exhibition rules: periods from the settings, SHL overtime and a
-/// shootout. SAP_VERSUS_P2=keyboard|pad1|pad2 overrides player two's device.</summary>
-public sealed class VersusMode : IGameMode
+namespace StickAndPuck.App.Versus
 {
-    /// <inheritdoc/>
-    public string Title => Text.Get(K.PlayerVsPlayer);
-
-    /// <inheritdoc/>
-    public int Order => 10;
-
-    /// <inheritdoc/>
-    public int ClubPicks => 2;
-
-    /// <inheritdoc/>
-    public string PickHeading(AppState app, int index)
+    /// <summary>Player vs player, the "new game" entry for two people in the same room. Player one plays
+    /// with the device from the settings (keyboard and mouse by default) and picks the home club,
+    /// player two plays with the first gamepad (or the keyboard when player one holds that pad) and
+    /// picks the visiting club. Exhibition rules: periods from the settings, SHL overtime and a
+    /// shootout. SAP_VERSUS_P2=keyboard|pad1|pad2 overrides player two's device.</summary>
+    public sealed class VersusMode : IGameMode
     {
-        // Each player sees the device they play with, the pad by name
-        var prefs = app.Screens.Prefs;
-        var device = index == 0 ? prefs.Controls : SecondDevice(prefs.Controls, prefs.Player2);
-        return Text.Format(K.VersusPick, index + 1, app.Pads.Label(device));
-    }
+        /// <inheritdoc/>
+        public string Title => Text.Get(K.PlayerVsPlayer);
 
-    /// <inheritdoc/>
-    public Maybe<MatchSetup> Setup(GameModeStart start)
-    {
-        var home = start.Picks.Count > 0 ? start.Picks[0] : start.Clubs[0];
-        var away = start.Picks.Count > 1 ? start.Picks[1] : start.Clubs.FirstOrDefault(c => c != home) ?? home;
-        return new MatchSetup
+        /// <inheritdoc/>
+        public int Order => 10;
+
+        /// <inheritdoc/>
+        public int ClubPicks => 2;
+
+        /// <inheritdoc/>
+        public string PickHeading(AppState app, int index)
         {
-            Home = home,
-            Away = away,
-            Inputs = Inputs(start.Device, start.App.Screens.Prefs.Player2),
-            Overtime = OvertimeRule.Shl,
-        };
-    }
+            // Each player sees the device they play with, the pad by name
+            ScreenPrefs prefs = app.Screens.Prefs;
+            InputDevice device =
+                index == 0 ? prefs.Controls : SecondDevice(prefs.Controls, prefs.Player2);
+            return Text.Format(K.VersusPick, index + 1, app.Pads.Label(device));
+        }
 
-    /// <summary>The two human slots: player one on <paramref name="playerOne"/> and the home club, player
-    /// two on <see cref="SecondDevice(InputDevice, InputDevice)"/> (from the settings pick <paramref name="picked"/>) and the visitors. <see cref="InputDevice.None"/> for
-    /// player one (SAP_HUMAN=0) lets the AI play both clubs, so headless runs go through.</summary>
-    public static IReadOnlyList<InputSlot> Inputs(InputDevice playerOne, InputDevice picked)
-    {
-        var playerTwo = playerOne == InputDevice.None ? InputDevice.None : SecondDevice(playerOne, picked);
-        return [new InputSlot(playerOne, Side.Home), new InputSlot(playerTwo, Side.Away)];
-    }
-
-    /// <summary>Player two's device: the settings screen's PLAYER 2 CONTROLS pick (<paramref name="picked"/>, by default the first gamepad) unless player one holds it, then the keyboard; SAP_VERSUS_P2 overrides, and OFF hands the visitors to the AI.</summary>
-    public static InputDevice SecondDevice(InputDevice playerOne, InputDevice picked) => SecondDevice(playerOne, picked, Env.Get("SAP_VERSUS_P2"));
-
-    /// <summary>Player two's device as <see cref="SecondDevice(InputDevice, InputDevice)"/> picks it, with <paramref name="forced"/> in place of SAP_VERSUS_P2.</summary>
-    public static InputDevice SecondDevice(InputDevice playerOne, InputDevice picked, string forced)
-    {
-        var wanted = forced.ToLowerInvariant() switch
+        /// <inheritdoc/>
+        public Maybe<MatchSetup> Setup(GameModeStart start)
         {
-            "keyboard" or "kb" or "keyboardmouse" => InputDevice.KeyboardMouse,
-            "pad1" or "gamepad1" or "gamepad" => InputDevice.Gamepad1,
-            "pad2" or "gamepad2" => InputDevice.Gamepad2,
-            _ => picked,
-        };
-        if (wanted == InputDevice.None) return InputDevice.None;    // player two turned off: the AI plays the visitors
-        if (wanted != playerOne) return wanted;
-        return playerOne == InputDevice.Gamepad1 ? InputDevice.KeyboardMouse : InputDevice.Gamepad1;
-    }
+            ClubData home = start.Picks.Count > 0 ? start.Picks[0] : start.Clubs[0];
+            ClubData away =
+                start.Picks.Count > 1
+                    ? start.Picks[1]
+                    : start.Clubs.FirstOrDefault(c => c != home) ?? home;
+            return new MatchSetup
+            {
+                Home = home,
+                Away = away,
+                Inputs = Inputs(start.Device, start.App.Screens.Prefs.Player2),
+                Overtime = OvertimeRule.Shl,
+            };
+        }
 
-    /// <summary>Gives each human slot a skater on its club: the centre, or the first skater free.</summary>
-    public static void AssignSlots(World world)
-    {
-        var inputs = world.Setup.Inputs;
-        for (int slot = 0; slot < inputs.Count && slot < MatchSetup.Slots; slot++)
+        /// <summary>The two human slots: player one on <paramref name="playerOne"/> and the home club, player
+        /// two on <see cref="SecondDevice(InputDevice, InputDevice)"/> (from the settings pick <paramref name="picked"/>) and the visitors. <see cref="InputDevice.None"/> for
+        /// player one (SAP_HUMAN=0) lets the AI play both clubs, so headless runs go through.</summary>
+        public static IReadOnlyList<InputSlot> Inputs(InputDevice playerOne, InputDevice picked)
         {
-            if (inputs[slot].Device == InputDevice.None) continue;
-            var skaters = world.OnIce(inputs[slot].Side).Where(p => !p.IsGoalie && p.Slot < 0).ToList();
-            if ((skaters.Find(p => p.Data.Position == PlayingPosition.C) ?? skaters.FirstOrDefault()) is { } centre) centre.Slot = slot;
+            InputDevice playerTwo =
+                playerOne == InputDevice.None ? InputDevice.None : SecondDevice(playerOne, picked);
+            return [new InputSlot(playerOne, Side.Home), new InputSlot(playerTwo, Side.Away)];
+        }
+
+        /// <summary>Player two's device: the settings screen's PLAYER 2 CONTROLS pick (<paramref name="picked"/>, by default the first gamepad) unless player one holds it, then the keyboard; SAP_VERSUS_P2 overrides, and OFF hands the visitors to the AI.</summary>
+        public static InputDevice SecondDevice(InputDevice playerOne, InputDevice picked)
+        {
+            return SecondDevice(playerOne, picked, Env.Get("SAP_VERSUS_P2"));
+        }
+
+        /// <summary>Player two's device as <see cref="SecondDevice(InputDevice, InputDevice)"/> picks it, with <paramref name="forced"/> in place of SAP_VERSUS_P2.</summary>
+        public static InputDevice SecondDevice(
+            InputDevice playerOne,
+            InputDevice picked,
+            string forced
+        )
+        {
+            InputDevice wanted = forced.ToLowerInvariant() switch
+            {
+                "keyboard" or "kb" or "keyboardmouse" => InputDevice.KeyboardMouse,
+                "pad1" or "gamepad1" or "gamepad" => InputDevice.Gamepad1,
+                "pad2" or "gamepad2" => InputDevice.Gamepad2,
+                _ => picked,
+            };
+            if (wanted == InputDevice.None)
+            {
+                return InputDevice.None; // player two turned off: the AI plays the visitors
+            }
+
+            return (wanted != playerOne)
+                ? wanted
+                : (
+                    (playerOne == InputDevice.Gamepad1)
+                        ? InputDevice.KeyboardMouse
+                        : InputDevice.Gamepad1
+                );
+        }
+
+        /// <summary>Gives each human slot a skater on its club: the centre, or the first skater free.</summary>
+        public static void AssignSlots(World world)
+        {
+            IReadOnlyList<InputSlot> inputs = world.Setup.Inputs;
+            for (int slot = 0; slot < inputs.Count && slot < MatchSetup.Slots; slot++)
+            {
+                if (inputs[slot].Device == InputDevice.None)
+                {
+                    continue;
+                }
+
+                List<Player> skaters =
+                [
+                    .. world.OnIce(inputs[slot].Side).Where(p => !p.IsGoalie && p.Slot < 0),
+                ];
+                if (
+                    (
+                        skaters.Find(p => p.Data.Position == PlayingPosition.C)
+                        ?? skaters.FirstOrDefault()
+                    ) is
+                    { } centre
+                )
+                {
+                    centre.Slot = slot;
+                }
+            }
         }
     }
 }

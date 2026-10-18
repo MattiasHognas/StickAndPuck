@@ -1,63 +1,98 @@
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Schedule;
 
-namespace StickAndPuck.App.Season;
-
-/// <summary>The playoffs of the season in <see cref="SeasonSession"/>. Once the regular season is over,
-/// <see cref="Open"/> seeds them from the final table (or picks up the saved ones), a scene (or
-/// the start screen) builds the world from <see cref="NextSetup"/>, and <see cref="PlayoffSystem"/>
-/// records the result when that match ends; <see cref="AutosaveSystem"/> then writes the save.</summary>
-public sealed class PlayoffSession(SeasonSession session)
+namespace StickAndPuck.App.Season.Playoffs
 {
-    /// <summary>Gets the playoffs of the season being played, or None before they start.</summary>
-    public Maybe<PlayoffState> Current => session.Current.TryGet(out var season) ? season.Playoffs : Maybe<PlayoffState>.None;
-
-    /// <summary>Gets the series whose next game the current match is, or None when the match is not a playoff game.</summary>
-    public Maybe<PlayoffSeries> Playing { get; private set; }
-
-    /// <summary>Gets or sets the rules playoff games follow: the SHL's unless a mode sets its own.</summary>
-    public PlayoffRules Rules { get; set; } = PlayoffRules.Shl;
-
-    /// <summary>Starts the playoffs once the regular season is over and settles every game up to the human's
-    /// next one; continues saved playoffs as they are. None while the season is still running.</summary>
-    public Maybe<PlayoffState> Open()
+    /// <summary>The playoffs of the season in <see cref="SeasonSession"/>. Once the regular season is over,
+    /// <see cref="Open"/> seeds them from the final table (or picks up the saved ones), a scene (or
+    /// the start screen) builds the world from <see cref="NextSetup"/>, and <see cref="PlayoffSystem"/>
+    /// records the result when that match ends; <see cref="Save.AutosaveSystem"/> then writes the save.</summary>
+    public sealed class PlayoffSession(SeasonSession session)
     {
-        Playing = Maybe<PlayoffSeries>.None;
-        if (!session.Current.TryGet(out var season) || !season.IsOver) return Maybe<PlayoffState>.None;
-        if (season.Playoffs.HasValue) return season.Playoffs;
-        var playoffs = PlayoffState.New(season);
-        season.Playoffs = playoffs;
-        playoffs.SimulateUntilUser(session.Clubs, Rules);
-        session.Unsaved = true;
-        return playoffs;
-    }
+        /// <summary>Gets the playoffs of the season being played, or None before they start.</summary>
+        public Maybe<PlayoffState> Current =>
+            session.Current.TryGet(out SeasonState season)
+                ? season.Playoffs
+                : Maybe.None<PlayoffState>();
 
-    /// <summary>The setup for the human's next playoff game, with the overtime rules of <see cref="Rules"/>, and
-    /// marks it as the game being played, so its result is recorded when the match ends. Over when the
-    /// human's club is out or there is a champion.</summary>
-    public NextMatch NextSetup(InputDevice device = InputDevice.KeyboardMouse)
-    {
-        var playoffs = Open();
-        Playing = playoffs.TryGet(out var open) ? open.UserSeries : Maybe<PlayoffSeries>.None;
-        if (!Playing.TryGet(out var series) || !session.Current.TryGet(out var season)) return NextMatch.Over;
-        var game = new Fixture(-1, -1, series.NextHome, series.NextAway);
-        return new NextMatch.Play(season.SetupFor(game, session.Clubs, device) with { OvertimeFormat = Rules.Overtime });
-    }
+        /// <summary>Gets the series whose next game the current match is, or None when the match is not a playoff game.</summary>
+        public Maybe<PlayoffSeries> Playing { get; private set; }
 
-    /// <summary>Records the result of the game being played, settles the other games up to the human's next
-    /// one (the rest of the playoffs when the human's club is out), and marks the season for saving.</summary>
-    public bool Finish(FixtureResult result)
-    {
-        if (!Current.TryGet(out var playoffs) || !Playing.TryGet(out var series) || !playoffs.Record(series, result)) return false;
-        playoffs.SimulateUntilUser(session.Clubs, Rules);
-        Playing = Maybe<PlayoffSeries>.None;
-        session.Unsaved = true;
-        return true;
-    }
+        /// <summary>Gets or sets the rules playoff games follow: the SHL's unless a mode sets its own.</summary>
+        public PlayoffRules Rules { get; set; } = PlayoffRules.Shl;
 
-    /// <summary>Forgets the game being played, for leaving season mode; the SHL rules come back.</summary>
-    public void End()
-    {
-        Playing = Maybe<PlayoffSeries>.None;
-        Rules = PlayoffRules.Shl;
+        /// <summary>Starts the playoffs once the regular season is over and settles every game up to the human's
+        /// next one; continues saved playoffs as they are. None while the season is still running.</summary>
+        public Maybe<PlayoffState> Open()
+        {
+            Playing = Maybe.None<PlayoffSeries>();
+            if (!session.Current.TryGet(out SeasonState season) || !season.IsOver)
+            {
+                return Maybe.None<PlayoffState>();
+            }
+
+            if (season.Playoffs.HasValue)
+            {
+                return season.Playoffs;
+            }
+
+            PlayoffState playoffs = PlayoffState.New(season);
+            season.Playoffs = playoffs;
+            _ = playoffs.SimulateUntilUser(session.Clubs, Rules);
+            session.Unsaved = true;
+            return playoffs;
+        }
+
+        /// <summary>The setup for the human's next playoff game, with the overtime rules of <see cref="Rules"/>, and
+        /// marks it as the game being played, so its result is recorded when the match ends. Over when the
+        /// human's club is out or there is a champion.</summary>
+        public NextMatch NextSetup(InputDevice device = InputDevice.KeyboardMouse)
+        {
+            Maybe<PlayoffState> playoffs = Open();
+            Playing = playoffs.TryGet(out PlayoffState open)
+                ? open.UserSeries
+                : Maybe.None<PlayoffSeries>();
+            if (
+                !Playing.TryGet(out PlayoffSeries series)
+                || !session.Current.TryGet(out SeasonState season)
+            )
+            {
+                return NextMatch.Over;
+            }
+
+            Fixture game = new(-1, -1, series.NextHome, series.NextAway);
+            return new NextMatch.Play(
+                season.SetupFor(game, session.Clubs, device) with
+                {
+                    OvertimeFormat = Rules.Overtime,
+                }
+            );
+        }
+
+        /// <summary>Records the result of the game being played, settles the other games up to the human's next
+        /// one (the rest of the playoffs when the human's club is out), and marks the season for saving.</summary>
+        public bool Finish(FixtureResult result)
+        {
+            if (
+                !Current.TryGet(out PlayoffState playoffs)
+                || !Playing.TryGet(out PlayoffSeries series)
+                || !playoffs.Record(series, result)
+            )
+            {
+                return false;
+            }
+
+            _ = playoffs.SimulateUntilUser(session.Clubs, Rules);
+            Playing = Maybe.None<PlayoffSeries>();
+            session.Unsaved = true;
+            return true;
+        }
+
+        /// <summary>Forgets the game being played, for leaving season mode; the SHL rules come back.</summary>
+        public void End()
+        {
+            Playing = Maybe.None<PlayoffSeries>();
+            Rules = PlayoffRules.Shl;
+        }
     }
 }

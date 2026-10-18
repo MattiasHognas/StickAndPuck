@@ -1,5 +1,6 @@
 # File formatting stays consistent across editors. Analyzer options and severities
-# use the installed SDK/package defaults except for the duplicate rules below.
+# use the installed SDK/package defaults, with enabled diagnostics promoted to
+# warnings and duplicate rules disabled below.
 root = true
 
 [*]
@@ -20,18 +21,42 @@ trim_trailing_whitespace = false
 
 [*.cs]
 
-# Keep one analyzer for each confirmed overlap. Similar rules with different scopes
-# retain their defaults; this is not a blanket suppression list for analyzer packages.
+# CSharpier owns whitespace formatting; Roslyn's formatter can disagree with it.
+# https://csharpier.com/docs/IntegratingWithLinters
+dotnet_diagnostic.IDE0055.severity = none
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+# CSharpier omits trailing commas in property patterns.
+dotnet_diagnostic.MA0007.severity = none
+
+# Promote enabled analyzer diagnostics, including suggestions, to warnings.
+# TreatWarningsAsErrors in Directory.Build.props makes these fail the build.
+dotnet_analyzer_diagnostic.severity = warning
+
+# Rule precedence: CSharpier > Roslyn (IDE/CA) > Sonar > Meziantou.
+# Keep the higher-priority rule for each confirmed overlap; unrelated rules retain
+# their defaults.
 # Reference: https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/comparison-with-other-analyzers.md
 
-# Method length: MA0051 owns this check; do not also report Sonar's line-count limit.
-dotnet_diagnostic.S138.severity = none
+# Roslyn's conditional-expression fixes can introduce nested ternaries.
+dotnet_diagnostic.S3358.severity = none
 
-# Types outside namespaces: MA0047 owns this check instead of Sonar's equivalent.
-dotnet_diagnostic.S3903.severity = none
+# Roslyn's enum-completion rules require explicit cases even when they share default.
+dotnet_diagnostic.S3458.severity = none
+
+# Method length: prefer Sonar's S138 over Meziantou's MA0051.
+dotnet_diagnostic.S138.severity = warning
+dotnet_diagnostic.MA0051.severity = none
+
+# Types outside namespaces: prefer Sonar's S3903 over Meziantou's MA0047.
+dotnet_diagnostic.S3903.severity = warning
+dotnet_diagnostic.MA0047.severity = none
 
 # Static members: CA1822 owns this check. MA0038/MA0041 are deprecated in its favor;
 # S2325 reports the same methods as CA1822 in this solution.
 dotnet_diagnostic.MA0038.severity = none
 dotnet_diagnostic.MA0041.severity = none
 dotnet_diagnostic.S2325.severity = none
+
+# Static members on generic types: CA1000 supersedes the deprecated MA0018.
+dotnet_diagnostic.MA0018.severity = none

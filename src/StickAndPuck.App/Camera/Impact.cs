@@ -2,145 +2,197 @@ using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
-using StickAndPuck.App.Players;
+using StickAndPuck.App.Players.Checks;
 
-namespace StickAndPuck.App.Camera;
-
-/// <summary>How big moments feel. A hard check (strength 1.5 and up) or a goal freezes the skaters and
-/// the puck for a few steps (hit-stop), shakes the camera in whole pixels and rumbles the pads of
-/// the people involved. The fight close-up moved to <see cref="CloseUp"/>.</summary>
-/// <remarks>
-/// The hit-stop works like the replay: it runs after every gameplay system and puts the players and
-/// puck back where the hit left them each step, so for those steps nothing moves on the ice. Timers
-/// the rules own (the clock) still run, which over a tenth of a second nobody sees.
-/// </remarks>
-internal sealed class Impact
+namespace StickAndPuck.App.Camera
 {
-    /// <summary>Hit-stop steps for a check at the hard-hit line, and the most for a crushing one.</summary>
-    const int CheckHoldMin = 4, CheckHoldMax = 8;
-
-    /// <summary>Hit-stop steps when a goal goes in.</summary>
-    const int GoalHold = 7;
-
-    /// <summary>Camera shake for a hard check: pixels at the hard-hit line and the most, and how long it lasts.</summary>
-    const float CheckShakeMin = 3f, CheckShakeMax = 6f, CheckShakeSeconds = 0.35f;
-
-    /// <summary>Camera shake when a goal goes in, in pixels and seconds.</summary>
-    const float GoalShake = 4f, GoalShakeSeconds = 0.5f;
-
-    readonly ReplayBuffer.Frame held = new();
-    readonly Random rng = new(30);
-    int holdSteps;
-    float shake, shakeLeft, shakeSeconds;
-    Vector2 shakeOffset;
-    int shakeStep;
-
-    /// <summary>Gets the camera shake as whole-pixel steps right and up, for this step.</summary>
-    public Vector2 ShakeOffset => shakeLeft > 0 ? shakeOffset : Vector2.Zero;
-
-    /// <summary>Gets the steps of hit-stop left.</summary>
-    public int Holding => holdSteps;
-
-    /// <summary>Runs one step: holds the ice still during a hit-stop, starts new ones, and moves shake and close-up along.</summary>
-    public void Update(World world, float dt)
+    /// <summary>How big moments feel. A hard check (strength 1.5 and up) or a goal freezes the skaters and
+    /// the puck for a few steps (hit-stop), shakes the camera in whole pixels and rumbles the pads of
+    /// the people involved. The fight close-up moved to <see cref="CloseUp"/>.</summary>
+    /// <remarks>
+    /// The hit-stop works like the replay: it runs after every gameplay system and puts the players and
+    /// puck back where the hit left them each step, so for those steps nothing moves on the ice. Timers
+    /// the rules own (the clock) still run, which over a tenth of a second nobody sees.
+    /// </remarks>
+    internal sealed class Impact
     {
-        world.App.Rumble.Update(dt);
-        if (world.ReplayPlaying)
-        {
-            holdSteps = 0;
-            shakeLeft = 0;
-            return;
-        }
+        /// <summary>Hit-stop steps for a check at the hard-hit line, and the most for a crushing one.</summary>
+        private const int CheckHoldMin = 4,
+            CheckHoldMax = 8;
 
-        if (holdSteps > 0)
+        /// <summary>Hit-stop steps when a goal goes in.</summary>
+        private const int GoalHold = 7;
+
+        /// <summary>Camera shake for a hard check: pixels at the hard-hit line and the most, and how long it lasts.</summary>
+        private const float CheckShakeMin = 3f,
+            CheckShakeMax = 6f,
+            CheckShakeSeconds = 0.35f;
+
+        /// <summary>Camera shake when a goal goes in, in pixels and seconds.</summary>
+        private const float GoalShake = 4f,
+            GoalShakeSeconds = 0.5f;
+
+        private readonly ReplayBuffer.Frame held = new();
+        private readonly Random rng = new(30);
+        private float shake,
+            shakeLeft,
+            shakeSeconds;
+        private Vector2 shakeOffset;
+        private int shakeStep;
+
+        /// <summary>Gets the camera shake as whole-pixel steps right and up, for this step.</summary>
+        public Vector2 ShakeOffset => shakeLeft > 0 ? shakeOffset : Vector2.Zero;
+
+        /// <summary>Gets the steps of hit-stop left.</summary>
+        public int Holding { get; private set; }
+
+        /// <summary>Runs one step: holds the ice still during a hit-stop, starts new ones, and moves shake and close-up along.</summary>
+        public void Update(World world, float dt)
         {
-            ReplayBuffer.Apply(held, world);
-            holdSteps--;
-        }
-        else
-        {
-            foreach (var e in world.Events.Current)
+            world.App.Rumble.Update(dt);
+            if (world.ReplayPlaying)
             {
-                if (e is CheckLanded { Strength: >= CheckingModel.HardHit } check) HardCheck(world, check);
-                else if (e is GoalScored goal) Goal(world, goal);
+                Holding = 0;
+                shakeLeft = 0;
+                return;
             }
+
+            if (Holding > 0)
+            {
+                ReplayBuffer.Apply(held, world);
+                Holding--;
+            }
+            else
+            {
+                foreach (MatchEvent e in world.Events.Current)
+                {
+                    if (e is CheckLanded { Strength: >= CheckingModel.HardHit } check)
+                    {
+                        HardCheck(world, check);
+                    }
+                    else if (e is GoalScored goal)
+                    {
+                        Goal(world, goal);
+                    }
+                }
+            }
+
+            Shake(dt);
         }
 
-        Shake(dt);
-    }
-
-    /// <summary>Moves a camera by this step's shake.</summary>
-    public Camera3D Apply(Camera3D camera, float pixel)
-    {
-        var offset = ShakeOffset;
-        if (offset != Vector2.Zero)
+        /// <summary>Moves a camera by this step's shake.</summary>
+        public Camera3D Apply(Camera3D camera, float pixel)
         {
-            var move = new Vector3(offset.X * pixel, offset.Y * pixel, 0);
-            camera.Position += move;
-            camera.Target += move;
+            Vector2 offset = ShakeOffset;
+            if (offset != Vector2.Zero)
+            {
+                Vector3 move = new(offset.X * pixel, offset.Y * pixel, 0);
+                camera.Position += move;
+                camera.Target += move;
+            }
+            return camera;
         }
-        return camera;
-    }
 
-    void HardCheck(World world, CheckLanded e)
-    {
-        float over = Math.Clamp((e.Strength - CheckingModel.HardHit) / 1.5f, 0f, 1f);
-        Hold(world, CheckHoldMin + (int)MathF.Round((CheckHoldMax - CheckHoldMin) * over));
-        Kick(CheckShakeMin + ((CheckShakeMax - CheckShakeMin) * over), CheckShakeSeconds);
-
-        // the checker feels it, the one hit feels it harder
-        Pulse(world, world.Players[e.CheckerId].Slot, 0.45f + (0.4f * over), 0.6f, 0.16f);
-        var victim = world.Players
-            .Where(p => p.Side != e.Side && p.OnIce)
-            .MinBy(p => Vector3.DistanceSquared(p.Position, e.Position));
-        if (victim is { }) Pulse(world, victim.Slot, 0.75f + (0.25f * over), 0.8f, 0.24f + (0.12f * over));
-        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"SAP: impact: hard check {e.Strength.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}, hold {holdSteps} steps"));
-    }
-
-    void Goal(World world, GoalScored e)
-    {
-        Hold(world, GoalHold);
-        Kick(GoalShake, GoalShakeSeconds);
-        for (int slot = 0; slot < MatchSetup.Slots && slot < world.Setup.Inputs.Count; slot++)
+        private void HardCheck(World world, CheckLanded e)
         {
-            bool scored = world.Setup.Inputs[slot].Side == e.Side;
-            world.App.Rumble.Pulse(world.Setup.Inputs[slot].Device, scored ? 0.6f : 0.3f, scored ? 1f : 0.3f, scored ? 0.5f : 0.2f);
+            float over = Math.Clamp((e.Strength - CheckingModel.HardHit) / 1.5f, 0f, 1f);
+            Hold(
+                world,
+                CheckHoldMin
+                    + (int)
+                        MathF.Round((CheckHoldMax - CheckHoldMin) * over, MidpointRounding.ToEven)
+            );
+            Kick(CheckShakeMin + ((CheckShakeMax - CheckShakeMin) * over), CheckShakeSeconds);
+
+            // the checker feels it, the one hit feels it harder
+            Pulse(world, world.Players[e.CheckerId].Slot, 0.45f + (0.4f * over), 0.6f, 0.16f);
+            Player victim = world
+                .Players.Where(p => p.Side != e.Side && p.OnIce)
+                .MinBy(p => Vector3.DistanceSquared(p.Position, e.Position));
+            if (victim is { })
+            {
+                Pulse(world, victim.Slot, 0.75f + (0.25f * over), 0.8f, 0.24f + (0.12f * over));
+            }
+
+            Console.WriteLine(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"SAP: impact: hard check {e.Strength.ToString("0.00", CultureInfo.InvariantCulture)}, hold {Holding} steps"
+                )
+            );
         }
-        Console.WriteLine("SAP: impact: goal");
-    }
 
-    void Hold(World world, int steps)
-    {
-        ReplayBuffer.Capture(world, held);
-        holdSteps = steps;
-    }
+        private void Goal(World world, GoalScored e)
+        {
+            Hold(world, GoalHold);
+            Kick(GoalShake, GoalShakeSeconds);
+            for (int slot = 0; slot < MatchSetup.Slots && slot < world.Setup.Inputs.Count; slot++)
+            {
+                bool scored = world.Setup.Inputs[slot].Side == e.Side;
+                world.App.Rumble.Pulse(
+                    world.Setup.Inputs[slot].Device,
+                    scored ? 0.6f : 0.3f,
+                    scored ? 1f : 0.3f,
+                    scored ? 0.5f : 0.2f
+                );
+            }
+            Console.WriteLine("SAP: impact: goal");
+        }
 
-    void Kick(float pixels, float seconds)
-    {
-        if (shakeLeft > 0 && shake * (shakeLeft / shakeSeconds) > pixels) return;
-        shake = pixels;
-        shakeSeconds = seconds;
-        shakeLeft = seconds;
-        shakeStep = 0;
-    }
+        private void Hold(World world, int steps)
+        {
+            ReplayBuffer.Capture(world, held);
+            Holding = steps;
+        }
 
-    /// <summary>A new offset every other step, swinging side to side and shrinking to nothing; whole pixels so
-    /// the boards stay crisp.</summary>
-    void Shake(float dt)
-    {
-        if (shakeLeft <= 0) return;
-        shakeLeft -= dt;
-        if (shakeStep++ % 2 != 0) return;
-        float amp = shake * Math.Max(shakeLeft, 0) / shakeSeconds;
-        float side = shakeStep % 4 == 1 ? 1 : -1;
-        float x = side * MathF.Round(amp * (0.6f + (0.4f * rng.NextSingle())));
-        float y = MathF.Round(((rng.NextSingle() * 2) - 1) * amp * 0.6f);
-        shakeOffset = new Vector2(x, y);
-    }
+        private void Kick(float pixels, float seconds)
+        {
+            if (shakeLeft > 0 && shake * (shakeLeft / shakeSeconds) > pixels)
+            {
+                return;
+            }
 
-    static void Pulse(World world, int slot, float strong, float weak, float seconds)
-    {
-        if (slot < 0 || slot >= world.Setup.Inputs.Count) return;
-        world.App.Rumble.Pulse(world.Setup.Inputs[slot].Device, strong, weak, seconds);
+            shake = pixels;
+            shakeSeconds = seconds;
+            shakeLeft = seconds;
+            shakeStep = 0;
+        }
+
+        /// <summary>A new offset every other step, swinging side to side and shrinking to nothing; whole pixels so
+        /// the boards stay crisp.</summary>
+        private void Shake(float dt)
+        {
+            if (shakeLeft <= 0)
+            {
+                return;
+            }
+
+            shakeLeft -= dt;
+            if (shakeStep++ % 2 != 0)
+            {
+                return;
+            }
+
+            float amp = shake * Math.Max(shakeLeft, 0) / shakeSeconds;
+            float side = shakeStep % 4 == 1 ? 1 : -1;
+            float x =
+                side
+                * MathF.Round(amp * (0.6f + (0.4f * rng.NextSingle())), MidpointRounding.ToEven);
+            float y = MathF.Round(
+                ((rng.NextSingle() * 2) - 1) * amp * 0.6f,
+                MidpointRounding.ToEven
+            );
+            shakeOffset = new Vector2(x, y);
+        }
+
+        private static void Pulse(World world, int slot, float strong, float weak, float seconds)
+        {
+            if (slot < 0 || slot >= world.Setup.Inputs.Count)
+            {
+                return;
+            }
+
+            world.App.Rumble.Pulse(world.Setup.Inputs[slot].Device, strong, weak, seconds);
+        }
     }
 }

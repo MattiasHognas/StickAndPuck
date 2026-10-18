@@ -3,11 +3,11 @@
 // OpenGL picks its graphics card when the window is made, so a game that should run on another
 // card than it started on starts itself again on that card first (see GpuLaunch).
 StickAndPuck.App.Core.AssetRoot.Enter();
-if (!OperatingSystem.IsBrowser() && !StickAndPuck.App.Core.GpuLaunch.OntoWanted())
+if (!OperatingSystem.IsBrowser() && !StickAndPuck.App.GpuLaunch.OntoWanted())
 {
     StickAndPuck.App.Core.Game.Run();
     if (!OperatingSystem.IsBrowser())
     {
-        StickAndPuck.App.Core.GpuLaunch.AfterRun();
+        StickAndPuck.App.GpuLaunch.AfterRun();
     }
 }

@@ -1,48 +1,86 @@
+using System.Collections.Immutable;
 using System.Globalization;
+using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
-using System.Collections.Immutable;
 using K = StickAndPuck.App.Core.Text.Keys;
 
-namespace StickAndPuck.App.Season;
-
-/// <summary>A plain standings panel in the A3 pixel font: rank, club, games, regulation and overtime wins
-/// and losses, goals and points, with the human's club in gold. The standings
-/// screen uses the same <see cref="SeasonState.Table"/> and the same header: the round of the human's next
-/// game, or the final table once the season is over.</summary>
-internal static class SeasonTable
+namespace StickAndPuck.App.Season.Schedule
 {
-    const int Line = 12, Pad = 6;
-
-    static readonly ImmutableArray<(string Head, int X)> Columns =
-        [(K.ColGp, 150), (K.ColW, 174), (K.ColOtw, 194), (K.ColOtl, 222), (K.ColL, 250), (K.ColGoals, 268), (K.ColPts, 314)];
-
-    /// <summary>Draws the table centred on the 480x270 frame.</summary>
-    public static void Draw(HudArt art, SeasonState season, IReadOnlyList<ClubData> clubs)
+    /// <summary>A plain standings panel in the A3 pixel font: rank, club, games, regulation and overtime wins
+    /// and losses, goals and points, with the human's club in gold. The standings
+    /// screen uses the same <see cref="SeasonState.Table"/> and the same header: the round of the human's next
+    /// game, or the final table once the season is over.</summary>
+    internal static class SeasonTable
     {
-        var table = season.Table;
-        int w = 340, h = (Pad * 2) + ((table.Count + 2) * Line);
-        int x = (Game.Width - w) / 2, y = Math.Max(2, (Game.Height - h) / 2);
-        art.DrawPanel("panel", x, y, w, h);
+        private const int Line = 12,
+            Pad = 6;
 
-        int top = y + Pad - 2;
-        string title = season.IsOver ? Text.Get(K.ShlFinalTable) : Text.Format(K.ShlRound, Screens.StandingsScreen.Round(season), season.Rounds);
-        art.DrawText(title, x + Pad + 4, top, art.Score);
-        top += Line;
-        foreach (var (head, cx) in Columns) art.DrawText(Text.Get(head), x + cx, top, art.Text);
+        private static readonly ImmutableArray<(string Head, int X)> Columns =
+        [
+            (K.ColGp, 150),
+            (K.ColW, 174),
+            (K.ColOtw, 194),
+            (K.ColOtl, 222),
+            (K.ColL, 250),
+            (K.ColGoals, 268),
+            (K.ColPts, 314),
+        ];
 
-        for (int i = 0; i < table.Count; i++)
+        /// <summary>Draws the table centred on the 480x270 frame.</summary>
+        public static void Draw(HudArt art, SeasonState season, IReadOnlyList<ClubData> clubs)
         {
-            var r = table[i];
+            IReadOnlyList<StandingRow> table = season.Table;
+            int w = 340,
+                h = (Pad * 2) + ((table.Count + 2) * Line);
+            int x = (Game.Width - w) / 2,
+                y = Math.Max(2, (Game.Height - h) / 2);
+            art.DrawPanel("panel", x, y, w, h);
+
+            int top = y + Pad - 2;
+            string title = season.IsOver
+                ? Text.Get(K.ShlFinalTable)
+                : Text.Format(K.ShlRound, Screens.StandingsScreen.Round(season), season.Rounds);
+            art.DrawText(title, x + Pad + 4, top, art.Score);
             top += Line;
-            var ink = string.Equals(r.ClubId, season.UserClub, StringComparison.Ordinal) ? art.Score : art.Text;
-            string name = clubs.FirstOrNone(c => string.Equals(c.Id, r.ClubId, StringComparison.Ordinal)).Select(c => c.Name).Or(r.ClubId);
-            art.DrawText(Num(i + 1), x + Pad + 4, top, ink);
-            art.DrawText(name, x + Pad + 22, top, ink);
-            string[] cells = [Num(r.Played), Num(r.Wins), Num(r.OvertimeWins), Num(r.OvertimeLosses), Num(r.Losses), string.Create(CultureInfo.InvariantCulture, $"{r.GoalsFor}-{r.GoalsAgainst}"), Num(r.Points)];
-            for (int c = 0; c < cells.Length; c++) art.DrawText(cells[c], x + Columns[c].X, top, ink);
+            foreach ((string head, int cx) in Columns)
+            {
+                art.DrawText(Text.Get(head), x + cx, top, art.Text);
+            }
+
+            for (int i = 0; i < table.Count; i++)
+            {
+                StandingRow r = table[i];
+                top += Line;
+                Color ink = string.Equals(r.ClubId, season.UserClub, StringComparison.Ordinal)
+                    ? art.Score
+                    : art.Text;
+                string name = clubs
+                    .FirstOrNone(c => string.Equals(c.Id, r.ClubId, StringComparison.Ordinal))
+                    .Select(c => c.Name)
+                    .Or(r.ClubId);
+                art.DrawText(Num(i + 1), x + Pad + 4, top, ink);
+                art.DrawText(name, x + Pad + 22, top, ink);
+                string[] cells =
+                [
+                    Num(r.Played),
+                    Num(r.Wins),
+                    Num(r.OvertimeWins),
+                    Num(r.OvertimeLosses),
+                    Num(r.Losses),
+                    string.Create(CultureInfo.InvariantCulture, $"{r.GoalsFor}-{r.GoalsAgainst}"),
+                    Num(r.Points),
+                ];
+                for (int c = 0; c < cells.Length; c++)
+                {
+                    art.DrawText(cells[c], x + Columns[c].X, top, ink);
+                }
+            }
+        }
+
+        private static string Num(int n)
+        {
+            return n.ToString(CultureInfo.InvariantCulture);
         }
     }
-
-    static string Num(int n) => n.ToString(CultureInfo.InvariantCulture);
 }

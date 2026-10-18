@@ -1,66 +1,101 @@
 using System.Text.Json;
 using StickAndPuck.App.Core;
 
-namespace StickAndPuck.App.Season;
-
-/// <summary>The arcade save: one indented JSON file holding an <see cref="ArcadeRun"/>, next to the season
-/// save (arcade.json in the user's settings folder), so a run and a season never overwrite each
-/// other. SAP_ARCADE_SAVE=path overrides it. Writes replace the file in one move, as the season save does.</summary>
-public static class ArcadeSave
+namespace StickAndPuck.App.Season.Arcade
 {
-    /// <summary>Gets the save file path: SAP_ARCADE_SAVE, or arcade.json in the user's settings folder.</summary>
-    public static string DefaultPath =>
-        Env.Get("SAP_ARCADE_SAVE") is { Length: > 0 } p
-            ? Path.GetFullPath(p)
-            : SavedFiles.DefaultPath("arcade.json");
-
-    /// <summary>Gets a value indicating whether an arcade save exists (finished or not).</summary>
-    public static bool Exists() => Exists(DefaultPath);
-
-    /// <summary>Gets a value indicating whether an arcade save exists (finished or not).</summary>
-    public static bool Exists(string path)
+    /// <summary>The arcade save: one indented JSON file holding an <see cref="ArcadeRun"/>, next to the season
+    /// save (arcade.json in the user's settings folder), so a run and a season never overwrite each
+    /// other. SAP_ARCADE_SAVE=path overrides it. Writes replace the file in one move, as the season save does.</summary>
+    public static class ArcadeSave
     {
-        return SavedFiles.Exists(path);
-    }
+        /// <summary>Gets the save file path: SAP_ARCADE_SAVE, or arcade.json in the user's settings folder.</summary>
+        public static string DefaultPath =>
+            Env.Get("SAP_ARCADE_SAVE") is { Length: > 0 } p
+                ? Path.GetFullPath(p)
+                : SavedFiles.DefaultPath("arcade.json");
 
-    /// <summary>Writes the run, replacing any earlier save.</summary>
-    public static void Write(ArcadeRun run) => Write(run, DefaultPath);
-
-    /// <summary>Writes the run, replacing any earlier save.</summary>
-    public static void Write(ArcadeRun run, string path)
-    {
-        if (DeviceInput.Playing) return;    // a replay never touches the saves
-        run.Saved = DateTime.UtcNow;
-        SavedFiles.WriteText(path, JsonSerializer.Serialize(run, SaveJsonContext.Default.ArcadeRun));
-    }
-
-    /// <summary>Reads the saved run.</summary>
-    /// <returns>The run, or None when there is no save, it cannot be read, or it is from a newer version.</returns>
-    public static Maybe<ArcadeRun> Read() => Read(DefaultPath);
-
-    /// <summary>Reads the saved run.</summary>
-    /// <returns>The run, or None when there is no save, it cannot be read, or it is from a newer version.</returns>
-    public static Maybe<ArcadeRun> Read(string path)
-    {
-        if (!SavedFiles.Exists(path)) return Maybe<ArcadeRun>.None;
-        try
+        /// <summary>Gets a value indicating whether an arcade save exists (finished or not).</summary>
+        public static bool Exists()
         {
-            if (JsonSerializer.Deserialize(SavedFiles.ReadText(path), SaveJsonContext.Default.ArcadeRun) is not { } run || run.Version > ArcadeRun.CurrentVersion || run.Opponents.Count == 0) return Maybe<ArcadeRun>.None;
-            return run;
+            return Exists(DefaultPath);
         }
-        catch (JsonException e)
+
+        /// <summary>Gets a value indicating whether an arcade save exists (finished or not).</summary>
+        public static bool Exists(string path)
         {
-            Console.WriteLine($"SAP: arcade save {path} could not be read ({e.Message})");
-            return Maybe<ArcadeRun>.None;
+            return SavedFiles.Exists(path);
         }
-    }
 
-    /// <summary>Removes the save.</summary>
-    public static void Delete() => Delete(DefaultPath);
+        /// <summary>Writes the run, replacing any earlier save.</summary>
+        public static void Write(ArcadeRun run)
+        {
+            Write(run, DefaultPath);
+        }
 
-    /// <summary>Removes the save.</summary>
-    public static void Delete(string path)
-    {
-        if (!DeviceInput.Playing) SavedFiles.Delete(path);
+        /// <summary>Writes the run, replacing any earlier save.</summary>
+        public static void Write(ArcadeRun run, string path)
+        {
+            if (DeviceInput.Playing)
+            {
+                return; // a replay never touches the saves
+            }
+
+            run.Saved = DateTime.UtcNow;
+            SavedFiles.WriteText(
+                path,
+                JsonSerializer.Serialize(run, SaveJsonContext.Default.ArcadeRun)
+            );
+        }
+
+        /// <summary>Reads the saved run.</summary>
+        /// <returns>The run, or None when there is no save, it cannot be read, or it is from a newer version.</returns>
+        public static Maybe<ArcadeRun> Read()
+        {
+            return Read(DefaultPath);
+        }
+
+        /// <summary>Reads the saved run.</summary>
+        /// <returns>The run, or None when there is no save, it cannot be read, or it is from a newer version.</returns>
+        public static Maybe<ArcadeRun> Read(string path)
+        {
+            if (!SavedFiles.Exists(path))
+            {
+                return Maybe.None<ArcadeRun>();
+            }
+
+            try
+            {
+                return
+                    JsonSerializer.Deserialize(
+                        SavedFiles.ReadText(path),
+                        SaveJsonContext.Default.ArcadeRun
+                    )
+                        is not { } run
+                    || run.Version > ArcadeRun.CurrentVersion
+                    || run.Opponents.Count == 0
+                    ? Maybe.None<ArcadeRun>()
+                    : (Maybe<ArcadeRun>)run;
+            }
+            catch (JsonException e)
+            {
+                Console.WriteLine($"SAP: arcade save {path} could not be read ({e.Message})");
+                return Maybe.None<ArcadeRun>();
+            }
+        }
+
+        /// <summary>Removes the save.</summary>
+        public static void Delete()
+        {
+            Delete(DefaultPath);
+        }
+
+        /// <summary>Removes the save.</summary>
+        public static void Delete(string path)
+        {
+            if (!DeviceInput.Playing)
+            {
+                SavedFiles.Delete(path);
+            }
+        }
     }
 }

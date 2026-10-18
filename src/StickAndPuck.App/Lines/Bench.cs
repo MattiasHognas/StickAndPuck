@@ -1,189 +1,188 @@
 using System.Numerics;
 using StickAndPuck.App.Core;
 
-namespace StickAndPuck.App.Lines;
-
-/// <summary>What the bench knows, for HUD, AI and screens to read. <see cref="LinesSystem"/> keeps it
-/// up to date in every world that runs the match flow.</summary>
-public static class Bench
+namespace StickAndPuck.App.Lines
 {
-
-    /// <summary>Gets a club's squad, or None in a world without the match flow.</summary>
-    public static Maybe<Squad> SquadOf(World world, Side side)
+    /// <summary>What the bench knows, for HUD, AI and screens to read. <see cref="LinesSystem"/> keeps it
+    /// up to date in every world that runs the match flow.</summary>
+    public static class Bench
     {
-        return world.Lines.TryGet(out var b) ? b.Squads[(int)side] : Maybe<Squad>.None;
-    }
-
-    /// <summary>Gets whether a club has a change on the fly under way: skaters heading for the bench.</summary>
-    public static bool IsChanging(World world, Side side)
-    {
-        return world.Lines.TryGet(out var b) && b.Changing[(int)side].HasValue;
-    }
-
-    /// <summary>Gets whether a skater is on the way to the bench.</summary>
-    public static bool IsLeaving(World world, Player p)
-    {
-        return world.Lines.TryGet(out var b) && b.Changing[(int)p.Side].TryGet(out var c) && c.Swaps.Exists(s => !s.Done && s.Out == p);
-    }
-
-    /// <summary>Gets the mean energy of a club's forwards or defencemen on the ice.</summary>
-    public static float OnIceEnergy(World world, Side side, Group group)
-    {
-        var on = OnIce(world, side, group).ToList();
-        return on.Count == 0 ? 1f : on.Average(p => p.Energy);
-    }
-
-    /// <summary>Gets the unit most of a group on the ice belongs to.</summary>
-    public static Maybe<Unit> OnIceUnit(World world, Side side, Group group)
-    {
-        return SquadOf(world, side).TryGet(out var squad) ? Maybe.From<Unit>(squad.Units(group).MaxBy(u => u.Members.Count(m => m.OnIce))) : Maybe<Unit>.None;
-    }
-
-    /// <summary>Asks for an early change, as the change line button does: the more tired of forwards and
-    /// defence goes off, on the fly in play, or at the next faceoff while play is stopped.</summary>
-    public static void RequestChange(World world, Side side)
-    {
-        if (world.Lines.TryGet(out var b)) b.Requested[(int)side] = true;
-    }
-
-    /// <summary>Sends a skater on from the bench, the extra attacker or the skater a club adds for a 4 on 3
-    /// power play in overtime: the freshest of the group who is not in the penalty box, from the
-    /// other group when that one is empty. On the fly he steps out of the bench door; at a stoppage
-    /// he waits at the door for the faceoff to place him.</summary>
-    public static Maybe<Player> SendOn(World world, Side side, Group group, bool onTheFly)
-    {
-        if (world.Players
-            .Where(p => p.Side == side && !p.OnIce && !p.IsGoalie && !Rules.Penalties.InBox(world, p.Id))
-            .OrderByDescending(p => Squad.GroupOf(p) == group)
-            .ThenByDescending(p => p.Energy)
-            .FirstOrDefault() is not { } on)
+        /// <summary>Gets a club's squad, or None in a world without the match flow.</summary>
+        public static Maybe<Squad> SquadOf(World world, Side side)
         {
-            return Maybe<Player>.None;
+            return world.Lines.TryGet(out LinesBoard b) ? b.Squads[(int)side] : Maybe.None<Squad>();
         }
-        var door = Squad.Door(side);
-        on.OnIce = true;
-        on.Position = new Vector3(door.X, 0, door.Y + (onTheFly ? 0.4f : 1.5f));
-        on.Velocity = onTheFly ? new Vector3(0, 0, 1.5f) : Vector3.Zero;
-        on.Heading = 0f;
-        on.Command = default;
-        on.Begin(PlayerAction.None);
-        return on;
-    }
 
-    /// <summary>Sends a player on the ice to the bench, handing a human's control to the teammate nearest the puck.</summary>
-    public static void SendOff(World world, Player p)
-    {
-        if (!p.OnIce) return;
-        if (p.Slot >= 0)
+        /// <summary>Gets whether a club has a change on the fly under way: skaters heading for the bench.</summary>
+        public static bool IsChanging(World world, Side side)
         {
-            if (world.OnIce(p.Side).Where(o => o != p && !o.IsGoalie && o.Slot < 0).MinBy(o => Vector3.DistanceSquared(o.Position, world.Puck.Position)) is { } to)
-                to.Slot = p.Slot;
-            p.Slot = -1;
+            return world.Lines.TryGet(out LinesBoard b) && b.Changing[(int)side].HasValue;
         }
-        var door = Squad.Door(p.Side);
-        p.OnIce = false;
-        p.Position = new Vector3(door.X, 0, door.Y - 1.5f);
-        p.Velocity = Vector3.Zero;
-        p.Command = default;
-        p.Begin(PlayerAction.None);
-        if (world.Puck.Carrier == p.Id) world.Puck.Carrier = -1;
-        if (world.Lines.TryGet(out var b) && b.Changing[(int)p.Side].TryGet(out var change))
-            foreach (var s in change.Swaps.Where(s => s.Out == p || s.In == p)) s.Done = true;
+
+        /// <summary>Gets whether a skater is on the way to the bench.</summary>
+        public static bool IsLeaving(World world, Player p)
+        {
+            return world.Lines.TryGet(out LinesBoard b)
+                && b.Changing[(int)p.Side].TryGet(out ShiftChange c)
+                && c.Swaps.Exists(s => !s.Done && s.Out == p);
+        }
+
+        /// <summary>Gets the mean energy of a club's forwards or defencemen on the ice.</summary>
+        public static float OnIceEnergy(World world, Side side, Group group)
+        {
+            List<Player> on = [.. OnIce(world, side, group)];
+            return on.Count == 0 ? 1f : on.Average(p => p.Energy);
+        }
+
+        /// <summary>Gets the unit most of a group on the ice belongs to.</summary>
+        public static Maybe<Unit> OnIceUnit(World world, Side side, Group group)
+        {
+            return SquadOf(world, side).TryGet(out Squad squad)
+                ? Maybe.From(squad.Units(group).MaxBy(u => u.Members.Count(m => m.OnIce)))
+                : Maybe.None<Unit>();
+        }
+
+        /// <summary>Asks for an early change, as the change line button does: the more tired of forwards and
+        /// defence goes off, on the fly in play, or at the next faceoff while play is stopped.</summary>
+        public static void RequestChange(World world, Side side)
+        {
+            if (world.Lines.TryGet(out LinesBoard b))
+            {
+                b.Requested[(int)side] = true;
+            }
+        }
+
+        /// <summary>Sends a skater on from the bench, the extra attacker or the skater a club adds for a 4 on 3
+        /// power play in overtime: the freshest of the group who is not in the penalty box, from the
+        /// other group when that one is empty. On the fly he steps out of the bench door; at a stoppage
+        /// he waits at the door for the faceoff to place him.</summary>
+        public static Maybe<Player> SendOn(World world, Side side, Group group, bool onTheFly)
+        {
+            if (
+                world
+                    .Players.Where(p =>
+                        p.Side == side
+                        && !p.OnIce
+                        && !p.IsGoalie
+                        && !Rules.Penalties.PenaltyCalls.InBox(world, p.Id)
+                    )
+                    .OrderByDescending(p => Squad.GroupOf(p) == group)
+                    .ThenByDescending(p => p.Energy)
+                    .FirstOrDefault()
+                is not { } on
+            )
+            {
+                return Maybe.None<Player>();
+            }
+            Vector2 door = Squad.Door(side);
+            on.OnIce = true;
+            on.Position = new Vector3(door.X, 0, door.Y + (onTheFly ? 0.4f : 1.5f));
+            on.Velocity = onTheFly ? new Vector3(0, 0, 1.5f) : Vector3.Zero;
+            on.Heading = 0f;
+            on.Command = default;
+            on.Begin(PlayerAction.None);
+            return on;
+        }
+
+        /// <summary>Sends a player on the ice to the bench, handing a human's control to the teammate nearest the puck.</summary>
+        public static void SendOff(World world, Player p)
+        {
+            if (!p.OnIce)
+            {
+                return;
+            }
+
+            if (p.Slot >= 0)
+            {
+                if (
+                    world
+                        .OnIce(p.Side)
+                        .Where(o => o != p && !o.IsGoalie && o.Slot < 0)
+                        .MinBy(o => Vector3.DistanceSquared(o.Position, world.Puck.Position)) is
+                    { } to
+                )
+                {
+                    to.Slot = p.Slot;
+                }
+
+                p.Slot = -1;
+            }
+            Vector2 door = Squad.Door(p.Side);
+            p.OnIce = false;
+            p.Position = new Vector3(door.X, 0, door.Y - 1.5f);
+            p.Velocity = Vector3.Zero;
+            p.Command = default;
+            p.Begin(PlayerAction.None);
+            if (world.Puck.Carrier == p.Id)
+            {
+                world.Puck.Carrier = -1;
+            }
+
+            if (
+                world.Lines.TryGet(out LinesBoard b)
+                && b.Changing[(int)p.Side].TryGet(out ShiftChange change)
+            )
+            {
+                foreach (Swap s in change.Swaps.Where(s => s.Out == p || s.In == p))
+                {
+                    s.Done = true;
+                }
+            }
+        }
+
+        /// <summary>Gets the skater a club can spare when it has more on the ice than it should: the extra
+        /// attacker if he is out there, else the most tired of the group with more than its
+        /// share (one forward at three a side, two defence at four or more), a human's skater last.</summary>
+        public static Maybe<Player> Surplus(World world, Side side, int target)
+        {
+            if (GoaliePull.ExtraAttacker(world, side).TryGet(out Player extra))
+            {
+                return extra;
+            }
+
+            List<Player> skaters = [.. world.OnIce(side).Where(p => !p.IsGoalie)];
+            int defenceWanted = target >= 4 ? 2 : Math.Max(0, target - 1);
+            int defence = skaters.Count(p => Squad.GroupOf(p) == Group.Defence);
+            Group group = defence > defenceWanted ? Group.Defence : Group.Forwards;
+            return Maybe.From(
+                skaters
+                    .Where(p => Squad.GroupOf(p) == group)
+                    .OrderBy(p => p.Slot >= 0)
+                    .ThenBy(p => p.Energy)
+                    .FirstOrDefault()
+                    ?? skaters.OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault()
+            );
+        }
+
+        /// <summary>Takes an ejected player out of his club's squad for the rest of the match: off the ice
+        /// if he is on it, out of his line or pair, and a skater from the last unit moves up into the gap
+        /// (<see cref="Squad.Remove"/>). The penalty box keeps him off the bench (<see cref="Rules.Penalties.PenaltyCalls.InBox"/>).</summary>
+        public static void Eject(World world, Player p)
+        {
+            SendOff(world, p);
+            if (!SquadOf(world, p.Side).TryGet(out Squad squad))
+            {
+                return;
+            }
+
+            Maybe<Unit> unit = squad.UnitOf(p);
+            Maybe<Player> up = squad.Remove(p);
+            if (unit.TryGet(out Unit refilled) && Rules.Match.MatchFlow.State(world).Log)
+            {
+                Console.WriteLine(
+                    $"LINES: {world.Setup.Club(p.Side).ShortName} {refilled.Name} refilled{(up.TryGet(out Player mover) ? $" with {mover.Data.LastName}" : " short")}"
+                );
+            }
+        }
+
+        internal static IEnumerable<Player> OnIce(World world, Side side, Group group)
+        {
+            return world.OnIce(side).Where(p => !p.IsGoalie && Squad.GroupOf(p) == group);
+        }
+
+        internal static LinesBoard Board(World world)
+        {
+            return world.Lines.Get(() => new LinesBoard());
+        }
     }
-
-    /// <summary>Gets the skater a club can spare when it has more on the ice than it should: the extra
-    /// attacker if he is out there, else the most tired of the group with more than its
-    /// share (one forward at three a side, two defence at four or more), a human's skater last.</summary>
-    public static Maybe<Player> Surplus(World world, Side side, int target)
-    {
-        if (GoaliePull.ExtraAttacker(world, side).TryGet(out var extra)) return extra;
-        var skaters = world.OnIce(side).Where(p => !p.IsGoalie).ToList();
-        int defenceWanted = target >= 4 ? 2 : Math.Max(0, target - 1);
-        int defence = skaters.Count(p => Squad.GroupOf(p) == Group.Defence);
-        var group = defence > defenceWanted ? Group.Defence : Group.Forwards;
-        return Maybe.From<Player>(skaters.Where(p => Squad.GroupOf(p) == group).OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault()
-            ?? skaters.OrderBy(p => p.Slot >= 0).ThenBy(p => p.Energy).FirstOrDefault());
-    }
-
-    /// <summary>Takes an ejected player out of his club's squad for the rest of the match: off the ice
-    /// if he is on it, out of his line or pair, and a skater from the last unit moves up into the gap
-    /// (<see cref="Squad.Remove"/>). The penalty box keeps him off the bench (<see cref="Rules.Penalties.InBox"/>).</summary>
-    public static void Eject(World world, Player p)
-    {
-        SendOff(world, p);
-        if (!SquadOf(world, p.Side).TryGet(out var squad)) return;
-        var unit = squad.UnitOf(p);
-        var up = squad.Remove(p);
-        if (unit.TryGet(out var refilled) && Rules.MatchFlow.State(world).Log)
-            Console.WriteLine($"LINES: {world.Setup.Club(p.Side).ShortName} {refilled.Name} refilled{(up.TryGet(out var mover) ? $" with {mover.Data.LastName}" : " short")}");
-    }
-
-    internal static IEnumerable<Player> OnIce(World world, Side side, Group group)
-    {
-        return world.OnIce(side).Where(p => !p.IsGoalie && Squad.GroupOf(p) == group);
-    }
-
-    internal static LinesBoard Board(World world)
-    {
-        return world.Lines.Get(() => new LinesBoard());
-    }
-}
-
-/// <summary>The bench's state for one match.</summary>
-internal sealed class LinesBoard
-{
-    public Maybe<Squad>[] Squads { get; } = new Maybe<Squad>[2];
-
-    /// <summary>Gets each club's change on the fly, if one is under way.</summary>
-    public Maybe<ShiftChange>[] Changing { get; } = new Maybe<ShiftChange>[2];
-
-    /// <summary>Gets the groups that change at the next faceoff, indexed by side then group.</summary>
-    public bool[,] Pending { get; } = new bool[2, 2];
-
-    /// <summary>Gets the clubs that send their first line and pair out at the next faceoff (a new period).</summary>
-    public bool[] FirstUnits { get; } = new bool[2];
-
-    /// <summary>Gets the clubs whose backup goalie comes in at the next faceoff.</summary>
-    public bool[] GoalieSwap { get; } = new bool[2];
-
-    /// <summary>Gets each club's pulled goalie, or None while he is in the net.</summary>
-    public Maybe<Player>[] PulledGoalie { get; } = new Maybe<Player>[2];
-
-    /// <summary>Gets the id of the extra attacker who came on for each club's goalie, or -1.</summary>
-    public int[] ExtraAttacker { get; } = [-1, -1];
-
-    /// <summary>Gets whether each human slot held the pull goalie button last step.</summary>
-    public bool[] PullHeld { get; } = new bool[MatchSetup.Slots];
-
-    /// <summary>Gets the button presses not yet acted on, per side.</summary>
-    public bool[] Requested { get; } = new bool[2];
-
-    /// <summary>Gets the game seconds of recent goals against, per side.</summary>
-    public List<float>[] GoalsAgainst { get; } = [[], []];
-
-    public int[] LastScore { get; } = new int[2];
-
-    /// <summary>Gets or sets the game seconds played: time in play, so the clock's time over all periods.</summary>
-    public float GameTime { get; set; }
-
-    public MatchPhase LastPhase { get; set; } = MatchPhase.Intro;
-
-    /// <summary>Gets what each club last sent out and when, for the debug panel.</summary>
-    public (string What, float At)[] Last { get; } = [("", float.NegativeInfinity), ("", float.NegativeInfinity)];
-}
-
-/// <summary>A change under way: who goes off, who comes on.</summary>
-internal sealed record ShiftChange(Side Side, Group Group, Unit Incoming, List<Swap> Swaps, float Started)
-{
-    /// <summary>Gets or sets a value indicating whether the line change event went out.</summary>
-    public bool Announced { get; set; }
-}
-
-/// <summary>One skater off for one on.</summary>
-internal sealed record Swap(Player Out, Player In)
-{
-    public bool Done { get; set; }
-
-    /// <summary>Gets the spot (x, z) on the ice where the bench door is.</summary>
-    public Vector2 Door => Squad.Door(Out.Side);
 }

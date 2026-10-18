@@ -15,6 +15,14 @@ For a Release build, add `-c Release`. The executable is still named `StickAndPu
 
 Development overrides are environment variables in front of the command, for example `SAP_SCENE=match SAP_HOME=frolunda SAP_AWAY=djurgarden dotnet run --project src/StickAndPuck.App`. On Windows PowerShell: `$env:SAP_SCENE="match"; dotnet run --project src/StickAndPuck.App`.
 
+CSharpier formats C# and XML. Restore the pinned local tool with `dotnet tool restore`,
+then use `dotnet csharpier format src tests analyzers` to format the solution or
+`dotnet csharpier check src tests analyzers` to check it. The matching
+`CSharpier.MsBuild` package formats project files during Debug builds and checks
+formatting during Release builds. Install the recommended CSharpier VS Code
+extension to use the workspace's format-on-save settings; builds and the CLI work
+without the extension. Keep the tool and package versions in sync when upgrading.
+
 Environment variables override saved settings for the run. `SAP_SETTINGS=path` chooses a different settings JSON file; leaving it unset uses the platform default. They also work with the downloaded release executable. See [Playing](PLAYING.md) for settings and save locations, and [Testing](TESTING.md#visual-scenes-sap_scene) for every scene.
 
 ## Match settings

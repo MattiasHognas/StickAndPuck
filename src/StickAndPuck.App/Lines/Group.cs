@@ -1,11 +1,12 @@
-namespace StickAndPuck.App.Lines;
-
-/// <summary>Which half of the skaters a unit belongs to; forwards and defence change separately.</summary>
-public enum Group
+namespace StickAndPuck.App.Lines
 {
-    /// <summary>Centres and wings.</summary>
-    Forwards,
+    /// <summary>Which half of the skaters a unit belongs to; forwards and defence change separately.</summary>
+    public enum Group
+    {
+        /// <summary>Centres and wings.</summary>
+        Forwards,
 
-    /// <summary>Defencemen.</summary>
-    Defence,
+        /// <summary>Defencemen.</summary>
+        Defence,
+    }
 }
