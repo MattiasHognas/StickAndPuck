@@ -79,6 +79,15 @@ namespace StickAndPuck.App.Core
             /// <summary>FIGHTING</summary>
             public const string InfFighting = nameof(InfFighting);
 
+            /// <summary>DELAY OF GAME</summary>
+            public const string InfDelayOfGame = nameof(InfDelayOfGame);
+
+            /// <summary>FACEOFF VIOLATION</summary>
+            public const string FaceoffViolation = nameof(FaceoffViolation);
+
+            /// <summary>#{0} {1} OUT, #{2} {3} IN</summary>
+            public const string FaceoffViolationSwap = nameof(FaceoffViolationSwap);
+
             /// <summary>PENALTY</summary>
             public const string InfPenalty = nameof(InfPenalty);
 

@@ -37,12 +37,19 @@ namespace StickAndPuck.App.Rules.Match
         /// <summary>Puts every on-ice player on their faceoff spot around a dot, standing still and facing up ice.</summary>
         public static void Place(World world, Vector3 dot)
         {
+            Place(world, dot, []);
+        }
+
+        /// <summary>Puts every on-ice player on their faceoff spot, with the skaters in <paramref name="kicked"/>
+        /// (waved out after a faceoff violation) kept off the centre spot: a winger takes the draw instead.</summary>
+        public static void Place(World world, Vector3 dot, IReadOnlyCollection<int> kicked)
+        {
             foreach (Side side in new[] { Side.Home, Side.Away })
             {
                 int end = DefendedEnd(world.Match, side);
                 float heading = end < 0 ? MathF.PI / 2 : -MathF.PI / 2;
                 List<Player> skaters = [.. world.OnIce(side).Where(p => !p.IsGoalie)];
-                foreach ((Player player, int spot) in Assign(skaters))
+                foreach ((Player player, int spot) in Assign(skaters, kicked))
                 {
                     Vector3 offset = Spots[spot];
                     Put(player, Clamp(dot + new Vector3(-end * offset.X, 0, offset.Z)), heading);
@@ -54,15 +61,26 @@ namespace StickAndPuck.App.Rules.Match
             }
         }
 
-        /// <summary>Gets the spot of each skater: the first skaters fill <see cref="FillOrder"/>, each spot preferring a matching position.</summary>
-        private static List<(Player Player, int Spot)> Assign(List<Player> skaters)
+        /// <summary>Gets the spot of each skater: the first skaters fill <see cref="FillOrder"/>, each spot preferring a matching position.
+        /// A kicked skater never takes the centre spot while another can: the centre first, then a winger, then anyone.</summary>
+        private static List<(Player Player, int Spot)> Assign(
+            List<Player> skaters,
+            IReadOnlyCollection<int> kicked
+        )
         {
             List<Player> free = [with(skaters)];
             List<int> spots = [.. FillOrder.Take(Math.Min(skaters.Count, FillOrder.Length))];
             List<(Player, int)> pairs = [];
             foreach (int spot in spots)
             {
-                if (free.Find(p => p.Data.Position == SpotPositions[spot]) is not { } match)
+                if (
+                    (
+                        spot == 0 && kicked.Count > 0
+                            ? free.Where(p => !kicked.Contains(p.Id)).MinBy(DrawRank)
+                            : free.Find(p => p.Data.Position == SpotPositions[spot])
+                    )
+                    is not { } match
+                )
                 {
                     continue;
                 }
@@ -82,6 +100,19 @@ namespace StickAndPuck.App.Rules.Match
             }
 
             return pairs;
+        }
+
+        /// <summary>Gets who takes the draw first once the centre is waved out: a centre, then a winger, then a defenceman.</summary>
+        private static int DrawRank(Player p)
+        {
+            return p.Data.Position switch
+            {
+                PlayingPosition.C => 0,
+                PlayingPosition.LW or PlayingPosition.RW => 1,
+                PlayingPosition.D => 2,
+                PlayingPosition.G => 3,
+                _ => 3,
+            };
         }
 
         private static void Put(Player p, Vector3 position, float heading)

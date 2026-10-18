@@ -20,6 +20,9 @@ namespace StickAndPuck.App.Rules.Match
         /// <summary>Gets the luck in the draws; the match seed's stream, so runs repeat.</summary>
         public required Random Dice { get; init; }
 
+        /// <summary>Gets the luck in an AI centre moving early; its own stream, so the draws keep theirs.</summary>
+        public required Random ViolationDice { get; init; }
+
         /// <summary>Gets the draw of the current faceoff.</summary>
         public DrawState Draw { get; } = new();
 

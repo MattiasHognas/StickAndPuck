@@ -104,7 +104,8 @@ namespace StickAndPuck.App.Season.Stats
                     or FightStarted
                     or PenaltyCalled
                     or IcingCalled
-                    or OffsideCalled:
+                    or OffsideCalled
+                    or FaceoffViolated:
                         break;
                     default:
                         throw new NotSupportedException(

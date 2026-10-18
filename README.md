@@ -29,7 +29,7 @@ Start an exhibition, take one of the 14 clubs through a 52-game season and playo
 | Switch player / change line | C / L | Y / LB |
 | Pause | Esc or P | Start |
 
-Press shoot or pass **after the puck drops** to win a faceoff. Pressing early loses it. Rebind controls, choose difficulty and rules, or adjust sound in settings.
+Press shoot or pass **after the puck drops** to win a faceoff. Pressing early is a violation: your centre is waved out and a winger takes the draw. Rebind controls, choose difficulty and rules, or adjust sound in settings.
 
 ![Both centres crouched over the faceoff dot](docs/images/faceoff.png)
 

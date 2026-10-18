@@ -15,7 +15,7 @@ namespace StickAndPuck.App.Core
         /// <summary>The SHL: the rules the game was built on.</summary>
         public static readonly RuleSet Shl = new();
 
-        /// <summary>Arcade: no offside, no icing, a lenient referee, the game's original penalty and fight rules and no team morale.</summary>
+        /// <summary>Arcade: no offside, no icing, a lenient referee, the game's original penalty and fight rules, no team morale and plain faceoffs (no violations, nearest dot).</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -35,10 +35,14 @@ namespace StickAndPuck.App.Core
             IcingNoChange = false,
             Intermission = IntermissionLength.Quick,
             Morale = false,
+            FaceoffViolations = false,
+            SmartDots = false,
+            IntentionalOffside = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
-        /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice and stronger team morale.</summary>
+        /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice, stronger team morale
+        /// and a delay-of-game minor for a second faceoff violation.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -50,6 +54,7 @@ namespace StickAndPuck.App.Core
             Tiebreak = TableTiebreak.RegulationWins,
             PlayoffHomeIce = PlayoffHomeIce.TwoTwoOneOneOne,
             MoraleStrength = MoraleStrength.Strong,
+            FaceoffViolationMinor = true,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -161,6 +166,18 @@ namespace StickAndPuck.App.Core
                     MoraleStrength.Normal => 1f,
                     _ => throw new NotSupportedException("no morale scale for " + MoraleStrength),
                 };
+
+        /// <summary>Gets a value indicating whether a centre who moves before the drop is waved out of the faceoff and a winger takes the draw.</summary>
+        public bool FaceoffViolations { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether a club's second faceoff violation in the same faceoff is a delay-of-game minor (the NHL); otherwise it hands the draw to the other club.</summary>
+        public bool FaceoffViolationMinor { get; init; }
+
+        /// <summary>Gets a value indicating whether a stoppage's faceoff dot is chosen against the club that caused it, rather than the dot nearest the puck.</summary>
+        public bool SmartDots { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether an intentional offside moves the faceoff to the offending club's own end-zone dot.</summary>
+        public bool IntentionalOffside { get; init; } = true;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

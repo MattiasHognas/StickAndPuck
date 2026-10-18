@@ -58,13 +58,20 @@ namespace StickAndPuck.App.Rules.Match
                 return false;
             }
 
+            Stop(world, dot);
+            return true;
+        }
+
+        /// <summary>Stops play for a faceoff at a dot from any phase: the whistle at once, then the faceoff after <see cref="MatchTuning.StoppageSeconds"/>.</summary>
+        internal static void Stop(World world, Vector3 dot)
+        {
             FlowState s = State(world);
             world.Match.Phase = MatchPhase.Stopped;
             world.Puck.Live = false;
             s.Timer = MatchTuning.StoppageSeconds;
             s.Dot = dot;
+            s.Draw.Dropped = false;
             world.Events.Publish(new WhistleBlown(world.Time, world.Puck.Position));
-            return true;
         }
 
         /// <summary>Starts a period after regulation (a 3 on 3 overtime): clock set, faceoff at centre. A goal in it ends the match.</summary>
@@ -103,6 +110,14 @@ namespace StickAndPuck.App.Rules.Match
             return true;
         }
 
+        /// <summary>Gets a value indicating whether a club had a skater waved out of the coming faceoff for a violation, so a winger takes its draw.</summary>
+        public static bool WavedOut(World world, Side side)
+        {
+            return IsRunning(world)
+                && world.Match.Phase == MatchPhase.Faceoff
+                && State(world).Draw.Kicked.Any(id => world.Players[id].Side == side);
+        }
+
         /// <summary>Gets a value indicating whether the faceoff prompt shows: a human takes the coming draw.</summary>
         public static bool FaceoffPrompt(World world)
         {
@@ -129,7 +144,11 @@ namespace StickAndPuck.App.Rules.Match
         internal static FlowState State(World world)
         {
             return world.Flow.Get(() =>
-                new FlowState { Dice = Seeds.Dice(world.Seed, "matchflow", 43) }
+                new FlowState
+                {
+                    Dice = Seeds.Dice(world.Seed, "matchflow", 43),
+                    ViolationDice = Seeds.Dice(world.Seed, "faceoffviolations", 47),
+                }
             );
         }
 

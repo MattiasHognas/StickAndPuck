@@ -156,6 +156,21 @@ namespace StickAndPuck.App.Core
             /// <summary>QUICK</summary>
             public const string RuleValueQuick = nameof(RuleValueQuick);
 
+            /// <summary>FACEOFFS</summary>
+            public const string RuleGroupFaceoffs = nameof(RuleGroupFaceoffs);
+
+            /// <summary>FACEOFF VIOLATIONS</summary>
+            public const string RuleFaceoffViolations = nameof(RuleFaceoffViolations);
+
+            /// <summary>MINOR ON 2ND VIOLATION</summary>
+            public const string RuleFaceoffViolationMinor = nameof(RuleFaceoffViolationMinor);
+
+            /// <summary>SMART DOTS</summary>
+            public const string RuleSmartDots = nameof(RuleSmartDots);
+
+            /// <summary>INTENTIONAL OFFSIDE</summary>
+            public const string RuleIntentionalOffside = nameof(RuleIntentionalOffside);
+
             /// <summary>FIGHTS</summary>
             public const string RuleFights = nameof(RuleFights);
 

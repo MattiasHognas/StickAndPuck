@@ -11,5 +11,8 @@ namespace StickAndPuck.App.Rules.Offside
 
         /// <summary>Gets or sets the last touch when the puck entered, so a new attacking touch can be told apart.</summary>
         public int EntryTouch { get; set; } = -1;
+
+        /// <summary>Gets or sets a value indicating whether the pending offside is intentional: the puck passed or dumped in to an attacker hanging deep in the zone.</summary>
+        public bool Intentional { get; set; }
     }
 }

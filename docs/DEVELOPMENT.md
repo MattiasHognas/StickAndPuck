@@ -89,7 +89,7 @@ in sync when upgrading.
 - `SAP_FLYOVER`: `0` leaves out the arena flyover at the start of the warm-up (the warm-up keeps its plain close-up). Default: the flyover plays, and the first start press skips it.
 - `SAP_REPLAY_AT`: seconds; fakes a goal at that time so the replay plays (used with the `camera` scene). Default off.
 
-- `SAP_RULES=shl|arcade|nhl`: chooses the rule preset in the menu flow and the overtime scene without saving that override; arcade modes retain their Arcade preset. Individual dev scenes can set up their own rules.
+- `SAP_RULES=shl|arcade|nhl`: chooses the rule preset in the menu flow and the overtime and faceoff scenes without saving that override; arcade modes retain their Arcade preset. Individual dev scenes can set up their own rules.
 
 ## Visuals, sound and input
 

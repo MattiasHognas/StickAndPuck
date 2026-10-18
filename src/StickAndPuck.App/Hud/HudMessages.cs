@@ -91,6 +91,7 @@ namespace StickAndPuck.App.Hud
                 OffsideCalled => OffsideBanner(e.Time),
                 IcingCalled icing => IcingBanner(world, icing, e.Time),
                 PenaltyCalled penalty => PenaltyBanner(world, m, penalty, e.Time),
+                FaceoffViolated violation => ViolationBanner(world, violation),
                 _ => Maybe.None<HudMessage>(),
             };
         }
@@ -158,6 +159,29 @@ namespace StickAndPuck.App.Hud
                 world.Setup.Club(offender).Name,
                 world.Setup.Club(offender).Id,
                 at + CallSeconds
+            );
+        }
+
+        private static HudMessage ViolationBanner(World world, FaceoffViolated violation)
+        {
+            // the skater waved out and the one taking the draw instead, with the club's crest
+            PlayerData who = world.Players[violation.PlayerId].Data;
+            string line =
+                violation.TakerId >= 0 && violation.TakerId != violation.PlayerId
+                    ? Text.Format(
+                        K.FaceoffViolationSwap,
+                        who.Number,
+                        who.LastName,
+                        world.Players[violation.TakerId].Data.Number,
+                        world.Players[violation.TakerId].Data.LastName
+                    )
+                    : Text.Format(K.PlayerTag, who.Number, who.LastName);
+            return new HudMessage(
+                "panel",
+                Text.Get(K.FaceoffViolation),
+                line,
+                world.Setup.Club(violation.Side).Id,
+                violation.Time + CallSeconds
             );
         }
 

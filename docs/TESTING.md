@@ -79,7 +79,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `hud`: the scorebug at 2-1 in the second period with one banner up.
 - `seasontable`, `playoffbracket`, `arcadesummary`: the saved season's table, the playoff bracket or the arcade run's panel over the rink, nothing played.
 - `outlines`: twelve skaters packed together to check the outlines.
-- `faceoff`: repeats faceoffs, transfers the human slot to the centre, and scripts a press 0.15 seconds after each drop.
+- `faceoff`: repeats faceoffs, transfers the human slot to the centre, and scripts a press 0.15 seconds after each drop. `SAP_FACEOFF_VIOLATION=n` also presses n times before each drop, a faceoff violation each: with 1 the centre is waved out and a winger takes the draw; with 2 and `SAP_RULES=nhl` the second is a delay-of-game minor. `SAP_RULES=shl|arcade|nhl` picks the rules (default SHL).
 - `celebration`: the last seconds of a decided game; `SAP_CLOCK` sets the remaining time (default 4), `SAP_WINNER=away` puts the visitors ahead instead.
 - `goaliepull`: late in the third period, down a goal, to show the extra attacker; `SAP_AI_HUMAN=1` gives the human control and G pulls/returns the goalie in this scene.
 - `specialteams`: a permanent power play, with the away side short-handed by default; `SAP_ST_KILL=home` reverses it and `SAP_ST_WAIT=1` advances to an established attacking shape, and `SAP_ST_RULE=off` plays it with the SpecialTeams rule off (even-strength positioning a man up).

@@ -46,6 +46,13 @@ namespace StickAndPuck.App.Referee
                 r.ClearCall();
             }
 
+            // a faceoff violation: the new man at the dot gets set again before the drop
+            if (world.Events.Of<FaceoffViolated>().Any())
+            {
+                r.SetTime = 0;
+                r.Waited = 0;
+            }
+
             Step(world, r, dice, dt);
             renderer.Animate(r, dt, world.Time);
         }
