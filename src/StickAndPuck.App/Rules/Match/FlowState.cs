@@ -28,5 +28,8 @@ namespace StickAndPuck.App.Rules.Match
 
         /// <summary>Gets or sets the end-of-game celebration, from the horn of a decided game.</summary>
         public Maybe<Celebration.CelebrationState> Celebration { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether the intermission under way is the break before a playoff overtime, so the overtime rules take over after it.</summary>
+        public bool IntoOvertime { get; set; }
     }
 }

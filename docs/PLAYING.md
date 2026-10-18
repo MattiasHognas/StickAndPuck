@@ -40,6 +40,6 @@ The settings screen holds every switch: control switching, line changes, difficu
 
 Screenshots (F12, `SAP_SCREENSHOT`) and recordings are saved in the folder the game was started from.
 
-The rules page provides SHL, Arcade and NHL presets with individual overrides. The GPU setting lists detected cards and shows the active renderer; on Linux with multiple cards, a changed GPU choice relaunches the game. Overall, Effects and Music each have a 0–10 volume control. Overall at zero mutes everything; an older saved Volume value carries over to Effects. Music plays on menus, at intermission and after the game, with no music during live play.
+The rules page provides SHL, Arcade and NHL presets with individual overrides. The intermission rule sets the Zamboni break between periods and before a playoff overtime: Standard (SHL, NHL) drives the whole lap, Quick (Arcade) half as long, Off skips it; enter, space or A skips a break. The GPU setting lists detected cards and shows the active renderer; on Linux with multiple cards, a changed GPU choice relaunches the game. Overall, Effects and Music each have a 0–10 volume control. Overall at zero mutes everything; an older saved Volume value carries over to Effects. Music plays on menus, at intermission and after the game, with no music during live play.
 
 For environment overrides and alternate save paths, see [Development](DEVELOPMENT.md). For captures and replays, see [Testing](TESTING.md).

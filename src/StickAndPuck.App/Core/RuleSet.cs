@@ -33,6 +33,7 @@ namespace StickAndPuck.App.Core
             Roughing = false,
             FightPenalty = FightPenalty.LoserMinor,
             IcingNoChange = false,
+            Intermission = IntermissionLength.Quick,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection and 4 on 4 coincidental minors.</summary>
@@ -123,6 +124,9 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets a value indicating whether the AI plays its power-play and penalty-kill shapes; off, it keeps its even-strength positioning a man up or down.</summary>
         public bool SpecialTeams { get; init; } = true;
+
+        /// <summary>Gets how long the Zamboni break between periods lasts; anything but Off also breaks before a playoff overtime.</summary>
+        public IntermissionLength Intermission { get; init; } = IntermissionLength.Standard;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

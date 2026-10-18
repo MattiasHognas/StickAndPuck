@@ -1,5 +1,6 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Intermission.Dev;
 using StickAndPuck.App.Rules.Match;
 
 namespace StickAndPuck.App.Rules.Overtime.Dev
@@ -9,7 +10,9 @@ namespace StickAndPuck.App.Rules.Overtime.Dev
     /// overtime (SAP_OT seconds, default 15) and the shootout with AI shooters. SAP_HUMAN=1 puts
     /// keyboard and mouse on the home club, so you take the home shots yourself. SAP_START=overtime or
     /// shootout skips regulation (and overtime) to start right there. SAP_PLAYOFF=1 plays the SHL
-    /// playoff format instead: 5 on 5 overtime periods until a goal and no shootout. SAP_RULES=shl|arcade|nhl
+    /// playoff format instead: 5 on 5 overtime periods until a goal and no shootout, each after a Zamboni
+    /// break (SAP_START=overtime opens in the break before the first; SAP_ZAMBONI_AT starts its drive that
+    /// many seconds in). SAP_RULES=shl|arcade|nhl
     /// plays that preset's shootout (SHL away first, NHL home chooses). The score line is on.</summary>
     public sealed class OvertimeScene : IScene
     {
@@ -74,6 +77,16 @@ namespace StickAndPuck.App.Rules.Overtime.Dev
                 world.Match.Period = setup.Periods + (shootout ? 1 : 0);
                 world.Match.Clock = 0;
                 world.Match.Phase = shootout ? MatchPhase.Shootout : MatchPhase.Overtime;
+                if (!shootout && MatchRules.BreaksBeforeOvertime(world, MatchPhase.Overtime))
+                {
+                    // the playoff overtime waits for its Zamboni break, as at the end of a tied regulation
+                    world.Match.Phase = MatchPhase.Intermission;
+                    world.Puck.Live = false;
+                    FlowState flow = MatchFlow.State(world);
+                    flow.Timer = MatchTuning.IntermissionSeconds;
+                    flow.IntoOvertime = true;
+                    ZamboniScene.StartAt(world);
+                }
             }
 
             world.Switches.MatchLine = true;

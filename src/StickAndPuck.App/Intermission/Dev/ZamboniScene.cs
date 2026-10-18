@@ -24,6 +24,14 @@ namespace StickAndPuck.App.Intermission.Dev
             m.Clock = 0;
             world.Puck.Live = false;
             MatchFlow.State(world).Timer = 4f;
+            StartAt(world);
+            return world;
+        }
+
+        /// <summary>SAP_ZAMBONI_AT=seconds: the next drive starts that far in, with the AI skaters already
+        /// waiting at their bench doors; also used by the overtime scene's break before a playoff overtime.</summary>
+        internal static void StartAt(World world)
+        {
             if (
                 float.TryParse(
                     Env.Get("SAP_ZAMBONI_AT"),
@@ -41,7 +49,6 @@ namespace StickAndPuck.App.Intermission.Dev
                     p.Heading = 0;
                 }
             }
-            return world;
         }
     }
 }
