@@ -38,7 +38,8 @@ namespace StickAndPuck.App.Core
             return world;
         }
 
-        /// <summary>The default exhibition: SAP_HOME and SAP_AWAY pick clubs by id, otherwise the first two
+        /// <summary>The default exhibition: SAP_HOME and SAP_AWAY pick clubs by id (an NHL club id from
+        /// data/clubs/nhl/ works too), otherwise the first two
         /// clubs (or the one club twice), with keyboard and mouse on the home club.</summary>
         public static MatchSetup DefaultSetup(IReadOnlyList<ClubData> clubs)
         {
@@ -62,7 +63,13 @@ namespace StickAndPuck.App.Core
                 : (Maybe<ClubData>)(
                     clubs.FirstOrDefault(c =>
                         string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase)
-                    ) ?? throw new InvalidOperationException($"{variable}={id} is not a club id")
+                    )
+                    ?? Clubs
+                        .LoadNhl()
+                        .FirstOrDefault(c =>
+                            string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase)
+                        )
+                    ?? throw new InvalidOperationException($"{variable}={id} is not a club id")
                 );
         }
 

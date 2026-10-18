@@ -8,6 +8,9 @@ namespace StickAndPuck.App.Core
         /// <summary>The club data files.</summary>
         public const string ClubFolder = "data.clubs";
 
+        /// <summary>The NHL club data files (W115), kept apart from the SHL clubs in <see cref="ClubFolder"/>.</summary>
+        public const string NhlClubFolder = "data.clubs.nhl";
+
         /// <summary>The skater model with its idle, skate and shoot clips.</summary>
         public const string Skater = "art.player.skater.glb";
 

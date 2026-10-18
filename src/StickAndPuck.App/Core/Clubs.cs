@@ -23,11 +23,19 @@ namespace StickAndPuck.App.Core
             return club;
         }
 
-        /// <summary>Reads every club file in the folder, sorted by id.</summary>
+        /// <summary>Reads every club file directly in the folder (not its subfolders, so the SHL list leaves
+        /// out data/clubs/nhl/), sorted by id.</summary>
         public static IReadOnlyList<ClubData> LoadAll(string folder = Assets.ClubFolder)
         {
             List<ClubData> clubs = [];
-            foreach (string resourceName in ResourceLoader.List(folder, ".json"))
+            foreach (
+                string resourceName in ResourceLoader
+                    .List(folder, ".json")
+                    .Where(name =>
+                        !name[(folder.Length + 1)..^".json".Length]
+                            .Contains('.', StringComparison.Ordinal)
+                    )
+            )
             {
                 ClubData club =
                     JsonSerializer.Deserialize(
@@ -42,6 +50,13 @@ namespace StickAndPuck.App.Core
                 clubs.Add(club);
             }
             return [.. clubs.OrderBy(c => c.Id, StringComparer.Ordinal)];
+        }
+
+        /// <summary>Reads the 32 NHL club files in data/clubs/nhl/ (W115), sorted by id. Not part of the SHL
+        /// club list the menus, seasons and arcade use; league choice (W117) picks between the two.</summary>
+        public static IReadOnlyList<ClubData> LoadNhl()
+        {
+            return LoadAll(Assets.NhlClubFolder);
         }
 
         /// <summary>Writes a club back to JSON, in the same shape <see cref="Load"/> reads.</summary>
