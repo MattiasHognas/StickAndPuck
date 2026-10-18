@@ -4,7 +4,8 @@ namespace StickAndPuck.App.Momentum
 {
     /// <summary>A short team boost after a goal, a fight won or a big hit. The boost tops up the energy of the
     /// club's skaters on the ice (a second wind: skating and shots already read energy), drains over
-    /// about twenty seconds of live play, swells the crowd and shows on the HUD. A goal ends the other
+    /// about twenty seconds of live play, swells the crowd and shows on the HUD. In a season game a club in
+    /// good spirits starts with some boost already (<see cref="StartLevel"/>). A goal ends the other
     /// club's boost. Others read it through <see cref="Of"/>.</summary>
     public static class MomentumMeter
     {
@@ -24,10 +25,32 @@ namespace StickAndPuck.App.Momentum
                 : ((home >= away) ? SideOrNone.Home : SideOrNone.Away);
         }
 
-        /// <summary>Gets a match's momentum, made on first use.</summary>
+        /// <summary>Gets a match's momentum, made on first use: a season game starts each club's boost from its team morale.</summary>
         public static MomentumState State(World world)
         {
-            return world.Momentum.Get(() => new MomentumState());
+            return world.Momentum.Get(() => Fresh(world.Setup));
+        }
+
+        /// <summary>Gets the boost a club starts a match with from its team morale (0 to 100): none at 50 or
+        /// below, rising to <see cref="MomentumTuning.MoraleStart"/> at 100, scaled by the morale strength.</summary>
+        public static float StartLevel(int morale, RuleSet rules)
+        {
+            float above = Math.Clamp((morale - 50) / 50f, 0f, 1f);
+            return Math.Clamp(above * MomentumTuning.MoraleStart * rules.MoraleScale, 0f, 1f);
+        }
+
+        private static MomentumState Fresh(MatchSetup setup)
+        {
+            MomentumState s = new();
+            if (setup.Morale.TryGet(out MatchMorale morale))
+            {
+                foreach (Side side in new[] { Side.Home, Side.Away })
+                {
+                    s.Level[(int)side] = StartLevel(morale.Of(side), setup.Rules);
+                }
+            }
+
+            return s;
         }
 
         /// <summary>Gets the boost each cause gives.</summary>

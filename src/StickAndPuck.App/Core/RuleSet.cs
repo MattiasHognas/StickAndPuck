@@ -15,7 +15,7 @@ namespace StickAndPuck.App.Core
         /// <summary>The SHL: the rules the game was built on.</summary>
         public static readonly RuleSet Shl = new();
 
-        /// <summary>Arcade: no offside, no icing, a lenient referee and the game's original penalty and fight rules.</summary>
+        /// <summary>Arcade: no offside, no icing, a lenient referee, the game's original penalty and fight rules and no team morale.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -34,10 +34,11 @@ namespace StickAndPuck.App.Core
             FightPenalty = FightPenalty.LoserMinor,
             IcingNoChange = false,
             Intermission = IntermissionLength.Quick,
+            Morale = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
-        /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points and 2-2-1-1-1 playoff home ice.</summary>
+        /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice and stronger team morale.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -48,6 +49,7 @@ namespace StickAndPuck.App.Core
             TablePoints = TablePoints.TwoTwoOne,
             Tiebreak = TableTiebreak.RegulationWins,
             PlayoffHomeIce = PlayoffHomeIce.TwoTwoOneOneOne,
+            MoraleStrength = MoraleStrength.Strong,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -140,6 +142,25 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets which games of a best of seven playoff series the higher seed hosts.</summary>
         public PlayoffHomeIce PlayoffHomeIce { get; init; } = PlayoffHomeIce.Alternating;
+
+        /// <summary>Gets a value indicating whether a season keeps a team morale per club that moves with results and events.</summary>
+        public bool Morale { get; init; } = true;
+
+        /// <summary>Gets how hard team morale swings and how much it counts.</summary>
+        public MoraleStrength MoraleStrength { get; init; } = MoraleStrength.Normal;
+
+        /// <summary>Gets the factor on morale's swings and effects: 0 with <see cref="Morale"/> off, else by <see cref="MoraleStrength"/>.</summary>
+        [JsonIgnore]
+        public float MoraleScale =>
+            !Morale
+                ? 0f
+                : MoraleStrength switch
+                {
+                    MoraleStrength.Mild => 0.5f,
+                    MoraleStrength.Strong => 1.5f,
+                    MoraleStrength.Normal => 1f,
+                    _ => throw new NotSupportedException("no morale scale for " + MoraleStrength),
+                };
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

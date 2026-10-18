@@ -76,6 +76,9 @@ namespace StickAndPuck.App.Core
             /// <summary>PTS</summary>
             public const string ColPts = nameof(ColPts);
 
+            /// <summary>MOR (team morale, 0 to 100)</summary>
+            public const string ColMorale = nameof(ColMorale);
+
             /// <summary>SHL  FINAL TABLE</summary>
             public const string ShlFinalTable = nameof(ShlFinalTable);
 

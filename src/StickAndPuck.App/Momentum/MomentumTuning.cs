@@ -15,6 +15,9 @@ namespace StickAndPuck.App.Momentum
         /// <summary>The check strength that counts as a big hit (the same 1.5 that can start a fight).</summary>
         public const float BigHitStrength = 1.5f;
 
+        /// <summary>The boost a club with full team morale (100) starts a season game with, at normal morale strength.</summary>
+        public const float MoraleStart = 0.5f;
+
         /// <summary>Seconds of live play a full boost lasts.</summary>
         public const float Seconds = 20f;
 

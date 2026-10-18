@@ -4,7 +4,7 @@ namespace StickAndPuck.App.Season.Schedule
 {
     /// <summary>Settles the games the human does not play from the clubs' traits, in an instant: goals are
     /// Poisson draws around about three a side, tilted by attack against defence and goalie, with a
-    /// small home edge. A tie goes to 3 on 3 overtime or a shootout, which adds one goal to the winner
+    /// small home edge and each club's lift (its team morale, <see cref="Morale.TeamMorale.GoalLift"/>). A tie goes to 3 on 3 overtime or a shootout, which adds one goal to the winner
     /// as in a played match. The same season seed and game always give the same score.</summary>
     public static class QuickSim
     {
@@ -12,12 +12,18 @@ namespace StickAndPuck.App.Season.Schedule
         private const double HomeEdge = 1.06;
         private const double OvertimeGoalShare = 0.55;
 
-        /// <summary>Plays one game on paper.</summary>
-        public static FixtureResult Play(ClubData home, ClubData away, int seed)
+        /// <summary>Plays one game on paper; each lift multiplies that club's expected goals (1 leaves them as the traits say).</summary>
+        public static FixtureResult Play(
+            ClubData home,
+            ClubData away,
+            int seed,
+            double homeLift = 1.0,
+            double awayLift = 1.0
+        )
         {
             Random dice = Seeds.Dice(seed);
-            double h = GoalsPerSide * HomeEdge * Ratio(home, away);
-            double a = GoalsPerSide / HomeEdge * Ratio(away, home);
+            double h = GoalsPerSide * HomeEdge * Ratio(home, away) * homeLift;
+            double a = GoalsPerSide / HomeEdge * Ratio(away, home) * awayLift;
             int hg = Poisson(dice, h),
                 ag = Poisson(dice, a);
             if (hg != ag)

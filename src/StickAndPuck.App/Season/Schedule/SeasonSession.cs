@@ -1,5 +1,6 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Save;
 using K = StickAndPuck.App.Core.Text.Keys;
@@ -154,7 +155,7 @@ namespace StickAndPuck.App.Season.Schedule
             }
 
             Playing = game;
-            FixtureResult result = QuickSim.Play(home, away, season.GameSeed(game.Number));
+            FixtureResult result = TeamMorale.Sim(season, home, away, season.GameSeed(game.Number));
             if (!Finish(result))
             {
                 return Maybe.None<SimmedGame>();

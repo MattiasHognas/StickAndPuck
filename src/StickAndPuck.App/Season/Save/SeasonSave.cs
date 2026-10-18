@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.Schedule;
 
 namespace StickAndPuck.App.Season.Save
@@ -68,7 +69,7 @@ namespace StickAndPuck.App.Season.Save
 
             try
             {
-                return
+                if (
                     JsonSerializer.Deserialize(
                         SavedFiles.ReadText(path),
                         SaveJsonContext.Default.SeasonState
@@ -76,8 +77,17 @@ namespace StickAndPuck.App.Season.Save
                         is not { } season
                     || season.Version > SeasonState.CurrentVersion
                     || season.Games.Count == 0
-                    ? Maybe.None<SeasonState>()
-                    : (Maybe<SeasonState>)season;
+                )
+                {
+                    return Maybe.None<SeasonState>();
+                }
+
+                if (season.Morale.Count == 0 && season.Games.Any(g => g.Played))
+                {
+                    TeamMorale.Rebuild(season); // a save from before team morale: work it out from the results
+                }
+
+                return season;
             }
             catch (JsonException e)
             {

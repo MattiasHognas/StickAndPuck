@@ -1,4 +1,5 @@
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Stats;
 
@@ -43,6 +44,10 @@ namespace StickAndPuck.App.Season.Schedule
 
         /// <summary>Gets or sets the player stats and records, filled as games are played or settled.</summary>
         public SeasonStats Stats { get; set; } = new();
+
+        /// <summary>Gets or sets each club's team morale by club id, 0 to 100; a club missing here is at the neutral 50 (see <see cref="TeamMorale"/>).</summary>
+        public IDictionary<string, int> Morale { get; set; } =
+            new Dictionary<string, int>(StringComparer.Ordinal);
 
         /// <summary>Gets the number of rounds.</summary>
         public int Rounds => Games.Count == 0 ? 0 : Games.Max(g => g.Round) + 1;
@@ -89,10 +94,11 @@ namespace StickAndPuck.App.Season.Schedule
             return Games.Where(g => g.Played && g.Involves(clubId));
         }
 
-        /// <summary>Records a game's result.</summary>
+        /// <summary>Records a game's result and moves both clubs' morale.</summary>
         public void Record(int number, FixtureResult result)
         {
             Games[number] = Games[number] with { Result = result };
+            TeamMorale.AfterResult(this, Games[number]);
         }
 
         /// <summary>Settles every unplayed game before and in the given round that the human does not play.
@@ -118,7 +124,7 @@ namespace StickAndPuck.App.Season.Schedule
                     continue;
                 }
 
-                Record(g.Number, QuickSim.Play(home, away, GameSeed(g.Number)));
+                Record(g.Number, TeamMorale.Sim(this, home, away, GameSeed(g.Number)));
                 count++;
             }
             return count;
@@ -131,7 +137,7 @@ namespace StickAndPuck.App.Season.Schedule
         }
 
         /// <summary>The match setup for a game, so the season starts a match the same way exhibition, arcade and
-        /// versus do: SHL rules, keyboard and mouse on the human's club.</summary>
+        /// versus do: SHL rules, keyboard and mouse on the human's club, and both clubs' morale.</summary>
         public MatchSetup SetupFor(
             Fixture game,
             IReadOnlyList<ClubData> clubs,
@@ -159,6 +165,7 @@ namespace StickAndPuck.App.Season.Schedule
                 Away = Find(game.Away),
                 Inputs = [new InputSlot(device, side), new InputSlot(InputDevice.None, other)],
                 Overtime = OvertimeRule.Shl,
+                Morale = TeamMorale.ForGame(this, game.Home, game.Away),
             };
         }
     }
