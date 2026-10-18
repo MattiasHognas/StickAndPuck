@@ -9,3 +9,4 @@ publish/
 .claude/
 TestResults/
 __pycache__/
+art/crowd/renders/

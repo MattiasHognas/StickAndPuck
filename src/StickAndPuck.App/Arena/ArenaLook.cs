@@ -25,6 +25,11 @@ namespace StickAndPuck.App.Arena
         /// <summary>Gets or sets the ice sheet tone. The ice is drawn flat (unlit) in this colour, so it never takes the key light's warmth.</summary>
         public Color Ice { get; set; } = DuskIce;
 
+        /// <summary>Gets or sets the light on the crowd (A18): white at full, lower with the intro's dimmed lights.
+        /// The club-coloured shirts take it as it is; the rest of each spectator is dimmed below it so the
+        /// stands stay behind the play.</summary>
+        public Color Crowd { get; set; } = Color.White;
+
         /// <summary>Gets or sets the skate scratch tone; alpha is how faint the scratches are.</summary>
         public Color Scratch { get; set; } = new(0xe3, 0xd8, 0xc6, 150);
     }

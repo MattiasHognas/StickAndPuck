@@ -94,6 +94,7 @@ in sync when upgrading.
 ## Visuals, sound and input
 
 - `SAP_LIGHTING`: `early`, `afternoon` or `late` fixes the arena lighting mood. Default: the settings screen's lighting (random each match).
+- `SAP_CROWD_POSE`: `sit`, `stand`, `cheer`, `wave` or `boo` puts every section of the crowd in that pose for the whole run, to preview the crowd frames. Default: seated, as the match sets it.
 - `SAP_DITHER`: `0` turns off the ordered dithering at toon band edges and palette snaps, for before and after comparisons. Default: on.
 - `SAP_DIFFICULTY`: `easy`, `normal` or `hard`. Default: the settings screen's difficulty (normal).
 - `SAP_CONTROL_MARKER`, `SAP_SIM_GAME`, `SAP_AUTO_DEKE`, `SAP_ONE_TIMERS`: `0` or `1`, override the matching settings screen switches (defaults on, on, off, on).
@@ -129,7 +130,9 @@ Club names, colours, rosters and traits are editable files in [data/clubs](../da
 
 Models, the rink and stepped animation clips are generated with Blender scripts under `art/scripts/`; `.blend` sources and exported `.glb` files live under `art/`. Aseprite sources and Lua/Python scripts produce the pixel atlases, kits and UI. Keep changes in their scripts and source assets so exports can be regenerated. Run only one Blender job at a time.
 
-The entry scripts describe their expected inputs: `build_player.py`, `anim.py`, `build_scene.py`, `export_arena.py`, `make_kits.py` and `make_ui.py`. NES-style effects come from `tools/sfx/sfx.py` into `art/audio/effects/`; music comes from `tools/music/music.py` into `art/audio/music/`.
+The entry scripts describe their expected inputs: `build_player.py`, `anim.py`, `build_scene.py`, `export_arena.py`, `make_kits.py` and `make_ui.py`.
+
+The crowd is drawn by the game from sprite frames, not baked into `arena.glb`: `export_arena.py` writes one seat per spectator to `art/scene/crowd_seats.json`, `build_crowd.py` (Blender) renders the sit, stand, cheer, wave and boo frames as flat part ids, and `crowd_atlas.py` (python3 with Pillow) paints them in dusk palette colours into `art/crowd/crowd_256.png`, with a shirt mask the game tints in the home club's colours, plus a contact sheet in `art/crowd/renders/`. NES-style effects come from `tools/sfx/sfx.py` into `art/audio/effects/`; music comes from `tools/music/music.py` into `art/audio/music/`.
 
 ## Building a release
 

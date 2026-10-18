@@ -119,126 +119,6 @@
   },
   {
    "index": 13,
-   "part": "Fans",
-   "material": "shirt0",
-   "vertices": 7848,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 14,
-   "part": "Fans",
-   "material": "shirt1",
-   "vertices": 8136,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 15,
-   "part": "Fans",
-   "material": "shirt2",
-   "vertices": 8664,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 16,
-   "part": "Fans",
-   "material": "shirt3",
-   "vertices": 8688,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 17,
-   "part": "Fans",
-   "material": "shirt4",
-   "vertices": 7776,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 18,
-   "part": "Fans",
-   "material": "shirt5",
-   "vertices": 7632,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 19,
-   "part": "Fans",
-   "material": "shirt6",
-   "vertices": 8304,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 20,
-   "part": "Fans",
-   "material": "shirt7",
-   "vertices": 7968,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 21,
-   "part": "Fans",
-   "material": "shirt8",
-   "vertices": 8592,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 22,
-   "part": "Fans",
-   "material": "shirt9",
-   "vertices": 7680,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 23,
-   "part": "Fans",
-   "material": "shirt10",
-   "vertices": 8232,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 24,
-   "part": "Fans",
-   "material": "skin0",
-   "vertices": 58140,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 25,
-   "part": "Fans",
-   "material": "skin1",
-   "vertices": 54240,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 26,
-   "part": "Fans",
-   "material": "skin2",
-   "vertices": 57540,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 27,
-   "part": "Fans",
-   "material": "skin3",
-   "vertices": 53880,
-   "unlit": false,
-   "textured": false
-  },
-  {
-   "index": 28,
    "part": "Floor",
    "material": "floor",
    "vertices": 4,
@@ -246,7 +126,7 @@
    "textured": false
   },
   {
-   "index": 29,
+   "index": 14,
    "part": "Glass",
    "material": "glass",
    "vertices": 616,
@@ -254,7 +134,7 @@
    "textured": false
   },
   {
-   "index": 30,
+   "index": 15,
    "part": "Ice",
    "material": "ice",
    "vertices": 52,
@@ -262,7 +142,7 @@
    "textured": false
   },
   {
-   "index": 31,
+   "index": 16,
    "part": "Lanterns",
    "material": "lantern",
    "vertices": 648,
@@ -270,7 +150,7 @@
    "textured": false
   },
   {
-   "index": 32,
+   "index": 17,
    "part": "Lanterns",
    "material": "lantern_cap",
    "vertices": 648,
@@ -278,7 +158,7 @@
    "textured": false
   },
   {
-   "index": 33,
+   "index": 18,
    "part": "Lanterns",
    "material": "cable",
    "vertices": 2592,
@@ -286,7 +166,7 @@
    "textured": false
   },
   {
-   "index": 34,
+   "index": 19,
    "part": "LED",
    "material": "led",
    "vertices": 520,
@@ -294,7 +174,7 @@
    "textured": false
   },
   {
-   "index": 35,
+   "index": 20,
    "part": "Markings",
    "material": "red_line",
    "vertices": 868,
@@ -302,7 +182,7 @@
    "textured": false
   },
   {
-   "index": 36,
+   "index": 21,
    "part": "Markings",
    "material": "blue_line",
    "vertices": 276,
@@ -310,7 +190,7 @@
    "textured": false
   },
   {
-   "index": 37,
+   "index": 22,
    "part": "Markings",
    "material": "crease",
    "vertices": 44,
@@ -318,7 +198,7 @@
    "textured": false
   },
   {
-   "index": 38,
+   "index": 23,
    "part": "Nets",
    "material": "net_frame",
    "vertices": 720,
@@ -326,7 +206,7 @@
    "textured": false
   },
   {
-   "index": 39,
+   "index": 24,
    "part": "Nets",
    "material": "net",
    "vertices": 868,
@@ -334,7 +214,7 @@
    "textured": false
   },
   {
-   "index": 40,
+   "index": 25,
    "part": "PenaltyBox",
    "material": "box_deck",
    "vertices": 48,
@@ -342,7 +222,7 @@
    "textured": false
   },
   {
-   "index": 41,
+   "index": 26,
    "part": "PenaltyBox",
    "material": "box_seat",
    "vertices": 48,
@@ -350,7 +230,7 @@
    "textured": false
   },
   {
-   "index": 42,
+   "index": 27,
    "part": "PenaltyBox",
    "material": "box_wall",
    "vertices": 192,
@@ -358,7 +238,7 @@
    "textured": false
   },
   {
-   "index": 43,
+   "index": 28,
    "part": "PenaltyBox",
    "material": "box_cap",
    "vertices": 48,
@@ -366,7 +246,7 @@
    "textured": false
   },
   {
-   "index": 44,
+   "index": 29,
    "part": "Posts",
    "material": "post",
    "vertices": 1272,
@@ -374,7 +254,7 @@
    "textured": false
   },
   {
-   "index": 45,
+   "index": 30,
    "part": "Stands",
    "material": "stand_a",
    "vertices": 3120,
@@ -382,7 +262,7 @@
    "textured": false
   },
   {
-   "index": 46,
+   "index": 31,
    "part": "Stands",
    "material": "stand_b",
    "vertices": 2600,
@@ -390,7 +270,7 @@
    "textured": false
   },
   {
-   "index": 47,
+   "index": 32,
    "part": "Stands",
    "material": "fascia",
    "vertices": 520,

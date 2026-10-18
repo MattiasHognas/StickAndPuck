@@ -106,7 +106,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 
 ### Variable coverage
 
-The reference covers all 84 current `SAP_*` names found in the app, tests and recording tools: 82 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
+The reference covers all 85 current `SAP_*` names found in the app, tests and recording tools: 83 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
 
 `SAP_MATCHES` appears only in an old comment in `DefenceTests.cs`; no current code reads it. It is not a supported override for the TUnit suite.
 

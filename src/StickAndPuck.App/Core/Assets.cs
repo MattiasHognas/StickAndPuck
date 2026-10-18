@@ -29,6 +29,12 @@ namespace StickAndPuck.App.Core
         /// <summary>The arena mesh list in Raylib load order, with each mesh's part and material.</summary>
         public const string ArenaMeshes = "art.scene.arena_meshes.json";
 
+        /// <summary>One seat per spectator in the stands: position, row and section (A18, art/scripts/export_arena.py).</summary>
+        public const string CrowdSeats = "art.scene.crowd_seats.json";
+
+        /// <summary>The crowd's pose frames and shirt masks (A18, art/scripts/build_crowd.py and crowd_atlas.py).</summary>
+        public const string CrowdAtlas = "art.crowd.crowd_256.png";
+
         /// <summary>The ad board text strip.</summary>
         public const string AdStrip = "art.ads.ads_53x80.png";
 
