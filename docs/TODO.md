@@ -30,7 +30,7 @@ Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setti
 | A16 | NHL kits and crests | 1 | M8 NHL league | Home and away kits and crest art for all 32 clubs, built through make_kits.py; the 64-colour palette has too few free slots for 32 more clubs, so it has to grow |
 | W116 | NHL season and playoffs | 2 | M8 NHL league | An NHL season played with the NHL rule preset: conferences and divisions, 82 games, and a 16-club playoff (needs W115) |
 | W117 | League choice | 2 | M8 NHL league | Pick SHL or NHL when starting a season, arcade or versus game, with saves kept per league (needs W115) |
-| A17 | NHL arena graphics | 2 | M8 NHL league | NHL centre ice, board ads and arena dressing, swapped in when an NHL match is played (after A16, art runs one at a time) |
+| A17 | NHL arena graphics | 2 | M8 NHL league | NHL centre ice and arena dressing (board ads are A21), swapped in when an NHL match is played (after A16, art runs one at a time) |
 | W118 | NHL presentation | 3 | M8 NHL league | Scorebug, lineup and standings screens showing NHL crests and names, with English and Swedish strings (needs W116, A16) |
 | A21 | League ad sets | 3 | M8 NHL league | Two sets of board ad strips from art/scripts/ads_pixel.py (today one atlas, art/ads/ads_53x80.png, with ten made-up sponsors in a 3x5 pixel font): Swedish-style products for SHL and Canadian and American-style products for NHL. Made-up brands in each region's style, not real logos (after A17, art runs one at a time) |
 | W137 | League-specific arena ads | 4 | M8 NHL league | The arena picks the ad atlas by league instead of the one fixed Assets.AdStrip, so SHL matches show the Swedish set and NHL matches the North American set (needs W117, A21) |
