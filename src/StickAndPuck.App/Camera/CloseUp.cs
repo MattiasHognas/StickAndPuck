@@ -9,7 +9,7 @@ namespace StickAndPuck.App.Camera
     /// <summary>The close-up cameras. Four moments leave the broadcast view and move in close at a lower
     /// angle: a fight (the two fighters side by side, a jolt on every punch that lands), a goal (a
     /// push-in on the scorer before the replay cuts in), the warm-up (the skater a person controls, or
-    /// the home squad) and the final horn (the winners' pile). The camera eases in from the gameplay
+    /// the home squad, during the arena flyover's close-up part) and the final horn (the winners' pile). The camera eases in from the gameplay
     /// camera and back out to it, with its target at the players' depth, so the camera system can pick
     /// the render scale: the fight and the goal land on 160x90, the warm-up and the pile on
     /// 240x135, and in every one a kit texel stays about one pixel.</summary>
@@ -182,7 +182,11 @@ namespace StickAndPuck.App.Camera
                 return Shot.Pile;
             }
             if (
-                Pregame.PregameFlow.IsWarmingUp(world) && WarmupSubject(world).TryGet(out Vector3 p)
+                Pregame.PregameFlow.IsWarmingUp(world)
+                && Pregame.ArenaFlyover.Phase(world)
+                    is Pregame.FlyoverPhase.Off
+                        or Pregame.FlyoverPhase.CloseUp
+                && WarmupSubject(world).TryGet(out Vector3 p)
             )
             {
                 spot = p with { Y = Chest };

@@ -1,10 +1,12 @@
 using System.Globalization;
 using System.Numerics;
 using StickAndPuck.App.AI.Positioning;
+using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics;
 using StickAndPuck.App.Players.Movement;
 using StickAndPuck.App.Pregame;
+using StickAndPuck.App.Replay;
 using StickAndPuck.App.Rules.Match;
 using StickAndPuck.Tests.Support;
 
@@ -105,6 +107,136 @@ namespace StickAndPuck.Tests.Pregame
                 "the puck drops and play starts"
             );
             Check(!PregameFlow.Start(w), "start does nothing once the game is on");
+        }
+
+        [Test]
+        public void FlyoverPlaysOut()
+        {
+            World w = Make(human: true);
+            List<FlyoverPhase> seen = [];
+            float lastProgress = 0;
+            bool rising = true;
+            Run(
+                w,
+                _ => false,
+                ArenaFlyover.Seconds + 1f,
+                world =>
+                {
+                    FlyoverPhase phase = ArenaFlyover.Phase(world);
+                    if (seen.Count == 0 || seen[^1] != phase)
+                    {
+                        seen.Add(phase);
+                    }
+
+                    float progress = ArenaFlyover.Progress(world);
+                    rising &= progress >= lastProgress;
+                    lastProgress = progress;
+                }
+            );
+            Check(
+                seen.SequenceEqual([
+                    FlyoverPhase.Aerial,
+                    FlyoverPhase.CloseUp,
+                    FlyoverPhase.Settle,
+                    FlyoverPhase.Done,
+                ]),
+                $"the flyover goes aerial, close-up, settle, done ({string.Join(' ', seen)})"
+            );
+            Check(rising && lastProgress >= 1f, "its progress only rises, to 1");
+            Check(
+                PregameFlow.IsWarmingUp(w) && w.Match.Phase == MatchPhase.Intro,
+                "the warm-up goes on once the flyover is done"
+            );
+            Check(
+                ArenaFlyover.Phase(Make(human: false)) == FlyoverPhase.Off,
+                "no warm-up, no flyover"
+            );
+        }
+
+        [Test]
+        public void StartSkipsFlyover()
+        {
+            World w = Make(human: true);
+            Run(w, _ => false, 1f);
+            Check(
+                ArenaFlyover.Phase(w) == FlyoverPhase.Aerial
+                    && ArenaFlyover.Progress(w) is > 0 and < 1,
+                "a second in, the flyover is in the air"
+            );
+            Check(PregameFlow.Press(w), "start is taken during the flyover");
+            Check(
+                ArenaFlyover.Phase(w) == FlyoverPhase.Done
+                    && ArenaFlyover.Progress(w) >= 1
+                    && PregameFlow.IsWarmingUp(w),
+                "the first press skips the flyover and the warm-up goes on"
+            );
+            Check(!ArenaFlyover.Skip(w), "a skipped flyover cannot be skipped again");
+            Run(w, _ => false, 0.5f);
+            Check(PregameFlow.Press(w), "the next press is taken");
+            Check(!PregameFlow.IsWarmingUp(w), "the next press starts the game");
+            Run(w, world => world.Match.Phase == MatchPhase.Faceoff, 5f);
+            Check(w.Match.Phase == MatchPhase.Faceoff, "the opening faceoff follows");
+            Check(
+                ArenaFlyover.Phase(w) == FlyoverPhase.Off,
+                "the flyover is off once the game is on"
+            );
+        }
+
+        [Test]
+        public void FlyoverLeavesChecksumsAlone()
+        {
+            // the same warm-up three ways: plain, with the camera flying over it, and with the flyover
+            // skipped part way; every step's checksum must agree, so the flyover is render only
+            World plain = Make(human: true);
+            World filmed = Make(human: true);
+            World skipped = Make(human: true);
+            CameraSystem camera = new();
+            camera.Start(filmed);
+            List<ulong> a = [],
+                b = [],
+                c = [];
+            Run(
+                plain,
+                _ => false,
+                ArenaFlyover.Seconds + 1f,
+                world => a.Add(WorldChecksum.Of(world))
+            );
+            Run(
+                filmed,
+                _ => false,
+                ArenaFlyover.Seconds + 1f,
+                world =>
+                {
+                    camera.Update(world, Game.Step);
+                    b.Add(WorldChecksum.Of(world));
+                }
+            );
+            Run(
+                skipped,
+                _ => false,
+                ArenaFlyover.Seconds + 1f,
+                world =>
+                {
+                    if (world.Tick == 90)
+                    {
+                        _ = ArenaFlyover.Skip(world);
+                    }
+
+                    c.Add(WorldChecksum.Of(world));
+                }
+            );
+            Check(
+                a.Count > 500 && a.SequenceEqual(b),
+                "the flyover camera leaves every step's checksum unchanged"
+            );
+            Check(
+                a.SequenceEqual(c),
+                "skipping the flyover leaves every step's checksum unchanged"
+            );
+            Check(
+                filmed.Camera.Position.Y < 20f && ArenaFlyover.Phase(filmed) == FlyoverPhase.Done,
+                "the camera has come down from the flyover"
+            );
         }
 
         [Test]

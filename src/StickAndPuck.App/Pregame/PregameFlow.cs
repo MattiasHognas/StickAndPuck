@@ -62,6 +62,12 @@ namespace StickAndPuck.App.Pregame
             return true;
         }
 
+        /// <summary>Start pressed by a person: skips the arena flyover while it plays (<see cref="ArenaFlyover.Skip"/>), else starts the game (<see cref="Start"/>).</summary>
+        public static bool Press(World world)
+        {
+            return ArenaFlyover.Skip(world) || Start(world);
+        }
+
         /// <summary>Whether a world wants the warm-up: a match flow with someone to press start, unless told otherwise.</summary>
         internal static bool Wanted(World world)
         {

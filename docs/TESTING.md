@@ -56,7 +56,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `versussetup`: the start screen flow opened on player vs player's team select.
 - `match`: full exhibition, 3 x 20 minute periods, intro and clock, you on the home centre.
 - `aimatch`: full exhibition with every skater played by the AI.
-- `warmup`: full exhibition opened with the pre-game warm-up: both squads skate round their own ends until space, enter or a pad's A or start is pressed, then the opening faceoff.
+- `warmup`: full exhibition opened with the pre-game warm-up: the arena flyover (a high sweep, a close-up on the home squad, then the broadcast view; the first start press skips it) while both squads skate round their own ends until space, enter or a pad's A or start is pressed, then the opening faceoff.
 - `lineup`: both clubs' starters at the opening faceoff, you on the home centre.
 - `practice`: one home skater with the puck on an empty rink.
 - `overtime`: a match that ends 0-0, then 3 on 3 overtime and a shootout; `SAP_PLAYOFF=1` plays the SHL playoff format instead (5 on 5 periods until a goal, no shootout).
@@ -106,7 +106,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 
 ### Variable coverage
 
-The reference covers all 81 current `SAP_*` names found in the app, tests and recording tools: 79 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
+The reference covers all 82 current `SAP_*` names found in the app, tests and recording tools: 80 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
 
 `SAP_MATCHES` appears only in an old comment in `DefenceTests.cs`; no current code reads it. It is not a supported override for the TUnit suite.
 

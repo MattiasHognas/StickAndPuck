@@ -86,6 +86,7 @@ in sync when upgrading.
 - `SAP_FIGHT_CHANCE`: 0 to 1, the chance a hard check drops the gloves in the `fight` scene. Default 0.4.
 - `SAP_HUD_MESSAGE`: the banner in the `hud` scene: `goal` (default), `period`, `final`, `tie`, `offside`, `icing`, `intro` or `none`.
 - `SAP_WARMUP`: `0` skips the pre-game warm-up in every match you play; a number of seconds starts the game by itself after that long. Default: warm up until start is pressed.
+- `SAP_FLYOVER`: `0` leaves out the arena flyover at the start of the warm-up (the warm-up keeps its plain close-up). Default: the flyover plays, and the first start press skips it.
 - `SAP_REPLAY_AT`: seconds; fakes a goal at that time so the replay plays (used with the `camera` scene). Default off.
 
 - `SAP_RULES=shl|arcade|nhl`: chooses the rule preset in the menu flow and the overtime scene without saving that override; arcade modes retain their Arcade preset. Individual dev scenes can set up their own rules.
