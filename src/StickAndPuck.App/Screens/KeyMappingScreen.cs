@@ -192,6 +192,7 @@ namespace StickAndPuck.App.Screens
                     GameAction.AcceptFight => K.ActionAcceptFight,
                     GameAction.Kit => K.ActionKit,
                     GameAction.Zoom => K.ActionZoom,
+                    GameAction.TimeOut => K.ActionTimeOut,
                     GameAction.Pause => K.ActionPause,
                     _ => throw new NotSupportedException(
                         $"Unhandled game action {action} in key mapping"

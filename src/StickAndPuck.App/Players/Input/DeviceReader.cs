@@ -26,6 +26,7 @@ namespace StickAndPuck.App.Players.Input
                 ChangeLine = now.Line && !last.Line,
                 Punch = now.Punch && !last.Punch,
                 AcceptFight = now.Accept && !last.Accept,
+                TimeOut = now.TimeOut && !last.TimeOut,
                 Pause = now.Pause && !last.Pause,
             };
             last = now;

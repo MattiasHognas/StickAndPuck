@@ -18,7 +18,7 @@ namespace StickAndPuck.App.Lines
     /// starters on the bench (<see cref="Player.OnIce"/> false), as four lines, three pairs and two
     /// goalies (<see cref="Squad"/>).</item>
     /// <item>Skaters tire on the ice in play, more when skating fast or sprinting, and rest on the bench
-    /// and during stoppages. Energy scales top speed, acceleration, stops and checks and shot
+    /// and during stoppages, faster on the ice during a time-out (<see cref="TimeOuts"/>). Energy scales top speed, acceleration, stops and checks and shot
     /// speed down; a spent skater skates at 70 % (see <see cref="SkatingModel.EnergyFactor"/>).</item>
     /// <item>Forwards and defence change separately. In play a tired group changes on the fly: the
     /// skaters head for the bench door and each one coming on steps out as one goes off; at a faceoff
@@ -120,6 +120,9 @@ namespace StickAndPuck.App.Lines
         private static void Tire(World world, bool play, float dt)
         {
             float pace = world.Switches.FatiguePace;
+            float iceRest = TimeOuts.Running(world).HasValue
+                ? LinesTuning.TimeOutRest
+                : LinesTuning.IceRest; // a time-out rests both clubs' skaters on the ice
             foreach (Player p in world.Players)
             {
                 if (p.IsGoalie)
@@ -134,7 +137,7 @@ namespace StickAndPuck.App.Lines
                 }
                 else if (!play)
                 {
-                    change = LinesTuning.IceRest;
+                    change = iceRest;
                 }
                 else
                 {

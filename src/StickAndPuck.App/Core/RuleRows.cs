@@ -245,6 +245,14 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { IntentionalOffside = v }
             ),
             Flag(
+                nameof(RuleSet.TimeOut),
+                K.RuleTimeOut,
+                K.RuleGroupGame,
+                plays: true,
+                r => r.TimeOut,
+                (r, v) => r with { TimeOut = v }
+            ),
+            Flag(
                 nameof(RuleSet.Fights),
                 K.RuleFights,
                 K.RuleGroupFights,

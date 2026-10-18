@@ -39,6 +39,9 @@ namespace StickAndPuck.App.Rules.Match
         /// <summary>After a whistle (offside, icing, a frozen puck) before the faceoff.</summary>
         public const float StoppageSeconds = 1.5f;
 
+        /// <summary>A time-out, from the call to the faceoff set-up.</summary>
+        public const float TimeOutSeconds = 30f;
+
         /// <summary>A goalie holding the puck this long freezes it for a whistle (the goalie plays it out at 2.5 s otherwise).</summary>
         public const float FreezeSeconds = 1.2f;
 

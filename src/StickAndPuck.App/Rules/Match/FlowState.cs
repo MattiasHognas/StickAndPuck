@@ -34,5 +34,8 @@ namespace StickAndPuck.App.Rules.Match
 
         /// <summary>Gets or sets a value indicating whether the intermission under way is the break before a playoff overtime, so the overtime rules take over after it.</summary>
         public bool IntoOvertime { get; set; }
+
+        /// <summary>Gets the clubs' time-outs.</summary>
+        public TimeOutState TimeOut { get; } = new();
     }
 }

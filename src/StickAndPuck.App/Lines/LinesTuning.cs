@@ -17,6 +17,9 @@ namespace StickAndPuck.App.Lines
         /// <summary>Energy regained per second on the ice while play is stopped.</summary>
         public const float IceRest = 0.01f;
 
+        /// <summary>Energy regained per second on the ice during a time-out: three quarters of a tank over its 30 seconds.</summary>
+        public const float TimeOutRest = 0.025f;
+
         /// <summary>Energy regained per second on the bench.</summary>
         public const float BenchRest = 0.02f;
 

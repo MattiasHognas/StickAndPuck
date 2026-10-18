@@ -34,6 +34,7 @@ namespace StickAndPuck.App.Audio
                 PuckHitPost p => [new(Sfx.Post, Hardness(p.Speed, 25))],
                 WhistleBlown => [new(Sfx.Whistle)],
                 FaceoffViolated => [new(Sfx.Whistle)],
+                TimeOutCalled => [new(Sfx.Whistle), new(Sfx.Crowd, 0.5f, Delay: 0.4f)],
                 _ => throw new UnreachableException($"no sound cues for {e.GetType().Name}"),
             };
         }
@@ -51,7 +52,7 @@ namespace StickAndPuck.App.Audio
                 FightStarted f => f.Position,
                 ShotSaved s => s.Position,
                 LineChanged l => l.Position,
-                PeriodEnded or MatchEnded => Vector3.Zero,
+                PeriodEnded or MatchEnded or TimeOutCalled => Vector3.Zero,
                 ShotTaken s => s.Position,
                 PassMade p => p.Position,
                 CheckLanded c => c.Position,
@@ -85,6 +86,7 @@ namespace StickAndPuck.App.Audio
                 new PuckHitPost(time, at, 0),
                 new WhistleBlown(time, at),
                 new FaceoffViolated(time, Side.Home, 0, at, 1),
+                new TimeOutCalled(time, Side.Home),
             ];
         }
 

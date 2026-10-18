@@ -13,7 +13,7 @@ namespace StickAndPuck.App.Core
         /// <summary>The actions in the order the key-mapping page lists them.</summary>
         public static readonly IReadOnlyList<GameAction> All = Enum.GetValues<GameAction>();
 
-        /// <summary>The defaults: arrows or WASD skate, shift sprints, space shoots, E passes, Q checks, C switches, L changes line, ctrl blocks, F accepts a fight, tab swaps kits, F6 zooms, P pauses; on a pad the d-pad skates, right trigger sprints, A shoots, X passes, B checks, Y switches and accepts, LB changes line, RB blocks, start pauses.</summary>
+        /// <summary>The defaults: arrows or WASD skate, shift sprints, space shoots, E passes, Q checks, C switches, L changes line, ctrl blocks, F accepts a fight, tab swaps kits, F6 zooms, T calls a time-out, P pauses; on a pad the d-pad skates, right trigger sprints, A shoots, X passes, B checks, Y switches and accepts, LB changes line, RB blocks, LT calls a time-out, start pauses.</summary>
         public static readonly IReadOnlyDictionary<GameAction, KeyBinding> Defaults =
             new Dictionary<GameAction, KeyBinding>
             {
@@ -80,6 +80,11 @@ namespace StickAndPuck.App.Core
                 ),
                 [GameAction.Kit] = new(KeyboardKey.Tab, KeyboardKey.Null, GamepadButton.Unknown),
                 [GameAction.Zoom] = new(KeyboardKey.F6, KeyboardKey.Null, GamepadButton.Unknown),
+                [GameAction.TimeOut] = new(
+                    KeyboardKey.T,
+                    KeyboardKey.Null,
+                    GamepadButton.LeftTrigger2
+                ),
                 [GameAction.Pause] = new(
                     KeyboardKey.P,
                     KeyboardKey.Null,

@@ -25,6 +25,7 @@ In a season, players carry their form from game to game: points, plus/minus and 
 | Block (in play and in a fight) | Left Ctrl | RB |
 | Accept a fight | F | Y |
 | Punch (when the marker is in the green) | Space | A |
+| Time-out (at a stoppage, once a game; also in the pause menu) | T | LT |
 | Pause | Esc or P | Start |
 | Menus: move, pick, back | Arrows or WASD, Enter or Space, Esc or Backspace | D-pad or left stick, A, B |
 | Skip replay | Enter or Space | A or Start |
@@ -42,6 +43,6 @@ The settings screen holds every switch: control switching, line changes, difficu
 
 Screenshots (F12, `SAP_SCREENSHOT`) and recordings are saved in the folder the game was started from.
 
-The rules page provides SHL, Arcade and NHL presets with individual overrides. The intermission rule sets the Zamboni break between periods and before a playoff overtime: Standard (SHL, NHL) drives the whole lap, Quick (Arcade) half as long, Off skips it; enter, space or A skips a break. The GPU setting lists detected cards and shows the active renderer; on Linux with multiple cards, a changed GPU choice relaunches the game. Overall, Effects and Music each have a 0–10 volume control. Overall at zero mutes everything; an older saved Volume value carries over to Effects. Music plays on menus, at intermission and after the game, with no music during live play.
+The rules page provides SHL, Arcade and NHL presets with individual overrides. The intermission rule sets the Zamboni break between periods and before a playoff overtime: Standard (SHL, NHL) drives the whole lap, Quick (Arcade) half as long, Off skips it; enter, space or A skips a break. The time-out rule (on in SHL and NHL, off in Arcade) gives each club one 30 second time-out a game: call it at a stoppage with T or LT, or from the pause menu, and the skaters on the ice get their legs back; the AI calls its own late in a close game when its line on the ice is tired, above all after icing the puck. The GPU setting lists detected cards and shows the active renderer; on Linux with multiple cards, a changed GPU choice relaunches the game. Overall, Effects and Music each have a 0–10 volume control. Overall at zero mutes everything; an older saved Volume value carries over to Effects. Music plays on menus, at intermission and after the game, with no music during live play.
 
 For environment overrides and alternate save paths, see [Development](DEVELOPMENT.md). For captures and replays, see [Testing](TESTING.md).

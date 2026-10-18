@@ -15,8 +15,8 @@ namespace StickAndPuck.App.Core
         /// <summary>The SHL: the rules the game was built on.</summary>
         public static readonly RuleSet Shl = new();
 
-        /// <summary>Arcade: no offside, no icing, a lenient referee, the game's original penalty and fight rules, no team morale and plain faceoffs (no violations, nearest dot).</summary>
-        /// <summary>Arcade: no offside, no icing, a lenient referee, the game's original penalty and fight rules and strong form swings.</summary>
+        /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale,
+        /// plain faceoffs (no violations, nearest dot) and strong form swings.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -40,6 +40,7 @@ namespace StickAndPuck.App.Core
             SmartDots = false,
             IntentionalOffside = false,
             FormStrength = FormStrength.Strong,
+            TimeOut = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -140,6 +141,9 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets how long the Zamboni break between periods lasts; anything but Off also breaks before a playoff overtime.</summary>
         public IntermissionLength Intermission { get; init; } = IntermissionLength.Standard;
+
+        /// <summary>Gets a value indicating whether each club may call one 30 second time-out a game at a stoppage, resting its skaters on the ice.</summary>
+        public bool TimeOut { get; init; } = true;
 
         /// <summary>Gets the points a league game gives in the standings.</summary>
         public TablePoints TablePoints { get; init; } = TablePoints.ThreeTwoOne;

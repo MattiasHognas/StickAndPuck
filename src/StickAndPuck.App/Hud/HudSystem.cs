@@ -72,6 +72,10 @@ namespace StickAndPuck.App.Hud
             {
                 DrawIntro(world, hud);
             }
+            else if (TimeOuts.Running(world).TryGet(out Side calling))
+            {
+                DrawBanner(TimeOutBanner(world, calling), hud);
+            }
             else if (messages.Current.TryGet(out HudMessage m))
             {
                 DrawBanner(m, hud);
@@ -81,6 +85,25 @@ namespace StickAndPuck.App.Hud
             {
                 DrawFaceoffPrompt(hud);
             }
+        }
+
+        /// <summary>The time-out banner for as long as it runs: TIME-OUT, the calling club with its crest, and the clock until play resumes.</summary>
+        internal static HudMessage TimeOutBanner(World world, Side side)
+        {
+            ClubData club = world.Setup.Club(side);
+            return new HudMessage(
+                "panel_gold",
+                Text.Get(K.TimeOut),
+                club.Name,
+                club.Id,
+                float.PositiveInfinity
+            )
+            {
+                Notes =
+                [
+                    Text.Format(K.TimeOutLeft, MatchFlow.ClockText(TimeOuts.SecondsLeft(world))),
+                ],
+            };
         }
 
         /// <summary>The faceoff prompt, low and centred so the dot stays clear: press shoot as the puck drops.</summary>

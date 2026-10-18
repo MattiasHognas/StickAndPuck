@@ -16,6 +16,7 @@ namespace StickAndPuck.App.Players.Input
             Punch,
             Block,
             Accept,
+            TimeOut,
             Pause;
     }
 }

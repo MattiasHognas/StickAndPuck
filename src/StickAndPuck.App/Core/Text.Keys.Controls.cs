@@ -160,6 +160,9 @@ namespace StickAndPuck.App.Core
             /// <summary>CAMERA ZOOM</summary>
             public const string ActionZoom = nameof(ActionZoom);
 
+            /// <summary>TIME-OUT</summary>
+            public const string ActionTimeOut = nameof(ActionTimeOut);
+
             /// <summary>PAUSE</summary>
             public const string ActionPause = nameof(ActionPause);
 
