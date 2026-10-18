@@ -205,8 +205,11 @@ namespace StickAndPuck.App.Screens
                 Pop();
             }
 
-            Screen overview = Overview();
-            if (Top.TryGet(out Screen top) && top is StandingsScreen or BracketScreen)
+            Screen overview = AfterSeasonGame();
+            if (
+                Top.TryGet(out Screen top)
+                && top is StandingsScreen or BracketScreen or DressingRoomScreen
+            )
             {
                 if (top.GetType() != overview.GetType())
                 {
@@ -247,6 +250,15 @@ namespace StickAndPuck.App.Screens
             return app.Season.Current.Is(s => s.Playoffs.HasValue)
                 ? new BracketScreen(app)
                 : new StandingsScreen(app);
+        }
+
+        /// <summary>The screen after a season or playoff result: the dressing room while there is a next game
+        /// and the season's rules have it on (<see cref="RuleSet.DressingRoom"/>), else the table or bracket.</summary>
+        public Screen AfterSeasonGame()
+        {
+            return SeasonHasNextGame() && DressingRoomScreen.Style(app) != DressingRoomStyle.Off
+                ? new DressingRoomScreen(app)
+                : Overview();
         }
 
         /// <summary>Starts a game mode with the player's picks.</summary>

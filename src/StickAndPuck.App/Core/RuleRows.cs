@@ -330,6 +330,15 @@ namespace StickAndPuck.App.Core
                 r => r.FormStrength,
                 (r, v) => r with { FormStrength = v }
             ),
+            Choice(
+                nameof(RuleSet.DressingRoom),
+                K.RuleDressingRoom,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<DressingRoomStyle>(),
+                r => r.DressingRoom,
+                (r, v) => r with { DressingRoom = v }
+            ),
         ];
 
         /// <summary>Gets the rules the game plays, grouped as the rules page shows them.</summary>

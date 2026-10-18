@@ -139,6 +139,7 @@ Use these with `SAP_SCENE=start` (the default scene). Values are case-insensitiv
 | `stats` | Season statistics and player of the game from a fresh test season with 12 user games simulated. |
 | `table` | The standings of a fresh test season with 20 user games simulated, played by the `SAP_RULES` preset's table points and tiebreak (SHL 3-2-1-0, NHL 2-2-1-0). |
 | `sim` | A test season with five user games simulated, then “sim this game”. |
+| `dressingroom` | The dressing room after a season result: a test season with six user games simulated, then one more settled with “sim this game” and its score closed. Enter on PLAY NEXT GAME starts the next game. |
 | `trophy` | The season champion after a test season and playoffs. |
 | `arcadetrophy` | The trophy for a completed three-lives arcade run. |
 | `bestruns` | The arcade best-run board with sample finished runs. |

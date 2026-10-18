@@ -33,6 +33,15 @@ namespace StickAndPuck.App.Screens
                     Season(app, clubs, "sim-test.json", 5);
                     app.Screens.SimSeasonGame();
                     break;
+                case "dressingroom":
+                    Season(app, clubs, "dressingroom-test.json", 6);
+                    app.Screens.SimSeasonGame(); // a season result: the dressing room under its score
+                    if (app.Screens.Top.Is(t => t is SimResultScreen))
+                    {
+                        app.Screens.Pop(); // continue past the score into the dressing room
+                    }
+
+                    break;
                 case "trophy":
                     Champions(app, clubs);
                     app.Screens.Push(new BracketScreen(app));

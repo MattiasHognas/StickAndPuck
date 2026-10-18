@@ -24,6 +24,8 @@ namespace StickAndPuck.App.Screens
         private static readonly Color Band = new(0x18, 0x13, 0x1f, 0xff);
 
         private Texture2D title;
+        private Maybe<Texture2D> dressingRoom;
+        private Maybe<Texture2D> coach;
 
         private ScreenArt(HudArt hud)
         {
@@ -44,8 +46,52 @@ namespace StickAndPuck.App.Screens
             ScreenArt art = new(HudArt.Load())
             {
                 title = ResourceLoader.Texture("art.ui.title.png"),
+                dressingRoom = Optional(Assets.DressingRoomBackdrop),
+                coach = Optional(Assets.CoachPortrait),
             };
             return art;
+        }
+
+        /// <summary>Draws the dressing room backdrop over the whole frame (A20); false while there is none yet.</summary>
+        public bool DrawDressingRoom()
+        {
+            if (!dressingRoom.TryGet(out Texture2D tex))
+            {
+                return false;
+            }
+
+            DrawTexture(tex, 0, 0, Color.White);
+            return true;
+        }
+
+        /// <summary>Draws the coach's portrait in a box (A20), or until it exists a framed placeholder: a dark
+        /// box with a stick icon and the label under it.</summary>
+        public void DrawCoach(int x, int y, int w, int h, string label)
+        {
+            if (coach.TryGet(out Texture2D tex))
+            {
+                DrawTexturePro(
+                    tex,
+                    new Rectangle(0, 0, tex.Width, tex.Height),
+                    new Rectangle(x, y, w, h),
+                    new(0, 0),
+                    0,
+                    Color.White
+                );
+                return;
+            }
+
+            Hud.DrawPanel("panel_gold", x, y, w, h);
+            DrawRectangle(x + 3, y + 3, w - 6, h - 6, Band);
+            Hud.DrawIcon("stick", x + ((w - 8) / 2), y + ((h - 8) / 2) - 6);
+            Centred(label, x + (w / 2), y + h - 16, Muted);
+        }
+
+        private static Maybe<Texture2D> Optional(string path)
+        {
+            return ResourceLoader.Exists(path)
+                ? ResourceLoader.Texture(path)
+                : Maybe.None<Texture2D>();
         }
 
         /// <summary>Darkens the rink behind a screen.</summary>
@@ -207,6 +253,16 @@ namespace StickAndPuck.App.Screens
         public void Unload()
         {
             UnloadTexture(title);
+            if (dressingRoom.TryGet(out Texture2D room))
+            {
+                UnloadTexture(room);
+            }
+
+            if (coach.TryGet(out Texture2D portrait))
+            {
+                UnloadTexture(portrait);
+            }
+
             Hud.Unload();
         }
     }
