@@ -23,6 +23,13 @@ namespace StickAndPuck.App.Core
             return club;
         }
 
+        /// <summary>Reads every club in one league, sorted by id: the 14 SHL clubs in data/clubs/ or the 32 NHL
+        /// clubs in data/clubs/nhl/. The single entry point for league choice (W117).</summary>
+        public static IReadOnlyList<ClubData> Load(League league)
+        {
+            return league == League.Nhl ? LoadNhl() : LoadAll();
+        }
+
         /// <summary>Reads every club file directly in the folder (not its subfolders, so the SHL list leaves
         /// out data/clubs/nhl/), sorted by id.</summary>
         public static IReadOnlyList<ClubData> LoadAll(string folder = Assets.ClubFolder)
@@ -59,7 +66,7 @@ namespace StickAndPuck.App.Core
             return LoadAll(Assets.NhlClubFolder);
         }
 
-        /// <summary>Writes a club back to JSON, in the same shape <see cref="Load"/> reads.</summary>
+        /// <summary>Writes a club back to JSON, in the same shape <see cref="Load(string)"/> reads.</summary>
         public static string ToJson(ClubData club)
         {
             return JsonSerializer.Serialize(club, PrettyJson.ClubData);

@@ -112,6 +112,74 @@ namespace StickAndPuck.Tests.Core
             Check(shl.All(c => !nhl.Contains(c.Id)), "no NHL club is in the SHL list");
         }
 
+        [Test]
+        public void LeagueConferenceAndDivisionLoad()
+        {
+            IReadOnlyList<ClubData> nhl = Clubs.Load(League.Nhl);
+            Check(nhl.Count == 32, $"Load(Nhl) reads the 32 NHL clubs ({nhl.Count})");
+            Check(nhl.All(c => c.League == League.Nhl), "every NHL club loads with League = Nhl");
+            HashSet<string> conferences = new(["Eastern", "Western"], StringComparer.Ordinal);
+            HashSet<string> divisions = new(
+                ["Atlantic", "Metropolitan", "Central", "Pacific"],
+                StringComparer.Ordinal
+            );
+            Check(
+                nhl.All(c =>
+                    c.Conference.Is(conferences.Contains) && c.Division.Is(divisions.Contains)
+                ),
+                "every NHL club loads its conference and division"
+            );
+            ClubData avalanche = nhl.Single(c =>
+                string.Equals(c.Id, "avalanche", StringComparison.Ordinal)
+            );
+            Check(
+                string.Equals(avalanche.Conference.Or(""), "Western", StringComparison.Ordinal)
+                    && string.Equals(
+                        avalanche.Division.Or(""),
+                        "Central",
+                        StringComparison.Ordinal
+                    ),
+                "Colorado is in the Western conference, Central division"
+            );
+            string json = Clubs.ToJson(avalanche);
+            Check(
+                json.Contains("\"league\": \"NHL\"", StringComparison.Ordinal)
+                    && json.Contains("\"conference\": \"Western\"", StringComparison.Ordinal),
+                "NHL clubs write their league and conference back"
+            );
+
+            IReadOnlyList<ClubData> shl = Clubs.Load(League.Shl);
+            Check(shl.Count == 14, $"Load(Shl) reads the 14 SHL clubs ({shl.Count})");
+            Check(
+                shl.All(c =>
+                    c.League == League.Shl
+                    && c.Conference == Maybe.None<string>()
+                    && c.Division == Maybe.None<string>()
+                ),
+                "SHL clubs default to League = Shl with no conference or division"
+            );
+            foreach (ClubData club in shl)
+            {
+                string written = Clubs.ToJson(club);
+                Check(
+                    !written.Contains("\"league\"", StringComparison.Ordinal)
+                        && !written.Contains("\"conference\"", StringComparison.Ordinal)
+                        && !written.Contains("\"division\"", StringComparison.Ordinal),
+                    $"{club.Id} JSON leaves the default league fields out"
+                );
+                Check(
+                    string.Equals(
+                        written,
+                        Clubs.ToJson(
+                            JsonSerializer.Deserialize(written, ClubJsonContext.Default.ClubData)
+                        ),
+                        StringComparison.Ordinal
+                    ),
+                    $"{club.Id} JSON round-trips byte-identical"
+                );
+            }
+        }
+
         private static int[] Values(Traits t)
         {
             return
