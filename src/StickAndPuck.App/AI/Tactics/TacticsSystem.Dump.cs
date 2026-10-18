@@ -36,7 +36,7 @@ namespace StickAndPuck.App.AI.Tactics
                 bool covered = opponents.Exists(o =>
                     end * o.Position.X > a && Vector3.Distance(o.Position, p.Position) < 12f
                 );
-                if (rng.NextSingle() >= (covered ? 0.75f : 0.2f))
+                if (rng.NextSingle() >= (covered ? 0.9f : 0.35f))
                 {
                     return; // open ice ahead: carry it in
                 }

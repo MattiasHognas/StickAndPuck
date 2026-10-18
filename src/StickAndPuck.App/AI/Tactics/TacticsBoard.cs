@@ -32,6 +32,15 @@ namespace StickAndPuck.App.AI.Tactics
         /// <summary>Gets where the other side's carrier was last step, along each side's attack ("a"), to spot breakouts leaving the zone.</summary>
         public float[] LastCarrierA { get; } = [float.NegativeInfinity, float.NegativeInfinity];
 
+        /// <summary>Gets or sets when a shooting club's carrier next weighs a shot from distance.</summary>
+        public float ShotLook { get; set; }
+
+        /// <summary>Gets or sets the skater who carried the puck last step and where the puck was, to spot shots leaving the stick.</summary>
+        public (int Player, Vector2 At) LastCarried { get; set; } = (-1, Vector2.Zero);
+
+        /// <summary>Gets the skaters who were checking last step, to count each check once.</summary>
+        public HashSet<int> Checking { get; } = [];
+
         /// <summary>Gets where the puck was last step, along each side's attack ("a"), to spot entries.</summary>
         public float[] LastA { get; } = [0f, 0f];
     }

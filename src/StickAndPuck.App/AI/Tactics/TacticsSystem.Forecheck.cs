@@ -93,7 +93,7 @@ namespace StickAndPuck.App.AI.Tactics
             foreach (Player p in forwards)
             {
                 Vector2 high = deep
-                    ? new Vector2(end * (RinkSpec.BlueLineX + 4f), c.Y * 0.3f)
+                    ? new Vector2(end * (RinkSpec.BlueLineX + 6f), c.Y * 0.3f)
                     : new Vector2(end * Math.Max(ca - 4f, 0.5f), c.Y * 0.3f);
                 Take(world, board, p, TacticTask.High, TeamShape.Inside(high), dt, sprint: false);
             }

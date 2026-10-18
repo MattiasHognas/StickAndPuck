@@ -17,7 +17,8 @@
   "tactics": {
     "forecheck": "trap",
     "entry": "carry",
-    "powerPlay": "mixed"
+    "powerPlay": "mixed",
+    "style": "balanced"
   },
   "roster": [
     {

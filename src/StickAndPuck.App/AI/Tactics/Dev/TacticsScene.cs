@@ -7,7 +7,8 @@ namespace StickAndPuck.App.AI.Tactics.Dev
     /// <summary>SAP_SCENE=tactics: an all-AI exhibition with each club's tactics and its dumps and entries on
     /// a line at the bottom. SAP_HOME and SAP_AWAY pick the clubs (default Frölunda's 2-1-2 against
     /// Luleå's trap); SAP_TACTICS_HOME and SAP_TACTICS_AWAY override a club's forecheck
-    /// (balanced, aggressive, trap). SAP_PERIOD=seconds shortens the periods.</summary>
+    /// (balanced, aggressive, trap), SAP_STYLE_HOME and SAP_STYLE_AWAY its style (balanced, physical,
+    /// shootFromAnywhere, defensiveShell). SAP_PERIOD=seconds shortens the periods.</summary>
     public sealed class TacticsScene : IScene
     {
         /// <inheritdoc/>
@@ -28,8 +29,14 @@ namespace StickAndPuck.App.AI.Tactics.Dev
             MatchSetup setup = Scenes.DefaultSetup(clubs);
             ClubData home = Pick("SAP_HOME", "frolunda", setup.Away);
             ClubData away = Pick("SAP_AWAY", "lulea", home);
-            home = home with { Tactics = Override(home.Tactics, "SAP_TACTICS_HOME") };
-            away = away with { Tactics = Override(away.Tactics, "SAP_TACTICS_AWAY") };
+            home = home with
+            {
+                Tactics = Override(home.Tactics, "SAP_TACTICS_HOME", "SAP_STYLE_HOME"),
+            };
+            away = away with
+            {
+                Tactics = Override(away.Tactics, "SAP_TACTICS_AWAY", "SAP_STYLE_AWAY"),
+            };
             float period =
                 float.TryParse(
                     Env.Get("SAP_PERIOD"),
@@ -55,12 +62,17 @@ namespace StickAndPuck.App.AI.Tactics.Dev
             return world;
         }
 
-        private static ClubTactics Override(ClubTactics tactics, string variable)
+        private static ClubTactics Override(ClubTactics tactics, string variable, string style)
         {
-            return Enum.TryParse(Env.Get(variable), ignoreCase: true, out Forecheck f)
+            if (Enum.TryParse(Env.Get(variable), ignoreCase: true, out Forecheck f))
+            {
+                tactics = tactics with { Forecheck = f };
+            }
+
+            return Enum.TryParse(Env.Get(style), ignoreCase: true, out PlayStyle s)
                 ? tactics with
                 {
-                    Forecheck = f,
+                    Style = s,
                 }
                 : tactics;
         }

@@ -17,7 +17,8 @@
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",
-    "powerPlay": "oneThreeOne"
+    "powerPlay": "oneThreeOne",
+    "style": "balanced"
   },
   "roster": [
     {

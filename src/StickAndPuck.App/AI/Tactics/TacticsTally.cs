@@ -31,6 +31,33 @@ namespace StickAndPuck.App.AI.Tactics
         /// <summary>Gets or sets the club's skaters back, goal side of the carrier, summed over those exits.</summary>
         public int BackAtExits { get; set; }
 
+        /// <summary>Gets or sets the body checks the club's skaters threw.</summary>
+        public int Hits { get; set; }
+
+        /// <summary>Gets or sets the shots the club's skaters let go with the puck on the stick inside the attacking zone.</summary>
+        public int Shots { get; set; }
+
+        /// <summary>Gets or sets those shots from further out than <see cref="LongShot"/> metres from the net.</summary>
+        public int LongShots { get; set; }
+
+        /// <summary>Gets or sets the seconds the other side carried the puck inside the club's own zone.</summary>
+        public float DefendSeconds { get; set; }
+
+        /// <summary>Gets or sets the skater-seconds the club had within <see cref="House"/> metres of its own net meanwhile.</summary>
+        public float HouseSkaterSeconds { get; set; }
+
+        /// <summary>How far from the net, in metres, a shot counts as from distance: the slap shot range.</summary>
+        public const float LongShot = 13f;
+
+        /// <summary>How near its own net, in metres, a defending skater counts as in the house.</summary>
+        public const float House = 9f;
+
+        /// <summary>Gets the share of the club's shots taken from distance, 0 to 1.</summary>
+        public float LongShare => Shots == 0 ? 0f : (float)LongShots / Shots;
+
+        /// <summary>Gets how many of the club's skaters stood near its own net, on average, while the other side had the puck in its zone.</summary>
+        public float Collapsed => DefendSeconds <= 0 ? 0f : HouseSkaterSeconds / DefendSeconds;
+
         /// <summary>Gets how many of the club's skaters were back, goal side of the puck, on average, as the other side carried it out of its zone.</summary>
         public float Back => Exits == 0 ? 0f : (float)BackAtExits / Exits;
 

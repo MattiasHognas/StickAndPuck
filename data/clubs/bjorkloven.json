@@ -17,7 +17,8 @@
   "tactics": {
     "forecheck": "aggressive",
     "entry": "dumpAndChase",
-    "powerPlay": "umbrella"
+    "powerPlay": "umbrella",
+    "style": "balanced"
   },
   "roster": [
     {

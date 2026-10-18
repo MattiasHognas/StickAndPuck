@@ -17,7 +17,8 @@
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",
-    "powerPlay": "oneThreeOne"
+    "powerPlay": "oneThreeOne",
+    "style": "physical"
   },
   "roster": [
     {

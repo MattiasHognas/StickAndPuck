@@ -17,7 +17,8 @@
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",
-    "powerPlay": "umbrella"
+    "powerPlay": "umbrella",
+    "style": "defensiveShell"
   },
   "roster": [
     {
