@@ -75,9 +75,10 @@
     <EmbeddedResource Include="$(RepoRoot)art/kits/*.png" LinkBase="art/kits" />
     <EmbeddedResource Include="$(RepoRoot)art/kits/numbers/*.png" LinkBase="art/kits/numbers" />
     <EmbeddedResource
-      Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json"
+      Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json;$(RepoRoot)art/scene/crowd_seats.json"
       LinkBase="art/scene"
     />
+    <EmbeddedResource Include="$(RepoRoot)art/crowd/*.png" LinkBase="art/crowd" />
     <EmbeddedResource Include="$(RepoRoot)art/zamboni/*.glb" LinkBase="art/zamboni" />
     <EmbeddedResource Include="$(RepoRoot)art/palette/*.gpl" LinkBase="art/palette" />
     <EmbeddedResource

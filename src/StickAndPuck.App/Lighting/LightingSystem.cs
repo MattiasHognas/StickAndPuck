@@ -85,6 +85,7 @@ namespace StickAndPuck.App.Lighting
             look.Glass = cue.Flash ? FlashGlass : preset.Glass;
             look.Ice = Dimmed(preset.Ice, cue.Tone);
             look.Scratch = Dimmed(preset.Scratch, cue.Tone);
+            look.Crowd = Dimmed(Color.White, cue.Tone); // the stands dim with the intro and light with a flash
         }
 
         /// <summary>A flat tone times the cue's light level, so the ice goes down with the intro and up with a flash; alpha is kept.</summary>

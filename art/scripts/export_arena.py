@@ -7,9 +7,11 @@ loads them, since a Raylib Model keeps no mesh or material names.
 2. drops players, puck, lights and cameras, flattens the ice to its base colour (the game draws
    the light bands, W2 / W18), turns any text objects into meshes (the SHL centre mark is already a mesh, see centre_logo.py),
 3. joins the scenery into one object per part, each part one named mesh: Ice, Floor, Markings,
-   Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Fans, Lanterns, Bench, BenchDoors (2b), PenaltyBox, BoxDoors (2c). Glass is its own mesh so the game can
+   Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Lanterns, Bench, BenchDoors (2b), PenaltyBox, BoxDoors (2c). Glass is its own mesh so the game can
    set its tone from the lighting; AdBoards is the only mesh with the ad_pixel material, which
-   exports as KHR_materials_unlit,
+   exports as KHR_materials_unlit. The static Fans are not exported (A18): after the bench and box
+   trim, every fan's seat goes to art/scene/crowd_seats.json and the game draws the animated crowd
+   (art/crowd/, Arena/CrowdRenderer.cs) there instead,
 4. exports a Y-up GLB with transforms applied and the ad strip embedded with nearest filtering,
    and checks every primitive stays under Raylib's 65536-vertex limit for 16-bit indices.
 Run in Blender:  exec(open(script).read(), {'__file__': script})  or with ART / SAP_ART set."""
@@ -197,6 +199,37 @@ for name, stems in PARTS:
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     ob.name = name; ob.data.name = name; used.add(name)
 trim_for_benches()
+
+# ---- 3b. the crowd's seats (A18): one per static fan, then the static fans go ----
+# Each fan in build_scene.py is a body cube (8 verts) standing on its row's tread at 0.5 + row * 0.55
+# and a head; the cube's centre gives the seat and its bottom the row. Written in game coordinates
+# (Blender (x, y, z) is the game's (x, z, -y)), back rows first so the game can draw them in order.
+# Sections split the stands for the crowd's poses: the two ends past the corner arcs, and each side
+# in thirds; far is behind the benches (Blender +y, the game's -z), near behind the penalty boxes.
+CROWD_SECTIONS = ['far_left', 'far_centre', 'far_right', 'near_left', 'near_centre', 'near_right', 'left_end', 'right_end']
+def crowd_section(x, y):
+    if x < -21.5: return 'left_end'
+    if x > 21.5: return 'right_end'
+    third = 'left' if x < -7.17 else 'right' if x > 7.17 else 'centre'
+    return ('far_' if y > 0 else 'near_') + third
+
+def write_seats():
+    me = bpy.data.objects['Fans'].data; bm = bmesh.new(); bm.from_mesh(me); bm.verts.index_update()
+    seats = []
+    for piece in components(bm):
+        if len(piece) != 8: continue                       # a head
+        c = sum((v.co for v in piece), Vector()) / 8; bottom = min(v.co.z for v in piece)
+        row = int(math.floor((bottom - 0.52) / 0.55)); tread = 0.5 + row * 0.55
+        seats.append([round(c.x, 3), round(tread, 3), round(-c.y, 3), row, CROWD_SECTIONS.index(crowd_section(c.x, c.y))])
+    bm.free()
+    seats.sort(key=lambda s: (-s[3], s[0], s[2]))
+    meta = {'source': 'art/scripts/export_arena.py', 'note': 'one seat per spectator: [x, tread height y, z, row, section], game metres, back rows first',
+            'sections': CROWD_SECTIONS, 'rows': max(s[3] for s in seats) + 1, 'seats': seats}
+    with open(ART + '/scene/crowd_seats.json', 'w') as f: json.dump(meta, f, separators=(',', ':'))
+    return len(seats)
+seat_count = write_seats()
+bpy.data.objects.remove(bpy.data.objects['Fans'])
+PARTS = [(n, s) for n, s in PARTS if n != 'Fans']
 left = [o.name for o in scene.objects if o.name not in used]
 for n in left: bpy.data.objects.remove(bpy.data.objects[n])
 
@@ -233,5 +266,5 @@ meta = {'source': 'art/scripts/export_arena.py', 'glb': 'art/scene/arena.glb', '
         'note': 'meshes in Raylib load order (Model.Meshes[index]); Y-up metres, x along the rink, +z toward the camera',
         'meshes': order}
 with open(ART + '/scene/arena_meshes.json', 'w') as f: json.dump(meta, f, indent=1)
-result = {'glb_bytes': len(raw), 'meshes': len(order), 'ads': ads, 'parts': [n for n, _ in PARTS],
+result = {'glb_bytes': len(raw), 'meshes': len(order), 'ads': ads, 'parts': [n for n, _ in PARTS], 'crowd_seats': seat_count,
           'max_vertices': max(o['vertices'] for o in order)}

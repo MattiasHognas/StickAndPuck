@@ -9,7 +9,8 @@ using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Arena
 {
-    /// <summary>The arena from arena.glb: ice, markings, boards, glass, nets, ad boards, benches, penalty boxes, stands and crowd.
+    /// <summary>The arena from arena.glb: ice, markings, boards, glass, nets, ad boards, benches, penalty boxes and stands,
+    /// with the animated crowd on the stands drawn by <see cref="CrowdRenderer"/>.
     /// arena_meshes.json says which part and material each mesh is, since Raylib keeps no names.
     /// Lit parts use the toon shader; ad boards, lanterns and LEDs are unlit; the ice sheet is a
     /// flat cold grey and the glass a flat translucent tint, both from <see cref="ArenaLook"/> so
@@ -38,6 +39,7 @@ namespace StickAndPuck.App.Arena
         [];
         private readonly IceBands bands = new();
         private readonly IceScratches scratches = new();
+        private readonly CrowdRenderer crowd = new();
         private Model model;
         private Material maskMaterial;
 
@@ -95,6 +97,11 @@ namespace StickAndPuck.App.Arena
             maskMaterial = LoadMaterialDefault();
             bands.Build();
             scratches.Load();
+            crowd.Load(world);
+            if (Enum.TryParse(Env.Get("SAP_CROWD_POSE"), ignoreCase: true, out CrowdPose pose))
+            {
+                world.Crowd.SetAll(pose, world.Time); // a fixed pose for previews of the crowd frames
+            }
         }
 
         private static Color ToSrgb(Color c)
@@ -134,6 +141,7 @@ namespace StickAndPuck.App.Arena
             Rlgl.DrawRenderBatchActive();
             ColorWrite.Set(enabled: true);
             DrawPass(render, shaderDefault, world.Look.Ice, ice: false, sheet: false);
+            crowd.Draw(world, render, shaderDefault, world.Look.Crowd);
 
             // glass last and without depth, so players behind it still draw; flat colour over the crowd
             Rlgl.DisableDepthMask();
@@ -227,6 +235,7 @@ namespace StickAndPuck.App.Arena
         public void Dispose()
         {
             scratches.Unload();
+            crowd.Unload();
             UnloadMaterial(maskMaterial);
             UnloadModel(model);
         }
