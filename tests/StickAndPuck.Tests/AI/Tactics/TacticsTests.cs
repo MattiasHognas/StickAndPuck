@@ -299,7 +299,7 @@ namespace StickAndPuck.Tests.AI.Tactics
         }
 
         /// <summary>Runs one period, or until a time limit.</summary>
-        private static void Play(World world, ISystem[] systems, float seconds)
+        internal static void Play(World world, ISystem[] systems, float seconds)
         {
             int steps = (int)(seconds / Game.Step);
             for (

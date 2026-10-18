@@ -251,7 +251,10 @@ namespace StickAndPuck.App.AI.Decisions
             if (
                 carrier.Side == p.Side
                 || carrier.IsGoalie
-                || PositioningModel.JobOf(world, p) != Job.Pressure
+                || (
+                    PositioningModel.JobOf(world, p) != Job.Pressure
+                    && Tactics.TacticsState.TaskOf(world, p) != Tactics.TacticTask.Hit
+                )
             )
             {
                 return;
@@ -262,9 +265,10 @@ namespace StickAndPuck.App.AI.Decisions
             if (world.Time >= brain.CheckReady && d < CheckFrom)
             {
                 float checking = Traits.Unit(p.Data.Traits.Checking);
+                float style = Tactics.TacticsState.HitScale(world, p.Side); // a physical club finishes its checks
                 brain.HitUntil =
                     rng.NextSingle()
-                    < (0.04f + (0.15f * checking)) * HumanEdge.HitChance(world, carrier)
+                    < (0.04f + (0.15f * checking)) * style * HumanEdge.HitChance(world, carrier)
                         ? world.Time + 0.9f
                         : float.NegativeInfinity;
                 brain.CheckReady = world.Time + 4f;

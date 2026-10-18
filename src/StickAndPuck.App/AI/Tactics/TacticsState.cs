@@ -11,6 +11,13 @@ namespace StickAndPuck.App.AI.Tactics
             return world.Setup.Club(side).Tactics;
         }
 
+        /// <summary>Gets how much likelier a side's skater on the carrier is to line up a hit when he weighs
+        /// one: more than 1 for a physical club, else 1.</summary>
+        public static float HitScale(World world, Side side)
+        {
+            return Of(world, side).Style == PlayStyle.Physical ? TacticsSystem.PhysicalHits : 1f;
+        }
+
         /// <summary>Gets a club's tally for this match.</summary>
         public static TacticsTally Tally(World world, Side side)
         {

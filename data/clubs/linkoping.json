@@ -17,7 +17,8 @@
   "tactics": {
     "forecheck": "balanced",
     "entry": "dumpAndChase",
-    "powerPlay": "mixed"
+    "powerPlay": "mixed",
+    "style": "balanced"
   },
   "roster": [
     {

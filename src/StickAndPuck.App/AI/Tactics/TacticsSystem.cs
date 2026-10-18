@@ -26,6 +26,11 @@ namespace StickAndPuck.App.AI.Tactics
     /// two forwards go after it.</item>
     /// <item>Power play: a club that always sets up the umbrella or the 1-3-1 gets that shape instead
     /// of the special teams coin toss.</item>
+    /// <item>Styles (<see cref="PlayStyle"/>): a physical club's skater nearest the carrier skates at
+    /// him and decisions line up hits <see cref="PhysicalHits"/> times as often; a shooting club's
+    /// carrier shoots from anywhere in the attacking zone with a lane; a defensive shell drops into a
+    /// box in front of its own net while the other side has the puck in its zone and, with a balanced
+    /// forecheck, waits in its own half on the breakout.</item>
     /// <item>Balanced and carry change nothing: the AI as it plays without tactics.</item>
     /// </list>
     /// Hockey IQ still sets how quickly and exactly each skater reads his tactical spot.</summary>
@@ -109,6 +114,8 @@ namespace StickAndPuck.App.AI.Tactics
                     default:
                         break;
                 }
+
+                Styles(world, board, skater, dt);
             }
             else if (!carrier.HasValue && board.Chasing.TryGet(out ChaseWatch chase))
             {
@@ -191,6 +198,7 @@ namespace StickAndPuck.App.AI.Tactics
                 board.Owner = onPuck.Side.OrNone();
                 board.OwnedSince = world.Time;
             }
+            CountShotsAndHits(world, board, carrier, even);
             foreach (Side side in new[] { Side.Home, Side.Away })
             {
                 int end = PuckHandling.AttackEnd(world, side);
@@ -229,6 +237,16 @@ namespace StickAndPuck.App.AI.Tactics
                         ? end * leaving.Position.X
                         : float.NegativeInfinity;
 
+                // the other side carrying the puck in this side's zone: how many of this side stand near their own net
+                if (
+                    skater.TryGet(out Player attacking)
+                    && attacking.Side != side
+                    && end * attacking.Position.X < -RinkSpec.BlueLineX
+                )
+                {
+                    TrackDefence(world, side, tally, end, dt);
+                }
+
                 // the other side carrying the puck in its own zone, settled for a moment: a breakout this side is meeting
                 if (
                     !skater.TryGet(out Player breaking)
@@ -245,6 +263,66 @@ namespace StickAndPuck.App.AI.Tactics
                 }
 
                 TrackBreakout(world, side, tally, end, dt);
+            }
+        }
+
+        private static void TrackDefence(
+            World world,
+            Side side,
+            TacticsTally tally,
+            int end,
+            float dt
+        )
+        {
+            Vector2 net = new(-end * RinkSpec.GoalLineX, 0f);
+            tally.DefendSeconds += dt;
+            tally.HouseSkaterSeconds +=
+                Skaters(world, side)
+                    .Count(p => Vector2.Distance(Flat(p.Position), net) < TacticsTally.House) * dt;
+        }
+
+        /// <summary>Counts each side's shots off the stick in the attacking zone (from where the puck was the
+        /// step before it left) and the checks its skaters throw.</summary>
+        private static void CountShotsAndHits(
+            World world,
+            TacticsBoard board,
+            Maybe<Player> carrier,
+            bool even
+        )
+        {
+            (int last, Vector2 from) = board.LastCarried;
+            if (even && last >= 0 && last < world.Players.Count && world.Puck.Carrier != last)
+            {
+                Player shooter = world.Players[last];
+                int end = PuckHandling.AttackEnd(world, shooter.Side);
+                if (shooter.Action == PlayerAction.Shoot && end * from.X > RinkSpec.BlueLineX)
+                {
+                    TacticsTally tally = TacticsState.Tally(world, shooter.Side);
+                    tally.Shots++;
+                    if (
+                        Vector2.Distance(from, new Vector2(end * RinkSpec.GoalLineX, 0f))
+                        > TacticsTally.LongShot
+                    )
+                    {
+                        tally.LongShots++;
+                    }
+                }
+            }
+            board.LastCarried =
+                carrier.TryGet(out Player held) && !held.IsGoalie
+                    ? (held.Id, Flat(world.Puck.Position))
+                    : (-1, Vector2.Zero);
+
+            foreach (Player p in world.Players.Where(p => p.OnIce && !p.IsGoalie))
+            {
+                if (p.Action != PlayerAction.Check)
+                {
+                    _ = board.Checking.Remove(p.Id);
+                }
+                else if (board.Checking.Add(p.Id) && even)
+                {
+                    TacticsState.Tally(world, p.Side).Hits++;
+                }
             }
         }
 
@@ -284,16 +362,13 @@ namespace StickAndPuck.App.AI.Tactics
                 TacticsTally tally = TacticsState.Tally(world, side);
                 return string.Create(
                     CultureInfo.InvariantCulture,
-                    $"{world.Setup.Club(side).ShortName} {Name(t.Forecheck)} {(t.Entry == ZoneEntry.DumpAndChase ? "DUMP" : "CARRY")} {tally.Dumps}/{tally.Entries}"
+                    $"{world.Setup.Club(side).ShortName} {Name(t.Forecheck)} {(t.Entry == ZoneEntry.DumpAndChase ? "DUMP" : "CARRY")} {Name(t.Style)}  dumps {tally.Dumps}/{tally.Entries}  hits {tally.Hits}  far shots {tally.LongShots}/{tally.Shots}  deep {tally.Forecheckers:F1}  house {tally.Collapsed:F1}"
                 );
             }
-            DrawText(
-                $"{Club(Side.Home)}   {Club(Side.Away)}",
-                6,
-                246,
-                10,
-                new Color(0xef, 0xe0, 0xc2, 255)
-            );
+            Color ink = new(0xef, 0xe0, 0xc2, 255);
+            DrawRectangle(0, 234, 480, 25, new Color(0x1a, 0x14, 0x1e, 0xc0)); // readable over the ice
+            DrawText(Club(Side.Home), 6, 236, 10, ink);
+            DrawText(Club(Side.Away), 6, 247, 10, ink);
         }
 
         /// <summary>The words a debug trace shows for a tactical task.</summary>
@@ -302,6 +377,9 @@ namespace StickAndPuck.App.AI.Tactics
             return task switch
             {
                 TacticTask.Chase => "chase the dump",
+                TacticTask.House => "shell: the house",
+                TacticTask.Retreat => "shell: wait back",
+                TacticTask.Hit => "physical: finish the check",
                 TacticTask.Outlet => "forecheck: take the outlet",
                 TacticTask.High => "forecheck: sit high",
                 TacticTask.Pinch => "forecheck: pinch",
@@ -321,6 +399,18 @@ namespace StickAndPuck.App.AI.Tactics
                 Forecheck.Trap => "TRAP",
                 Forecheck.Balanced => "BAL",
                 _ => throw new NotSupportedException("no name for forecheck " + f),
+            };
+        }
+
+        private static string Name(PlayStyle s)
+        {
+            return s switch
+            {
+                PlayStyle.Physical => "PHYSICAL",
+                PlayStyle.ShootFromAnywhere => "SHOOTERS",
+                PlayStyle.DefensiveShell => "SHELL",
+                PlayStyle.Balanced => "BAL",
+                _ => throw new NotSupportedException("no name for style " + s),
             };
         }
 

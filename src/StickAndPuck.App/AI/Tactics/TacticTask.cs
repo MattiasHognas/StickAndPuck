@@ -26,5 +26,14 @@ namespace StickAndPuck.App.AI.Tactics
 
         /// <summary>Dump and chase: a forward going in after the dump.</summary>
         Chase,
+
+        /// <summary>Defensive shell: in the box in front of the club's own net.</summary>
+        House,
+
+        /// <summary>Defensive shell: waiting back in the club's own half while the other side breaks out.</summary>
+        Retreat,
+
+        /// <summary>Physical: skating at the carrier to finish the check; decisions may hit with him.</summary>
+        Hit,
     }
 }
