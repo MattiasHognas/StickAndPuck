@@ -116,6 +116,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets a value indicating whether the icing club keeps its line until the faceoff.</summary>
         public bool IcingNoChange { get; init; } = true;
 
+        /// <summary>Gets a value indicating whether the AI plays its power-play and penalty-kill shapes; off, it keeps its even-strength positioning a man up or down.</summary>
+        public bool SpecialTeams { get; init; } = true;
+
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]
         public float StrictnessScale =>

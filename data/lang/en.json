@@ -325,6 +325,7 @@
   "RuleBoarding": "BOARDING",
   "RuleRoughing": "ROUGHING",
   "RuleIcingNoChange": "NO CHANGE AFTER ICING",
+  "RuleSpecialTeams": "SPECIAL TEAMS",
   "RuleFights": "FIGHTS",
   "RuleGroupFights": "FIGHTS",
   "RuleFightPenalty": "FIGHT PENALTY",

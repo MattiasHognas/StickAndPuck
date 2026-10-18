@@ -25,8 +25,20 @@ namespace StickAndPuck.App.AI.SpecialTeams
             Side kill
         )
         {
+            return ShortHanded(clubs, settings, kill, RuleSet.Shl);
+        }
+
+        /// <summary>A match at the opening faceoff with one skater of a club in the box for the whole period, played by the given rules.</summary>
+        internal static World ShortHanded(
+            IReadOnlyList<ClubData> clubs,
+            Settings settings,
+            Side kill,
+            RuleSet rules
+        )
+        {
             MatchSetup setup = Scenes.DefaultSetup(clubs) with
             {
+                Rules = rules,
                 PeriodSeconds = 20 * 60,
                 Inputs =
                 [

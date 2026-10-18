@@ -82,7 +82,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `faceoff`: repeats faceoffs, transfers the human slot to the centre, and scripts a press 0.15 seconds after each drop.
 - `celebration`: the last seconds of a decided game; `SAP_CLOCK` sets the remaining time (default 4), `SAP_WINNER=away` puts the visitors ahead instead.
 - `goaliepull`: late in the third period, down a goal, to show the extra attacker; `SAP_AI_HUMAN=1` gives the human control and G pulls/returns the goalie in this scene.
-- `specialteams`: a permanent power play, with the away side short-handed by default; `SAP_ST_KILL=home` reverses it and `SAP_ST_WAIT=1` advances to an established attacking shape.
+- `specialteams`: a permanent power play, with the away side short-handed by default; `SAP_ST_KILL=home` reverses it and `SAP_ST_WAIT=1` advances to an established attacking shape, and `SAP_ST_RULE=off` plays it with the SpecialTeams rule off (even-strength positioning a man up).
 - `tactics`: Frölunda against Luleå by default, with tactical choices shown; `SAP_TACTICS_HOME` and `SAP_TACTICS_AWAY` accept `balanced`, `aggressive` or `trap`.
 - `momentum`: a boost after a home goal; `SAP_MOMENTUM_SIDE=away` boosts the visitors instead.
 - `shotdemo`: repeated tap, half-held and full-held shots for checking shot height and shadows; goals do not count.

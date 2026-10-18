@@ -26,6 +26,7 @@ namespace StickAndPuck.App.AI.SpecialTeams
     /// one picking the right answer, a fumbling one the wrong one; a smart skater finds his spot
     /// exactly and clears at once, a poor one stands a little off and hesitates with the puck.</item>
     /// </list>
+    /// The SpecialTeams rule (<see cref="RuleSet.SpecialTeams"/>) turns it all off, leaving a power play to the even-strength AI.
     /// SAP_ST_SPOTS=1 or the match debug setting draws the spots on the ice.</summary>
     /// <remarks>Initializes the system with its own randomness, so tests repeat.</remarks>
     /// <param name="rng">Randomness for shape choice, reads and clears.</param>
@@ -58,6 +59,7 @@ namespace StickAndPuck.App.AI.SpecialTeams
             board.Shape = [Formation.None, Formation.None];
             if (
                 !on
+                || !world.Setup.Rules.SpecialTeams
                 || !PositioningModel.Drives(world)
                 || world.Match.Phase is not (MatchPhase.Play or MatchPhase.Overtime)
             )
