@@ -16,6 +16,7 @@ namespace StickAndPuck.App.Season.DressingRoom
             new SuspensionReport(),
             new RivalryNews(),
             new DevelopmentNews(),
+            new TradeNews(),
         ];
 
         /// <summary>Fills a report from every source.</summary>

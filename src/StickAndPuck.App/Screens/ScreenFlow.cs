@@ -294,7 +294,7 @@ namespace StickAndPuck.App.Screens
             Screen overview = AfterSeasonGame();
             if (
                 Top.TryGet(out Screen top)
-                && top is StandingsScreen or BracketScreen or DressingRoomScreen
+                && top is StandingsScreen or BracketScreen or DressingRoomScreen or TradeOfferScreen
             )
             {
                 if (top.GetType() != overview.GetType())
@@ -338,9 +338,20 @@ namespace StickAndPuck.App.Screens
                 : new StandingsScreen(app);
         }
 
-        /// <summary>The screen after a season or playoff result: the dressing room while there is a next game
-        /// and the season's rules have it on (<see cref="RuleSet.DressingRoom"/>), else the table or bracket.</summary>
+        /// <summary>The screen after a season or playoff result: the trade deadline's offers when some wait for an
+        /// answer (<see cref="TradeOfferScreen"/>), else <see cref="AfterTrades"/>.</summary>
         public Screen AfterSeasonGame()
+        {
+            return
+                SeasonHasNextGame()
+                && app.Season.Current.Is(s => s.Trades.Offers.Any(o => o.IsOpen))
+                ? new TradeOfferScreen(app)
+                : AfterTrades();
+        }
+
+        /// <summary>The dressing room while there is a next game and the season's rules have it on
+        /// (<see cref="RuleSet.DressingRoom"/>), else the table or bracket.</summary>
+        public Screen AfterTrades()
         {
             return SeasonHasNextGame() && DressingRoomScreen.Style(app) != DressingRoomStyle.Off
                 ? new DressingRoomScreen(app)

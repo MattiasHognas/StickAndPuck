@@ -20,14 +20,14 @@ namespace StickAndPuck.App.Season.DressingRoom
         /// <summary>Gets the human's club id.</summary>
         public string UserClub => Season.UserClub;
 
-        /// <summary>Builds the context for a season.</summary>
+        /// <summary>Builds the context for a season, with its clubs as traded (<see cref="SeasonState.Rosters"/>).</summary>
         public static DressingRoomContext Of(
             SeasonState season,
             IReadOnlyList<ClubData> clubs,
             RuleSet rules
         )
         {
-            return new(season, clubs, LastGame.Of(season), rules);
+            return new(season, season.Rosters(clubs), LastGame.Of(season), rules);
         }
 
         /// <summary>Gets the stat sheet of the last game: the one the human played when the save has it, else

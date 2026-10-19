@@ -10,7 +10,7 @@ namespace StickAndPuck.App.Screens
     /// <summary>The dressing room (W122): after each season or playoff result and before the next game. The
     /// coach's portrait and line, the last game, then the news and injuries side by side and the board's
     /// notes, all from <see cref="DressingRoomSources"/>; the next game under them and the menu: play it,
-    /// sim it, the table or bracket, the main menu. The season's <see cref="RuleSet.DressingRoom"/> sets how
+    /// sim it, the table or bracket, the main menu (and the trade deadline's open offers first, W135). The season's <see cref="RuleSet.DressingRoom"/> sets how
     /// much shows (Brief keeps the coach and the games) or turns the screen off. The backdrop and portrait
     /// are A20's art when it exists (<see cref="Assets.DressingRoomBackdrop"/>, <see cref="Assets.CoachPortrait"/>).</summary>
     internal sealed class DressingRoomScreen(AppState app) : MenuScreen(app)
@@ -38,7 +38,19 @@ namespace StickAndPuck.App.Screens
                     ? K.StartPlayoffsItem
                     : K.PlayNextGame
             );
-            List<MenuItem> items = [new MenuItem(play, Play, enabled: Flow.SeasonHasNextGame())];
+            List<MenuItem> items = [];
+            int offers = season.Select(s => s.Trades.Open.Count).Or(0);
+            if (offers > 0 && Flow.SeasonHasNextGame())
+            {
+                items.Add(
+                    new MenuItem(
+                        Text.Format(K.TradeOffersItem, offers),
+                        () => Flow.Push(new TradeOfferScreen(App))
+                    )
+                );
+            }
+
+            items.Add(new MenuItem(play, Play, enabled: Flow.SeasonHasNextGame()));
             if (Flow.Settings.SimGame)
             {
                 items.Add(

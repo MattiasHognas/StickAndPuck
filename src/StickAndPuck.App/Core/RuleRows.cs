@@ -3,7 +3,7 @@ using K = StickAndPuck.App.Core.Text.Keys;
 namespace StickAndPuck.App.Core
 {
     /// <summary>Every rule switch, in page order: Game (offside, icing, goalie pull), Overtime, Penalties,
-    /// Infractions, Faceoffs, Fights, League (table points, tiebreak and playoff home ice) and Season (team morale, carry-over form, dressing room, rivalries). <see cref="RuleRow.Plays"/> says whether the game plays a row's rule.</summary>
+    /// Infractions, Faceoffs, Fights, League (table points, tiebreak and playoff home ice) and Season (team morale, carry-over form, dressing room, rivalries, trade deadline). <see cref="RuleRow.Plays"/> says whether the game plays a row's rule.</summary>
     public static class RuleRows
     {
         private const string On = "On",
@@ -515,6 +515,23 @@ namespace StickAndPuck.App.Core
                 Enum.GetValues<DevelopmentStrength>(),
                 r => r.DevelopmentStrength,
                 (r, v) => r with { DevelopmentStrength = v }
+            ),
+            Flag(
+                nameof(RuleSet.TradeDeadline),
+                K.RuleTradeDeadline,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.TradeDeadline,
+                (r, v) => r with { TradeDeadline = v }
+            ),
+            Choice(
+                nameof(RuleSet.TradeOffers),
+                K.RuleTradeOffers,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<TradeFrequency>(),
+                r => r.TradeOffers,
+                (r, v) => r with { TradeOffers = v }
             ),
         ];
 

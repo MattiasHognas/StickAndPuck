@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, strong form swings, no dressing room, no pre-game talk, no injuries, no suspensions and no player development.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, strong form swings, no dressing room, no pre-game talk, no injuries, no suspensions, no player development and no trade deadline.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -55,11 +55,12 @@ namespace StickAndPuck.App.Core
             Rivalries = false,
             Development = false,
             PenaltyShot = false,
+            TradeDeadline = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
         /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice, stronger team morale,
-        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games and milder player development over its longer season.</summary>
+        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games and milder player development over its longer season and two trade offers at the deadline.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -77,6 +78,7 @@ namespace StickAndPuck.App.Core
             IntermissionTalkStrength = TalkStrength.Strong,
             RivalryStrength = RivalryStrength.Strong,
             DevelopmentStrength = DevelopmentStrength.Mild,
+            TradeOffers = TradeFrequency.Often,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -351,6 +353,13 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets how much hotter a rivalry game is.</summary>
         public RivalryStrength RivalryStrength { get; init; } = RivalryStrength.Normal;
+
+        /// <summary>Gets a value indicating whether AI clubs low in the table make player-for-player trade offers to the
+        /// human's club at the season's trade deadline, two thirds of the way through (W135).</summary>
+        public bool TradeDeadline { get; init; } = true;
+
+        /// <summary>Gets how many trade offers come at the deadline: one, one or two, or two.</summary>
+        public TradeFrequency TradeOffers { get; init; } = TradeFrequency.Normal;
 
         /// <summary>Gets the factor on what a rivalry game adds, 0 with <see cref="Rivalries"/> off, else by <see cref="RivalryStrength"/>.</summary>
         [JsonIgnore]

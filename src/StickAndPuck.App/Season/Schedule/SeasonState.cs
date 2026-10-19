@@ -4,6 +4,7 @@ using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Stats;
+using StickAndPuck.App.Season.Trades;
 
 namespace StickAndPuck.App.Season.Schedule
 {
@@ -65,6 +66,9 @@ namespace StickAndPuck.App.Season.Schedule
 
         /// <summary>Gets or sets the news events in play (see <see cref="NewsDesk"/>); empty in an older save.</summary>
         public IList<NewsEvent> News { get; set; } = [];
+
+        /// <summary>Gets or sets the trade deadline: its offers and the trades made (see <see cref="TradeDesk"/>); empty in an older save.</summary>
+        public SeasonTrades Trades { get; set; } = new();
 
         /// <summary>Gets the number of rounds.</summary>
         public int Rounds => Games.Count == 0 ? 0 : Games.Max(g => g.Round) + 1;
@@ -138,6 +142,13 @@ namespace StickAndPuck.App.Season.Schedule
             return groups;
         }
 
+        /// <summary>The clubs as this season has them: the club data files with the season's trades made
+        /// (<see cref="TradeDeals.Apply"/>). Clubs that already have them are returned unchanged.</summary>
+        public IReadOnlyList<ClubData> Rosters(IReadOnlyList<ClubData> clubs)
+        {
+            return Trades.Deals.Count == 0 ? clubs : TradeDeals.Apply(clubs, Trades.Deals);
+        }
+
         /// <summary>Gets the games of one round.</summary>
         public IEnumerable<Fixture> Round(int round)
         {
@@ -161,10 +172,8 @@ namespace StickAndPuck.App.Season.Schedule
         /// Called when the human's game of that round ends.</summary>
         public int SimulateUpTo(int round, IReadOnlyList<ClubData> clubs)
         {
-            Dictionary<string, ClubData> byId = clubs.ToDictionary(
-                c => c.Id,
-                StringComparer.Ordinal
-            );
+            Dictionary<string, ClubData> byId = Rosters(clubs)
+                .ToDictionary(c => c.Id, StringComparer.Ordinal);
             int count = 0;
             foreach (
                 Fixture g in Games
@@ -229,16 +238,17 @@ namespace StickAndPuck.App.Season.Schedule
 
         /// <summary>The match setup for a game, so the season starts a match the same way exhibition, arcade and
         /// versus do: SHL rules, keyboard and mouse on the human's club, both clubs' morale, their form and
-        /// their rosters without the injured and suspended players (<see cref="AbsenceTable"/>).</summary>
+        /// their rosters as traded (<see cref="Rosters"/>) without the injured and suspended players (<see cref="AbsenceTable"/>).</summary>
         public MatchSetup SetupFor(
             Fixture game,
             IReadOnlyList<ClubData> clubs,
             InputDevice device = InputDevice.KeyboardMouse
         )
         {
+            IReadOnlyList<ClubData> rosters = Rosters(clubs);
             ClubData Find(string id)
             {
-                return clubs
+                return rosters
                     .FirstOrNone(c => string.Equals(c.Id, id, StringComparison.Ordinal))
                     .TryGet(out ClubData club)
                     ? club
@@ -275,6 +285,7 @@ namespace StickAndPuck.App.Season.Schedule
                 Form = form,
                 StartEnergy = NewsDesk.StartEnergy(this, game),
                 Absent = absent,
+                Trades = [.. Trades.Deals],
             };
         }
     }

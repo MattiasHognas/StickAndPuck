@@ -34,6 +34,9 @@ namespace StickAndPuck.App.Replay
         /// <summary>Gets a value indicating whether the match is a rivalry game, as <see cref="MatchSetup.Rivalry"/>; false in an older replay.</summary>
         public bool Rivalry { get; init; }
 
+        /// <summary>Gets the season's trades, as <see cref="MatchSetup.Trades"/>; empty in an older replay.</summary>
+        public IReadOnlyList<Trade> Trades { get; init; } = [];
+
         /// <summary>Gets the stored form of a setup.</summary>
         public static ReplaySetup Of(MatchSetup s)
         {
@@ -54,17 +57,26 @@ namespace StickAndPuck.App.Replay
                 Talk = s.Talk,
                 Absent = s.Absent,
                 Rivalry = s.Rivalry,
+                Trades = s.Trades,
             };
         }
 
-        /// <summary>Builds the setup again from the clubs on this machine.</summary>
+        /// <summary>Builds the setup again from the clubs on this machine, with the season's trades made.</summary>
         public MatchSetup ToSetup(IReadOnlyList<ClubData> clubs)
         {
+            IReadOnlyList<ClubData> traded = TradeDeals.Apply(
+                Trades.Count == 0
+                || clubs.Any(c => string.Equals(c.Id, Home, StringComparison.Ordinal))
+                    ? clubs
+                    : Clubs.LoadNhl(),
+                Trades
+            );
+
             ClubData Club(string id)
             {
-                return clubs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))
-                    ?? Clubs
-                        .LoadNhl()
+                return traded.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))
+                    ?? TradeDeals
+                        .Apply(Clubs.LoadNhl(), Trades)
                         .FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal))
                     ?? throw new InvalidOperationException(
                         $"the replay's club {id} is not in data/clubs"
@@ -87,6 +99,7 @@ namespace StickAndPuck.App.Replay
                 StartEnergy = StartEnergy,
                 Talk = Talk,
                 Rivalry = Rivalry,
+                Trades = Trades,
             };
         }
     }
