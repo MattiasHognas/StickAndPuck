@@ -7,15 +7,19 @@ namespace StickAndPuck.App.Arena
 {
     /// <summary>A17: the home club's crest at centre ice in an NHL arena, as real NHL rinks paint the home
     /// club's logo there. The crest is the club's 16x16 cell of art/ui/crests.png (A16, the same art the
-    /// HUD uses, located through ui.json), laid flat inside the centre circle with every crest pixel
-    /// 0.26 m across and 0.52 m deep, so the 28 degree broadcast camera sees it square, like the
-    /// 'SHL' mark's blocks (centre_logo.py). Drawn on the ice with the bands and scratches: depth test,
-    /// no depth write, so players drawn earlier stay in front and the centre line and dot go over it.</summary>
+    /// HUD uses, located through ui.json), a decal lying flat on the ice plane in world space: every crest
+    /// pixel a 0.5 m square, so the 8 m crest sits inside the 9.14 m centre circle and the broadcast camera
+    /// foreshortens it exactly as it does the circle and the lines. It takes the ice's light (<see cref="Tone"/>)
+    /// and lets some ice through, faded like a logo painted under the ice. Drawn on the ice with the bands
+    /// and scratches: depth test, no depth write, so players drawn earlier stay in front and the centre
+    /// line and dot go over it.</summary>
     internal sealed class CentreIce
     {
-        private const float PixelAcross = 0.26f,
-            PixelDeep = 0.52f,
+        private const float Pixel = 0.5f,
             Y = 0f;
+
+        /// <summary>How much of the crest shows over the ice, of 255: painted-under-ice logos read a little faded.</summary>
+        private const byte Fade = 200;
 
         private readonly Dictionary<string, Rectangle> cells = [with(StringComparer.Ordinal)];
         private string fallback = "generic";
@@ -44,7 +48,7 @@ namespace StickAndPuck.App.Arena
 
         /// <summary>Gets the crest's tone for an ice tone: white under the dusk lights the crest art is
         /// painted for, and dimmed or shifted as the ice sheet is (the warm-up's dimmed lights, the lighting
-        /// moods), since the crest is drawn flat like the ice.</summary>
+        /// moods), since the crest is drawn flat like the ice; its alpha is the under-ice fade.</summary>
         public static Color Tone(Color ice)
         {
             static byte F(byte v, byte dusk)
@@ -53,7 +57,7 @@ namespace StickAndPuck.App.Arena
             }
 
             Color dusk = ArenaLook.DuskIce;
-            return new Color(F(ice.R, dusk.R), F(ice.G, dusk.G), F(ice.B, dusk.B), (byte)255);
+            return new Color(F(ice.R, dusk.R), F(ice.G, dusk.G), F(ice.B, dusk.B), Fade);
         }
 
         /// <summary>Draws a club's crest at centre ice in the given tone. The caller has turned depth writes off.</summary>
@@ -70,8 +74,8 @@ namespace StickAndPuck.App.Arena
                 return;
             }
 
-            float x = src.Width * PixelAcross / 2f,
-                z = src.Height * PixelDeep / 2f;
+            float x = src.Width * Pixel / 2f,
+                z = src.Height * Pixel / 2f;
             float u0 = src.X / sheet.Width,
                 u1 = (src.X + src.Width) / sheet.Width,
                 v0 = src.Y / sheet.Height,
