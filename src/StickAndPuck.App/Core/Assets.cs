@@ -55,6 +55,15 @@ namespace StickAndPuck.App.Core
         /// screen shows a framed placeholder.</summary>
         public const string CoachPortrait = "art.ui.coach_portrait.png";
 
+        /// <summary>The coach in every <see cref="CoachMood"/>, 64x80 cells left to right in the enum's order (A20).</summary>
+        public const string CoachMoods = "art.ui.coach_moods.png";
+
+        /// <summary>White ink mask of the dressing room jerseys' body, 480x270, tinted with the club's primary kit colour (A20).</summary>
+        public const string DressingRoomJersey = "art.ui.dressing_room_jersey.png";
+
+        /// <summary>White ink mask of the dressing room jerseys' stripes and numbers, 480x270, tinted with the club's secondary colour (A20).</summary>
+        public const string DressingRoomTrim = "art.ui.dressing_room_trim.png";
+
         /// <summary>The shader folder.</summary>
         public const string Shaders = "shaders";
 
