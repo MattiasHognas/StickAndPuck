@@ -1,0 +1,61 @@
+{
+  "_comment": "The season news deck (W130). After each of the human's regular-season games one card may be drawn (the SEASON rules' news frequency sets how often); weight is how likely a card is against the others. effect: traits (trait points on players of the human's club for some games), energy (the club starts its next games tired) or morale (a team morale nudge when drawn). pick chooses the skaters for traits: random, best or weakest. venue limits a card to a next game at home or away. text is the string key in data/lang; {0} is the players' names, {1} the games left.",
+  "cards": [
+    {
+      "id": "flu",
+      "weight": 3,
+      "effect": "traits",
+      "pick": "random",
+      "playersMin": 2,
+      "playersMax": 3,
+      "gamesMin": 2,
+      "gamesMax": 3,
+      "amount": -8,
+      "text": "NewsFlu"
+    },
+    {
+      "id": "rookie",
+      "weight": 2,
+      "effect": "traits",
+      "pick": "weakest",
+      "playersMin": 1,
+      "playersMax": 1,
+      "gamesMin": 3,
+      "gamesMax": 4,
+      "amount": 6,
+      "text": "NewsRookie"
+    },
+    {
+      "id": "contract",
+      "weight": 2,
+      "effect": "traits",
+      "pick": "best",
+      "playersMin": 1,
+      "playersMax": 1,
+      "gamesMin": 3,
+      "gamesMax": 5,
+      "amount": -6,
+      "text": "NewsContract"
+    },
+    {
+      "id": "travel",
+      "weight": 2,
+      "effect": "energy",
+      "venue": "away",
+      "gamesMin": 1,
+      "gamesMax": 1,
+      "energy": 0.7,
+      "text": "NewsTravel"
+    },
+    {
+      "id": "fannight",
+      "weight": 2,
+      "effect": "morale",
+      "venue": "home",
+      "gamesMin": 1,
+      "gamesMax": 1,
+      "amount": 8,
+      "text": "NewsFanNight"
+    }
+  ]
+}

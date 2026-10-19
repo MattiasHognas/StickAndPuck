@@ -42,6 +42,7 @@ namespace StickAndPuck.App.Core
             FormStrength = FormStrength.Strong,
             TimeOut = false,
             DressingRoom = DressingRoomStyle.Off,
+            News = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -59,6 +60,7 @@ namespace StickAndPuck.App.Core
             PlayoffHomeIce = PlayoffHomeIce.TwoTwoOneOneOne,
             MoraleStrength = MoraleStrength.Strong,
             FaceoffViolationMinor = true,
+            NewsFrequency = NewsFrequency.Often,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -207,6 +209,25 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets how much the dressing room between season games shows, or Off to go straight to the table.</summary>
         public DressingRoomStyle DressingRoom { get; init; } = DressingRoomStyle.Full;
+
+        /// <summary>Gets a value indicating whether season news events (flu, a rookie call-up, a travel delay and more) are drawn between the human's games.</summary>
+        public bool News { get; init; } = true;
+
+        /// <summary>Gets how often a season news event comes up.</summary>
+        public NewsFrequency NewsFrequency { get; init; } = NewsFrequency.Normal;
+
+        /// <summary>Gets the odds of a news event after a game, one in this many: 0 with <see cref="News"/> off.</summary>
+        [JsonIgnore]
+        public int NewsEvery =>
+            !News
+                ? 0
+                : NewsFrequency switch
+                {
+                    NewsFrequency.Rare => 8,
+                    NewsFrequency.Often => 3,
+                    NewsFrequency.Normal => 5,
+                    _ => throw new NotSupportedException("no news odds for " + NewsFrequency),
+                };
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

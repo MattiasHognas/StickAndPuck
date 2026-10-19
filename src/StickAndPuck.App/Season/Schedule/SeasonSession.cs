@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Morale;
+using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Save;
 using K = StickAndPuck.App.Core.Text.Keys;
@@ -134,6 +135,7 @@ namespace StickAndPuck.App.Season.Schedule
                 season.NextGame.HasValue ? game.Round : season.Rounds - 1,
                 Clubs
             );
+            NewsDesk.AfterGame(season, Clubs); // the news for the next game
             Playing = Maybe.None<Fixture>();
             Unsaved = true;
             return true;

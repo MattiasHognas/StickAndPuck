@@ -137,6 +137,7 @@ namespace StickAndPuck.App.Core
                 Side = side,
                 Data = data,
                 Position = position,
+                Energy = Setup.StartEnergyOf(side),
             };
             Players.Add(p);
             return p;

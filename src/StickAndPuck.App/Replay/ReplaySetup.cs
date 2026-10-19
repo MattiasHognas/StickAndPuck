@@ -21,6 +21,9 @@ namespace StickAndPuck.App.Replay
         public IReadOnlyDictionary<string, int> Form { get; init; } =
             new Dictionary<string, int>(StringComparer.Ordinal);
 
+        /// <summary>Gets the energy each club started with, as <see cref="MatchSetup.StartEnergy"/>; full in an older replay.</summary>
+        public IReadOnlyList<float> StartEnergy { get; init; } = [1f, 1f];
+
         /// <summary>Gets the stored form of a setup.</summary>
         public static ReplaySetup Of(MatchSetup s)
         {
@@ -37,6 +40,7 @@ namespace StickAndPuck.App.Replay
             )
             {
                 Form = s.Form,
+                StartEnergy = s.StartEnergy,
             };
         }
 
@@ -66,6 +70,7 @@ namespace StickAndPuck.App.Replay
                 OvertimeFormat = OvertimeFormat,
                 Rules = Rules,
                 Morale = Morale,
+                StartEnergy = StartEnergy,
             };
         }
     }
