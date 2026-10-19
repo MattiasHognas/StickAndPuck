@@ -7,7 +7,8 @@ loads them, since a Raylib Model keeps no mesh or material names.
 2. drops players, puck, lights and cameras, flattens the ice to its base colour (the game draws
    the light bands, W2 / W18), turns any text objects into meshes (the SHL centre mark is already a mesh, see centre_logo.py),
 3. joins the scenery into one object per part, each part one named mesh: Ice, Floor, Markings,
-   Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Lanterns, Bench, BenchDoors (2b), PenaltyBox, BoxDoors (2c). Glass is its own mesh so the game can
+   Boards, Glass, Posts, AdBoards, Nets, Stands, LED, Lanterns, Bench, BenchDoors (2b), PenaltyBox, BoxDoors (2c), plus the
+   league layers the game swaps per match (A17): Logo (the SHL centre mark), Trapezoid and Banners (nhl_arena.py). Glass is its own mesh so the game can
    set its tone from the lighting; AdBoards is the only mesh with the ad_pixel material, which
    exports as KHR_materials_unlit. The static Fans are not exported (A18): after the bench and box
    trim, every fan's seat goes to art/scene/crowd_seats.json and the game draws the animated crowd
@@ -174,11 +175,15 @@ def trim_for_benches():
     bmesh.ops.delete(bm, geom=gone, context='FACES'); bm.to_mesh(me); bm.free()
 
 # ---- 3. one object and one named mesh per part ----
-PARTS = [('Ice', ['Ice']), ('Floor', ['Floor']), ('Markings', ['Markings', 'Logo']), ('Boards', ['Boards']),
+PARTS = [('Ice', ['Ice']), ('Floor', ['Floor']), ('Markings', ['Markings']), ('Logo', ['Logo']), ('Trapezoid', ['Trapezoid']),
+         ('Banners', ['Banners']), ('Boards', ['Boards']),
          ('Glass', ['Glass', 'BoxGlass']), ('Posts', ['Posts']), ('AdBoards', ['Ad']), ('Nets', ['NetFrame', 'Net']),
          ('Stands', ['Stands']), ('LED', ['LED']), ('Fans', ['Fans']), ('Lanterns', ['Lanterns', 'Cable']),
          ('Bench', ['Bench']), ('BenchDoors', ['BenchDoors']), ('PenaltyBox', ['PenaltyBox']), ('BoxDoors', ['BoxDoors'])]
 build_benches(); build_penalty_boxes()
+# the league layers (A17, nhl_arena.py): the trapezoid in the goal lines' red, and the rafter banners
+sys.path.insert(0, ART + '/scripts'); import nhl_arena
+nhl_arena.build_trapezoid(scene.collection, bpy.data.materials['red_line']); nhl_arena.build_banners(scene.collection)
 def stem(name): return name.split('.')[0]
 for ob in scene.objects:                 # unparent, keeping world placement, so joins and applies are exact
     if ob.parent: mw = ob.matrix_world.copy(); ob.parent = None; ob.matrix_world = mw
