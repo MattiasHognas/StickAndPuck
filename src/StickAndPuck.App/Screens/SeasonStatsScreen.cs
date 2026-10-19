@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.DressingRoom;
 using StickAndPuck.App.Season.Schedule;
 using StickAndPuck.App.Season.Stats;
 using K = StickAndPuck.App.Core.Text.Keys;
@@ -12,7 +13,7 @@ namespace StickAndPuck.App.Screens
     /// Left and right on SHOW pick points, goals, assists, hits, goalies, player-of-the-game stars or
     /// the human's own club; GAMES switches between the regular season and the playoffs once they run.
     /// The latest player of the game sits underneath; an arrow by a name shows a player in form (up) or out of it
-    /// (down). Reads <see cref="SeasonStats"/>.</summary>
+    /// (down), and a "+2" or "-1" after it a player's development with age (W132). Reads <see cref="SeasonStats"/>.</summary>
     internal sealed class SeasonStatsScreen(AppState app) : MenuScreen(app)
     {
         private const int PanelW = 440,
@@ -228,7 +229,7 @@ namespace StickAndPuck.App.Screens
             return top + 4;
         }
 
-        /// <summary>One player's line: place, name with the form arrow, club (or position on the club view) and the view's columns.</summary>
+        /// <summary>One player's line: place, name with the form arrow and development mark, club (or position on the club view) and the view's columns.</summary>
         private void DrawLine(
             ScreenArt art,
             PlayerStats p,
@@ -244,13 +245,22 @@ namespace StickAndPuck.App.Screens
                     ? art.Gold
                     : art.Text;
             art.Right(N(i + 1), x + 22, top, ink);
-            string label = art.Clip(p.Label, 128);
+            int grown = season.DevelopmentPoints(p.Club, p.Number);
+            string mark = grown == 0 ? "" : DevelopmentNews.Signed(grown);
+            int markW = grown == 0 ? 0 : art.Hud.Measure(mark) + 2;
+            string label = art.Clip(p.Label, 128 - markW);
             art.Left(label, x + 30, top, ink);
-            _ = ScreenArt.FormArrow(
-                season.FormNudge(p.Club, p.Number),
-                x + 30 + art.Hud.Measure(label) + 3,
-                top
-            );
+            int arrowX = x + 30 + art.Hud.Measure(label) + 3;
+            int arrowW = ScreenArt.FormArrow(season.FormNudge(p.Club, p.Number), arrowX, top);
+            if (grown != 0)
+            {
+                art.Left(
+                    mark,
+                    arrowX + arrowW + (arrowW > 0 ? 2 : 0),
+                    top,
+                    ScreenArt.DevelopmentInk(grown)
+                );
+            }
             art.Left(
                 view == 6 ? p.Position.ToString() : Short(Flow.Clubs, p.Club),
                 x + 170,

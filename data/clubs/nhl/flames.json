@@ -30,6 +30,7 @@
       "lastName": "Wolf",
       "position": "G",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Cooley",
       "position": "G",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Backlund",
       "position": "C",
       "shoots": "Left",
+      "age": 37,
       "traits": {
         "acceleration": 63,
         "topSpeed": 65,
@@ -89,6 +92,7 @@
       "lastName": "Farabee",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 72,
         "topSpeed": 74,
@@ -106,6 +110,7 @@
       "lastName": "Coronato",
       "position": "RW",
       "shoots": "Right",
+      "age": 23,
       "traits": {
         "acceleration": 80,
         "topSpeed": 79,
@@ -123,6 +128,7 @@
       "lastName": "Bahl",
       "position": "D",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 70,
         "topSpeed": 74,
@@ -140,6 +146,7 @@
       "lastName": "Nemec",
       "position": "D",
       "shoots": "Right",
+      "age": 22,
       "traits": {
         "acceleration": 74,
         "topSpeed": 77,
@@ -157,6 +164,7 @@
       "lastName": "Sharangovich",
       "position": "C",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 64,
         "topSpeed": 63,
@@ -174,6 +182,7 @@
       "lastName": "Suniev",
       "position": "LW",
       "shoots": "Left",
+      "age": 21,
       "traits": {
         "acceleration": 69,
         "topSpeed": 72,
@@ -191,6 +200,7 @@
       "lastName": "Gridin",
       "position": "RW",
       "shoots": "Left",
+      "age": 20,
       "traits": {
         "acceleration": 70,
         "topSpeed": 73,
@@ -208,6 +218,7 @@
       "lastName": "Whitecloud",
       "position": "D",
       "shoots": "Right",
+      "age": 29,
       "traits": {
         "acceleration": 61,
         "topSpeed": 68,
@@ -225,6 +236,7 @@
       "lastName": "Kuznetsov",
       "position": "D",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 66,
         "topSpeed": 68,
@@ -242,6 +254,7 @@
       "lastName": "Frost",
       "position": "C",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 65,
         "topSpeed": 66,
@@ -259,6 +272,7 @@
       "lastName": "Pospisil",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 61,
         "topSpeed": 65,
@@ -276,6 +290,7 @@
       "lastName": "Tsyplakov",
       "position": "RW",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 56,
         "topSpeed": 60,
@@ -293,6 +308,7 @@
       "lastName": "Parekh",
       "position": "D",
       "shoots": "Right",
+      "age": 20,
       "traits": {
         "acceleration": 61,
         "topSpeed": 67,
@@ -310,6 +326,7 @@
       "lastName": "Middleton",
       "position": "D",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 56,
         "topSpeed": 54,
@@ -327,6 +344,7 @@
       "lastName": "Strome",
       "position": "C",
       "shoots": "Right",
+      "age": 33,
       "traits": {
         "acceleration": 43,
         "topSpeed": 50,
@@ -344,6 +362,7 @@
       "lastName": "Castagna",
       "position": "LW",
       "shoots": "Left",
+      "age": 21,
       "traits": {
         "acceleration": 59,
         "topSpeed": 61,
@@ -361,6 +380,7 @@
       "lastName": "Klapka",
       "position": "RW",
       "shoots": "Right",
+      "age": 26,
       "traits": {
         "acceleration": 48,
         "topSpeed": 55,

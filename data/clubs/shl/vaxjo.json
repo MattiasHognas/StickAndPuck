@@ -27,6 +27,7 @@
       "lastName": "Persson",
       "position": "G",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -48,6 +49,7 @@
       "lastName": "Åhman",
       "position": "G",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -69,6 +71,7 @@
       "lastName": "Rasmussen",
       "position": "C",
       "shoots": "Left",
+      "age": 36,
       "traits": {
         "acceleration": 54,
         "topSpeed": 58,
@@ -86,6 +89,7 @@
       "lastName": "Elvenes",
       "position": "LW",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 66,
         "topSpeed": 68,
@@ -103,6 +107,7 @@
       "lastName": "Nadeau",
       "position": "RW",
       "shoots": "Right",
+      "age": 23,
       "traits": {
         "acceleration": 72,
         "topSpeed": 74,
@@ -120,6 +125,7 @@
       "lastName": "Cooper",
       "position": "D",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 67,
         "topSpeed": 67,
@@ -137,6 +143,7 @@
       "lastName": "Persson",
       "position": "D",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 63,
         "topSpeed": 65,
@@ -154,6 +161,7 @@
       "lastName": "Mäntykivi",
       "position": "C",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 58,
         "topSpeed": 60,
@@ -171,6 +179,7 @@
       "lastName": "Suomi",
       "position": "LW",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 59,
         "topSpeed": 59,
@@ -188,6 +197,7 @@
       "lastName": "Cehlarik",
       "position": "RW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 55,
         "topSpeed": 57,
@@ -205,6 +215,7 @@
       "lastName": "Lowe",
       "position": "D",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 50,
         "topSpeed": 52,
@@ -222,6 +233,7 @@
       "lastName": "Suomi",
       "position": "D",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 64,
         "topSpeed": 66,
@@ -239,6 +251,7 @@
       "lastName": "Anderberg",
       "position": "C",
       "shoots": "Left",
+      "age": 19,
       "traits": {
         "acceleration": 61,
         "topSpeed": 61,
@@ -256,6 +269,7 @@
       "lastName": "Gustafsson",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 55,
         "topSpeed": 55,
@@ -273,6 +287,7 @@
       "lastName": "Henriksson",
       "position": "RW",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 55,
         "topSpeed": 55,
@@ -290,6 +305,7 @@
       "lastName": "Lindgren",
       "position": "D",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 51,
         "topSpeed": 53,
@@ -307,6 +323,7 @@
       "lastName": "Rafferty",
       "position": "D",
       "shoots": "Right",
+      "age": 31,
       "traits": {
         "acceleration": 48,
         "topSpeed": 50,
@@ -324,6 +341,7 @@
       "lastName": "Strandberg",
       "position": "C",
       "shoots": "Left",
+      "age": 34,
       "traits": {
         "acceleration": 40,
         "topSpeed": 40,
@@ -341,6 +359,7 @@
       "lastName": "Kratz",
       "position": "LW",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 50,
         "topSpeed": 52,
@@ -358,6 +377,7 @@
       "lastName": "Levin",
       "position": "RW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 44,
         "topSpeed": 46,

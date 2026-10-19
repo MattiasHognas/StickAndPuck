@@ -30,6 +30,7 @@
       "lastName": "Kuemper",
       "position": "G",
       "shoots": "Left",
+      "age": 36,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Forsberg",
       "position": "G",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Laughton",
       "position": "C",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 69,
         "topSpeed": 67,
@@ -89,6 +92,7 @@
       "lastName": "Panarin",
       "position": "LW",
       "shoots": "Right",
+      "age": 35,
       "traits": {
         "acceleration": 68,
         "topSpeed": 73,
@@ -106,6 +110,7 @@
       "lastName": "Kempe",
       "position": "RW",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 67,
         "topSpeed": 69,
@@ -123,6 +128,7 @@
       "lastName": "Doughty",
       "position": "D",
       "shoots": "Right",
+      "age": 36,
       "traits": {
         "acceleration": 62,
         "topSpeed": 62,
@@ -140,6 +146,7 @@
       "lastName": "Clarke",
       "position": "D",
       "shoots": "Right",
+      "age": 23,
       "traits": {
         "acceleration": 76,
         "topSpeed": 73,
@@ -157,6 +164,7 @@
       "lastName": "Perry",
       "position": "C",
       "shoots": "Right",
+      "age": 41,
       "traits": {
         "acceleration": 49,
         "topSpeed": 55,
@@ -174,6 +182,7 @@
       "lastName": "Moore",
       "position": "LW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 59,
         "topSpeed": 64,
@@ -191,6 +200,7 @@
       "lastName": "Byfield",
       "position": "RW",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 67,
         "topSpeed": 65,
@@ -208,6 +218,7 @@
       "lastName": "Gustafsson",
       "position": "D",
       "shoots": "Left",
+      "age": 34,
       "traits": {
         "acceleration": 58,
         "topSpeed": 62,
@@ -225,6 +236,7 @@
       "lastName": "Ceci",
       "position": "D",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 58,
         "topSpeed": 62,
@@ -242,6 +254,7 @@
       "lastName": "Helenius",
       "position": "C",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 59,
         "topSpeed": 67,
@@ -259,6 +272,7 @@
       "lastName": "Haula",
       "position": "LW",
       "shoots": "Left",
+      "age": 35,
       "traits": {
         "acceleration": 53,
         "topSpeed": 51,
@@ -276,6 +290,7 @@
       "lastName": "Laferriere",
       "position": "RW",
       "shoots": "Right",
+      "age": 25,
       "traits": {
         "acceleration": 58,
         "topSpeed": 58,
@@ -293,6 +308,7 @@
       "lastName": "Anderson",
       "position": "D",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 57,
         "topSpeed": 59,
@@ -310,6 +326,7 @@
       "lastName": "Dumoulin",
       "position": "D",
       "shoots": "Left",
+      "age": 35,
       "traits": {
         "acceleration": 52,
         "topSpeed": 52,
@@ -327,6 +344,7 @@
       "lastName": "Zuccarello",
       "position": "C",
       "shoots": "Left",
+      "age": 39,
       "traits": {
         "acceleration": 39,
         "topSpeed": 45,
@@ -344,6 +362,7 @@
       "lastName": "Lee",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 54,
         "topSpeed": 54,
@@ -361,6 +380,7 @@
       "lastName": "Armia",
       "position": "RW",
       "shoots": "Right",
+      "age": 33,
       "traits": {
         "acceleration": 50,
         "topSpeed": 52,

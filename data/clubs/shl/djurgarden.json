@@ -27,6 +27,7 @@
       "lastName": "Hellberg",
       "position": "G",
       "shoots": "Left",
+      "age": 35,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -48,6 +49,7 @@
       "lastName": "Marmenlind",
       "position": "G",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -69,6 +71,7 @@
       "lastName": "Åman",
       "position": "C",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 66,
         "topSpeed": 68,
@@ -86,6 +89,7 @@
       "lastName": "Snively",
       "position": "LW",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 67,
         "topSpeed": 67,
@@ -103,6 +107,7 @@
       "lastName": "Wahlstrom",
       "position": "RW",
       "shoots": "Right",
+      "age": 26,
       "traits": {
         "acceleration": 66,
         "topSpeed": 68,
@@ -120,6 +125,7 @@
       "lastName": "Sissons",
       "position": "D",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 66,
         "topSpeed": 68,
@@ -137,6 +143,7 @@
       "lastName": "Brouillard",
       "position": "D",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 67,
         "topSpeed": 67,
@@ -154,6 +161,7 @@
       "lastName": "Josefson",
       "position": "C",
       "shoots": "Left",
+      "age": 35,
       "traits": {
         "acceleration": 50,
         "topSpeed": 52,
@@ -171,6 +179,7 @@
       "lastName": "Hudon",
       "position": "LW",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 59,
         "topSpeed": 59,
@@ -188,6 +197,7 @@
       "lastName": "Hartmann",
       "position": "RW",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 55,
         "topSpeed": 57,
@@ -205,6 +215,7 @@
       "lastName": "Holm",
       "position": "D",
       "shoots": "Left",
+      "age": 34,
       "traits": {
         "acceleration": 50,
         "topSpeed": 52,
@@ -222,6 +233,7 @@
       "lastName": "Lindström",
       "position": "D",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 58,
         "topSpeed": 60,
@@ -239,6 +251,7 @@
       "lastName": "Vejdemo",
       "position": "C",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 48,
         "topSpeed": 50,
@@ -256,6 +269,7 @@
       "lastName": "Stockselius",
       "position": "LW",
       "shoots": "Left",
+      "age": 19,
       "traits": {
         "acceleration": 53,
         "topSpeed": 57,
@@ -273,6 +287,7 @@
       "lastName": "Gunler",
       "position": "RW",
       "shoots": "Right",
+      "age": 25,
       "traits": {
         "acceleration": 51,
         "topSpeed": 53,
@@ -290,6 +305,7 @@
       "lastName": "Pettersson",
       "position": "D",
       "shoots": "Left",
+      "age": 19,
       "traits": {
         "acceleration": 57,
         "topSpeed": 59,
@@ -307,6 +323,7 @@
       "lastName": "Pettersson",
       "position": "D",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 52,
         "topSpeed": 52,
@@ -324,6 +341,7 @@
       "lastName": "Krüger",
       "position": "C",
       "shoots": "Left",
+      "age": 36,
       "traits": {
         "acceleration": 36,
         "topSpeed": 38,
@@ -341,6 +359,7 @@
       "lastName": "Pettersen",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 48,
         "topSpeed": 48,
@@ -358,6 +377,7 @@
       "lastName": "Blomgren",
       "position": "RW",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 54,
         "topSpeed": 54,

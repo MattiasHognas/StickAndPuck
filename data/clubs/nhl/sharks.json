@@ -30,6 +30,7 @@
       "lastName": "Askarov",
       "position": "G",
       "shoots": "Right",
+      "age": 24,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Nedeljkovic",
       "position": "G",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Celebrini",
       "position": "C",
       "shoots": "Left",
+      "age": 20,
       "traits": {
         "acceleration": 79,
         "topSpeed": 81,
@@ -89,6 +92,7 @@
       "lastName": "Marchment",
       "position": "LW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 68,
         "topSpeed": 69,
@@ -106,6 +110,7 @@
       "lastName": "Graf",
       "position": "RW",
       "shoots": "Right",
+      "age": 24,
       "traits": {
         "acceleration": 74,
         "topSpeed": 77,
@@ -123,6 +128,7 @@
       "lastName": "Trouba",
       "position": "D",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 65,
         "topSpeed": 65,
@@ -140,6 +146,7 @@
       "lastName": "Nurse",
       "position": "D",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 65,
         "topSpeed": 72,
@@ -157,6 +164,7 @@
       "lastName": "Wennberg",
       "position": "C",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 60,
         "topSpeed": 63,
@@ -174,6 +182,7 @@
       "lastName": "Stenberg",
       "position": "LW",
       "shoots": "Left",
+      "age": 19,
       "traits": {
         "acceleration": 73,
         "topSpeed": 73,
@@ -191,6 +200,7 @@
       "lastName": "Toffoli",
       "position": "RW",
       "shoots": "Right",
+      "age": 34,
       "traits": {
         "acceleration": 57,
         "topSpeed": 62,
@@ -208,6 +218,7 @@
       "lastName": "Kesselring",
       "position": "D",
       "shoots": "Right",
+      "age": 26,
       "traits": {
         "acceleration": 65,
         "topSpeed": 69,
@@ -225,6 +236,7 @@
       "lastName": "Orlov",
       "position": "D",
       "shoots": "Left",
+      "age": 35,
       "traits": {
         "acceleration": 59,
         "topSpeed": 62,
@@ -242,6 +254,7 @@
       "lastName": "Smith",
       "position": "C",
       "shoots": "Right",
+      "age": 21,
       "traits": {
         "acceleration": 70,
         "topSpeed": 67,
@@ -259,6 +272,7 @@
       "lastName": "Sherwood",
       "position": "LW",
       "shoots": "Right",
+      "age": 31,
       "traits": {
         "acceleration": 53,
         "topSpeed": 59,
@@ -276,6 +290,7 @@
       "lastName": "Goodrow",
       "position": "RW",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 54,
         "topSpeed": 53,
@@ -293,6 +308,7 @@
       "lastName": "Dickinson",
       "position": "D",
       "shoots": "Left",
+      "age": 20,
       "traits": {
         "acceleration": 63,
         "topSpeed": 64,
@@ -310,6 +326,7 @@
       "lastName": "Allan",
       "position": "D",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 59,
         "topSpeed": 60,
@@ -327,6 +344,7 @@
       "lastName": "Misa",
       "position": "C",
       "shoots": "Left",
+      "age": 19,
       "traits": {
         "acceleration": 56,
         "topSpeed": 61,
@@ -344,6 +362,7 @@
       "lastName": "Chernyshov",
       "position": "LW",
       "shoots": "Right",
+      "age": 20,
       "traits": {
         "acceleration": 65,
         "topSpeed": 63,
@@ -361,6 +380,7 @@
       "lastName": "Ostapchuk",
       "position": "RW",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 53,
         "topSpeed": 59,

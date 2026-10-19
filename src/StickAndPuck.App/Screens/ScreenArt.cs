@@ -218,6 +218,12 @@ namespace StickAndPuck.App.Screens
                 : Clip(TeamSelectScreen.Nickname(name), width);
         }
 
+        /// <summary>Gets the ink of a season player's development mark (W132): green for "+2", red for "-1", the form arrow's colours.</summary>
+        public static Color DevelopmentInk(int points)
+        {
+            return points > 0 ? FormUp : FormDown;
+        }
+
         /// <summary>Draws a season player's form arrow with its left edge on a column: a green arrow up for a
         /// positive nudge, a red one down for a negative, nothing when level. Returns its width.</summary>
         public static int FormArrow(int nudge, int x, int y)

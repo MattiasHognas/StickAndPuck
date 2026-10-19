@@ -27,6 +27,7 @@
       "lastName": "Mann",
       "position": "G",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -48,6 +49,7 @@
       "lastName": "Lampinen",
       "position": "G",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -69,6 +71,7 @@
       "lastName": "Stjernborg",
       "position": "C",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 76,
         "topSpeed": 76,
@@ -86,6 +89,7 @@
       "lastName": "Vuollet",
       "position": "LW",
       "shoots": "Left",
+      "age": 20,
       "traits": {
         "acceleration": 76,
         "topSpeed": 76,
@@ -103,6 +107,7 @@
       "lastName": "Johnson",
       "position": "RW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 67,
         "topSpeed": 67,
@@ -120,6 +125,7 @@
       "lastName": "Lundberg",
       "position": "D",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 63,
         "topSpeed": 65,
@@ -137,6 +143,7 @@
       "lastName": "Johansson",
       "position": "D",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 66,
         "topSpeed": 68,
@@ -154,6 +161,7 @@
       "lastName": "Lindberg",
       "position": "C",
       "shoots": "Left",
+      "age": 35,
       "traits": {
         "acceleration": 50,
         "topSpeed": 52,
@@ -171,6 +179,7 @@
       "lastName": "Hugg",
       "position": "LW",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 62,
         "topSpeed": 62,
@@ -188,6 +197,7 @@
       "lastName": "Aagaard",
       "position": "RW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 55,
         "topSpeed": 57,
@@ -205,6 +215,7 @@
       "lastName": "Bergqvist",
       "position": "D",
       "shoots": "Left",
+      "age": 21,
       "traits": {
         "acceleration": 64,
         "topSpeed": 66,
@@ -222,6 +233,7 @@
       "lastName": "Pudas",
       "position": "D",
       "shoots": "Right",
+      "age": 33,
       "traits": {
         "acceleration": 54,
         "topSpeed": 54,
@@ -239,6 +251,7 @@
       "lastName": "Forsfjäll",
       "position": "C",
       "shoots": "Left",
+      "age": 21,
       "traits": {
         "acceleration": 61,
         "topSpeed": 61,
@@ -256,6 +269,7 @@
       "lastName": "Johnson",
       "position": "LW",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 43,
         "topSpeed": 45,
@@ -273,6 +287,7 @@
       "lastName": "Kaderli",
       "position": "RW",
       "shoots": "Left",
+      "age": 21,
       "traits": {
         "acceleration": 57,
         "topSpeed": 59,
@@ -290,6 +305,7 @@
       "lastName": "Forsfjäll",
       "position": "D",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 51,
         "topSpeed": 53,
@@ -307,6 +323,7 @@
       "lastName": "Grahn",
       "position": "D",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 51,
         "topSpeed": 53,
@@ -324,6 +341,7 @@
       "lastName": "Lindholm",
       "position": "C",
       "shoots": "Left",
+      "age": 35,
       "traits": {
         "acceleration": 36,
         "topSpeed": 38,
@@ -341,6 +359,7 @@
       "lastName": "Lindberg",
       "position": "LW",
       "shoots": "Left",
+      "age": 20,
       "traits": {
         "acceleration": 54,
         "topSpeed": 54,
@@ -358,6 +377,7 @@
       "lastName": "Fasching",
       "position": "RW",
       "shoots": "Right",
+      "age": 31,
       "traits": {
         "acceleration": 37,
         "topSpeed": 41,

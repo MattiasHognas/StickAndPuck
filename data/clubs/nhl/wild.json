@@ -30,6 +30,7 @@
       "lastName": "Wallstedt",
       "position": "G",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Pickard",
       "position": "G",
       "shoots": "Left",
+      "age": 34,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Eriksson Ek",
       "position": "C",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 67,
         "topSpeed": 71,
@@ -89,6 +92,7 @@
       "lastName": "Boldy",
       "position": "LW",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 75,
         "topSpeed": 80,
@@ -106,6 +110,7 @@
       "lastName": "Shabanov",
       "position": "RW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 74,
         "topSpeed": 75,
@@ -123,6 +128,7 @@
       "lastName": "Hughes",
       "position": "D",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 70,
         "topSpeed": 72,
@@ -140,6 +146,7 @@
       "lastName": "Brodin",
       "position": "D",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 64,
         "topSpeed": 69,
@@ -157,6 +164,7 @@
       "lastName": "McCarron",
       "position": "C",
       "shoots": "Right",
+      "age": 31,
       "traits": {
         "acceleration": 57,
         "topSpeed": 57,
@@ -174,6 +182,7 @@
       "lastName": "Kaprizov",
       "position": "LW",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 60,
         "topSpeed": 67,
@@ -191,6 +200,7 @@
       "lastName": "Hartman",
       "position": "RW",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 58,
         "topSpeed": 63,
@@ -208,6 +218,7 @@
       "lastName": "Bogosian",
       "position": "D",
       "shoots": "Right",
+      "age": 36,
       "traits": {
         "acceleration": 57,
         "topSpeed": 57,
@@ -225,6 +236,7 @@
       "lastName": "Spacek",
       "position": "D",
       "shoots": "Right",
+      "age": 23,
       "traits": {
         "acceleration": 70,
         "topSpeed": 71,
@@ -242,6 +254,7 @@
       "lastName": "Trenin",
       "position": "C",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 58,
         "topSpeed": 64,
@@ -259,6 +272,7 @@
       "lastName": "Coleman",
       "position": "LW",
       "shoots": "Left",
+      "age": 34,
       "traits": {
         "acceleration": 55,
         "topSpeed": 54,
@@ -276,6 +290,7 @@
       "lastName": "Yurov",
       "position": "RW",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 61,
         "topSpeed": 64,
@@ -293,6 +308,7 @@
       "lastName": "Hunt",
       "position": "D",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 57,
         "topSpeed": 59,
@@ -310,6 +326,7 @@
       "lastName": "Kiersted",
       "position": "D",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 55,
         "topSpeed": 57,
@@ -327,6 +344,7 @@
       "lastName": "Pitlick",
       "position": "C",
       "shoots": "Right",
+      "age": 34,
       "traits": {
         "acceleration": 43,
         "topSpeed": 42,
@@ -344,6 +362,7 @@
       "lastName": "Lorenz",
       "position": "LW",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 62,
         "topSpeed": 65,
@@ -361,6 +380,7 @@
       "lastName": "Brink",
       "position": "RW",
       "shoots": "Right",
+      "age": 25,
       "traits": {
         "acceleration": 60,
         "topSpeed": 59,

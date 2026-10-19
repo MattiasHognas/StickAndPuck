@@ -190,11 +190,29 @@ namespace StickAndPuck.App.Season.Schedule
         }
 
         /// <summary>The club as this season's games play it: without its injured and suspended players, and its
-        /// players' traits moved by their carry-over form, under the season's stored rules (SHL until its
-        /// first game stores them).</summary>
+        /// players' traits moved by their carry-over form and their development (W132), under the season's
+        /// stored rules (SHL until its first game stores them).</summary>
         public ClubData InForm(ClubData club)
         {
-            return Stats.Form.Apply(Stats.Absences.Without(club), Rules.Or(RuleSet.Shl));
+            ClubData playing = Stats.Absences.Without(club);
+            return FormTable.Apply(playing, Nudges(playing, Rules.Or(RuleSet.Shl)));
+        }
+
+        /// <summary>Gets the trait points a player's development has moved this season, for the "+2" by the name.</summary>
+        public int DevelopmentPoints(string club, int number)
+        {
+            return Stats.Development.Points(club, number, Rules.Or(RuleSet.Shl));
+        }
+
+        /// <summary>A club's players' season nudges by <see cref="FormTable.Key"/>: carry-over form plus development.</summary>
+        private Dictionary<string, int> Nudges(ClubData club, RuleSet rules)
+        {
+            Dictionary<string, int> nudges = new(
+                Stats.Form.Nudges(club, rules),
+                StringComparer.Ordinal
+            );
+            Stats.Development.AddNudges(club, rules, nudges);
+            return nudges;
         }
 
         /// <summary>Gets the trait points a player's carry-over form moves in this season, for the arrow by the name.</summary>
@@ -238,11 +256,8 @@ namespace StickAndPuck.App.Season.Schedule
             absent.AddRange(Stats.Absences.Out(Find(game.Away)));
             ClubData home = AbsenceTable.Without(Find(game.Home), absent),
                 away = AbsenceTable.Without(Find(game.Away), absent);
-            Dictionary<string, int> form = new(
-                Stats.Form.Nudges(home, rules),
-                StringComparer.Ordinal
-            );
-            foreach ((string key, int nudge) in Stats.Form.Nudges(away, rules))
+            Dictionary<string, int> form = Nudges(home, rules);
+            foreach ((string key, int nudge) in Nudges(away, rules))
             {
                 form[key] = nudge;
             }

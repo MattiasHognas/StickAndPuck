@@ -29,6 +29,9 @@ namespace StickAndPuck.App.Season.Stats
         /// <summary>Gets or sets the players injured or suspended for some of their club's next games, counted down by each game credited.</summary>
         public AbsenceTable Absences { get; set; } = new();
 
+        /// <summary>Gets or sets every player's development with age (W132), moved by each game credited after its form.</summary>
+        public DevelopmentTable Development { get; set; } = new();
+
         /// <summary>Gets or sets the keys of the games credited: "g12" for season game 13, "p0.1.2" for playoff round 1 series 2 game 3.</summary>
         public ISet<string> Credited { get; set; } = new HashSet<string>(StringComparer.Ordinal);
 
@@ -71,6 +74,7 @@ namespace StickAndPuck.App.Season.Stats
             (key.StartsWith('p', StringComparison.Ordinal) ? Playoffs : Regular).Add(sheet);
             Form.Add(sheet);
             Absences.Play(sheet);
+            Development.Add(key, sheet, Form);
             if (sheet.Award(key).TryGet(out PlayerOfGameAward award))
             {
                 Awards.Add(award);

@@ -2,6 +2,10 @@
 """Builds data/clubs/nhl/*.json, one file per NHL club, from the NHL's public API.
 
     python3 -I tools/clubs/nhl_clubs.py <cache dir> [<output dir>]
+    python3 -I tools/clubs/nhl_clubs.py ages <cache dir> [<output dir>]
+
+The second form only sets each player's `age` in the club files already there (W132), from the birth
+date on the club's roster or, for a player no longer on it, the player's own NHL record.
 
 Downloads go to the cache dir (kept between runs, delete it to fetch again) and are read as data only.
 Each club's squad is the 20 players it dressed in its latest regular-season game, filled from its
@@ -316,6 +320,7 @@ def build(cache, row, seasons):
             "lastName": p["last"],
             "position": position,
             "shoots": "Right" if p["shoots"] == "R" else "Left",
+            **({"age": age(p["birth"])} if p["birth"] else {}),
             "traits": traits,
         }
 
@@ -353,9 +358,53 @@ def build(cache, row, seasons):
     return club, game["gameDate"]
 
 
+def add_ages(cache, out):
+    """Sets `age` on every player of the club files in out, matched by sweater number and last name."""
+    for name in sorted(os.listdir(out)):
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(out, name)
+        with open(path, encoding="utf-8") as f:
+            club = json.load(f)
+        abbrev = club["shortName"]
+        roster = fetch(cache, f"{WEB}roster/{abbrev}/current")
+        births = {}
+        for group in ("forwards", "defensemen", "goalies"):
+            for p in roster[group]:
+                births[(p.get("sweaterNumber", 0), p["lastName"]["default"])] = p.get("birthDate", "")
+        box = fetch(cache, f"{WEB}gamecenter/{last_game(cache, abbrev)['id']}/boxscore")
+        side = "homeTeam" if box["homeTeam"]["abbrev"] == abbrev else "awayTeam"
+        ids = {}
+        for group in ("forwards", "defense", "goalies"):
+            for p in box["playerByGameStats"][side][group]:
+                ids[p.get("sweaterNumber", 0)] = p["playerId"]
+        missing = []
+        for i, player in enumerate(club["roster"]):
+            birth = births.get((player["number"], player["lastName"]), "")
+            if not birth and player["number"] in ids:
+                birth = fetch(cache, f"{WEB}player/{ids[player['number']]}/landing").get("birthDate", "")
+            if not birth:
+                missing.append(f"#{player['number']} {player['lastName']}")
+                continue
+            entry = {k: v for k, v in player.items() if k not in ("age", "traits")}
+            entry["age"] = age(birth)
+            entry["traits"] = player["traits"]
+            club["roster"][i] = entry
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(club, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        print(f"{abbrev} {club['id']}: ages set" + (f", none found for {', '.join(missing)}" if missing else ""))
+
+
 def main():
     if len(sys.argv) < 2:
         raise SystemExit(__doc__)
+    if sys.argv[1] == "ages":
+        if len(sys.argv) < 3:
+            raise SystemExit(__doc__)
+        out = sys.argv[3] if len(sys.argv) > 3 else os.path.join(os.path.dirname(__file__), "..", "..", "data", "clubs", "nhl")
+        add_ages(sys.argv[2], out)
+        return
     cache = sys.argv[1]
     out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(__file__), "..", "..", "data", "clubs", "nhl")
     os.makedirs(cache, exist_ok=True)

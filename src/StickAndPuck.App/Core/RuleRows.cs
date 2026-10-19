@@ -491,6 +491,23 @@ namespace StickAndPuck.App.Core
                 r => r.RivalryStrength,
                 (r, v) => r with { RivalryStrength = v }
             ),
+            Flag(
+                nameof(RuleSet.Development),
+                K.RuleDevelopment,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.Development,
+                (r, v) => r with { Development = v }
+            ),
+            Choice(
+                nameof(RuleSet.DevelopmentStrength),
+                K.RuleDevelopmentStrength,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<DevelopmentStrength>(),
+                r => r.DevelopmentStrength,
+                (r, v) => r with { DevelopmentStrength = v }
+            ),
         ];
 
         /// <summary>Gets the rules the game plays, grouped as the rules page shows them.</summary>

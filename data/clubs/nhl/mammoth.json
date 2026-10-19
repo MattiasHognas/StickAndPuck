@@ -30,6 +30,7 @@
       "lastName": "Vejmelka",
       "position": "G",
       "shoots": "Right",
+      "age": 30,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Cossa",
       "position": "G",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Schmaltz",
       "position": "C",
       "shoots": "Right",
+      "age": 30,
       "traits": {
         "acceleration": 69,
         "topSpeed": 71,
@@ -89,6 +92,7 @@
       "lastName": "Crouse",
       "position": "LW",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 67,
         "topSpeed": 72,
@@ -106,6 +110,7 @@
       "lastName": "Keller",
       "position": "RW",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 74,
         "topSpeed": 72,
@@ -123,6 +128,7 @@
       "lastName": "Sergachev",
       "position": "D",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 70,
         "topSpeed": 68,
@@ -140,6 +146,7 @@
       "lastName": "Weegar",
       "position": "D",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 67,
         "topSpeed": 66,
@@ -157,6 +164,7 @@
       "lastName": "Cooley",
       "position": "C",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 71,
         "topSpeed": 74,
@@ -174,6 +182,7 @@
       "lastName": "Lee",
       "position": "LW",
       "shoots": "Left",
+      "age": 36,
       "traits": {
         "acceleration": 57,
         "topSpeed": 55,
@@ -191,6 +200,7 @@
       "lastName": "Guenther",
       "position": "RW",
       "shoots": "Right",
+      "age": 23,
       "traits": {
         "acceleration": 67,
         "topSpeed": 71,
@@ -208,6 +218,7 @@
       "lastName": "Schmidt",
       "position": "D",
       "shoots": "Left",
+      "age": 35,
       "traits": {
         "acceleration": 59,
         "topSpeed": 58,
@@ -225,6 +236,7 @@
       "lastName": "Marino",
       "position": "D",
       "shoots": "Right",
+      "age": 29,
       "traits": {
         "acceleration": 64,
         "topSpeed": 65,
@@ -242,6 +254,7 @@
       "lastName": "Trocheck",
       "position": "C",
       "shoots": "Right",
+      "age": 33,
       "traits": {
         "acceleration": 54,
         "topSpeed": 59,
@@ -259,6 +272,7 @@
       "lastName": "McBain",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 56,
         "topSpeed": 62,
@@ -276,6 +290,7 @@
       "lastName": "Yamamoto",
       "position": "RW",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 61,
         "topSpeed": 63,
@@ -293,6 +308,7 @@
       "lastName": "Peeke",
       "position": "D",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 53,
         "topSpeed": 56,
@@ -310,6 +326,7 @@
       "lastName": "Simashev",
       "position": "D",
       "shoots": "Left",
+      "age": 21,
       "traits": {
         "acceleration": 65,
         "topSpeed": 65,
@@ -327,6 +344,7 @@
       "lastName": "Hayton",
       "position": "C",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 51,
         "topSpeed": 52,
@@ -344,6 +362,7 @@
       "lastName": "But",
       "position": "LW",
       "shoots": "Right",
+      "age": 21,
       "traits": {
         "acceleration": 61,
         "topSpeed": 64,
@@ -361,6 +380,7 @@
       "lastName": "Stenlund",
       "position": "RW",
       "shoots": "Right",
+      "age": 30,
       "traits": {
         "acceleration": 50,
         "topSpeed": 53,

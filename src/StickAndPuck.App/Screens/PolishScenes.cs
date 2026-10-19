@@ -21,7 +21,7 @@ namespace StickAndPuck.App.Screens
             switch (screen)
             {
                 case "leaders" or "stats":
-                    Season(app, clubs, "stats-test.json", 12);
+                    Season(app, clubs, "stats-test.json", StatsGames());
                     app.Screens.Push(
                         new SeasonStatsScreen(app).Showing(
                             Env.Get("SAP_STATS_VIEW") is { Length: > 0 } view ? view : "POINTS"
@@ -96,6 +96,19 @@ namespace StickAndPuck.App.Screens
                 default:
                     break;
             }
+        }
+
+        /// <summary>Gets the games the stats fixture settles: SAP_STATS_GAMES, else 12.</summary>
+        private static int StatsGames()
+        {
+            return int.TryParse(
+                Env.Get("SAP_STATS_GAMES"),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int games
+            )
+                ? games
+                : 12;
         }
 
         /// <summary>A fresh test season with a few rounds settled on paper (the rest of each round follows).</summary>
