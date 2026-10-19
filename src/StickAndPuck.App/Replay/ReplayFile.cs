@@ -119,6 +119,10 @@ namespace StickAndPuck.App.Replay
                     CultureInfo.InvariantCulture,
                     $"{b.Side} {b.BlockerId} {V(b.Position)} {b.Speed:R} {b.Slap}"
                 ),
+                PenaltyShotAwarded s => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{s.Side} {s.ShooterId} {s.OffenderId} {V(s.Position)}"
+                ),
                 _ => SeasonFields(e),
             };
             return string.Create(

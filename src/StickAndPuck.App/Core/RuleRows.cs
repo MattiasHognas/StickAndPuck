@@ -278,6 +278,14 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { TooManyMen = v }
             ),
             Flag(
+                nameof(RuleSet.PenaltyShot),
+                K.RulePenaltyShot,
+                K.RuleGroupInfractions,
+                plays: true,
+                r => r.PenaltyShot,
+                (r, v) => r with { PenaltyShot = v }
+            ),
+            Flag(
                 nameof(RuleSet.Fights),
                 K.RuleFights,
                 K.RuleGroupFights,

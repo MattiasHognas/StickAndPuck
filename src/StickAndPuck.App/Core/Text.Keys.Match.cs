@@ -85,6 +85,9 @@ namespace StickAndPuck.App.Core
             /// <summary>TOO MANY MEN</summary>
             public const string InfTooManyMen = nameof(InfTooManyMen);
 
+            /// <summary>PENALTY SHOT, the banner when the referee awards one</summary>
+            public const string PenaltyShot = nameof(PenaltyShot);
+
             /// <summary>FACEOFF VIOLATION</summary>
             public const string FaceoffViolation = nameof(FaceoffViolation);
 

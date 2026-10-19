@@ -21,6 +21,9 @@ namespace StickAndPuck.App.Hud
         /// <summary>How long an offside or icing call stays up.</summary>
         public const float CallSeconds = 2f;
 
+        /// <summary>How long a penalty shot banner stays up: through the whistle until the shooter is set at centre.</summary>
+        public const float ShotSeconds = 3.5f;
+
         /// <summary>Goals in a match that make a hat trick.</summary>
         public const int HatTrick = 3;
 
@@ -93,6 +96,7 @@ namespace StickAndPuck.App.Hud
                 PenaltyCalled penalty => PenaltyBanner(world, m, penalty, e.Time),
                 FaceoffViolated violation => ViolationBanner(world, violation),
                 PuckOverGlass over => OverGlassBanner(world, over),
+                PenaltyShotAwarded shot => PenaltyShotBanner(world, shot),
                 _ => Maybe.None<HudMessage>(),
             };
         }
@@ -204,6 +208,19 @@ namespace StickAndPuck.App.Hud
                 line,
                 club,
                 over.Time + CallSeconds
+            );
+        }
+
+        private static HudMessage PenaltyShotBanner(World world, PenaltyShotAwarded shot)
+        {
+            // the shooter, with his club's crest, up until he is set at centre
+            PlayerData who = world.Players[shot.ShooterId].Data;
+            return new HudMessage(
+                "panel_gold",
+                Text.Get(K.PenaltyShot),
+                Text.Format(K.PlayerTag, who.Number, who.LastName),
+                world.Setup.Club(shot.Side).Id,
+                shot.Time + ShotSeconds
             );
         }
 

@@ -3,6 +3,19 @@ namespace StickAndPuck.App.Rules.Penalties
     /// <summary>How often the referee calls penalties and how long they last.</summary>
     public static class PenaltyTuning
     {
+        /// <summary>A breakaway: an opposing skater this far (metres) or less nearer the goal than the carrier is level
+        /// with him, not between him and the goal.</summary>
+        public const float BreakawayLevel = 0.5f;
+
+        /// <summary>A carrier tripped off the puck still had it when it lies this close to him (metres).</summary>
+        public const float BreakawayPuckReach = 2.5f;
+
+        /// <summary>The whistle for a penalty shot: play stands still this long before the ice is cleared for the shot.</summary>
+        public const float ShotWhistleSeconds = 2f;
+
+        /// <summary>The pause after a missed penalty shot before the skaters come back for the faceoff at centre.</summary>
+        public const float ShotResultSeconds = 1.5f;
+
         /// <summary>A minor penalty in game seconds at full 20 minute periods; shorter periods shorten it in proportion.</summary>
         public const float MinorSeconds = 2 * 60;
 

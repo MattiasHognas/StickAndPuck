@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, strong form swings, no dressing room, no pre-game talk, no injuries, no suspensions and no player development.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, strong form swings, no dressing room, no pre-game talk, no injuries, no suspensions and no player development.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -54,6 +54,7 @@ namespace StickAndPuck.App.Core
             TooManyMen = TooManyMenCall.Off,
             Rivalries = false,
             Development = false,
+            PenaltyShot = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -385,6 +386,10 @@ namespace StickAndPuck.App.Core
                         "no development scale for " + DevelopmentStrength
                     ),
                 };
+
+        /// <summary>Gets a value indicating whether a trip, hook or slash from behind on a skater on a clean breakaway
+        /// (past the last defender in the attacking half, only the goalie to beat) is a penalty shot instead of a minor.</summary>
+        public bool PenaltyShot { get; init; } = true;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

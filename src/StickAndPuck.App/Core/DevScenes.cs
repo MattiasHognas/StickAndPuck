@@ -30,5 +30,8 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets the too many men scene's scripted rushed change.</summary>
         internal Slot<Lines.Dev.TooManyMenDemo> TooManyMen { get; } = new();
+
+        /// <summary>Gets the penalty shot scene's scripted breakaway trip.</summary>
+        internal Slot<Rules.Penalties.Dev.PenaltyShotDemo> PenaltyShot { get; } = new();
     }
 }

@@ -90,6 +90,7 @@ namespace StickAndPuck.App.Rules.Penalties
                 Goals(world, book);
             }
 
+            PenaltyShot.Step(world, book, dt);
             HandlePlayState(world, book, m, dt);
         }
 
@@ -121,6 +122,8 @@ namespace StickAndPuck.App.Rules.Penalties
                 {
                     Watch(world, book, dt);
                 }
+
+                Dev.PenaltyShotDemo.Update(world);
 
                 if (book.Delayed.Count > 0 && Touched(world, book).TryGetSide(out Side offender))
                 {
@@ -443,6 +446,12 @@ namespace StickAndPuck.App.Rules.Penalties
                 strength,
                 book.Rng.NextSingle()
             );
+            // a foul from behind on a clean breakaway is a penalty shot, not a minor
+            if (!afterWhistle && PenaltyShot.Award(world, foul.PlayerId, foul.Infraction, severity))
+            {
+                return;
+            }
+
             _ = PenaltyCalls.Signal(world, foul.PlayerId, foul.Infraction, severity, afterWhistle);
         }
 

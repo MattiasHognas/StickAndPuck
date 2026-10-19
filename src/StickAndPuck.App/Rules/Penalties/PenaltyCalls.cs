@@ -452,7 +452,11 @@ namespace StickAndPuck.App.Rules.Penalties
         internal static PenaltyBook Book(World world)
         {
             return world.Penalties.Get(() =>
-                new PenaltyBook { Rng = Seeds.Dice(world.Seed, "penalties", 14) }
+                new PenaltyBook
+                {
+                    Rng = Seeds.Dice(world.Seed, "penalties", 14),
+                    ShotRng = Seeds.Dice(world.Seed, "penaltyshot", 15),
+                }
             );
         }
 
