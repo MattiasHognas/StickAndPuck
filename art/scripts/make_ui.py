@@ -7,7 +7,8 @@ These PNGs are only the starting point. make_ui.lua turns them into .aseprite fi
 the source of truth from then on; after editing one in Aseprite, export it back to its PNG and
 run `python3 make_ui.py fnt` if the font changed, so font.fnt follows the new glyph widths.
 
-Run: python3 art/scripts/make_ui.py [all|fnt|title]  (title rebuilds only title.png and its ui.json entry)
+Run: python3 art/scripts/make_ui.py [all|fnt|title|crests [club ...]]  (title rebuilds only title.png and its ui.json entry;
+  crests only crests.png and its entry: clubs new to CRESTS, plus any named, are drawn)
 """
 import json
 import os
@@ -288,6 +289,32 @@ EMBLEMS = {
     "lion": ["..##......", ".####.....", "####......", ".####..#..", "..#####.#.", "..######..", "..#####...", ".##..##...", ".#....#...", "##...##..."],
     "leaf": ["...#...", "..###..", ".#####.", "###.###", "###.###", ".##.##.", "..#.#..", "...#...", "...#..."],
     "puck": ["..####..", ".######.", "#......#", ".######.", "..####.."],
+    # NHL (A16): made-up symbols that evoke each club, not its real logo
+    "snowflake": ["#..#..#", ".#.#.#.", "..###..", "#######", "..###..", ".#.#.#.", "#..#..#"],
+    "quill": [".......#", "......##", ".....###", "....####", "...####.", "..####..", ".#.##...", ".#......", "#......."],
+    "star": ["...#...", "...#...", "#######", ".#####.", "..###..", ".##.##.", "##...##"],
+    "note": ["...#...", "...##..", "...#.#.", "...#..#", "...#...", ".###...", "####...", ".##...."],
+    "fleur": ["....#....", "...###...", "#..###..#", "##.###.##", ".#######.", "#########", "..#.#.#..", "...###...", "....#...."],
+    "tail": ["#.......#", "###...###", ".#######.", "...###...", "....#....", "....#....", "....#...."],
+    "trident": ["#..#..#", "#..#..#", "#######", "...#...", "...#...", "...#...", "...#...", "...#..."],
+    "foot": ["#..#..#", "#..#..#", "##.#.##", ".#####.", ".#####.", "..###..", "...#...", "...#..."],
+    "flame": ["..#....", "..##...", ".###..#", ".####.#", "#######", "###.###", "##...##", ".##.##.", "..###.."],
+    "visor": ["..###..", ".#####.", "#######", "#.#.#.#", "#######", "#######", ".#####."],
+    "storm": ["..####.", ".##....", "##.##..", "#.#.#.#", "..##.##", "....##.", ".####.."],
+    "lighthouse": ["..#..", ".###.", "..#..", ".###.", ".#.#.", ".###.", ".#.#.", "#####"],
+    "jet": ["....#....", "...###...", "...###...", ".#######.", "#########", "...###...", "..#####.."],
+    "anchor": ["..###..", "..#.#..", "..###..", "...#...", "#######", "...#...", "#..#..#", ".#.#.#.", "..###.."],
+    "bolt": ["...##", "..##.", ".##..", "#####", "..##.", ".##..", "##...", "#...."],
+    "peaks": ["...#......", "..###.....", ".#####.#..", "#######.#.", "#########.", "##########"],
+    "maple": ["....#....", "...###...", "#.#####.#", "#########", ".#######.", "..#####..", "#.#####.#", "....#....", "....#...."],
+    "drop": ["..#..", "..#..", ".###.", ".###.", "#####", "#####", "#####", ".###."],
+    "paw": ["..#.#..", "#.#.#.#", "#.....#", "..###..", ".#####.", ".#####.", "..###.."],
+    "triangle": ["....#....", "...###...", "..##.##..", ".##...##.", "#########"],
+    "fangs": ["#######", "#######", ".##.##.", ".##.##.", ".#...#.", ".#...#."],
+    "sabres": ["#.......#", ".#.....#.", "..#...#..", "...#.#...", "....#....", "...#.#...", "..#...#..", "##.....##", "##.....##"],
+    "helmet": ["...#...", "..###..", ".#####.", "#######", "#.#.#.#", "#.....#", "##...##"],
+    "fin": ["...#....", "...##...", "...###..", "..####..", ".######.", "########"],
+    "wing": ["##.......", "####.....", "######...", ".########", "..#######", "...#.#.#."],
 }
 
 # Club colours from each club's current crest (shl.se team logos), as hex. They are snapped to
@@ -311,7 +338,42 @@ CRESTS = [
     ("vaxjo",      ROUND,  "#3e5875", "#c8963c", ("lion", None),      "#e07a3a"),
     ("bjorkloven", ROUND,  "#005040", "#f0d000", ("leaf", None),      "#f0d000"),
     ("generic",    ROUND,  "#423236", "#74666b", ("puck", None),      "#efe0c2"),
+    # NHL (A16): each club's colours (on the kit block of the palette) and a simple symbol that
+    # evokes the club. Made up for the game: none copies a real NHL logo.
+    ("avalanche",      ROUND,  "#6e2438", "#2f5f8f", ("snowflake", None),  "#efe0c2"),
+    ("blackhawks",     ROUND,  "#d42a22", "#111111", ("quill", None),      "#efe0c2"),
+    ("blue_jackets",   SHIELD, "#2b3d6b", "#d42a22", ("star", None),       "#efe0c2"),
+    ("blues",          ROUND,  "#1c3a9e", "#f2c14e", ("note", None),       "#efe0c2"),
+    ("bruins",         ROUND,  "#111111", "#f2c14e", ("text", "B"),        "#f2c14e"),
+    ("canadiens",      SHIELD, "#b8323c", "#2b3d6b", ("fleur", None),      "#efe0c2"),
+    ("canucks",        ROUND,  "#2b3d6b", "#2f8a4e", ("tail", None),       "#efe0c2"),
+    ("capitals",       SHIELD, "#d42a22", "#2b3d6b", ("text", "W"),        "#efe0c2"),
+    ("devils",         ROUND,  "#d42a22", "#111111", ("trident", None),    "#111111"),
+    ("ducks",          SHIELD, "#111111", "#f0581c", ("foot", None),       "#f0581c"),
+    ("flames",         ROUND,  "#d42a22", "#f2c14e", ("flame", None),      "#f2c14e"),
+    ("flyers",         ROUND,  "#f0581c", "#111111", ("text", "P"),        "#111111"),
+    ("golden_knights", SHIELD, "#2a2c36", "#b49a5e", ("visor", None),      "#b49a5e"),
+    ("hurricanes",     ROUND,  "#d42a22", "#111111", ("storm", None),      "#efe0c2"),
+    ("islanders",      ROUND,  "#2e6db0", "#e07a3a", ("lighthouse", None), "#efe0c2"),
+    ("jets",           ROUND,  "#2b3d6b", "#a7a3b0", ("jet", None),        "#efe0c2"),
+    ("kings",          SHIELD, "#111111", "#a7a3b0", ("crown", None),      "#a7a3b0"),
+    ("kraken",         ROUND,  "#2a2c36", "#9ad2d0", ("anchor", None),     "#9ad2d0"),
+    ("lightning",      ROUND,  "#2b3d6b", "#efe0c2", ("bolt", None),       "#efe0c2"),
+    ("mammoth",        SHIELD, "#111111", "#6aaedf", ("peaks", None),      "#6aaedf"),
+    ("maple_leafs",    ROUND,  "#2b3d6b", "#efe0c2", ("maple", None),      "#efe0c2"),
+    ("oilers",         ROUND,  "#2b3d6b", "#f0581c", ("drop", None),       "#f0581c"),
+    ("panthers",       SHIELD, "#b8323c", "#2b3d6b", ("paw", None),        "#f2c14e"),
+    ("penguins",       ROUND,  "#111111", "#f2c14e", ("triangle", None),   "#f2c14e"),
+    ("predators",      SHIELD, "#f2c14e", "#2b3d6b", ("fangs", None),      "#2b3d6b"),
+    ("rangers",        SHIELD, "#1c3a9e", "#d42a22", ("text", "NY"),       "#efe0c2"),
+    ("red_wings",      ROUND,  "#d42a22", "#efe0c2", ("wing", None),       "#efe0c2"),
+    ("sabres",         ROUND,  "#1c3a9e", "#f2c14e", ("sabres", None),     "#efe0c2"),
+    ("senators",       ROUND,  "#111111", "#d42a22", ("helmet", None),     "#c8963c"),
+    ("sharks",         ROUND,  "#14727a", "#111111", ("fin", None),        "#efe0c2"),
+    ("stars",          SHIELD, "#2c6e4a", "#a7a3b0", ("star", None),       "#efe0c2"),
+    ("wild",           ROUND,  "#2c6e4a", "#b8323c", ("pine", None),       "#efe0c2"),
 ]
+CREST_COLUMNS = 16          # crests.png is a grid of 16x16 cells, CREST_COLUMNS to a row
 
 
 def build_crest(shape, field, band, emblem, ecol):
@@ -359,12 +421,17 @@ def build_crest(shape, field, band, emblem, ecol):
     return img
 
 
-def build_crests(meta):
-    sheet = Image.new("RGBA", (16 * len(CRESTS), 16), CLEAR)
+def build_crests(meta, keep=None):
+    """Lays every crest in CRESTS out on a grid, in list order. keep maps club ids to a 16x16
+    crest to use as it is instead of drawing it (the hand-edited cells of crests.png)."""
+    keep = keep or {}
+    rows = (len(CRESTS) + CREST_COLUMNS - 1) // CREST_COLUMNS
+    sheet = Image.new("RGBA", (16 * min(len(CRESTS), CREST_COLUMNS), 16 * rows), CLEAR)
     cells = {}
     for i, (cid, shape, field, band, emblem, ecol) in enumerate(CRESTS):
-        sheet.paste(build_crest(shape, field, band, emblem, ecol), (i * 16, 0))
-        cells[cid] = [i * 16, 0, 16, 16]
+        x, y = i % CREST_COLUMNS * 16, i // CREST_COLUMNS * 16
+        sheet.paste(keep[cid] if cid in keep else build_crest(shape, field, band, emblem, ecol), (x, y))
+        cells[cid] = [x, y, 16, 16]
     sheet.save(os.path.join(UI, "crests.png"))
     meta["crests"] = {"file": "art/ui/crests.png", "cells": cells, "fallback": "generic",
                       "note": "Keys are club ids from data/clubs; unknown ids use the fallback."}
@@ -378,6 +445,22 @@ def build_title(meta):
     out = title_logo.build()
     out.save(os.path.join(UI, "title.png"))
     meta["title"] = {"file": "art/ui/title.png", "size": list(out.size)}
+
+
+def build_crests_only(redraw):
+    """Rebuilds crests.png and its ui.json entry: a crest that already has a cell keeps its pixels
+    (crests.png is exported from the hand-edited crests.aseprite), a club in CRESTS without one is
+    drawn, and so is every club id named in redraw. Run make_ui.lua with only=crests afterwards."""
+    path = os.path.join(UI, "ui.json")
+    with open(path, encoding="utf-8") as f:
+        meta = json.load(f)
+    old = Image.open(os.path.join(UI, "crests.png")).convert("RGBA")
+    keep = {cid: old.crop((x, y, x + w, y + h)) for cid, (x, y, w, h) in meta["crests"]["cells"].items()
+            if cid not in redraw}
+    build_crests(meta, keep)
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(meta, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def main():
@@ -394,6 +477,9 @@ def main():
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.write("\n")
+        return
+    if mode == "crests":           # only the crest sheet; keeps every other (hand-edited) PNG as it is
+        build_crests_only(sys.argv[2:])
         return
     meta = {"font": {"file": "art/ui/font.fnt", "image": "art/ui/font.png", "lineHeight": CELL_H + 1,
                      "capHeight": 7,
