@@ -81,6 +81,21 @@ namespace StickAndPuck.App.Screens
                 : (int)Math.Round(players.Average(value), MidpointRounding.ToEven);
         }
 
+        /// <summary>The name of a playstyle, in the language shown (the stats card and the coach's scouting tip).</summary>
+        public static string StyleName(PlayStyle style)
+        {
+            return Text.Get(
+                style switch
+                {
+                    PlayStyle.Balanced => K.StyleBalanced,
+                    PlayStyle.Physical => K.StylePhysical,
+                    PlayStyle.ShootFromAnywhere => K.StyleShootFromAnywhere,
+                    PlayStyle.DefensiveShell => K.StyleDefensiveShell,
+                    _ => throw new NotSupportedException($"Unhandled playstyle {style}"),
+                }
+            );
+        }
+
         /// <summary>Puts a club's tactics in words, in the language shown.</summary>
         public static string Describe(ClubTactics tactics)
         {
