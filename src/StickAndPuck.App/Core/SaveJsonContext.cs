@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Screens;
 using StickAndPuck.App.Season.Arcade;
+using StickAndPuck.App.Season.Board;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Schedule;
 using StickAndPuck.App.Season.Stats;
@@ -24,6 +25,7 @@ namespace StickAndPuck.App.Core
             typeof(MaybeJsonConverter<PlayerOfGameAward>),
             typeof(MaybeJsonConverter<MatchStatSheet>),
             typeof(MaybeJsonConverter<MatchStatLine>),
+            typeof(MaybeJsonConverter<BoardGoal>),
         ]
     )]
     [JsonSerializable(typeof(ScreenPrefs))]
@@ -36,6 +38,7 @@ namespace StickAndPuck.App.Core
     [JsonSerializable(typeof(PlayerOfGameAward))]
     [JsonSerializable(typeof(MatchStatSheet))]
     [JsonSerializable(typeof(MatchStatLine))]
+    [JsonSerializable(typeof(BoardGoal))]
     [JsonSerializable(typeof(string))]
     internal sealed partial class SaveJsonContext : JsonSerializerContext;
 }

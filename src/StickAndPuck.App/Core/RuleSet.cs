@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development, no trade deadline and no playout.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, no hot seat, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development, no trade deadline and no playout.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -58,11 +58,12 @@ namespace StickAndPuck.App.Core
             PenaltyShot = false,
             TradeDeadline = false,
             Playout = false,
+            HotSeat = HotSeat.Off,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
         /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice, stronger team morale,
-        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games, milder player development over its longer season, two trade offers at the deadline and no relegation playout.</summary>
+        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games, milder player development over its longer season, two trade offers at the deadline no relegation playout and a board that judges from halfway through the season.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -82,6 +83,7 @@ namespace StickAndPuck.App.Core
             DevelopmentStrength = DevelopmentStrength.Mild,
             TradeOffers = TradeFrequency.Often,
             Playout = false,
+            HotSeat = HotSeat.Strict,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -389,6 +391,9 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets how many trade offers come at the deadline: one, one or two, or two.</summary>
         public TradeFrequency TradeOffers { get; init; } = TradeFrequency.Normal;
+
+        /// <summary>Gets whether, and how soon, the board fires you for missing its season goal badly (see <see cref="Season.Board.BoardExpectation"/>).</summary>
+        public HotSeat HotSeat { get; init; } = HotSeat.Lenient;
 
         /// <summary>Gets the factor on what a rivalry game adds, 0 with <see cref="Rivalries"/> off, else by <see cref="RivalryStrength"/>.</summary>
         [JsonIgnore]

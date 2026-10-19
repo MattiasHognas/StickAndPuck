@@ -1,4 +1,5 @@
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Board;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Save;
 using StickAndPuck.App.Season.Schedule;
@@ -61,10 +62,13 @@ namespace StickAndPuck.App.Screens
         /// <summary>Whether the human's club has a season or playoff game left, as <see cref="ScreenFlow.SeasonHasNextGame"/> asks of the open season.</summary>
         private static bool HasNextGame(SeasonState season)
         {
-            return !season.IsOver
-                ? season.NextGame.HasValue
-                : !season.Playoffs.TryGet(out PlayoffState playoffs)
-                    || playoffs.UserSeries.HasValue;
+            return !season.Fired
+                && (
+                    !season.IsOver
+                        ? season.NextGame.HasValue
+                        : !season.Playoffs.TryGet(out PlayoffState playoffs)
+                            || playoffs.UserSeries.HasValue
+                );
         }
 
         /// <inheritdoc/>
@@ -93,13 +97,13 @@ namespace StickAndPuck.App.Screens
                 int played = season.Games.Count(g => g.Played && g.Involves(season.UserClub));
                 int total = season.Games.Count(g => g.Involves(season.UserClub));
                 string line =
-                    (!season.IsOver)
-                        ? Text.Format(K.StartGameOf, club, played + 1, total)
-                        : (
-                            season.Playoffs.Is(p => !p.UserSeries.HasValue)
-                                ? Text.Format(K.StartSeasonOver, club)
-                                : Text.Format(K.StartPlayoffs, club)
-                        );
+                    season.Fired ? Text.Format(K.StartFired, club)
+                    : (!season.IsOver) ? Text.Format(K.StartGameOf, club, played + 1, total)
+                    : (
+                        season.Playoffs.Is(p => !p.UserSeries.HasValue)
+                            ? Text.Format(K.StartSeasonOver, club)
+                            : Text.Format(K.StartPlayoffs, club)
+                    );
                 art.Centred(line, Game.Width / 2, 80 + h + 6, art.Text);
             }
             art.Hint(Text.Get(K.HintMenu));
@@ -107,35 +111,43 @@ namespace StickAndPuck.App.Screens
 
         private void NewSeason()
         {
-            Flow.Push(
+            PickNewSeason(App, ask: true);
+        }
+
+        /// <summary>Opens team select for a new season at the picked club's league save; with <paramref name="ask"/>,
+        /// asks first when that league has a save (the fired screen does not ask: that season is over).</summary>
+        public static void PickNewSeason(AppState app, bool ask)
+        {
+            ScreenFlow flow = app.Screens;
+            flow.Push(
                 new TeamSelectScreen(
-                    App,
+                    app,
                     Text.Get(K.PickYourClub),
                     Maybe.None<ClubData>(),
                     club =>
                     {
                         void Begin()
                         {
-                            SeasonState season = App.Season.StartNew(
-                                Flow.ClubsOf(club.League),
+                            SeasonState season = app.Season.StartNew(
+                                flow.ClubsOf(club.League),
                                 club.Id
                             ); // at the league's own save
-                            season.Rules = RulePicks.Choice(App).Resolve(); // the rules picked on team select (the league's preset unless changed), in either league
-                            SeasonSave.Write(season, App.Season.SavePath);
+                            season.Rules = RulePicks.Choice(app).Resolve(); // the rules picked on team select (the league's preset unless changed), in either league
+                            SeasonSave.Write(season, app.Season.SavePath);
 
                             Console.WriteLine(
-                                $"SAP: screens: new season for {club.Id}, {season.Games.Count} games, saved to {App.Season.SavePath}"
+                                $"SAP: screens: new season for {club.Id}, {season.Games.Count} games, board goal {season.Goal.Or(BoardGoal.MakePlayoffs)}, saved to {app.Season.SavePath}"
                             );
-                            Flow.PlaySeasonGame();
+                            flow.PlaySeasonGame();
                         }
 
-                        if (!SeasonSave.Read(SeasonSave.PathFor(club.League)).HasValue)
+                        if (!ask || !SeasonSave.Read(SeasonSave.PathFor(club.League)).HasValue)
                         {
                             Begin();
                         }
                         else
                         {
-                            Flow.Push(new ConfirmScreen(App, Text.Get(K.ReplaceSave), Begin));
+                            flow.Push(new ConfirmScreen(app, Text.Get(K.ReplaceSave), Begin));
                         }
                     }
                 )

@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Arcade;
+using StickAndPuck.App.Season.Board;
 using StickAndPuck.App.Season.Challenges;
 using StickAndPuck.App.Season.DressingRoom.Dev;
 using StickAndPuck.App.Season.Injuries;
@@ -12,7 +13,7 @@ using StickAndPuck.App.Season.Schedule;
 namespace StickAndPuck.App.Screens
 {
     /// <summary>The saves behind the headless captures of the polished screens (SAP_SCREEN=stats, table, sim,
-    /// dressingroom, suspension, trade, trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
+    /// dressingroom, suspension, trade, fired, trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
     /// player's season and arcade saves are left alone.</summary>
     internal static class PolishScenes
     {
@@ -85,6 +86,10 @@ namespace StickAndPuck.App.Screens
                     break;
                 case "trade":
                     TradeDeadline(app, clubs);
+                    break;
+                case "fired":
+                    Fired(app, clubs);
+                    app.Screens.Push(app.Screens.Overview()); // the fired screen
                     break;
                 case "trophy":
                     Champions(app, clubs);
@@ -278,6 +283,40 @@ namespace StickAndPuck.App.Screens
                 string.Create(
                     CultureInfo.InvariantCulture,
                     $"SAP: screens: playout test, {season.UserClub} in the playout, {settled} games simmed, relegated {season.Relegated.Or("not yet")}"
+                )
+            );
+        }
+
+        /// <summary>A fresh test season for the club the board expects most of (SAP_CLUB picks another), under the
+        /// chosen rules with the hot seat at least lenient, losing every game until the board fires the human
+        /// (SAP_SCREEN=fired).</summary>
+        public static void Fired(AppState app, IReadOnlyList<ClubData> clubs)
+        {
+            string path = TestPath(SeasonSave.DefaultPath, "fired-test.json");
+            string club = Env.Get("SAP_CLUB") is { Length: > 0 } c
+                ? c
+                : clubs.First(x => BoardExpectation.Rank(clubs, x.Id) == 1).Id;
+            SeasonState season = app.Season.StartNew(clubs, club, Seed(), path);
+            RuleSet rules = RulePicks.Choice(app).Resolve();
+            season.Rules =
+                rules.HotSeat == HotSeat.Off ? rules with { HotSeat = HotSeat.Lenient } : rules;
+            while (!season.Fired && app.Season.NextSetup(InputDevice.None) is NextMatch.Play)
+            {
+                bool home = app.Season.Playing.Is(g =>
+                    string.Equals(g.Home, club, StringComparison.Ordinal)
+                );
+                _ = app.Season.Finish(
+                    home
+                        ? new FixtureResult(1, 4, ResultKind.Regulation)
+                        : new FixtureResult(4, 1, ResultKind.Regulation)
+                );
+            }
+
+            SeasonSave.Write(season, path);
+            Console.WriteLine(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"SAP: screens: test season in {path}, {club} fired {season.Fired} after {season.PlayedBy(club).Count()} games, place {BoardExpectation.Place(season)}"
                 )
             );
         }

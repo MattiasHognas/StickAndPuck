@@ -27,6 +27,8 @@ Hard checks, blocked slap shots and fights can injure a skater (goalies are spar
 
 A second fight in one game, or a match penalty (a game misconduct, or a major and game misconduct: every fight under SHL rules, a dangerous hit), suspends the player for his club's next 1 to 3 games: one game, two for a dangerous hit or for two offences in the same game. He is left out of the lines until he has sat them out, and the dressing room lists him as suspended. The rules page's Season group turns suspensions off or sets their length (mild takes a game off, strong adds one; Arcade has none).
 
+At the start of a season the board sets a target from your club's strength against the league: win the regular season, finish near the top (top 4 in the SHL, top 8 in the NHL), make the playoffs or stay out of the bottom. The dressing room's board line shows your place against it: ahead of target, on track, under pressure or on the hot seat. With the Season group's hot seat on (lenient in the SHL: the last quarter of the season; strict in the NHL: from halfway; off in Arcade), a club far below its target that late is fired, and the season is over: start a new one.
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |

@@ -294,7 +294,12 @@ namespace StickAndPuck.App.Screens
             Screen overview = AfterSeasonGame();
             if (
                 Top.TryGet(out Screen top)
-                && top is StandingsScreen or BracketScreen or DressingRoomScreen or TradeOfferScreen
+                && top
+                    is StandingsScreen
+                        or BracketScreen
+                        or DressingRoomScreen
+                        or TradeOfferScreen
+                        or FiredScreen
             )
             {
                 if (top.GetType() != overview.GetType())
@@ -322,6 +327,7 @@ namespace StickAndPuck.App.Screens
         public bool SeasonHasNextGame()
         {
             return app.Season.Current.TryGet(out SeasonState season)
+                && !season.Fired
                 && (
                     !season.IsOver
                         ? season.NextGame.HasValue
@@ -330,11 +336,12 @@ namespace StickAndPuck.App.Screens
                 );
         }
 
-        /// <summary>The season screen that fits: the bracket once the playoffs have started, the table before.</summary>
+        /// <summary>The season screen that fits: the fired screen once the board has let the human go (W133), the
+        /// bracket once the playoffs have started, the table before.</summary>
         public Screen Overview()
         {
-            return app.Season.Current.Is(s => s.Playoffs.HasValue)
-                ? new BracketScreen(app)
+            return app.Season.Current.Is(s => s.Fired) ? new FiredScreen(app)
+                : app.Season.Current.Is(s => s.Playoffs.HasValue) ? new BracketScreen(app)
                 : new StandingsScreen(app);
         }
 
