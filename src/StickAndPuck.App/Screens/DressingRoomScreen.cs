@@ -71,10 +71,16 @@ namespace StickAndPuck.App.Screens
                 return;
             }
 
-            _ = art.DrawDressingRoom();
             RuleSet rules = Rules(App);
             bool full = rules.DressingRoom == DressingRoomStyle.Full;
             DressingRoomContext context = DressingRoomContext.Of(season, Flow.Clubs, rules);
+            KitColours kit = Flow
+                .Clubs.FirstOrNone(c =>
+                    string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)
+                )
+                .Select(c => c.Home)
+                .Or(new KitColours());
+            bool room = art.DrawDressingRoom(kit);
             DressingRoomReport report = DressingRoomSources.Build(context);
             IReadOnlyList<MenuItem> items = Items();
             bool board = full && report.Board.Count > 0;
@@ -92,12 +98,10 @@ namespace StickAndPuck.App.Screens
                 + 6
                 + (items.Count * ScreenArt.Row)
                 + 4;
-            (int x, int top) = art.Panel(
-                Text.Get(K.DressingRoom),
-                PanelW,
-                h,
-                Math.Max(2, (Game.Height - h - 14) / 2)
-            );
+            int py = Math.Max(2, (Game.Height - h - 14) / 2);
+            (int x, int top) = room
+                ? art.RoomPanel(kit, Text.Get(K.DressingRoom), PanelW, h, py)
+                : art.Panel(Text.Get(K.DressingRoom), PanelW, h, py);
             int cx = Game.Width / 2;
             art.Centred(Stage(season), cx, top, ScreenArt.Muted);
             top += Line + 4;

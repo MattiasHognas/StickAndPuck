@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text;
 using Raylib_cs;
 using StickAndPuck.App.Core;
@@ -23,9 +24,16 @@ namespace StickAndPuck.App.Screens
         private static readonly Color Shade = new(0x18, 0x13, 0x1f, 0xd8);
         private static readonly Color Band = new(0x18, 0x13, 0x1f, 0xff);
 
+        // the dressing room under its panel, multiplied down to about a third so cream text reads over it
+        private static readonly Color RoomDim = new(0x40, 0x3c, 0x4c, 0xff);
+        private static readonly Color PanelLight = new(0x33, 0x29, 0x3a, 0xff);
+
         private Texture2D title;
         private Maybe<Texture2D> dressingRoom;
         private Maybe<Texture2D> coach;
+        private Maybe<Texture2D> coachMoods;
+        private Maybe<Texture2D> roomJersey;
+        private Maybe<Texture2D> roomTrim;
 
         private ScreenArt(HudArt hud)
         {
@@ -48,26 +56,96 @@ namespace StickAndPuck.App.Screens
                 title = ResourceLoader.Texture("art.ui.title.png"),
                 dressingRoom = Optional(Assets.DressingRoomBackdrop),
                 coach = Optional(Assets.CoachPortrait),
+                coachMoods = Optional(Assets.CoachMoods),
+                roomJersey = Optional(Assets.DressingRoomJersey),
+                roomTrim = Optional(Assets.DressingRoomTrim),
             };
             return art;
         }
 
-        /// <summary>Draws the dressing room backdrop over the whole frame (A20); false while there is none yet.</summary>
-        public bool DrawDressingRoom()
+        /// <summary>Draws the dressing room backdrop over the whole frame (A20), the jerseys in the stalls
+        /// tinted with a kit's colours; false while there is none yet.</summary>
+        public bool DrawDressingRoom(KitColours kit)
         {
-            if (!dressingRoom.TryGet(out Texture2D tex))
+            if (!dressingRoom.HasValue)
             {
                 return false;
             }
 
-            DrawTexture(tex, 0, 0, Color.White);
+            DrawRoom(kit, new Rectangle(0, 0, Game.Width, Game.Height), Color.White);
             return true;
+        }
+
+        /// <summary>Draws a panel over the dressing room backdrop: the room shows through it, dimmed, so the
+        /// text over it stays readable (an opaque draw, so the rink never shows through the HUD target).
+        /// Returns where the body starts, like <see cref="Panel"/>.</summary>
+        public (int X, int Top) RoomPanel(KitColours kit, string heading, int w, int h, int y)
+        {
+            int x = (Game.Width - w) / 2;
+            DrawRoom(kit, new Rectangle(x, y, w, h), RoomDim);
+            DrawRectangleLines(x, y, w, h, Band);
+            DrawRectangle(x + 1, y + 1, w - 2, 1, PanelLight);
+            DrawRectangle(x + 1, y + 1, 1, h - 2, PanelLight);
+            if (heading.Length == 0)
+            {
+                return (x, y + 6);
+            }
+
+            Centred(heading, Game.Width / 2, y + 5, Gold);
+            return (x, y + 5 + Row + 2);
+        }
+
+        /// <summary>One region of the backdrop and its jersey masks, every layer multiplied by a shade.</summary>
+        private void DrawRoom(KitColours kit, Rectangle area, Color shade)
+        {
+            if (!dressingRoom.TryGet(out Texture2D room))
+            {
+                return;
+            }
+
+            Vector2 at = new(area.X, area.Y);
+            DrawTextureRec(room, area, at, shade);
+            if (roomJersey.TryGet(out Texture2D jersey))
+            {
+                DrawTextureRec(jersey, area, at, Multiply(HudArt.Hex(kit.Primary), shade));
+            }
+
+            if (roomTrim.TryGet(out Texture2D trim))
+            {
+                DrawTextureRec(trim, area, at, Multiply(HudArt.Hex(kit.Secondary), shade));
+            }
+        }
+
+        private static Color Multiply(Color a, Color b)
+        {
+            return new Color(a.R * b.R / 255, a.G * b.G / 255, a.B * b.B / 255, 255);
         }
 
         /// <summary>Draws the coach's portrait in a box (A20), or until it exists a framed placeholder: a dark
         /// box with a stick icon and the label under it.</summary>
         public void DrawCoach(int x, int y, int w, int h, string label)
         {
+            DrawCoach(x, y, w, h, label, CoachMood.Neutral);
+        }
+
+        /// <summary>Draws the coach's portrait with a mood (A20's cell in <see cref="Assets.CoachMoods"/>), the
+        /// plain portrait when there is no mood sheet, or the framed placeholder.</summary>
+        public void DrawCoach(int x, int y, int w, int h, string label, CoachMood mood)
+        {
+            if (coachMoods.TryGet(out Texture2D moods))
+            {
+                int cell = moods.Width / Enum.GetValues<CoachMood>().Length;
+                DrawTexturePro(
+                    moods,
+                    new Rectangle((int)mood * cell, 0, cell, moods.Height),
+                    new Rectangle(x, y, w, h),
+                    new(0, 0),
+                    0,
+                    Color.White
+                );
+                return;
+            }
+
             if (coach.TryGet(out Texture2D tex))
             {
                 DrawTexturePro(
@@ -261,6 +339,14 @@ namespace StickAndPuck.App.Screens
             if (coach.TryGet(out Texture2D portrait))
             {
                 UnloadTexture(portrait);
+            }
+
+            foreach (Maybe<Texture2D> extra in new[] { coachMoods, roomJersey, roomTrim })
+            {
+                if (extra.TryGet(out Texture2D t))
+                {
+                    UnloadTexture(t);
+                }
             }
 
             Hud.Unload();
