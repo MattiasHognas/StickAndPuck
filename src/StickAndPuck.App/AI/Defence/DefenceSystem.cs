@@ -158,7 +158,9 @@ namespace StickAndPuck.App.AI.Defence
                     * Coverage.HitPace(
                         Decisions.DecisionState.Tally(world, presser.Side).Checks,
                         Played(world)
-                    );
+                    )
+                    * Rivals.HitFactor(world.Setup); // a rivalry game plays the body more
+
                 plan.Engage = rng.NextSingle() < chance;
             }
             if (plan.Engage)

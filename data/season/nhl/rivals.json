@@ -1,0 +1,21 @@
+{
+  // NHL rival pairs by club id (data/clubs/nhl/). A game between the two is rivalry night: a pre-game banner,
+  // more checking and fights, and a bigger team morale swing. The order inside a pair does not matter.
+  // Sources are in data/clubs/README.md (Rivals).
+  "pairs": [
+    ["bruins", "canadiens"],
+    ["bruins", "maple_leafs"],
+    ["maple_leafs", "canadiens"],
+    ["maple_leafs", "senators"],
+    ["rangers", "islanders"],
+    ["rangers", "devils"],
+    ["penguins", "flyers"],
+    ["penguins", "capitals"],
+    ["oilers", "flames"],
+    ["kings", "ducks"],
+    ["blackhawks", "red_wings"],
+    ["blackhawks", "blues"],
+    ["avalanche", "red_wings"],
+    ["lightning", "panthers"]
+  ]
+}

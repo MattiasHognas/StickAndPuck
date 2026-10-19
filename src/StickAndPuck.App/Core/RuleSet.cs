@@ -15,7 +15,7 @@ namespace StickAndPuck.App.Core
         /// <summary>The SHL: the rules the game was built on.</summary>
         public static readonly RuleSet Shl = new();
 
-        /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale,
+        /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
         /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, strong form swings, no dressing room, no pre-game talk, no injuries and no suspensions.</summary>
         public static readonly RuleSet Arcade = new()
         {
@@ -52,11 +52,12 @@ namespace StickAndPuck.App.Core
             Injuries = false,
             Suspensions = false,
             TooManyMen = TooManyMenCall.Off,
+            Rivalries = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
         /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice, stronger team morale
-        /// and a delay-of-game minor for a second faceoff violation.</summary>
+        /// a delay-of-game minor for a second faceoff violation and hotter rivalry games.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -72,6 +73,7 @@ namespace StickAndPuck.App.Core
             NewsFrequency = NewsFrequency.Often,
             CoachTemper = CoachTemper.Strong,
             IntermissionTalkStrength = TalkStrength.Strong,
+            RivalryStrength = RivalryStrength.Strong,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -340,6 +342,25 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets how a rushed human line change that steps on too early is called: a bench minor for too many men on the ice, or Off.</summary>
         public TooManyMenCall TooManyMen { get; init; } = TooManyMenCall.Lenient;
+
+        /// <summary>Gets a value indicating whether a game between rival clubs (data/season/{league}/rivals.json) gets its banner, more checking and fights, and a bigger morale swing.</summary>
+        public bool Rivalries { get; init; } = true;
+
+        /// <summary>Gets how much hotter a rivalry game is.</summary>
+        public RivalryStrength RivalryStrength { get; init; } = RivalryStrength.Normal;
+
+        /// <summary>Gets the factor on what a rivalry game adds, 0 with <see cref="Rivalries"/> off, else by <see cref="RivalryStrength"/>.</summary>
+        [JsonIgnore]
+        public float RivalryScale =>
+            !Rivalries
+                ? 0f
+                : RivalryStrength switch
+                {
+                    RivalryStrength.Mild => 0.5f,
+                    RivalryStrength.Strong => 1.5f,
+                    RivalryStrength.Normal => 1f,
+                    _ => throw new NotSupportedException("no rivalry scale for " + RivalryStrength),
+                };
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

@@ -400,12 +400,16 @@ namespace StickAndPuck.App.Screens
             return world;
         }
 
-        /// <summary>Gives a mode's setup the period length from the settings and the rules the plan plays, as every match the screens start gets them.</summary>
+        /// <summary>Gives a mode's setup the period length from the settings, the rules the plan plays and whether its clubs are rivals, as every match the screens start gets them.</summary>
         public MatchSetup Prepare(MatchSetup setup, MatchPlan plan)
         {
-            return (setup with { PeriodSeconds = PeriodSeconds() }).WithRules(
-                RulePicks.For(app, plan)
-            );
+            return (
+                setup with
+                {
+                    PeriodSeconds = PeriodSeconds(),
+                    Rivalry = Rivals.Are(setup.Home.Id, setup.Away.Id),
+                }
+            ).WithRules(RulePicks.For(app, plan));
         }
 
         /// <summary>Starts a match whose setup, seed and settings came from elsewhere (the host of a network

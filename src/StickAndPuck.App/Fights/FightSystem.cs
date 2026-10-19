@@ -87,7 +87,11 @@ namespace StickAndPuck.App.Fights
                     continue;
                 }
 
-                if (s.Rng.NextSingle() >= s.OfferChance)
+                // a rivalry game drops the gloves more readily
+                if (
+                    s.Rng.NextSingle()
+                    >= Math.Min(1f, s.OfferChance * Rivals.FightFactor(world.Setup))
+                )
                 {
                     continue;
                 }

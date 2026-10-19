@@ -31,6 +31,9 @@ namespace StickAndPuck.App.Replay
         /// <summary>Gets the players the season left out of the match, as <see cref="MatchSetup.Absent"/>; empty in an older replay.</summary>
         public IReadOnlyList<string> Absent { get; init; } = [];
 
+        /// <summary>Gets a value indicating whether the match is a rivalry game, as <see cref="MatchSetup.Rivalry"/>; false in an older replay.</summary>
+        public bool Rivalry { get; init; }
+
         /// <summary>Gets the stored form of a setup.</summary>
         public static ReplaySetup Of(MatchSetup s)
         {
@@ -50,6 +53,7 @@ namespace StickAndPuck.App.Replay
                 StartEnergy = s.StartEnergy,
                 Talk = s.Talk,
                 Absent = s.Absent,
+                Rivalry = s.Rivalry,
             };
         }
 
@@ -82,6 +86,7 @@ namespace StickAndPuck.App.Replay
                 Morale = Morale,
                 StartEnergy = StartEnergy,
                 Talk = Talk,
+                Rivalry = Rivalry,
             };
         }
     }
