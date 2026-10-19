@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Arcade;
+using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Save;
 using StickAndPuck.App.Season.Schedule;
@@ -39,6 +40,14 @@ namespace StickAndPuck.App.Screens
                     if (app.Screens.Top.Is(t => t is SimResultScreen))
                     {
                         app.Screens.Pop(); // continue past the score into the dressing room
+                    }
+
+                    if (
+                        Env.Get("SAP_NEWS") is { Length: > 0 } news
+                        && app.Season.Current.TryGet(out SeasonState room)
+                    )
+                    {
+                        _ = NewsDesk.Force(room, clubs, NewsDeck.Default, news.ToLowerInvariant()); // a news card in play, whatever the dice said
                     }
 
                     break;

@@ -59,6 +59,8 @@ namespace StickAndPuck.App.Core
                 "TwoTwoOneOneOne" => Text.Get(K.RuleValueTwoTwoOneOneOne),
                 "Mild" => Text.Get(K.RuleValueMild),
                 "Strong" => Text.Get(K.RuleValueStrong),
+                "Rare" => Text.Get(K.RuleValueRare),
+                "Often" => Text.Get(K.RuleValueOften),
                 _ => value.ToUpperInvariant(),
             };
         }

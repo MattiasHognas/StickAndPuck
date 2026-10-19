@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Morale;
+using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Stats;
 
@@ -60,6 +61,9 @@ namespace StickAndPuck.App.Season.Schedule
         /// <summary>Gets or sets each club's team morale by club id, 0 to 100; a club missing here is at the neutral 50 (see <see cref="TeamMorale"/>).</summary>
         public IDictionary<string, int> Morale { get; set; } =
             new Dictionary<string, int>(StringComparer.Ordinal);
+
+        /// <summary>Gets or sets the news events in play (see <see cref="NewsDesk"/>); empty in an older save.</summary>
+        public IList<NewsEvent> News { get; set; } = [];
 
         /// <summary>Gets the number of rounds.</summary>
         public int Rounds => Games.Count == 0 ? 0 : Games.Max(g => g.Round) + 1;
@@ -238,6 +242,8 @@ namespace StickAndPuck.App.Season.Schedule
                 form[key] = nudge;
             }
 
+            NewsDesk.AddNudges(this, form);
+
             return new MatchSetup
             {
                 Home = FormTable.Apply(home, form),
@@ -246,6 +252,7 @@ namespace StickAndPuck.App.Season.Schedule
                 Overtime = OvertimeRule.Shl,
                 Morale = TeamMorale.ForGame(this, game.Home, game.Away),
                 Form = form,
+                StartEnergy = NewsDesk.StartEnergy(this, game),
             };
         }
     }

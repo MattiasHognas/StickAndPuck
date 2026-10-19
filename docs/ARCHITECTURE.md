@@ -15,7 +15,7 @@ Stick and puck is a C# game using Raylib_cs. Simulation runs at a fixed 60 Hz; t
 | `analyzers/` | Build-time enforcement, including the ban on nullable types and null literals in app code. |
 | `art/` | Blender/Aseprite sources, generation scripts and exported models, textures, UI and audio. |
 | `shaders/` | Toon lighting, masks, ice and the pixel post-processing pass. |
-| `data/clubs/`, `data/lang/` | Editable clubs/rosters/traits and English/Swedish string tables. |
+| `data/clubs/`, `data/lang/`, `data/season/` | Editable clubs/rosters/traits, English/Swedish string tables and the season news deck. |
 | `tools/` | Publish, version, capture, sound-effect and music tools. |
 
 ## Match and app state

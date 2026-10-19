@@ -339,6 +339,23 @@ namespace StickAndPuck.App.Core
                 r => r.DressingRoom,
                 (r, v) => r with { DressingRoom = v }
             ),
+            Flag(
+                nameof(RuleSet.News),
+                K.RuleNews,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.News,
+                (r, v) => r with { News = v }
+            ),
+            Choice(
+                nameof(RuleSet.NewsFrequency),
+                K.RuleNewsFrequency,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<NewsFrequency>(),
+                r => r.NewsFrequency,
+                (r, v) => r with { NewsFrequency = v }
+            ),
         ];
 
         /// <summary>Gets the rules the game plays, grouped as the rules page shows them.</summary>
