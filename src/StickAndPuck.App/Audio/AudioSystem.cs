@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
+using StickAndPuck.App.Arena;
 using StickAndPuck.App.Core;
 using static Raylib_cs.Raylib;
 
@@ -11,7 +12,7 @@ namespace StickAndPuck.App.Audio
     /// (<see cref="MusicPlayer"/>) under the overall volume. Runs after every
     /// publisher, reads this step's <see cref="MatchEvents"/> and maps them through
     /// <see cref="SoundCues"/>; it also watches the puck, so a pickup or a deflection nobody published
-    /// still clicks. With no audio device it stays silent and the game runs on.
+    /// still clicks. Over it the fans chant (<see cref="CrowdChants"/>). With no audio device it stays silent and the game runs on.
     /// SAP_SFX=demo plays every event's sounds in turn, for listening to the set in the game.</summary>
     internal sealed class AudioSystem : ISystem, IDisposable
     {
@@ -28,6 +29,7 @@ namespace StickAndPuck.App.Audio
         private readonly Dictionary<Sfx, float> lastStart = [];
         private readonly List<(float At, Cue Cue, float Pan)> delayed = [];
         private readonly MusicPlayer music = new();
+        private readonly CrowdChants chants = new();
         private float clock;
         private int played;
         private bool ready;
@@ -104,6 +106,23 @@ namespace StickAndPuck.App.Audio
             }
 
             WatchPuck(world, puckEvent);
+            foreach (Chant chant in chants.Update(world, dt))
+            {
+                // the home end fills the arena; the away chant comes from the visitors' corner
+                float pan =
+                    chant.Fans == Side.Away
+                        ? Pan(world, CrowdReactions.Middle(CrowdFans.AwaySection))
+                        : 0f;
+                if (chant.Cue.Delay > 0)
+                {
+                    delayed.Add((clock + chant.Cue.Delay, chant.Cue, pan));
+                }
+                else
+                {
+                    Play(world, chant.Cue, pan);
+                }
+            }
+
             if (demo)
             {
                 Demo(world, dt);

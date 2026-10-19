@@ -86,7 +86,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `specialteams`: a permanent power play, with the away side short-handed by default; `SAP_ST_KILL=home` reverses it and `SAP_ST_WAIT=1` advances to an established attacking shape, and `SAP_ST_RULE=off` plays it with the SpecialTeams rule off (even-strength positioning a man up).
 - `tactics`: Frölunda against Luleå by default, with tactical choices shown; `SAP_TACTICS_HOME` and `SAP_TACTICS_AWAY` accept `balanced`, `aggressive` or `trap`, and `SAP_STYLE_HOME` and `SAP_STYLE_AWAY` accept `balanced`, `physical`, `shootFromAnywhere` or `defensiveShell`. The line at the bottom shows each club's forecheck, entry and style with its dumps, checks thrown, shots from distance, skaters deep on the forecheck and skaters in front of its own net when defending.
 - `crowd`: the puck shot into the empty right-hand net, so the home crowd rises and cheers for a real goal (the end behind the net first), then waves on the boost before sitting back down.
-- `momentum`: a boost after a home goal; `SAP_MOMENTUM_SIDE=away` boosts the visitors instead.
+- `momentum`: a boost after a home goal; `SAP_MOMENTUM_SIDE=away` boosts the visitors instead, so the visitors' corner (far right, in the away club's colours) waves while the home sections sit.
 - `shotdemo`: repeated tap, half-held and full-held shots for checking shot height and shadows; goals do not count.
 - `onetimer`: repeated passes to an armed receiver, alternating a successful feed with an interception that cancels the wind-up.
 - `aimoves`: AI deke drill (`SAP_MOVE=deke`, default), or an AI one-timer drill (`SAP_MOVE=onetimer`).
