@@ -81,7 +81,7 @@ namespace StickAndPuck.App.Lines
             foreach (Swap s in change.Swaps.Where(s => !s.Done))
             {
                 Player off = s.Out;
-                if (!off.OnIce || s.In.OnIce)
+                if (!off.OnIce || (s.In.OnIce && !s.Early))
                 {
                     s.Done = true;
                     continue;
@@ -94,7 +94,16 @@ namespace StickAndPuck.App.Lines
                 float d = Vector2.Distance(Flat(off), s.Door);
                 if (d < LinesTuning.DoorReach || late)
                 {
-                    Swap(world, b, change, s, onTheFly: true);
+                    if (s.Early)
+                    {
+                        Leave(off); // his man is already out
+                        s.Done = true;
+                    }
+                    else
+                    {
+                        Swap(world, b, change, s, onTheFly: true);
+                    }
+
                     continue;
                 }
                 if (off.Slot >= 0)
@@ -122,7 +131,11 @@ namespace StickAndPuck.App.Lines
         {
             foreach (Swap s in change.Swaps.Where(s => !s.Done))
             {
-                if (s.Out.OnIce && !s.In.OnIce)
+                if (s.Early && s.Out.OnIce)
+                {
+                    Leave(s.Out);
+                }
+                else if (s.Out.OnIce && !s.In.OnIce)
                 {
                     Swap(world, b, change, s, onTheFly);
                 }
@@ -142,31 +155,83 @@ namespace StickAndPuck.App.Lines
         {
             Put(s.Out, s.In, onTheFly);
             s.Done = true;
+            Announce(world, b, change, s.In);
+        }
+
+        /// <summary>Publishes the change's one <see cref="LineChanged"/>, for the first player on.</summary>
+        private static void Announce(World world, LinesBoard b, ShiftChange change, Player on)
+        {
             if (change.Announced)
             {
                 return;
             }
 
             change.Announced = true;
-            world.Events.Publish(new LineChanged(world.Time, change.Side, s.In.Id, s.In.Position));
+            world.Events.Publish(new LineChanged(world.Time, change.Side, on.Id, on.Position));
             b.Last[(int)change.Side] = (change.Incoming.Name, world.Time);
+        }
+
+        /// <summary>A human's second press while his club's change on the fly is under way: every skater still to come
+        /// on steps out of the bench door at once, while the skater he replaces keeps skating for the door and
+        /// goes off when he gets there. Until then both are on the ice: too many men (<see cref="TooManyMen"/>).</summary>
+        private static void Rush(World world, LinesBoard b, ShiftChange change)
+        {
+            if (change.Rushed)
+            {
+                return;
+            }
+
+            change.Rushed = true;
+            foreach (Swap s in change.Swaps.Where(s => !s.Done && s.Out.OnIce && !s.In.OnIce))
+            {
+                Vector2 door = s.Door;
+                Enter(s.In, new Vector3(door.X, 0, door.Y + 0.4f), 0f, onTheFly: true);
+                if (s.Out.Slot >= 0)
+                {
+                    s.In.Slot = s.Out.Slot;
+                    s.Out.Slot = -1;
+                }
+
+                s.Early = true;
+                Announce(world, b, change, s.In);
+            }
+
+            Log(world, $"{world.Setup.Club(change.Side).ShortName} rush the change");
         }
 
         /// <summary>One player off, the other on: at the bench door on the fly, in the same spot at a stoppage (the faceoff places them).</summary>
         private static void Put(Player off, Player on, bool onTheFly)
         {
             Vector2 door = Squad.Door(off.Side);
-            on.OnIce = true;
-            on.Position = onTheFly ? new Vector3(door.X, 0, door.Y + 0.4f) : off.Position;
-            on.Velocity = onTheFly ? new Vector3(0, 0, 1.5f) : Vector3.Zero;
-            on.Heading = onTheFly ? 0f : off.Heading;
-            on.Command = default;
-            on.Begin(PlayerAction.None);
+            Enter(
+                on,
+                onTheFly ? new Vector3(door.X, 0, door.Y + 0.4f) : off.Position,
+                onTheFly ? 0f : off.Heading,
+                onTheFly
+            );
             if (off.Slot >= 0)
             {
                 on.Slot = off.Slot;
                 off.Slot = -1;
             }
+            Leave(off);
+        }
+
+        /// <summary>A player comes onto the ice at <paramref name="at"/>, stepping out of the door on the fly.</summary>
+        private static void Enter(Player on, Vector3 at, float heading, bool onTheFly)
+        {
+            on.OnIce = true;
+            on.Position = at;
+            on.Velocity = onTheFly ? new Vector3(0, 0, 1.5f) : Vector3.Zero;
+            on.Heading = heading;
+            on.Command = default;
+            on.Begin(PlayerAction.None);
+        }
+
+        /// <summary>A player goes off the ice onto his club's bench.</summary>
+        private static void Leave(Player off)
+        {
+            Vector2 door = Squad.Door(off.Side);
             off.OnIce = false;
             off.Velocity = Vector3.Zero;
             off.Command = default;

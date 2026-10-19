@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, strong form swings, no dressing room, no pre-game talk, no injuries and no suspensions.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, strong form swings, no dressing room, no pre-game talk, no injuries and no suspensions.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -51,6 +51,7 @@ namespace StickAndPuck.App.Core
             IntermissionTalk = false,
             Injuries = false,
             Suspensions = false,
+            TooManyMen = TooManyMenCall.Off,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -336,6 +337,9 @@ namespace StickAndPuck.App.Core
                         "no intermission talk scale for " + IntermissionTalkStrength
                     ),
                 };
+
+        /// <summary>Gets how a rushed human line change that steps on too early is called: a bench minor for too many men on the ice, or Off.</summary>
+        public TooManyMenCall TooManyMen { get; init; } = TooManyMenCall.Lenient;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

@@ -27,5 +27,8 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets the line calls scene's plays.</summary>
         internal Slot<Rules.Offside.Dev.LineCallsDemo> LineCalls { get; } = new();
+
+        /// <summary>Gets the too many men scene's scripted rushed change.</summary>
+        internal Slot<Lines.Dev.TooManyMenDemo> TooManyMen { get; } = new();
     }
 }

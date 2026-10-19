@@ -180,6 +180,9 @@ namespace StickAndPuck.App.Core
             /// <summary>OVER-GLASS MINOR</summary>
             public const string RuleOverGlassMinor = nameof(RuleOverGlassMinor);
 
+            /// <summary>TOO MANY MEN</summary>
+            public const string RuleTooManyMen = nameof(RuleTooManyMen);
+
             /// <summary>FIGHTS</summary>
             public const string RuleFights = nameof(RuleFights);
 

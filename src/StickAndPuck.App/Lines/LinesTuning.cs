@@ -41,6 +41,12 @@ namespace StickAndPuck.App.Lines
         /// <summary>A leaving skater who has not reached the door after this many seconds swaps anyway.</summary>
         public const float LeaveTimeout = 8f;
 
+        /// <summary>A rushed change is too many men under <see cref="Core.TooManyMenCall.Lenient"/> when the skater going off is further than this from the bench door, in metres.</summary>
+        public const float TooManyMenLenient = 5f;
+
+        /// <summary>The same under <see cref="Core.TooManyMenCall.Strict"/>: the rulebook's five feet.</summary>
+        public const float TooManyMenStrict = 1.5f;
+
         /// <summary>Goals against in a short spell that bring in the backup goalie.</summary>
         public const int GoalieGoals = 3;
 
