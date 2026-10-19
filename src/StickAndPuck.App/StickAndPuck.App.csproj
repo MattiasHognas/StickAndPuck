@@ -26,10 +26,6 @@
     <NoWarn>$(NoWarn);NETSDK1057</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="StickAndPuck.Tests" />
-  </ItemGroup>
-
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'browser-wasm'">
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
