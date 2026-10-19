@@ -47,6 +47,7 @@ namespace StickAndPuck.App.Core
             PreGameTalk = false,
             PuckOverGlass = false,
             OverGlassMinor = false,
+            IntermissionTalk = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -66,6 +67,7 @@ namespace StickAndPuck.App.Core
             FaceoffViolationMinor = true,
             NewsFrequency = NewsFrequency.Often,
             CoachTemper = CoachTemper.Strong,
+            IntermissionTalkStrength = TalkStrength.Strong,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -265,6 +267,29 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets a value indicating whether a skater who shoots or clears the puck directly over the glass from his own defending zone takes a delay-of-game minor (not for a deflection); needs <see cref="PuckOverGlass"/>.</summary>
         public bool OverGlassMinor { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether a human club trailing after period 1 or 2 gets a one-choice talk
+        /// in the Zamboni break (push or stay patient) that changes its shifts and aggression in the next period.
+        /// Plays in any match with a Zamboni break, not only in a season.</summary>
+        public bool IntermissionTalk { get; init; } = true;
+
+        /// <summary>Gets how much the intermission talk changes the next period.</summary>
+        public TalkStrength IntermissionTalkStrength { get; init; } = TalkStrength.Normal;
+
+        /// <summary>Gets the factor on the intermission talk's changes for <see cref="IntermissionTalkStrength"/>, 0 with <see cref="IntermissionTalk"/> off.</summary>
+        [JsonIgnore]
+        public float IntermissionTalkScale =>
+            !IntermissionTalk
+                ? 0f
+                : IntermissionTalkStrength switch
+                {
+                    TalkStrength.Mild => 0.5f,
+                    TalkStrength.Strong => 1.5f,
+                    TalkStrength.Normal => 1f,
+                    _ => throw new NotSupportedException(
+                        "no intermission talk scale for " + IntermissionTalkStrength
+                    ),
+                };
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

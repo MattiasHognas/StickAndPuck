@@ -406,6 +406,23 @@ namespace StickAndPuck.App.Core
                 r => r.TalkStrength,
                 (r, v) => r with { TalkStrength = v }
             ),
+            Flag(
+                nameof(RuleSet.IntermissionTalk),
+                K.RuleIntermissionTalk,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.IntermissionTalk,
+                (r, v) => r with { IntermissionTalk = v }
+            ),
+            Choice(
+                nameof(RuleSet.IntermissionTalkStrength),
+                K.RuleIntermissionTalkStrength,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<TalkStrength>(),
+                r => r.IntermissionTalkStrength,
+                (r, v) => r with { IntermissionTalkStrength = v }
+            ),
         ];
 
         /// <summary>Gets the rules the game plays, grouped as the rules page shows them.</summary>

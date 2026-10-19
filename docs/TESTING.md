@@ -97,6 +97,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `benches`: cycles through bench reactions to goals, penalties, fights, hits, stoppages and a tired line, with a close camera and draw-time logging.
 - `penaltybox`: box entry, sitting and release; `SAP_BOX=in` (default), `two` or `out` chooses the script.
 - `zamboni`: opens in the first intermission; `SAP_ZAMBONI_AT` starts the drive that many seconds in. The corner tag shows the next period, the time left and the skip button; the rules' intermission length (Standard, Quick in Arcade, or Off) sets how long it lasts.
+- `talk`: opens in the first intermission with the keyboard on the home centre a goal down (`SAP_TALK_DOWN=n` goals; two or more makes the coach angry), so the trailing talk (push or stay patient) shows over the Zamboni; the stick picks, shoot or pass answers. `SAP_TALK=push` or `patient` answers it after a moment with a scripted press the replay records; `SAP_ZAMBONI_AT` works as in `zamboni`.
 - `netlobby`: the start screen flow opened on the online versus lobby.
 - `nethost`: the lobby's host flow with `SAP_HOME` and `SAP_AWAY` picked, listening on `SAP_NET_PORT` until a player joins, then the network match.
 - `netjoin`: the lobby's join flow, connecting to `SAP_NET_ADDRESS` on `SAP_NET_PORT`, then the network match.
@@ -119,7 +120,7 @@ The `NetworkTests` class runs two lockstep peers over a real loopback TCP connec
 
 ### Variable coverage
 
-The reference covers all 91 current `SAP_*` names found in the app, tests and recording tools: 89 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
+The reference covers all 93 current `SAP_*` names found in the app, tests and recording tools: 91 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
 
 `SAP_MATCHES` appears only in an old comment in `DefenceTests.cs`; no current code reads it. It is not a supported override for the TUnit suite.
 

@@ -128,6 +128,9 @@ namespace StickAndPuck.App.Core
 
         internal Slot<Rules.Penalties.PenaltyBook> Penalties { get; } = new();
 
+        /// <summary>Gets the trailing club's intermission talk and what it chose.</summary>
+        internal Slot<Intermission.TalkState> Talk { get; } = new();
+
         /// <summary>Adds a player from a club's roster.</summary>
         public Player AddPlayer(Side side, PlayerData data, System.Numerics.Vector3 position)
         {

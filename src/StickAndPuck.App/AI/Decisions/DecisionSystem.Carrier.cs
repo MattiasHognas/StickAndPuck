@@ -1,6 +1,7 @@
 using System.Numerics;
 using StickAndPuck.App.AI.Positioning;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Intermission;
 using StickAndPuck.App.Players.Movement;
 using StickAndPuck.App.Players.Puck;
 
@@ -65,6 +66,8 @@ namespace StickAndPuck.App.AI.Decisions
         {
             Maybe<PassOption> best = Maybe.None<PassOption>();
             float vision = Choices.Vision(smart);
+            float risk = TrailingTalk.TurnoverWeight(world, p.Side); // a pushing club risks more, a patient one less
+            float safest = TrailingTalk.SafestPass(world, p.Side);
             foreach (Player mate in world.OnIce(p.Side))
             {
                 if (mate == p || mate.IsGoalie || mate.Action == PlayerAction.Fallen)
@@ -101,12 +104,17 @@ namespace StickAndPuck.App.AI.Decisions
                 }
 
                 float success = Choices.LaneSuccess(at, target, speed, seen, smart);
+                if (success < safest)
+                {
+                    continue; // too risky for a club told to stay patient
+                }
+
                 float value =
                     (
                         success
                         * Choices.SpotValue(end, target)
                         * (0.5f + (0.5f * Choices.Room(target, seen)))
-                    ) - ((1f - success) * (cycling ? Choices.CycleTurnover : 0.08f));
+                    ) - ((1f - success) * (cycling ? Choices.CycleTurnover : 0.08f) * risk);
                 if (!best.TryGet(out PassOption top) || value > top.Value)
                 {
                     best = new PassOption(mate, target, success, value);

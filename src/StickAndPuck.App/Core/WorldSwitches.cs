@@ -17,6 +17,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets or sets where the next zamboni run starts along its route, in seconds; the intermission scene's SAP_ZAMBONI_AT sets it, and the run resets it to 0.</summary>
         public float ZamboniStartAt { get; set; }
 
+        /// <summary>Gets or sets the answer the talk scene's SAP_TALK presses for the trailing human, as a scripted press the replay records; None waits for the player.</summary>
+        public TalkChoice TalkPick { get; set; }
+
         /// <summary>Gets or sets a value indicating whether goals start a celebration.</summary>
         public bool Celebrations { get; set; } = true;
 

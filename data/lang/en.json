@@ -561,5 +561,15 @@
   "StyleDefensiveShell": "DEF. SHELL",
   "TeamCardRecord": "{0}-{1}-{2}  {3} PTS",
   "TeamCardPlace": "#{0} OF {1}",
-  "TeamCardScorer": "#{0} {1}  {2} G"
+  "TeamCardScorer": "#{0} {1}  {2} G",
+  "RuleIntermissionTalk": "TRAILING TALK",
+  "RuleIntermissionTalkStrength": "TRAILING TALK STRENGTH",
+  "TalkAsk": "DOWN BY {0}. HOW DO WE PLAY PERIOD {1}?",
+  "TalkPush": "PUSH",
+  "TalkPatient": "STAY PATIENT",
+  "TalkPushHint": "SHORT SHIFTS, HARD FORECHECK, D PINCH",
+  "TalkPatientHint": "KEEP SHAPE, SAFE PASSES",
+  "TalkKeys": "LEFT/RIGHT PICK   SPACE TELL THEM",
+  "TalkPushSaid": "PUSH! SHORT SHIFTS AND GET IN THEIR FACES.",
+  "TalkPatientSaid": "STAY PATIENT. OUR CHANCES WILL COME."
 }
