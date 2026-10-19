@@ -44,9 +44,9 @@ namespace StickAndPuck.App.Season.Schedule
             art.DrawPanel("panel", x, y, w, h);
 
             int top = y + Pad - 2;
-            string title = season.IsOver
-                ? Text.Get(K.ShlFinalTable)
-                : Text.Format(K.ShlRound, Screens.StandingsScreen.Round(season), season.Rounds);
+            string title = LeagueText
+                .Of(season.League)
+                .TableHeading(season.IsOver, Screens.StandingsScreen.Round(season), season.Rounds);
             art.DrawText(title, x + Pad + 4, top, art.Score);
             top += Line;
             foreach ((string head, int cx) in Columns)
@@ -92,9 +92,9 @@ namespace StickAndPuck.App.Season.Schedule
             int x = (Game.Width - w) / 2,
                 y = Math.Max(2, (Game.Height - h) / 2);
             art.DrawPanel("panel", x, y, w, h);
-            string title = season.IsOver
-                ? Text.Get(K.NhlFinalTable)
-                : Text.Format(K.NhlRound, Screens.StandingsScreen.Round(season), season.Rounds);
+            string title = LeagueText
+                .Of(season.League)
+                .TableHeading(season.IsOver, Screens.StandingsScreen.Round(season), season.Rounds);
             art.DrawText(title, x + Pad + 4, y + Pad - 2, art.Score);
             _ = NhlStandingsDraw.Draw(
                 art,

@@ -571,5 +571,14 @@
   "TalkPatientHint": "KEEP SHAPE, SAFE PASSES",
   "TalkKeys": "LEFT/RIGHT PICK   SPACE TELL THEM",
   "TalkPushSaid": "PUSH! SHORT SHIFTS AND GET IN THEIR FACES.",
-  "TalkPatientSaid": "STAY PATIENT. OUR CHANCES WILL COME."
+  "TalkPatientSaid": "STAY PATIENT. OUR CHANCES WILL COME.",
+  "NhlLeadersHeadingSeason": "NHL  SEASON LEADERS  -  {0}",
+  "NhlLeadersHeadingPlayoff": "NHL  PLAYOFF LEADERS  -  {0}",
+  "RoundStanleyCupFinal": "STANLEY CUP FINAL",
+  "TrophyLeMat": "LE MAT TROPHY",
+  "TrophyStanleyCup": "STANLEY CUP",
+  "TrophyHeading": "{0}  -  {1}",
+  "WildCardHeading": "WILD CARD",
+  "HintStandingsWildCard": "LEFT RIGHT SHOWS THE WILD CARD RACE",
+  "HintStandingsDivisions": "LEFT RIGHT SHOWS THE DIVISIONS"
 }

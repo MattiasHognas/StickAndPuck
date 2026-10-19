@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Schedule;
-using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season.Playoffs
 {
@@ -69,29 +68,13 @@ namespace StickAndPuck.App.Season.Playoffs
         /// <summary>Gets a round's name in the language shown: play-in, quarter-finals, semi-finals, final.</summary>
         public static string RoundTitle(int round)
         {
-            return Text.Get(
-                round switch
-                {
-                    <= 0 => K.RoundPlayIn,
-                    1 => K.RoundQuarterFinals,
-                    2 => K.RoundSemiFinals,
-                    _ => K.RoundFinal,
-                }
-            );
+            return Text.Get(LeagueText.Shl.RoundKey(round));
         }
 
-        /// <summary>Gets an NHL round's name in the language shown: first round, second round, conference finals, final.</summary>
+        /// <summary>Gets an NHL round's name in the language shown: first round, second round, conference finals, Stanley Cup final.</summary>
         public static string NhlRoundTitle(int round)
         {
-            return Text.Get(
-                round switch
-                {
-                    <= 0 => K.RoundFirst,
-                    1 => K.RoundSecond,
-                    2 => K.RoundConferenceFinals,
-                    _ => K.RoundFinal,
-                }
-            );
+            return Text.Get(LeagueText.Nhl.RoundKey(round));
         }
 
         /// <summary>Gets a round's name in the language shown, in this playoff's format.</summary>

@@ -194,10 +194,11 @@ namespace StickAndPuck.App.Pregame
             Hud.DrawText(text, x, (int)slot.Y - 2, colour);
         }
 
-        /// <summary>Draws text centred in a card slot such as home_name.</summary>
+        /// <summary>Draws text centred in a card slot such as home_name, shortened with a dot when it is wider.</summary>
         public void DrawInSlot(string slot, string text, Color colour)
         {
-            Hud.DrawInSlot(text, Slot(slot), colour);
+            Rectangle r = Slot(slot);
+            Hud.DrawInSlot(Hud.Clip(text, (int)r.Width), r, colour);
         }
 
         /// <summary>Draws one form dot: win, loss, otloss or none.</summary>

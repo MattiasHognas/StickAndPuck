@@ -166,7 +166,10 @@ namespace StickAndPuck.App.Screens
             }
             else
             {
-                string leadersHeading = post ? K.LeadersHeadingPlayoff : K.LeadersHeadingSeason;
+                LeagueText league = LeagueText.Of(
+                    App.Season.Current.Select(s => s.League).Or(League.Shl)
+                );
+                string leadersHeading = post ? league.LeadersPlayoff : league.LeadersSeason;
                 title = Text.Format(leadersHeading, Text.Get(Views[view]));
             }
             (int x, int top) = art.Panel(title, PanelW, h, Math.Max(2, (Game.Height - h - 14) / 2));

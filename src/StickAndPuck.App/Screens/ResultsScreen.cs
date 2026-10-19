@@ -224,13 +224,13 @@ namespace StickAndPuck.App.Screens
             art.Hud.DrawCrest(awayClub.Id, cx + 40, top);
             art.Centred($"{N(result.HomeGoals)} - {N(result.AwayGoals)}", cx, top + 3, art.Gold);
             art.Right(
-                art.Clip(homeClub.Name, cx - 62 - x - 8),
+                art.ClubName(homeClub.Name, cx - 62 - x - 8),
                 cx - 40 - 22,
                 top + 3,
                 Ink(art, Side.Home)
             );
             art.Left(
-                art.Clip(awayClub.Name, x + PanelW - 8 - (cx + 62)),
+                art.ClubName(awayClub.Name, x + PanelW - 8 - (cx + 62)),
                 cx + 40 + 22,
                 top + 3,
                 Ink(art, Side.Away)
