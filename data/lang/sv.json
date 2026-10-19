@@ -561,5 +561,15 @@
   "StyleDefensiveShell": "FÖRSVARSMUR",
   "TeamCardRecord": "{0}-{1}-{2}  {3} P",
   "TeamCardPlace": "#{0} AV {1}",
-  "TeamCardScorer": "#{0} {1}  {2} M"
+  "TeamCardScorer": "#{0} {1}  {2} M",
+  "RuleIntermissionTalk": "PEPPTALK I PAUSEN",
+  "RuleIntermissionTalkStrength": "PEPPTALKETS STYRKA I PAUSEN",
+  "TalkAsk": "UNDER MED {0}. HUR SPELAR VI PERIOD {1}?",
+  "TalkPush": "TRYCK PÅ",
+  "TalkPatient": "HA TÅLAMOD",
+  "TalkPushHint": "KORTA BYTEN, HÅRT FORECHECK, BACKARNA KLIVER",
+  "TalkPatientHint": "HÅLL FORMEN, SÄKRA PASSNINGAR",
+  "TalkKeys": "VÄNSTER/HÖGER VÄLJ   MELLANSLAG SÄG DET",
+  "TalkPushSaid": "TRYCK PÅ! KORTA BYTEN OCH GÅ PÅ DEM.",
+  "TalkPatientSaid": "HA TÅLAMOD. VÅRA LÄGEN KOMMER."
 }

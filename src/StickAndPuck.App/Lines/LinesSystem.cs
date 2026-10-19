@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Intermission;
 using StickAndPuck.App.Players.Movement;
 using StickAndPuck.App.Rules.Icing;
 using StickAndPuck.App.Rules.Match;
@@ -343,7 +344,8 @@ namespace StickAndPuck.App.Lines
                     b.Pending[s, (int)group]
                     || (
                         Automatic(world, side)
-                        && energy < LinesTuning.FaceoffBelow
+                        && energy
+                            < LinesTuning.FaceoffBelow + TrailingTalk.ShiftsEarlier(world, side)
                         && unit.Is(u => u.Energy >= energy + LinesTuning.FresherBy)
                     );
                 if (!want)
@@ -378,15 +380,16 @@ namespace StickAndPuck.App.Lines
                 return;
             }
 
+            float earlier = TrailingTalk.ShiftsEarlier(world, side); // a club told to push changes sooner
             foreach (Group group in BothGroups.OrderBy(g => Bench.OnIceEnergy(world, side, g)))
             {
                 float energy = Bench.OnIceEnergy(world, side, group);
-                if (energy >= LinesTuning.ChangeBelow)
+                if (energy >= LinesTuning.ChangeBelow + earlier)
                 {
                     continue;
                 }
 
-                if (energy >= LinesTuning.ForceBelow && !Safe(world, side))
+                if (energy >= LinesTuning.ForceBelow + earlier && !Safe(world, side))
                 {
                     continue;
                 }

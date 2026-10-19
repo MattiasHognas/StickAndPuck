@@ -5,6 +5,7 @@ using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Lines;
 using StickAndPuck.App.Rules.Match;
+using StickAndPuck.App.Screens;
 using static Raylib_cs.Raylib;
 using K = StickAndPuck.App.Core.Text.Keys;
 
@@ -18,7 +19,9 @@ namespace StickAndPuck.App.Intermission
     /// camera wins while the Zamboni is out and hands back smoothly before the faceoff. The rules'
     /// <see cref="RuleSet.Intermission"/> sets the length: Standard drives the whole route, Quick at double pace,
     /// Off sends no Zamboni. The same break runs before a playoff overtime. While it drives, a tag in the
-    /// corner shows what follows, the time left and the skip button.</summary>
+    /// corner shows what follows, the time left and the skip button. A human club trailing after period 1 or 2
+    /// gets the coach's one-choice talk in the break (<see cref="TrailingTalk"/>); its answer wins over the skip
+    /// on the step it is given.</summary>
     /// <remarks>Initializes a new instance of the <see cref="IntermissionSystem"/> class with its own skip button, for the self test.</remarks>
     internal sealed class IntermissionSystem(Func<bool> skipPressed) : ISystem, IDisposable
     {
@@ -42,6 +45,7 @@ namespace StickAndPuck.App.Intermission
 
         private readonly Func<bool> skipPressed = skipPressed;
         private readonly ZamboniRenderer renderer = new();
+        private Maybe<ScreenArt> art;
         private float cameraX,
             cameraVx,
             blend;
@@ -63,6 +67,7 @@ namespace StickAndPuck.App.Intermission
             if (MatchFlow.IsRunning(world))
             {
                 renderer.Load();
+                art = ScreenArt.Load();
             }
         }
 
@@ -80,6 +85,7 @@ namespace StickAndPuck.App.Intermission
             {
                 Current = Maybe.None<Drive>();
                 blend = 0;
+                TrailingTalk.Close(world);
                 return;
             }
 
@@ -100,15 +106,25 @@ namespace StickAndPuck.App.Intermission
                 };
                 Current = drive;
                 world.Switches.ZamboniStartAt = 0;
+                if (
+                    TrailingTalk
+                        .Trailing(world, drive.Period, drive.IntoOvertime)
+                        .TryGet(out Side behind)
+                )
+                {
+                    TrailingTalk.Open(world, behind, drive.Period + 1);
+                }
+
                 cameraX = Route.At(Route.Distance(drive.Seconds)).X;
                 cameraVx = 0;
             }
 
+            bool answered = TrailingTalk.Update(world, dt);
             if (!drive.Finished)
             {
                 drive.Seconds += dt * drive.Rate;
                 drive.Shown += dt;
-                if (drive.Shown >= SkipAfterSeconds && skipPressed())
+                if (!answered && drive.Shown >= SkipAfterSeconds && skipPressed())
                 {
                     drive.Skipped = true;
                     drive.Finished = true;
@@ -119,6 +135,10 @@ namespace StickAndPuck.App.Intermission
                 }
 
                 flow.Timer = drive.Finished ? AfterSeconds : Math.Max(flow.Timer, HoldSeconds);
+                if (drive.Finished)
+                {
+                    TrailingTalk.Close(world); // the break is over: an unanswered talk goes unanswered
+                }
             }
 
             if (!drive.Finished)
@@ -257,6 +277,11 @@ namespace StickAndPuck.App.Intermission
 
         public void DrawHud(World world, RenderContext render)
         {
+            if (art.TryGet(out ScreenArt loaded))
+            {
+                TalkPanel.Draw(world, loaded);
+            }
+
             if (
                 !Current.TryGet(out Drive drive)
                 || drive.Finished
@@ -278,6 +303,11 @@ namespace StickAndPuck.App.Intermission
         public void Dispose()
         {
             renderer.Dispose();
+            if (art.TryGet(out ScreenArt loaded))
+            {
+                loaded.Unload();
+                art = Maybe.None<ScreenArt>();
+            }
         }
 
         /// <summary>Gets the distance along the route to draw at, or None while the Zamboni is out of sight behind the boards or gone.</summary>
