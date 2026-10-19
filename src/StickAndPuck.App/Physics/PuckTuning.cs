@@ -22,7 +22,7 @@ namespace StickAndPuck.App.Physics
         /// <summary>Restitution off the boards.</summary>
         public const float BoardBounce = 0.55f;
 
-        /// <summary>Restitution off the glass above the boards: livelier than the boards. Netting above the glass catches anything higher, so the wall has no top.</summary>
+        /// <summary>Restitution off the glass above the boards: livelier than the boards. Above the glass a puck leaves the rink (<see cref="Core.RuleSet.PuckOverGlass"/>), or netting catches it.</summary>
         public const float GlassBounce = 0.7f;
 
         /// <summary>Rubbing against the boards or glass: speed lost along the wall per unit of impact (a friction coefficient).</summary>

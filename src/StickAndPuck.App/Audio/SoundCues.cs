@@ -36,6 +36,7 @@ namespace StickAndPuck.App.Audio
                 WhistleBlown => [new(Sfx.Whistle)],
                 FaceoffViolated => [new(Sfx.Whistle)],
                 TimeOutCalled => [new(Sfx.Whistle), new(Sfx.Crowd, 0.5f, Delay: 0.4f)],
+                PuckOverGlass => [], // the whistle that follows is its own event
                 _ => throw new UnreachableException($"no sound cues for {e.GetType().Name}"),
             };
         }
@@ -62,6 +63,7 @@ namespace StickAndPuck.App.Audio
                 PuckHitPost p => p.Position,
                 WhistleBlown w => w.Position,
                 FaceoffViolated f => f.Position,
+                PuckOverGlass o => o.Position,
                 _ => throw new UnreachableException($"no position for {e.GetType().Name}"),
             };
         }
@@ -90,6 +92,7 @@ namespace StickAndPuck.App.Audio
                 new WhistleBlown(time, at),
                 new FaceoffViolated(time, Side.Home, 0, at, 1),
                 new TimeOutCalled(time, Side.Home),
+                new PuckOverGlass(time, at, 0, at, Direct: true),
             ];
         }
 

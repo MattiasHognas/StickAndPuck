@@ -20,6 +20,11 @@ namespace StickAndPuck.App.Rules.Match.Dev
         /// <summary>Gets how many times per faceoff the demo presses shoot for the human centre before the drop, a faceoff violation each; 0 for none.</summary>
         public int EarlyPresses { get; init; }
 
+        /// <summary>Gets the zone the demo's scripted clears go over the glass from: None for no clears, the club's own (defending) end, or the end it attacks.</summary>
+        public Maybe<bool> ClearsFromOwnZone { get; init; }
+
+        private int clearStage;
+
         /// <summary>Seconds into a faceoff before each early press, times the violations so far plus one.</summary>
         private const float EarlyAfter = 0.35f;
 
@@ -35,6 +40,12 @@ namespace StickAndPuck.App.Rules.Match.Dev
         private void Run(World world)
         {
             Pan(world);
+            if (ClearsFromOwnZone.TryGet(out bool own))
+            {
+                Clear(world, own);
+                return;
+            }
+
             if (PressAfter >= 0)
             {
                 Faceoffs(world);
@@ -102,6 +113,50 @@ namespace StickAndPuck.App.Rules.Match.Dev
                 _ = MatchFlow.Whistle(world, RinkSpec.CentreDot);
             }
         }
+
+        /// <summary>A second into each spell of play, a home defenceman gets the puck in front of a net and holds it
+        /// there a moment (the camera pans over), then lofts it high over the far glass: carried, so it counts as his clear.</summary>
+        private void Clear(World world, bool own)
+        {
+            Puck pk = world.Puck;
+            if (world.Match.Phase != MatchPhase.Play)
+            {
+                shotAt = world.Time;
+                clearStage = 0;
+                return;
+            }
+
+            Player[] skaters = [.. world.OnIce(Side.Home).Where(p => !p.IsGoalie)];
+            if (skaters.Length == 0 || clearStage > 1 || world.Time - shotAt < 1f)
+            {
+                return;
+            }
+
+            Player d =
+                skaters.FirstOrDefault(p => p.Data.Position == PlayingPosition.D) ?? skaters[0];
+            int end = FaceoffFormation.DefendedEnd(world.Match, Side.Home) * (own ? 1 : -1);
+            Vector3 spot = new(end * 19f, 0, -1f);
+            if (world.Time - shotAt < 2f)
+            {
+                d.Position = spot;
+                d.Velocity = Vector3.Zero;
+                pk.Carrier = d.Id;
+                pk.LastTouch = d.Id;
+                pk.Position = spot;
+                pk.Velocity = Vector3.Zero;
+                clearStage = 1;
+                return;
+            }
+
+            // above the sticks at once, so nobody picks it off the blade; a high lob out over the far glass
+            pk.Carrier = -1;
+            pk.Position = spot with { Y = PuckHandlingHeight, Z = spot.Z - 0.4f };
+            pk.Velocity = new Vector3(-end * 1f, 11f, -6.5f);
+            clearStage = 2;
+        }
+
+        /// <summary>How high the scripted clear starts: just over a stick's reach.</summary>
+        private const float PuckHandlingHeight = 0.3f;
 
         private void Shoot(World world, Side shooter)
         {

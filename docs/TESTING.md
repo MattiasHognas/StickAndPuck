@@ -81,6 +81,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `seasontable`, `playoffbracket`, `arcadesummary`: the saved season's table, the playoff bracket or the arcade run's panel over the rink, nothing played.
 - `outlines`: twelve skaters packed together to check the outlines.
 - `faceoff`: repeats faceoffs, transfers the human slot to the centre, and scripts a press 0.15 seconds after each drop. `SAP_FACEOFF_VIOLATION=n` also presses n times before each drop, a faceoff violation each: with 1 the centre is waved out and a winger takes the draw; with 2 and `SAP_RULES=nhl` the second is a delay-of-game minor. `SAP_RULES=shl|arcade|nhl` picks the rules (default SHL).
+- `overglass`: an AI exhibition where, a second into each spell of play, a home defenceman lobs the puck over the far glass from his own zone: the puck leaves the rink and play stops, with a delay-of-game minor and the draw in his end under SHL and NHL rules. `SAP_GLASS_FROM=attack` lobs it from the zone home attacks instead (a stoppage, no minor, the draw outside that zone); `SAP_RULES=shl|arcade|nhl` picks the rules (default SHL; in Arcade the netting keeps the puck in play).
 - `celebration`: the last seconds of a decided game; `SAP_CLOCK` sets the remaining time (default 4), `SAP_WINNER=away` puts the visitors ahead instead.
 - `timeout`: late in the third period, the home club a goal down with its tired line held on the ice by an icing, so its AI calls the time-out at the faceoff: the banner shows the club and the clock until play resumes 30 seconds later, while the skaters on the ice rest (`SAP_LINES_DEBUG=1` shows their energy bars fill).
 - `goaliepull`: late in the third period, down a goal, to show the extra attacker; `SAP_AI_HUMAN=1` gives the human control and G pulls/returns the goalie in this scene.
@@ -118,7 +119,7 @@ The `NetworkTests` class runs two lockstep peers over a real loopback TCP connec
 
 ### Variable coverage
 
-The reference covers all 90 current `SAP_*` names found in the app, tests and recording tools: 88 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
+The reference covers all 91 current `SAP_*` names found in the app, tests and recording tools: 89 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
 
 `SAP_MATCHES` appears only in an old comment in `DefenceTests.cs`; no current code reads it. It is not a supported override for the TUnit suite.
 

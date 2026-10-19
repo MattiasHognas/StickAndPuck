@@ -92,6 +92,7 @@ namespace StickAndPuck.App.Hud
                 IcingCalled icing => IcingBanner(world, icing, e.Time),
                 PenaltyCalled penalty => PenaltyBanner(world, m, penalty, e.Time),
                 FaceoffViolated violation => ViolationBanner(world, violation),
+                PuckOverGlass over => OverGlassBanner(world, over),
                 _ => Maybe.None<HudMessage>(),
             };
         }
@@ -182,6 +183,27 @@ namespace StickAndPuck.App.Hud
                 line,
                 world.Setup.Club(violation.Side).Id,
                 violation.Time + CallSeconds
+            );
+        }
+
+        private static HudMessage OverGlassBanner(World world, PuckOverGlass over)
+        {
+            // who put it out, with his club's crest; a delay-of-game call that follows replaces it
+            string line = "",
+                club = "";
+            if (over.PlayerId >= 0 && over.PlayerId < world.Players.Count)
+            {
+                Player who = world.Players[over.PlayerId];
+                line = Text.Format(K.PlayerTag, who.Data.Number, who.Data.LastName);
+                club = world.Setup.Club(who.Side).Id;
+            }
+
+            return new HudMessage(
+                "panel",
+                Text.Get(K.PuckOverGlass),
+                line,
+                club,
+                over.Time + CallSeconds
             );
         }
 

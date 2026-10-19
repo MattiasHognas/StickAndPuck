@@ -128,7 +128,8 @@ namespace StickAndPuck.App.Season.Stats
                     or IcingCalled
                     or OffsideCalled
                     or FaceoffViolated
-                    or TimeOutCalled:
+                    or TimeOutCalled
+                    or PuckOverGlass:
                         break;
                     default:
                         throw new NotSupportedException(

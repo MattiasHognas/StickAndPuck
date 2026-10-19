@@ -3,6 +3,7 @@ using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Physics.Dev;
 using StickAndPuck.App.Render;
+using StickAndPuck.App.Rules.Match;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Physics
@@ -22,7 +23,11 @@ namespace StickAndPuck.App.Physics
     /// A body the puck bounces off becomes its last touch, so a deflection counts for the deflector.
     /// Goalies are left to the goalie system, which runs before this system.
     /// Before the puck moves, <see cref="NetBody"/> pushes every player out of both cages, after all
-    /// skating, checking, stickhandling and goalie movement of the step.</summary>
+    /// skating, checking, stickhandling and goalie movement of the step.
+    /// Under <see cref="RuleSet.PuckOverGlass"/>, while the match flow runs and the puck is in play, the wall
+    /// stops at <see cref="RinkSpec.GlassTop"/>: a puck above it flies out of the rink, <see cref="PuckOverGlass"/>
+    /// is published with who last played it (<see cref="PuckPlay"/>), and the puck flies on into the stands
+    /// untouched until something places it again (the faceoff). Otherwise netting catches everything.</summary>
     internal sealed class PuckPhysics : ISystem, IDisposable
     {
         private static readonly Color Rubber = new(0x18, 0x13, 0x1f, 255);
@@ -36,6 +41,11 @@ namespace StickAndPuck.App.Physics
         private int scored; // the end whose net the current goal was published for (-1, +1), or 0
         private int inNet; // the end whose net holds the puck because it came in through the mouth, or 0
         private Maybe<Vector3> lastPosition;
+        private readonly PuckPlay play = new();
+        private bool outside; // the puck left the rink over the glass and has not been placed since
+
+        /// <summary>How far below the ice a puck that left the rink falls before it stops: out of sight under the stands.</summary>
+        private const float OutOfSightY = -1f;
 
         public void Start(World world)
         {
@@ -48,6 +58,11 @@ namespace StickAndPuck.App.Physics
             PuckDemo.Update(world);
             NetBody.Resolve(world, dt);
             Puck pk = world.Puck;
+            if (Outside(pk, dt))
+            {
+                return;
+            }
+
             if (pk.Carrier < 0 && lastCarrier >= 0)
             {
                 releasedBy = lastCarrier;
@@ -55,6 +70,7 @@ namespace StickAndPuck.App.Physics
             }
             lastCarrier = pk.Carrier;
             Track(pk);
+            play.Before(world);
 
             if (pk.Carrier < 0)
             {
@@ -78,21 +94,81 @@ namespace StickAndPuck.App.Physics
                 impacts.Clear();
                 Vector3 position = pk.Position;
                 Vector3 velocity = pk.Velocity;
-                PuckMotion.Step(
+                bool left = PuckMotion.Step(
                     ref position,
                     ref velocity,
                     ref inNet,
                     dt,
                     System.Runtime.InteropServices.CollectionsMarshal.AsSpan(bodies),
-                    impacts
+                    impacts,
+                    WallTop(world)
                 );
                 pk.Position = position;
                 pk.Velocity = velocity;
+                foreach (PuckImpact i in impacts)
+                {
+                    play.Hit(i);
+                }
+
                 Publish(world, impacts);
+                if (left)
+                {
+                    outside = true;
+                    world.Events.Publish(
+                        new PuckOverGlass(
+                            world.Time,
+                            position,
+                            play.PlayerId,
+                            play.From,
+                            play.Clean
+                        )
+                    );
+                }
             }
 
             lastPosition = pk.Position;
             GoalLine(world);
+        }
+
+        /// <summary>The top of the wall this step: the glass while the puck is in play under <see cref="RuleSet.PuckOverGlass"/>, otherwise none (netting).</summary>
+        private static float WallTop(World world)
+        {
+            return
+                world.Setup.Rules.PuckOverGlass
+                && world.Puck.Live
+                && world.Match.Phase == MatchPhase.Play
+                && MatchFlow.IsRunning(world)
+                ? RinkSpec.GlassTop
+                : float.PositiveInfinity;
+        }
+
+        /// <summary>A puck out of the rink flies on into the stands and drops out of sight, touching nothing,
+        /// until something else places it. Returns true while it is out.</summary>
+        private bool Outside(Puck pk, float dt)
+        {
+            if (!outside)
+            {
+                return false;
+            }
+
+            if (pk.Carrier >= 0 || !lastPosition.TryGet(out Vector3 last) || last != pk.Position)
+            {
+                outside = false;
+                return false;
+            }
+
+            if (pk.Position.Y > OutOfSightY)
+            {
+                pk.Velocity -= new Vector3(0, PuckTuning.Gravity * dt, 0);
+                pk.Position += pk.Velocity * dt;
+            }
+            else
+            {
+                pk.Velocity = Vector3.Zero;
+            }
+
+            lastPosition = pk.Position;
+            return true;
         }
 
         /// <summary>Follows a puck that something other than physics moved since the last step: a carrier's stick, a
@@ -248,7 +324,9 @@ namespace StickAndPuck.App.Physics
         {
             Vector3 pos = render.Motion.Puck(world);
             // An airborne puck drops a crisp dark shadow on the ice and grows a little, so its height reads from the broadcast camera
-            if (PuckLook.Airborne(pos.Y))
+            bool overIce =
+                MathF.Abs(pos.X) <= RinkSpec.HalfLength && MathF.Abs(pos.Z) <= RinkSpec.HalfWidth;
+            if (overIce && PuckLook.Airborne(pos.Y))
             {
                 float r = PuckLook.Shadow(pos.Y);
                 DrawCylinder(

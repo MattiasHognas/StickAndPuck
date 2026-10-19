@@ -24,6 +24,10 @@ namespace StickAndPuck.App.Core
         /// <summary>Height of the boards above the ice.</summary>
         public const float BoardHeight = 1.07f;
 
+        /// <summary>Height of the top of the glass above the ice (the glass in arena.glb runs from 1.15 to 2.95 m).
+        /// A puck clearing it leaves the rink when <see cref="RuleSet.PuckOverGlass"/> is on.</summary>
+        public const float GlassTop = 2.95f;
+
         /// <summary>Net mouth width (between the posts).</summary>
         public const float NetWidth = 1.83f;
 

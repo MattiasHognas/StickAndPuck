@@ -174,6 +174,12 @@ namespace StickAndPuck.App.Core
             /// <summary>INTENTIONAL OFFSIDE</summary>
             public const string RuleIntentionalOffside = nameof(RuleIntentionalOffside);
 
+            /// <summary>PUCK OVER GLASS</summary>
+            public const string RulePuckOverGlass = nameof(RulePuckOverGlass);
+
+            /// <summary>OVER-GLASS MINOR</summary>
+            public const string RuleOverGlassMinor = nameof(RuleOverGlassMinor);
+
             /// <summary>FIGHTS</summary>
             public const string RuleFights = nameof(RuleFights);
 

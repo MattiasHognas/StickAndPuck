@@ -33,12 +33,38 @@ namespace StickAndPuck.App.Physics
             ICollection<PuckImpact> impacts
         )
         {
+            _ = Step(
+                ref position,
+                ref velocity,
+                ref inNet,
+                dt,
+                bodies,
+                impacts,
+                float.PositiveInfinity
+            );
+        }
+
+        /// <summary>Advances a loose puck as above, with a top on the wall: a puck that reaches the boards wholly
+        /// above <paramref name="wallTop"/> flies out of the rink instead of bouncing back (the puck over the
+        /// glass). <see cref="float.PositiveInfinity"/> is netting above the glass that catches everything.</summary>
+        /// <returns>True when the puck left the rink this step; it stops at the wall it crossed.</returns>
+        public static bool Step(
+            ref Vector3 position,
+            ref Vector3 velocity,
+            ref int inNet,
+            float dt,
+            ReadOnlySpan<PuckBody> bodies,
+            ICollection<PuckImpact> impacts,
+            float wallTop
+        )
+        {
             float move = velocity.Length() * dt;
             int steps = Math.Clamp((int)MathF.Ceiling(move / PuckTuning.MaxSubstepMove), 1, 64);
             float h = dt / steps;
-            for (int i = 0; i < steps; i++)
+            bool left = false;
+            for (int i = 0; i < steps && !left; i++)
             {
-                SubStep(ref position, ref velocity, ref inNet, h, bodies, impacts);
+                left = SubStep(ref position, ref velocity, ref inNet, h, bodies, impacts, wallTop);
             }
 
             if (
@@ -51,15 +77,18 @@ namespace StickAndPuck.App.Physics
                 velocity = Vector3.Zero;
                 inNet = 0;
             }
+
+            return left;
         }
 
-        private static void SubStep(
+        private static bool SubStep(
             ref Vector3 p,
             ref Vector3 v,
             ref int inNet,
             float h,
             ReadOnlySpan<PuckBody> bodies,
-            ICollection<PuckImpact> impacts
+            ICollection<PuckImpact> impacts,
+            float wallTop
         )
         {
             Vector3 prev = p;
@@ -102,7 +131,11 @@ namespace StickAndPuck.App.Physics
                 }
             }
 
-            Boards(ref p, ref v, impacts);
+            if (Boards(ref p, ref v, impacts, wallTop))
+            {
+                return true;
+            }
+
             for (int end = -1; end <= 1; end += 2)
             {
                 Net(end, prev, ref p, ref v, ref inNet, h, impacts);
@@ -112,10 +145,19 @@ namespace StickAndPuck.App.Physics
             {
                 Body(b, ref p, ref v, impacts);
             }
+
+            return false;
         }
 
-        /// <summary>The rink outline: straight boards with rounded corners, glass above, netting above that.</summary>
-        private static void Boards(ref Vector3 p, ref Vector3 v, ICollection<PuckImpact> impacts)
+        /// <summary>The rink outline: straight boards with rounded corners, glass above, and above the glass
+        /// either netting (an endless wall) or open air: a puck wholly above <paramref name="wallTop"/> at the
+        /// wall is out of the rink, and true comes back with the puck left where it crossed.</summary>
+        private static bool Boards(
+            ref Vector3 p,
+            ref Vector3 v,
+            ICollection<PuckImpact> impacts,
+            float wallTop
+        )
         {
             float r = RinkSpec.PuckRadius,
                 cr = RinkSpec.CornerRadius;
@@ -133,7 +175,7 @@ namespace StickAndPuck.App.Physics
                 depth = dist - (cr - r);
                 if (depth <= 0)
                 {
-                    return;
+                    return false;
                 }
 
                 n = d / dist;
@@ -144,7 +186,7 @@ namespace StickAndPuck.App.Physics
                     dz = az - (RinkSpec.HalfWidth - r);
                 if (dx <= 0 && dz <= 0)
                 {
-                    return;
+                    return false;
                 }
 
                 if (dx > dz)
@@ -158,6 +200,11 @@ namespace StickAndPuck.App.Physics
                     n = new Vector2(0, MathF.Sign(p.Z));
                 }
             }
+            if (p.Y - HalfThickness > wallTop)
+            {
+                return true;
+            }
+
             p.X -= n.X * depth;
             p.Z -= n.Y * depth;
             bool glass = p.Y + HalfThickness > RinkSpec.BoardHeight;
@@ -170,6 +217,7 @@ namespace StickAndPuck.App.Physics
                 p,
                 impacts
             );
+            return false;
         }
 
         /// <summary>The net behind one goal line: a cage open only at the mouth. The puck is inside only when it came
