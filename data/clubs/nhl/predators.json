@@ -20,7 +20,8 @@
   "tactics": {
     "forecheck": "balanced",
     "entry": "dumpAndChase",
-    "powerPlay": "umbrella"
+    "powerPlay": "umbrella",
+    "style": "defensiveShell"
   },
   "roster": [
     {

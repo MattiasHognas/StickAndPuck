@@ -91,6 +91,7 @@ in sync when upgrading.
 
 - `SAP_NET_ADDRESS`, `SAP_NET_PORT`, `SAP_NET_DELAY`: the online versus lobby's starting host address to join (default `127.0.0.1`), TCP port (default 7777) and the host's input delay in steps (1 to 15, default 4). The lobby screen changes them for the run. Desktop only.
 
+- `SAP_LEAGUE=shl|nhl`: the league whose clubs the run loads; `nhl` plays the season, playoff and screen scenes as an NHL season (82 games by division and conference, NHL rules, the 16-club division playoff). Default `shl`.
 - `SAP_RULES=shl|arcade|nhl`: chooses the rule preset in the menu flow and the overtime and faceoff scenes without saving that override; arcade modes retain their Arcade preset. Individual dev scenes can set up their own rules.
 
 ## Visuals, sound and input

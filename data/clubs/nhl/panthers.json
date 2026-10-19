@@ -20,7 +20,8 @@
   "tactics": {
     "forecheck": "aggressive",
     "entry": "dumpAndChase",
-    "powerPlay": "oneThreeOne"
+    "powerPlay": "oneThreeOne",
+    "style": "physical"
   },
   "roster": [
     {

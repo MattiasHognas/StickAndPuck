@@ -117,13 +117,13 @@ The `NetworkTests` class runs two lockstep peers over a real loopback TCP connec
 
 ### Variable coverage
 
-The reference covers all 89 current `SAP_*` names found in the app, tests and recording tools: 87 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
+The reference covers all 90 current `SAP_*` names found in the app, tests and recording tools: 88 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
 
 `SAP_MATCHES` appears only in an old comment in `DefenceTests.cs`; no current code reads it. It is not a supported override for the TUnit suite.
 
 ## Screen previews (`SAP_SCREEN`)
 
-Use these with `SAP_SCENE=start` (the default scene). Values are case-insensitive; an unknown value stops the game. This is the complete set accepted by `Screens/ScreenScenes.cs`:
+Use these with `SAP_SCENE=start` (the default scene). `SAP_LEAGUE=nhl` loads the 32 NHL clubs instead of the SHL's for the whole run, so `season`, `playoffs`, `standings` and `bracket` show an NHL season (82 games, NHL rules, division standings, 16-club playoffs); unset or `shl` keeps the SHL. For example `SAP_LEAGUE=nhl SAP_SAVE=/tmp/nhl.json SAP_SCREEN=bracket` settles an NHL season and shows its bracket, and the same save with `SAP_SCREEN=standings` shows its final standings. Values are case-insensitive; an unknown value stops the game. This is the complete set accepted by `Screens/ScreenScenes.cs`:
 
 | Value | Opens |
 | --- | --- |
@@ -133,8 +133,8 @@ Use these with `SAP_SCENE=start` (the default scene). Values are case-insensitiv
 | `teams` | Exhibition team selection, club strengths and rules choice. |
 | `pause` | A match paused with the pause menu open. |
 | `results` | A sample 4–3 overtime result with long player names and a goal list. |
-| `standings` | The saved season's table; starts a season if none exists. |
-| `bracket` | The playoff test season's bracket. |
+| `standings` | The saved season's table; starts a season if none exists. With `SAP_LEAGUE=nhl`, the NHL standings: the four divisions side by side under their conferences, with the playoff spots as they stand (1-3 and WC1/WC2). |
+| `bracket` | The playoff test season's bracket. With `SAP_LEAGUE=nhl`, the NHL bracket (its own test save, `playoffs-test-nhl.json`): 16 clubs by division and wild card, first round on the outside, final in the middle. |
 | `leaders` | Alias of `stats`. |
 | `stats` | Season statistics and player of the game from a fresh test season with 12 user games simulated. |
 | `table` | The standings of a fresh test season with 20 user games simulated, played by the `SAP_RULES` preset's table points and tiebreak (SHL 3-2-1-0, NHL 2-2-1-0). |

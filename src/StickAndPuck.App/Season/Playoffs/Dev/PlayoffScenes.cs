@@ -116,7 +116,9 @@ namespace StickAndPuck.App.Season.Playoffs.Dev
                 ? SeasonSave.DefaultPath
                 : Path.Combine(
                     Path.GetDirectoryName(SeasonSave.DefaultPath) ?? "",
-                    "playoffs-test.json"
+                    clubs.Count > 0 && clubs[0].League == League.Nhl
+                        ? "playoffs-test-nhl.json"
+                        : "playoffs-test.json"
                 );
             bool fresh = string.Equals(
                 Env.Get("SAP_SEASON"),

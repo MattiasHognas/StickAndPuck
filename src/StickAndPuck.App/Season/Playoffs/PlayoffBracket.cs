@@ -24,9 +24,45 @@ namespace StickAndPuck.App.Season.Playoffs
             int x = (Game.Width - Width) / 2,
                 y = (Game.Height - Height) / 2;
             art.DrawPanel("panel", x, y, Width, Height);
-            art.DrawText(Text.Get(K.ShlPlayoffs), x + Pad + 4, y + Pad - 2, art.Score);
+            bool nhl = playoffs.League == League.Nhl;
+            art.DrawText(
+                Text.Get(nhl ? K.NhlPlayoffs : K.ShlPlayoffs),
+                x + Pad + 4,
+                y + Pad - 2,
+                art.Score
+            );
 
             int top = y + Pad + Line + 4;
+            if (nhl)
+            {
+                NhlBracketDraw.Draw(
+                    art,
+                    playoffs,
+                    clubs,
+                    x + Pad,
+                    top,
+                    Width - (Pad * 2),
+                    Height - (Pad * 2) - (Line * 4),
+                    Line,
+                    (art.Text, art.Score, Raylib.ColorAlpha(art.Text, 0.4f))
+                );
+            }
+            else
+            {
+                DrawShlRounds(art, playoffs, clubs, x, top);
+            }
+
+            art.DrawText(Footer(playoffs, clubs), x + Pad + 4, y + Height - Pad - Line, art.Score);
+        }
+
+        private static void DrawShlRounds(
+            HudArt art,
+            PlayoffState playoffs,
+            IReadOnlyList<ClubData> clubs,
+            int x,
+            int top
+        )
+        {
             for (int r = 0; r < PlayoffState.RoundCount; r++)
             {
                 int cx = x + Pad + 4 + (r * Column);
@@ -46,7 +82,6 @@ namespace StickAndPuck.App.Season.Playoffs
                     DrawSeries(art, series[s], playoffs.UserClub, clubs, cx, sy);
                 }
             }
-            art.DrawText(Footer(playoffs, clubs), x + Pad + 4, y + Height - Pad - Line, art.Score);
         }
 
         private static void DrawSeries(
@@ -107,13 +142,18 @@ namespace StickAndPuck.App.Season.Playoffs
         {
             if (playoffs.IsOver)
             {
-                return Text.Format(K.ShlChampionsOf, Name(clubs, playoffs.Champion.Or("")));
+                return Text.Format(
+                    playoffs.League == League.Nhl ? K.NhlChampionsOf : K.ShlChampionsOf,
+                    Name(clubs, playoffs.Champion.Or(""))
+                );
             }
 
             string user = Name(clubs, playoffs.UserClub);
             if (!playoffs.UserQualified)
             {
-                return Text.Format(K.MissedPlayoffsPlace, user, playoffs.SeedOf(playoffs.UserClub));
+                return playoffs.League == League.Nhl
+                    ? Text.Format(K.MissedPlayoffs, user)
+                    : Text.Format(K.MissedPlayoffsPlace, user, playoffs.SeedOf(playoffs.UserClub));
             }
 
             if (playoffs.UserSeries.TryGet(out PlayoffSeries s))
@@ -131,7 +171,8 @@ namespace StickAndPuck.App.Season.Playoffs
                     other
                 );
             }
-            return Text.Format(playoffs.UserAlive ? K.WaitForPlayIn : K.AreOut, user);
+            string wait = playoffs.League == League.Nhl ? K.WaitForNextRound : K.WaitForPlayIn;
+            return Text.Format(playoffs.UserAlive ? wait : K.AreOut, user);
         }
 
         /// <summary>The quarter-finals while the play-in runs: the top six seeds, the top two waiting for the play-in winners.</summary>

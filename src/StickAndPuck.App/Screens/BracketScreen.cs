@@ -69,14 +69,32 @@ namespace StickAndPuck.App.Screens
             IReadOnlyList<MenuItem> items = Items();
             int rows = 4 * 3;
             int h = BracketHeight(rows, items.Count);
+            bool nhl = playoffs.League == League.Nhl;
             (int x, int top) = art.Panel(
-                Text.Get(K.ShlPlayoffs),
+                Text.Get(nhl ? K.NhlPlayoffs : K.ShlPlayoffs),
                 PanelW,
                 h,
                 Math.Max(2, (Game.Height - h - 15) / 2)
             );
 
-            DrawRounds(art, playoffs, clubs, x, top, rows);
+            if (nhl)
+            {
+                NhlBracketDraw.Draw(
+                    art.Hud,
+                    playoffs,
+                    clubs,
+                    x + 6,
+                    top,
+                    PanelW - 12,
+                    Line + 4 + (rows * Line),
+                    Line,
+                    (art.Text, art.Gold, ScreenArt.Muted)
+                );
+            }
+            else
+            {
+                DrawRounds(art, playoffs, clubs, x, top, rows);
+            }
             top += Line + 4 + (rows * Line) + 6;
             art.Centred(Footer(playoffs, clubs), Game.Width / 2, top, art.Gold);
             top += Line + 4;
@@ -190,7 +208,10 @@ namespace StickAndPuck.App.Screens
         {
             if (playoffs.IsOver)
             {
-                return Text.Format(K.ShlChampionsOf, Name(clubs, playoffs.Champion.Or("")));
+                return Text.Format(
+                    playoffs.League == League.Nhl ? K.NhlChampionsOf : K.ShlChampionsOf,
+                    Name(clubs, playoffs.Champion.Or(""))
+                );
             }
 
             string user = Name(clubs, playoffs.UserClub);

@@ -48,7 +48,7 @@ namespace StickAndPuck.App.Core
             /// <summary>Loads the world and its render resources.</summary>
             public Session()
             {
-                IReadOnlyList<ClubData> clubs = Clubs.LoadAll();
+                IReadOnlyList<ClubData> clubs = Clubs.Load(Leagues.FromEnvironment());
                 Text.Use(Settings.FromEnvironment().Language);
                 Console.WriteLine(
                     $"SAP: {clubs.Count} club(s): {string.Join(", ", clubs.Select(c => $"{c.Name} ({c.Roster.Count} players)"))}"

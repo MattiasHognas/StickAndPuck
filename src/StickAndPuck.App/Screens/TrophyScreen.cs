@@ -59,7 +59,7 @@ namespace StickAndPuck.App.Screens
             List<(string, string)> statLines = BuildSeasonLines(current, playoffs, champion, clubs);
             return new TrophyScreen(
                 app,
-                Text.Get(K.ShlChampions),
+                Text.Get(current.Is(s => s.League == League.Nhl) ? K.NhlChampions : K.ShlChampions),
                 champion,
                 Name(clubs, champion),
                 statLines,
