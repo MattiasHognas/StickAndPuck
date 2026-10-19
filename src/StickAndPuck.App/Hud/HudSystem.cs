@@ -68,7 +68,7 @@ namespace StickAndPuck.App.Hud
                 DrawShootout(world, hud, so);
             }
 
-            if (world.Match.Phase == MatchPhase.Intro)
+            if (world.Match.Phase == MatchPhase.Intro && !world.Switches.IntroCardPreview)
             {
                 DrawIntro(world, hud);
             }

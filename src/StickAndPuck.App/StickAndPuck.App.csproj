@@ -82,7 +82,7 @@
     <EmbeddedResource Include="$(RepoRoot)art/zamboni/*.glb" LinkBase="art/zamboni" />
     <EmbeddedResource Include="$(RepoRoot)art/palette/*.gpl" LinkBase="art/palette" />
     <EmbeddedResource
-      Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json"
+      Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json;$(RepoRoot)art/ui/intro_card.json"
       LinkBase="art/ui"
     />
     <EmbeddedResource Include="$(RepoRoot)art/audio/effects/*.wav" LinkBase="art/audio/effects" />

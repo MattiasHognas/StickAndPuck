@@ -64,6 +64,15 @@ namespace StickAndPuck.App.Core
         /// <summary>White ink mask of the dressing room jerseys' stripes and numbers, 480x270, tinted with the club's secondary colour (A20).</summary>
         public const string DressingRoomTrim = "art.ui.dressing_room_trim.png";
 
+        /// <summary>The pre-game stats card's versus panel, 300x196 (A22, art/scripts/make_intro_card.py).</summary>
+        public const string IntroCard = "art.ui.intro_card.png";
+
+        /// <summary>The stats card's stat icons, form dots and playstyle badges (A22).</summary>
+        public const string IntroIcons = "art.ui.intro_icons.png";
+
+        /// <summary>The stats card's layout: slots, rows and icon cells, card-local (A22).</summary>
+        public const string IntroCardLayout = "art.ui.intro_card.json";
+
         /// <summary>The shader folder.</summary>
         public const string Shaders = "shaders";
 

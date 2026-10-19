@@ -2,6 +2,7 @@ using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.AI.Positioning;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Hud;
 using StickAndPuck.App.Rules.Match;
 using static Raylib_cs.Raylib;
 using K = StickAndPuck.App.Core.Text.Keys;
@@ -20,6 +21,8 @@ namespace StickAndPuck.App.Pregame
         private const float GatherSeconds = 2.5f; // from start pressed to the faceoff, enough to skate to the blue line
         private const float StickDead = 0.15f; // a human stick shorter than this leaves the skater on its loop
         private const float Lead = 1f; // the chased point runs this many seconds ahead, so nobody eases off onto it
+
+        private Maybe<IntroCardArt> introCard;
 
         public void Update(World world, float dt)
         {
@@ -82,6 +85,23 @@ namespace StickAndPuck.App.Pregame
             {
                 return;
             }
+
+            if (world.Switches.IntroCardPreview)
+            {
+                // SAP_SCENE=introcard: the A22 card art with made-up numbers, loaded on first use
+                if (!introCard.HasValue)
+                {
+                    introCard = IntroCardArt.Load(HudArt.Load());
+                }
+
+                if (introCard.TryGet(out IntroCardArt card))
+                {
+                    Dev.IntroCardPreview.Draw(world, card);
+                }
+
+                return;
+            }
+
             // a blinking prompt under the intro card
             if ((int)(world.Time * 2) % 2 == 0)
             {

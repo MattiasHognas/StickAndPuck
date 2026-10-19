@@ -30,6 +30,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets or sets a hook that sees every AI write as it happens, for the command fixtures (a no-op by default).</summary>
         internal Action<Player, AI.AiIntent> AiWatch { get; set; } = static (_, _) => { }; // nobody is watching: a fixture sets its own hook
 
+        /// <summary>Gets or sets a value indicating whether the warm-up shows the stats card art with made-up numbers (SAP_SCENE=introcard).</summary>
+        public bool IntroCardPreview { get; set; }
+
         /// <summary>Gets or sets a value indicating whether the tactics debug line shows (SAP_TACTICS_LINE=1).</summary>
         public bool TacticsLine { get; set; } = Env.Is("SAP_TACTICS_LINE", "1");
 
