@@ -60,6 +60,11 @@ namespace StickAndPuck.App.Core
         /// (<see cref="CoachTalk"/> reads its effects); a replay stores it.</summary>
         public Maybe<CoachTalk> Talk { get; init; }
 
+        /// <summary>Gets the players left out of a season match, injured or suspended, by "club#number"; empty outside
+        /// the season. <see cref="Home"/> and <see cref="Away"/> are already without them; a replay stores
+        /// these to build the same clubs again.</summary>
+        public IReadOnlyList<string> Absent { get; init; } = [];
+
         /// <summary>This setup played by a rule set: the set goes on <see cref="Rules"/>, and its overtime
         /// switch picks the format. A setup whose mode pinned its own <see cref="OvertimeFormat"/> is a
         /// playoff game and takes <see cref="RuleSet.PlayoffOvertime"/>, keeping the mode's own

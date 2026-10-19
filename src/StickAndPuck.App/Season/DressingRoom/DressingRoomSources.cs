@@ -7,7 +7,13 @@ namespace StickAndPuck.App.Season.DressingRoom
     {
         /// <summary>Gets the sources.</summary>
         public static IReadOnlyList<IDressingRoomSource> All { get; } =
-        [new LastResultCoach(), new PostGameReaction(), new SeasonNews(), new NewsEvents()];
+        [
+            new LastResultCoach(),
+            new PostGameReaction(),
+            new SeasonNews(),
+            new NewsEvents(),
+            new InjuryReport(),
+        ];
 
         /// <summary>Fills a report from every source.</summary>
         public static DressingRoomReport Build(DressingRoomContext context)

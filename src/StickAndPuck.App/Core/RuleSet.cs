@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, strong form swings, no dressing room and no pre-game talk.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, strong form swings, no dressing room, no pre-game talk and no injuries.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -48,6 +48,7 @@ namespace StickAndPuck.App.Core
             PuckOverGlass = false,
             OverGlassMinor = false,
             IntermissionTalk = false,
+            Injuries = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -212,6 +213,25 @@ namespace StickAndPuck.App.Core
                     FormStrength.Strong => 1.5f,
                     FormStrength.Normal => 1f,
                     _ => throw new NotSupportedException("no form scale for " + FormStrength),
+                };
+
+        /// <summary>Gets a value indicating whether hard checks, blocked slap shots and fights (and, rarely, games settled on paper) injure players for 1 to 6 season games.</summary>
+        public bool Injuries { get; init; } = true;
+
+        /// <summary>Gets how often players are injured.</summary>
+        public InjuryRate InjuryRate { get; init; } = InjuryRate.Normal;
+
+        /// <summary>Gets the factor on every injury chance: 0 with <see cref="Injuries"/> off, else by <see cref="InjuryRate"/>.</summary>
+        [JsonIgnore]
+        public float InjuryScale =>
+            !Injuries
+                ? 0f
+                : InjuryRate switch
+                {
+                    InjuryRate.Rare => 0.5f,
+                    InjuryRate.Frequent => 2f,
+                    InjuryRate.Normal => 1f,
+                    _ => throw new NotSupportedException("no injury scale for " + InjuryRate),
                 };
 
         /// <summary>Gets how much the dressing room between season games shows, or Off to go straight to the table.</summary>

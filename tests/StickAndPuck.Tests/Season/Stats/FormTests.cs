@@ -376,7 +376,12 @@ namespace StickAndPuck.Tests.Season.Stats
             );
             List<(PlayerData Played, PlayerData File)> pairs =
             [
-                .. setup.Home.Roster.Zip(file.Roster),
+                .. setup.Home.Roster.Join( // by number: an injured player sits the game out (W128)
+                    file.Roster,
+                    p => p.Number,
+                    p => p.Number,
+                    (played, data) => (played, data)
+                ),
             ];
             Check(
                 pairs.TrueForAll(p =>

@@ -72,6 +72,24 @@ namespace StickAndPuck.App.Core
 
             /// <summary>BRIEF</summary>
             public const string RuleValueBrief = nameof(RuleValueBrief);
+
+            /// <summary>#{0} {1}, {2}: {3}</summary>
+            public const string InjuryLine = nameof(InjuryLine);
+
+            /// <summary>HIT</summary>
+            public const string InjuryCheck = nameof(InjuryCheck);
+
+            /// <summary>BLOCKED SHOT</summary>
+            public const string InjuryBlockedShot = nameof(InjuryBlockedShot);
+
+            /// <summary>FIGHT</summary>
+            public const string InjuryFight = nameof(InjuryFight);
+
+            /// <summary>OUT 1 GAME</summary>
+            public const string InjuryOutOne = nameof(InjuryOutOne);
+
+            /// <summary>OUT {0} GAMES</summary>
+            public const string InjuryOutGames = nameof(InjuryOutGames);
         }
     }
 }

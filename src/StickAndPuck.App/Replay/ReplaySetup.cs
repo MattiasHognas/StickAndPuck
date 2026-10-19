@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules.Overtime;
+using StickAndPuck.App.Season.Injuries;
 using StickAndPuck.App.Season.Stats;
 
 namespace StickAndPuck.App.Replay
@@ -27,6 +28,9 @@ namespace StickAndPuck.App.Replay
         /// <summary>Gets the coach's pre-game talk, as <see cref="MatchSetup.Talk"/>; None in an older replay.</summary>
         public Maybe<CoachTalk> Talk { get; init; }
 
+        /// <summary>Gets the players the season left out of the match, as <see cref="MatchSetup.Absent"/>; empty in an older replay.</summary>
+        public IReadOnlyList<string> Absent { get; init; } = [];
+
         /// <summary>Gets the stored form of a setup.</summary>
         public static ReplaySetup Of(MatchSetup s)
         {
@@ -45,6 +49,7 @@ namespace StickAndPuck.App.Replay
                 Form = s.Form,
                 StartEnergy = s.StartEnergy,
                 Talk = s.Talk,
+                Absent = s.Absent,
             };
         }
 
@@ -64,9 +69,10 @@ namespace StickAndPuck.App.Replay
 
             return new MatchSetup
             {
-                Home = FormTable.Apply(Club(Home), Form),
-                Away = FormTable.Apply(Club(Away), Form),
+                Home = FormTable.Apply(AbsenceTable.Without(Club(Home), Absent), Form),
+                Away = FormTable.Apply(AbsenceTable.Without(Club(Away), Absent), Form),
                 Form = Form,
+                Absent = Absent,
                 Inputs = Inputs,
                 PeriodSeconds = PeriodSeconds,
                 Periods = Periods,
