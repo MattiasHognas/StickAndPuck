@@ -6,8 +6,8 @@
   "conference": "Western",
   "division": "Pacific",
   "home": {
-    "primary": "#b4975a",
-    "secondary": "#333f48",
+    "primary": "#333f48",
+    "secondary": "#b4975a",
     "accent": "#c8102e",
     "helmet": "#b4975a"
   },

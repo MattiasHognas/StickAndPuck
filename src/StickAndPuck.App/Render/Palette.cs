@@ -8,8 +8,10 @@ namespace StickAndPuck.App.Render
     /// (art/palette/stickandpuck_dusk.gpl), so the game and the Blender post pass always agree.</summary>
     public static class Palette
     {
-        /// <summary>The most colours the post shader takes; the palette may grow to about 48 for club kits.</summary>
-        public const int MaxColours = 64;
+        /// <summary>The most colours the post shader takes: the size of the palette uniform array in
+        /// shaders/post.fs and shaders/web/post.fs, which must change with it. Grown from 64 for the NHL
+        /// club kits (A16); WebGL 1 keeps a 128-entry vec3 array well inside its uniform budget.</summary>
+        public const int MaxColours = 128;
 
         private static readonly Lazy<IReadOnlyList<Vector3>> current = new(() =>
             Load(Assets.Palette)

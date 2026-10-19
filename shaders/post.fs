@@ -14,7 +14,7 @@
 in vec2 fragTexCoord;
 uniform sampler2D texture0;
 uniform sampler2D maskTex;
-uniform vec3 palette[64];
+uniform vec3 palette[128];  // Render/Palette.cs MaxColours
 uniform int paletteSize;
 uniform int kitStart;       // palette[kitStart..] are kit colours, used only on player pixels
 uniform vec3 outline;

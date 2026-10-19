@@ -16,7 +16,7 @@ precision highp int;
 varying vec2 fragTexCoord;
 uniform sampler2D texture0;
 uniform sampler2D maskTex;
-uniform vec3 palette[64];
+uniform vec3 palette[128];  // Render/Palette.cs MaxColours
 uniform int paletteSize;
 uniform int kitStart;       // palette[kitStart..] are kit colours, used only on player pixels
 uniform vec3 outline;
@@ -67,7 +67,7 @@ void main() {
     vec3 c = texture2D(texture0, uv).rgb;
     vec3 best = palette[0], next = palette[0]; float bd = 1e9, nd = 1e9;
     int n = here > 0.0 ? paletteSize : kitStart;
-    for (int i = 0; i < 64; i++) {
+    for (int i = 0; i < 128; i++) {   // GLSL ES 1.00 loops need a constant bound: the array size
         if (i >= n) break;
         vec3 e = c - palette[i]; float dd = dot(e, e);
         if (dd < bd) { nd = bd; next = best; bd = dd; best = palette[i]; }

@@ -31,7 +31,7 @@ GPL = os.path.join(ART, 'palette', 'stickandpuck_dusk.gpl')
 CLUBS = os.path.join(ROOT, 'data', 'clubs')
 OUT = os.path.join(ART, 'kits')
 MARK = '# kit colours: written by art/scripts/make_kits.py palette, do not edit below'
-MAX_COLOURS = 64                     # the post shader's palette size (src/Render/Palette.cs)
+MAX_COLOURS = 128                    # the post shader's palette size (src/Render/Palette.cs, shaders/post.fs)
 
 # The toon shader's three tones (shaders/toon.fs): full light, mid, shadow.
 TONES = [(1.0, 1.0, 1.0), (0.70, 0.68, 0.72), (0.42, 0.40, 0.48)]
@@ -44,6 +44,9 @@ KIT_BASES = {
     'orange': '#e07a3a',
     'kit red': '#b8323c', 'kit bright red': '#d42a22', 'kit royal blue': '#2e6db0', 'kit navy': '#2b3d6b',
     'kit bright green': '#2f8a4e', 'kit yellow': '#f4d63e',
+    # the NHL set (A16), for the 32 clubs in data/clubs/nhl/; appended so the SHL kits keep their snaps
+    'silver': '#a7a3b0', 'kit burgundy': '#6e2438', 'kit blue': '#1c3a9e', 'kit sky blue': '#6aaedf',
+    'kit teal': '#14727a', 'kit ice blue': '#9ad2d0', 'kit vegas gold': '#b49a5e', 'kit bright orange': '#f0581c',
 }
 RESERVED = [k for k in KIT_BASES if k.startswith('kit ')]
 NEAR = 12.0                          # Lab distance under which an existing colour already serves a tone
