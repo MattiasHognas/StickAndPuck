@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "es2022",
+    "lib": ["es2023", "dom"]
+  },
+  "include": ["*.mjs", "globals.d.ts"],
+  "exclude": ["node_modules"]
+}
