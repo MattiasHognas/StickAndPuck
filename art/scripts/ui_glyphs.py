@@ -1,5 +1,5 @@
-"""Pixel data for the HUD font: 5x7 capitals with two rows above for Å Ä Ö É Ü and two below
-for descenders. Each glyph is a list of 11 rows; '#' is ink. Width is the row length."""
+"""Pixel data for the HUD font: 5x7 capitals with two rows above for accents (Å Ä Ö É Ü and the
+other Latin letters in player names) and two below for descenders and the cedilla. Each glyph is a list of 11 rows; '#' is ink. Width is the row length."""
 
 _CAP = {
     "A": [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
@@ -67,6 +67,30 @@ _ACCENT = {
     "Ü": ("U", [".#.#.", "....."], None),
     "É": ("E", ["...#.", "..#.."], None),
 }
+# Accented capitals for player names (Kovács, Studenič, Øby-Olsen and the like): (base, top, body, below);
+# body None means the base capital, below None means two empty rows.
+_ACUTE, _GRAVE, _CARON = ["...#.", "..#.."], [".#...", "..#.."], [".#.#.", "..#.."]
+_CIRCUMFLEX, _DIAERESIS, _TILDE = ["..#..", ".#.#."], [".#.#.", "....."], [".##.#", "#..#."]
+_NAMES = {
+    "Á": ("A", _ACUTE, None, None),
+    "Í": ("I", ["..#", ".#."], None, None),
+    "Ó": ("O", _ACUTE, None, None),
+    "Ú": ("U", _ACUTE, None, None),
+    "Ý": ("Y", _ACUTE, None, None),
+    "È": ("E", _GRAVE, None, None),
+    "Č": ("C", _CARON, None, None),
+    "Š": ("S", _CARON, None, None),
+    "Ž": ("Z", _CARON, None, None),
+    "Ř": ("R", _CARON, None, None),
+    "Ô": ("O", _CIRCUMFLEX, None, None),
+    "Ë": ("E", _DIAERESIS, None, None),
+    "Ñ": ("N", _TILDE, None, None),
+    # Ø: the slash runs from above the cap height to below the baseline, so it never reads as a zero.
+    "Ø": ("O", [".....", "....#"], [".###.", "#..##", "#..##", "#.#.#", "##..#", "##..#", ".###."], ["#....", "....."]),
+    "Ł": ("L", [".....", "....."], [".#...", ".#...", ".#.#.", ".##..", "##...", ".#...", ".####"], None),
+    "Ç": ("C", [".....", "....."], None, ["..#..", ".##.."]),
+}
+
 # Å: the ring's lower half is the A's apex, so the A starts one row lower and loses its top row.
 _ACCENT["Å"] = ("A", ["..#..", ".#.#."], ["..#..", ".#.#.", "#...#", "#####", "#...#", "#...#", "#...#"])
 
@@ -89,6 +113,9 @@ def glyphs():
     for ch, (base, top, body) in _ACCENT.items():
         rows = body or _CAP[base]
         out[ch] = top + rows + ["." * len(rows[0])] * 2
+    for ch, (base, top, body, below) in _NAMES.items():
+        rows = body or _CAP[base]
+        out[ch] = top + rows + (below or ["." * len(rows[0])] * 2)
     for ch, (rows, low) in _DESC.items():
         w = len(rows[0])
         out[ch] = ["." * w] * 2 + rows + low

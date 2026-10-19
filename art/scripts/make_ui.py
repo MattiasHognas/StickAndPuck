@@ -7,9 +7,10 @@ These PNGs are only the starting point. make_ui.lua turns them into .aseprite fi
 the source of truth from then on; after editing one in Aseprite, export it back to its PNG and
 run `python3 make_ui.py fnt` if the font changed, so font.fnt follows the new glyph widths.
 
-Run: python3 art/scripts/make_ui.py [all|fnt|title|crests [club ...]]  (title rebuilds only title.png, the intro's
-  title_letters.png and their ui.json entries; crests only crests.png and its entry: clubs new to CRESTS, plus any
-  named, are drawn)
+Run: python3 art/scripts/make_ui.py [all|fnt|font|title|crests [club ...]]  (font adds glyphs new to CHARS to
+  font.png and rewrites font.fnt, leaving existing cells alone; then run make_ui.lua only=font;
+  title rebuilds only title.png, the intro's title_letters.png and their ui.json entries; crests only
+  crests.png and its entry: clubs new to CRESTS, plus any named, are drawn)
 """
 import json
 import os
@@ -71,7 +72,8 @@ WHITE = (255, 255, 255, 255)
 CLEAR = (0, 0, 0, 0)
 
 GLYPHS = ui_glyphs.glyphs()
-CHARS = " !\"#%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ_ÅÄÖÉÜ"
+# New glyphs go on the end, so existing cells keep their place in font.png (see `font` mode).
+CHARS = " !\"#%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ_ÅÄÖÉÜÁÍÓÚÝÈČŠŽŘÔËÑØŁÇ"
 CELL_W, CELL_H, COLS = 6, ui_glyphs.HEIGHT, 16
 SPACE_ADVANCE = 3
 
@@ -125,6 +127,25 @@ def build_font():
     rows = (len(CHARS) + COLS - 1) // COLS
     img = Image.new("RGBA", (COLS * CELL_W, rows * CELL_H), CLEAR)
     for i, ch in enumerate(CHARS):
+        cx, cy = (i % COLS) * CELL_W, (i // COLS) * CELL_H
+        bitmap(img, cx, cy, GLYPHS[ch], WHITE)
+    img.save(os.path.join(UI, "font.png"))
+
+
+def extend_font():
+    """Adds the CHARS that font.fnt lacks to font.png, keeping every existing (maybe hand-edited)
+    cell as it is: the old sheet is pasted at the top-left and only the new cells are drawn."""
+    old_chars = set()
+    for line in open(os.path.join(UI, "font.fnt"), encoding="utf-8"):
+        if line.startswith("char id="):
+            old_chars.add(chr(int(line.split()[1].split("=")[1])))
+    count = len(old_chars)
+    assert set(CHARS[:count]) == old_chars, "CHARS must only grow at the end"
+    old = Image.open(os.path.join(UI, "font.png")).convert("RGBA")
+    rows = (len(CHARS) + COLS - 1) // COLS
+    img = Image.new("RGBA", (COLS * CELL_W, rows * CELL_H), CLEAR)
+    img.paste(old, (0, 0))
+    for i, ch in enumerate(CHARS[count:], start=count):
         cx, cy = (i % COLS) * CELL_W, (i // COLS) * CELL_H
         bitmap(img, cx, cy, GLYPHS[ch], WHITE)
     img.save(os.path.join(UI, "font.png"))
@@ -488,6 +509,10 @@ def main():
     os.makedirs(UI, exist_ok=True)
     mode = sys.argv[1] if len(sys.argv) > 1 else "all"
     if mode == "fnt":
+        write_fnt()
+        return
+    if mode == "font":             # only glyphs new to CHARS; keeps the existing (hand-edited) cells
+        extend_font()
         write_fnt()
         return
     if mode == "title":            # only the logo; keeps every other (hand-edited) PNG as it is
