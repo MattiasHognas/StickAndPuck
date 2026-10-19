@@ -43,7 +43,7 @@ namespace StickAndPuck.App.Screens
             {
                 items.Add(
                     new MenuItem(
-                        Text.Get(K.SimThisGame),
+                        Text.Get(K.SimNextGame),
                         Flow.SimSeasonGame,
                         enabled: Flow.CanSimGame()
                     )
