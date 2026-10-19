@@ -48,7 +48,7 @@ The PNG is saved in the working directory from which you launched the game. Pref
 
 An unknown name stops the game and prints the list of scenes. Names are not case sensitive.
 
-- `start` (default): the start screen, and from there season, other modes, settings and the match.
+- `start` (default): the start screen, and from there season, other modes, settings and the match. A plain launch opens with the title intro (see `SAP_INTRO` in [Development](DEVELOPMENT.md#visuals-sound-and-input)); `SAP_INTRO=1 SAP_INTRO_SEED=3 SAP_RECORD=5` records it.
 - `season`: continues the saved season (or starts one) and plays your next game, then shows the table.
 - `playoffs`: a playoff test setup on its own save: settles the regular season on paper and plays your next playoff game.
 - `arcade`: continues the saved arcade run (or starts one) and plays your next game.

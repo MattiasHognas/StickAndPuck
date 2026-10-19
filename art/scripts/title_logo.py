@@ -132,3 +132,120 @@ def build():
     _outline(out)
     left, top, right, bottom = out.getbbox()
     return out.crop((left - 1, top - 1, right + 1, bottom + 1))
+
+
+# ---------------------------------------------------------------- the letters one by one, for the title intro
+
+def _pieces():
+    """Each piece of the logo drawn on its own, in the order the intro drops them, as (char, sprite, x, y)
+    with (x, y) where the sprite sits on build()'s untrimmed canvas."""
+    pieces = []
+
+    def piece(c, mask, face, depth, side, x, y):
+        spr = Image.new("RGBA", (len(mask[0]) + 8, len(mask) + 8), CLEAR)
+        _stamp(spr, mask, 2, 2, face, depth, side, GOLD_L)    # room for the ink ring and the outline round it
+        _outline(spr)
+        pieces.append((c, spr, x - 2, y - 2))
+
+    def word(text, ox, oy):
+        x = 0
+        for c in text:
+            piece(c, _letters(c), GOLD_FACE, 5, BLUE_SIDE, ox + x, oy)
+            x += (len(GLYPHS[c][0]) + GAP) * 2
+
+    word("STICK", 8, 4)
+    piece("&", _letters(AMP), RED_FACE, 3, RED_SIDE, 122, 9)
+    word("PUCK", 146, 4)
+    return pieces
+
+
+def build_letters():
+    """The title intro's art: every piece of the logo trimmed to itself, side by side on one sheet, then a
+    white mask of the assembled logo's gold (where the shine sweeps). Returns (sheet, pieces, shine) with
+    pieces as [{char, rect, offset}] in drop order (offset: the piece's top left in the trimmed logo that
+    build() returns) and shine as the mask's [x, y, w, h], the size of that logo."""
+    full = Image.new("RGBA", (292, 42), CLEAR)
+    _stamp(full, _letters("STICK"), 8, 4, GOLD_FACE, 5, BLUE_SIDE, GOLD_L)
+    _stamp(full, _letters(AMP), 122, 9, RED_FACE, 3, RED_SIDE, GOLD_L)
+    _stamp(full, _letters("PUCK"), 146, 4, GOLD_FACE, 5, BLUE_SIDE, GOLD_L)
+    _outline(full)
+    left, top, _, _ = full.getbbox()
+    ox, oy = left - 1, top - 1
+    logo = build()
+
+    trimmed = []
+    for c, spr, x, y in _pieces():
+        # where a letter's outline ink lands on the extrusion of the letter before it, the logo keeps the
+        # extrusion: leave that ink out so the letters assemble into exactly the logo
+        for yy in range(spr.height):
+            for xx in range(spr.width):
+                lx, ly = x + xx - ox, y + yy - oy
+                if spr.getpixel((xx, yy)) == INK and 0 <= lx < logo.width and 0 <= ly < logo.height \
+                        and logo.getpixel((lx, ly)) not in (INK, CLEAR):
+                    spr.putpixel((xx, yy), CLEAR)
+        l, t, r, b = spr.getbbox()
+        trimmed.append((c, spr.crop((l, t, r, b)), x + l - ox, y + t - oy))
+
+    w = max(sum(s.width + 1 for _, s, _, _ in trimmed), logo.width)
+    h = max(s.height for _, s, _, _ in trimmed) + 1 + logo.height
+    sheet = Image.new("RGBA", (w, h), CLEAR)
+    meta, x = [], 0
+    for c, spr, px, py in trimmed:
+        sheet.alpha_composite(spr, (x, 0))
+        meta.append({"char": c, "rect": [x, 0, spr.width, spr.height], "offset": [px, py]})
+        x += spr.width + 1
+    sy = h - logo.height
+    gold = {GOLD, GOLD_D, GOLD_L}
+    for yy in range(logo.height):
+        for xx in range(logo.width):
+            if logo.getpixel((xx, yy)) in gold:
+                sheet.putpixel((xx, sy + yy), (255, 255, 255, 255))
+    return sheet, meta, [0, sy, logo.width, logo.height]
+
+
+def assemble(sheet, pieces, size):
+    """The logo put back together from the sheet's pieces in drop order, to compare with build()."""
+    out = Image.new("RGBA", tuple(size), CLEAR)
+    for p in pieces:
+        x, y, w, h = p["rect"]
+        out.alpha_composite(sheet.crop((x, y, x + w, y + h)), tuple(p["offset"]))
+    return out
+
+
+def same_picture(a, b):
+    """Whether two RGBA images show the same pixels (any colour under full transparency counts as clear)."""
+    if a.size != b.size:
+        return False
+    return all(x == y or (x[3] == 0 and y[3] == 0) for x, y in zip(_pixels(a), _pixels(b)))
+
+
+def _pixels(img):
+    px = img.load()
+    return [px[x, y] for y in range(img.height) for x in range(img.width)]
+
+
+def colour_map(built, shipped):
+    """How the shipped title.png (exported through Aseprite's indexed palette) recoloured build()'s colours,
+    as {built colour: shipped colour}; None when shipped is not the same drawing."""
+    if built.size != shipped.size:
+        return None
+    m = {}
+    for x, y in zip(_pixels(built), _pixels(shipped)):
+        if x[3] == 0 and y[3] == 0:
+            continue
+        if m.setdefault(x, y) != y or (x[3] == 0) != (y[3] == 0):
+            return None
+    return m
+
+
+def recolour(sheet, pieces, mapping):
+    """The sheet with its pieces (not the shine mask) in the shipped colours."""
+    out = sheet.copy()
+    px = out.load()
+    for p in pieces:
+        x0, y0, w, h = p["rect"]
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                if px[x, y][3]:
+                    px[x, y] = mapping.get(px[x, y], px[x, y])
+    return out

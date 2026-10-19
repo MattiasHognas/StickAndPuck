@@ -157,6 +157,8 @@ async function verifyBrowser(name) {
         assert(logs.some(line => line.includes('Loaded animation: skater_')), 'Skater animation clips load.');
 
         // Navigate the actual menus using short taps, save a changed control setting, then reload.
+        // Escape first skips the title intro if it is still playing (on the start menu it does nothing).
+        await press(page, 'Escape');
         for (const key of ['ArrowUp', 'ArrowUp', 'Enter', 'ArrowDown', 'ArrowRight', 'Escape']) await press(page, key);
         const settings = (await saves(page))['stickandpuck:v1:/saves/settings.json'];
         assert(settings, 'Settings menu writes browser storage.');

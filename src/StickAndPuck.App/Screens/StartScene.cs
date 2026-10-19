@@ -24,7 +24,7 @@ namespace StickAndPuck.App.Screens
             string screen = Env.Get("SAP_SCREEN") is { Length: > 0 } s
                 ? s.ToLowerInvariant()
                 : "start";
-            World world = app.Screens.Begin(clubs, new StartScreen(app));
+            World world = Begin(app, clubs, screen);
             switch (screen)
             {
                 case "start":
@@ -94,6 +94,30 @@ namespace StickAndPuck.App.Screens
                     );
             }
             Console.WriteLine($"SAP: screens: {screen}");
+            return world;
+        }
+
+        /// <summary>Turns the screens on. On a plain launch to the start screen the title intro plays over it
+        /// (<see cref="TitleIntro.Plays"/>), with two clubs drawn at random on the rink behind; only here, so
+        /// back from a match the menus open as they are.</summary>
+        private static World Begin(AppState app, IReadOnlyList<ClubData> clubs, string screen)
+        {
+            bool intro =
+                string.Equals(screen, "start", StringComparison.Ordinal)
+                && TitleIntro.Plays(Env.Get);
+            World world = app.Screens.Begin(
+                clubs,
+                new StartScreen(app),
+                intro ? TitleIntro.Backdrop(clubs, Env.Get) : Maybe.None<MatchSetup>()
+            );
+            if (intro)
+            {
+                app.Screens.Push(new TitleIntroScreen(app));
+                Console.WriteLine(
+                    $"SAP: title intro, {world.Setup.Home.Id} v {world.Setup.Away.Id} (SAP_INTRO=0 skips it)"
+                );
+            }
+
             return world;
         }
 

@@ -92,6 +92,13 @@ namespace StickAndPuck.App.Screens
         /// <summary>Turns the screens on and builds the start screen's world.</summary>
         public World Begin(IReadOnlyList<ClubData> clubs, Screen first)
         {
+            return Begin(clubs, first, Maybe.None<MatchSetup>());
+        }
+
+        /// <summary>Turns the screens on and builds the start screen's world, with these clubs on the rink behind (None: the default clubs).</summary>
+        public World Begin(IReadOnlyList<ClubData> clubs, Screen first, Maybe<MatchSetup> backdrop)
+        {
+            Backdrop = backdrop;
             Active = true;
             UseClubs(clubs);
             Prefs = ScreenPrefsFile.Read();

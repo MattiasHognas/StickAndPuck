@@ -459,5 +459,147 @@
       244,
       30
     ]
+  },
+  "title_letters": {
+    "file": "art/ui/title_letters.png",
+    "note": "The title intro's pieces in drop order: rect on the sheet, offset of its top left in title.png. shine: a white mask of title.png's gold, the same size.",
+    "pieces": [
+      {
+        "char": "S",
+        "rect": [
+          0,
+          0,
+          31,
+          28
+        ],
+        "offset": [
+          1,
+          1
+        ]
+      },
+      {
+        "char": "T",
+        "rect": [
+          32,
+          0,
+          26,
+          28
+        ],
+        "offset": [
+          30,
+          1
+        ]
+      },
+      {
+        "char": "I",
+        "rect": [
+          59,
+          0,
+          19,
+          28
+        ],
+        "offset": [
+          49,
+          1
+        ]
+      },
+      {
+        "char": "C",
+        "rect": [
+          79,
+          0,
+          29,
+          28
+        ],
+        "offset": [
+          62,
+          1
+        ]
+      },
+      {
+        "char": "K",
+        "rect": [
+          109,
+          0,
+          32,
+          28
+        ],
+        "offset": [
+          85,
+          1
+        ]
+      },
+      {
+        "char": "&",
+        "rect": [
+          142,
+          0,
+          20,
+          22
+        ],
+        "offset": [
+          115,
+          6
+        ]
+      },
+      {
+        "char": "P",
+        "rect": [
+          163,
+          0,
+          30,
+          28
+        ],
+        "offset": [
+          139,
+          1
+        ]
+      },
+      {
+        "char": "U",
+        "rect": [
+          194,
+          0,
+          31,
+          28
+        ],
+        "offset": [
+          163,
+          1
+        ]
+      },
+      {
+        "char": "C",
+        "rect": [
+          226,
+          0,
+          29,
+          28
+        ],
+        "offset": [
+          188,
+          1
+        ]
+      },
+      {
+        "char": "K",
+        "rect": [
+          256,
+          0,
+          32,
+          28
+        ],
+        "offset": [
+          211,
+          1
+        ]
+      }
+    ],
+    "shine": [
+      0,
+      29,
+      244,
+      30
+    ]
   }
 }
