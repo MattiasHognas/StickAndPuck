@@ -30,6 +30,7 @@
       "lastName": "Swayman",
       "position": "G",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "DiPietro",
       "position": "G",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Geekie",
       "position": "C",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 68,
         "topSpeed": 71,
@@ -89,6 +92,7 @@
       "lastName": "Kuraly",
       "position": "LW",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 67,
         "topSpeed": 70,
@@ -106,6 +110,7 @@
       "lastName": "Pastrnak",
       "position": "RW",
       "shoots": "Right",
+      "age": 30,
       "traits": {
         "acceleration": 71,
         "topSpeed": 75,
@@ -123,6 +128,7 @@
       "lastName": "McAvoy",
       "position": "D",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 67,
         "topSpeed": 71,
@@ -140,6 +146,7 @@
       "lastName": "Lindholm",
       "position": "D",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 62,
         "topSpeed": 69,
@@ -157,6 +164,7 @@
       "lastName": "Minten",
       "position": "C",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 69,
         "topSpeed": 68,
@@ -174,6 +182,7 @@
       "lastName": "Jeannot",
       "position": "LW",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 59,
         "topSpeed": 60,
@@ -191,6 +200,7 @@
       "lastName": "Peterka",
       "position": "RW",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 71,
         "topSpeed": 72,
@@ -208,6 +218,7 @@
       "lastName": "Borgen",
       "position": "D",
       "shoots": "Right",
+      "age": 29,
       "traits": {
         "acceleration": 65,
         "topSpeed": 67,
@@ -225,6 +236,7 @@
       "lastName": "Lohrei",
       "position": "D",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 65,
         "topSpeed": 65,
@@ -242,6 +254,7 @@
       "lastName": "Lindholm",
       "position": "C",
       "shoots": "Right",
+      "age": 31,
       "traits": {
         "acceleration": 59,
         "topSpeed": 61,
@@ -259,6 +272,7 @@
       "lastName": "Kastelic",
       "position": "LW",
       "shoots": "Right",
+      "age": 27,
       "traits": {
         "acceleration": 56,
         "topSpeed": 61,
@@ -276,6 +290,7 @@
       "lastName": "Mittelstadt",
       "position": "RW",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 59,
         "topSpeed": 63,
@@ -293,6 +308,7 @@
       "lastName": "Brunet",
       "position": "D",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 63,
         "topSpeed": 61,
@@ -310,6 +326,7 @@
       "lastName": "Aspirot",
       "position": "D",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 59,
         "topSpeed": 60,
@@ -327,6 +344,7 @@
       "lastName": "Khusnutdinov",
       "position": "C",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 55,
         "topSpeed": 57,
@@ -344,6 +362,7 @@
       "lastName": "Poitras",
       "position": "LW",
       "shoots": "Right",
+      "age": 22,
       "traits": {
         "acceleration": 59,
         "topSpeed": 61,
@@ -361,6 +380,7 @@
       "lastName": "Hagens",
       "position": "RW",
       "shoots": "Left",
+      "age": 19,
       "traits": {
         "acceleration": 63,
         "topSpeed": 61,

@@ -30,6 +30,7 @@
       "lastName": "Ullmark",
       "position": "G",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Ersson",
       "position": "G",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Stützle",
       "position": "C",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 76,
         "topSpeed": 77,
@@ -89,6 +92,7 @@
       "lastName": "Zetterlund",
       "position": "LW",
       "shoots": "Right",
+      "age": 27,
       "traits": {
         "acceleration": 70,
         "topSpeed": 74,
@@ -106,6 +110,7 @@
       "lastName": "Batherson",
       "position": "RW",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 69,
         "topSpeed": 70,
@@ -123,6 +128,7 @@
       "lastName": "Chabot",
       "position": "D",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 70,
         "topSpeed": 68,
@@ -140,6 +146,7 @@
       "lastName": "Spence",
       "position": "D",
       "shoots": "Right",
+      "age": 25,
       "traits": {
         "acceleration": 72,
         "topSpeed": 73,
@@ -157,6 +164,7 @@
       "lastName": "Pinto",
       "position": "C",
       "shoots": "Right",
+      "age": 25,
       "traits": {
         "acceleration": 68,
         "topSpeed": 70,
@@ -174,6 +182,7 @@
       "lastName": "Burakovsky",
       "position": "LW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 63,
         "topSpeed": 65,
@@ -191,6 +200,7 @@
       "lastName": "Giroux",
       "position": "RW",
       "shoots": "Right",
+      "age": 38,
       "traits": {
         "acceleration": 53,
         "topSpeed": 60,
@@ -208,6 +218,7 @@
       "lastName": "Kleven",
       "position": "D",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 64,
         "topSpeed": 68,
@@ -225,6 +236,7 @@
       "lastName": "Zub",
       "position": "D",
       "shoots": "Right",
+      "age": 31,
       "traits": {
         "acceleration": 64,
         "topSpeed": 64,
@@ -242,6 +254,7 @@
       "lastName": "Cozens",
       "position": "C",
       "shoots": "Right",
+      "age": 25,
       "traits": {
         "acceleration": 59,
         "topSpeed": 66,
@@ -259,6 +272,7 @@
       "lastName": "Foegele",
       "position": "LW",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 54,
         "topSpeed": 55,
@@ -276,6 +290,7 @@
       "lastName": "Amadio",
       "position": "RW",
       "shoots": "Right",
+      "age": 30,
       "traits": {
         "acceleration": 53,
         "topSpeed": 54,
@@ -293,6 +308,7 @@
       "lastName": "Yakemchuk",
       "position": "D",
       "shoots": "Right",
+      "age": 21,
       "traits": {
         "acceleration": 61,
         "topSpeed": 59,
@@ -310,6 +326,7 @@
       "lastName": "Matinpalo",
       "position": "D",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 53,
         "topSpeed": 60,
@@ -327,6 +344,7 @@
       "lastName": "Greig",
       "position": "C",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 50,
         "topSpeed": 52,
@@ -344,6 +362,7 @@
       "lastName": "Cousins",
       "position": "LW",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 50,
         "topSpeed": 55,
@@ -361,6 +380,7 @@
       "lastName": "Halliday",
       "position": "RW",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 53,
         "topSpeed": 59,

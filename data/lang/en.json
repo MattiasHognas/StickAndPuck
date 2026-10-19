@@ -659,5 +659,9 @@
   "ScoutStrongDefence3": "THEY DEFEND WELL. WE NEED SECOND EFFORTS TONIGHT.",
   "ScoutWeakDefence1": "THEIR DEFENCE IS SHAKY. FORECHECK HARD AND FORCE MISTAKES.",
   "ScoutWeakDefence2": "THEIR D STRUGGLE UNDER PRESSURE. GET IN ON THEM.",
-  "ScoutWeakDefence3": "ATTACK THEIR DEFENCE. THEY TURN THE PUCK OVER."
+  "ScoutWeakDefence3": "ATTACK THEIR DEFENCE. THEY TURN THE PUCK OVER.",
+  "RuleDevelopment": "PLAYER DEVELOPMENT",
+  "RuleDevelopmentStrength": "DEVELOPMENT STRENGTH",
+  "NewsDevelopUp": "{0} ({1}) LEVELS UP: {2}",
+  "NewsDevelopDown": "{0} ({1}) SLOWS DOWN: {2}"
 }

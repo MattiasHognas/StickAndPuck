@@ -192,11 +192,23 @@ namespace StickAndPuck.App.Replay
             return plan.Mode.Select(m => m.GetType().Name).Or("");
         }
 
-        /// <summary>Gets a short hash of two clubs' data.</summary>
+        /// <summary>Gets a short hash of two clubs' data. Player ages (W132) are left out: they never play a match
+        /// themselves (development reaches it through <see cref="MatchSetup.Form"/>), so replays recorded before
+        /// the club files had them keep their fingerprint.</summary>
         internal static string ClubsHash(ClubData home, ClubData away)
         {
+            static string Json(ClubData club)
+            {
+                return Clubs.ToJson(
+                    club with
+                    {
+                        Roster = [.. club.Roster.Select(p => p with { Age = 0 })],
+                    }
+                );
+            }
+
             ulong h = 14695981039346656037UL;
-            foreach (char ch in Clubs.ToJson(home) + Clubs.ToJson(away))
+            foreach (char ch in Json(home) + Json(away))
             {
                 h ^= ch;
                 h *= 1099511628211UL;

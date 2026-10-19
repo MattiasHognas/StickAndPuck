@@ -30,6 +30,7 @@
       "lastName": "Markstrom",
       "position": "G",
       "shoots": "Left",
+      "age": 36,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Schmid",
       "position": "G",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Reinhart",
       "position": "C",
       "shoots": "Right",
+      "age": 30,
       "traits": {
         "acceleration": 67,
         "topSpeed": 69,
@@ -89,6 +92,7 @@
       "lastName": "Tkachuk",
       "position": "LW",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 72,
         "topSpeed": 75,
@@ -106,6 +110,7 @@
       "lastName": "Luostarinen",
       "position": "RW",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 73,
         "topSpeed": 73,
@@ -123,6 +128,7 @@
       "lastName": "Jones",
       "position": "D",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 65,
         "topSpeed": 70,
@@ -140,6 +146,7 @@
       "lastName": "Forsling",
       "position": "D",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 70,
         "topSpeed": 71,
@@ -157,6 +164,7 @@
       "lastName": "Verhaeghe",
       "position": "C",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 63,
         "topSpeed": 62,
@@ -174,6 +182,7 @@
       "lastName": "Tkachuk",
       "position": "LW",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 62,
         "topSpeed": 61,
@@ -191,6 +200,7 @@
       "lastName": "Eller",
       "position": "RW",
       "shoots": "Left",
+      "age": 37,
       "traits": {
         "acceleration": 52,
         "topSpeed": 58,
@@ -208,6 +218,7 @@
       "lastName": "Ekblad",
       "position": "D",
       "shoots": "Right",
+      "age": 30,
       "traits": {
         "acceleration": 64,
         "topSpeed": 60,
@@ -225,6 +236,7 @@
       "lastName": "Mikkola",
       "position": "D",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 60,
         "topSpeed": 67,
@@ -242,6 +254,7 @@
       "lastName": "Bennett",
       "position": "C",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 57,
         "topSpeed": 63,
@@ -259,6 +272,7 @@
       "lastName": "Vilmanis",
       "position": "LW",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 62,
         "topSpeed": 66,
@@ -276,6 +290,7 @@
       "lastName": "Lafferty",
       "position": "RW",
       "shoots": "Right",
+      "age": 31,
       "traits": {
         "acceleration": 51,
         "topSpeed": 53,
@@ -293,6 +308,7 @@
       "lastName": "Kulikov",
       "position": "D",
       "shoots": "Left",
+      "age": 36,
       "traits": {
         "acceleration": 47,
         "topSpeed": 52,
@@ -310,6 +326,7 @@
       "lastName": "Balinskis",
       "position": "D",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 53,
         "topSpeed": 59,
@@ -327,6 +344,7 @@
       "lastName": "Lundell",
       "position": "C",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 49,
         "topSpeed": 50,
@@ -344,6 +362,7 @@
       "lastName": "Imama",
       "position": "LW",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 52,
         "topSpeed": 53,
@@ -361,6 +380,7 @@
       "lastName": "Hathaway",
       "position": "RW",
       "shoots": "Right",
+      "age": 34,
       "traits": {
         "acceleration": 43,
         "topSpeed": 47,

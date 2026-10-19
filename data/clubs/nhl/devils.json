@@ -30,6 +30,7 @@
       "lastName": "Allen",
       "position": "G",
       "shoots": "Left",
+      "age": 36,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Daws",
       "position": "G",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Hughes",
       "position": "C",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 73,
         "topSpeed": 76,
@@ -89,6 +92,7 @@
       "lastName": "Bratt",
       "position": "LW",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 71,
         "topSpeed": 77,
@@ -106,6 +110,7 @@
       "lastName": "Meier",
       "position": "RW",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 72,
         "topSpeed": 71,
@@ -123,6 +128,7 @@
       "lastName": "Hughes",
       "position": "D",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 73,
         "topSpeed": 77,
@@ -140,6 +146,7 @@
       "lastName": "Hamilton",
       "position": "D",
       "shoots": "Right",
+      "age": 33,
       "traits": {
         "acceleration": 66,
         "topSpeed": 63,
@@ -157,6 +164,7 @@
       "lastName": "Hischier",
       "position": "C",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 65,
         "topSpeed": 64,
@@ -174,6 +182,7 @@
       "lastName": "Glass",
       "position": "LW",
       "shoots": "Right",
+      "age": 27,
       "traits": {
         "acceleration": 65,
         "topSpeed": 68,
@@ -191,6 +200,7 @@
       "lastName": "Gritsyuk",
       "position": "RW",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 66,
         "topSpeed": 64,
@@ -208,6 +218,7 @@
       "lastName": "Pesce",
       "position": "D",
       "shoots": "Right",
+      "age": 31,
       "traits": {
         "acceleration": 59,
         "topSpeed": 62,
@@ -225,6 +236,7 @@
       "lastName": "Siegenthaler",
       "position": "D",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 64,
         "topSpeed": 66,
@@ -242,6 +254,7 @@
       "lastName": "Rodrigues",
       "position": "C",
       "shoots": "Right",
+      "age": 33,
       "traits": {
         "acceleration": 60,
         "topSpeed": 58,
@@ -259,6 +272,7 @@
       "lastName": "Boqvist",
       "position": "LW",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 56,
         "topSpeed": 61,
@@ -276,6 +290,7 @@
       "lastName": "Mantha",
       "position": "RW",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 54,
         "topSpeed": 50,
@@ -293,6 +308,7 @@
       "lastName": "Kovacevic",
       "position": "D",
       "shoots": "Right",
+      "age": 29,
       "traits": {
         "acceleration": 54,
         "topSpeed": 55,
@@ -310,6 +326,7 @@
       "lastName": "Chisholm",
       "position": "D",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 55,
         "topSpeed": 60,
@@ -327,6 +344,7 @@
       "lastName": "Mercer",
       "position": "C",
       "shoots": "Right",
+      "age": 25,
       "traits": {
         "acceleration": 49,
         "topSpeed": 55,
@@ -344,6 +362,7 @@
       "lastName": "Lombardi",
       "position": "LW",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 64,
         "topSpeed": 65,
@@ -361,6 +380,7 @@
       "lastName": "Noesen",
       "position": "RW",
       "shoots": "Right",
+      "age": 33,
       "traits": {
         "acceleration": 48,
         "topSpeed": 50,

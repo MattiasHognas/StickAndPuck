@@ -659,5 +659,9 @@
   "ScoutStrongDefence3": "DE FÖRSVARAR SIG BRA. VI MÅSTE GÅ PÅ RETURERNA I KVÄLL.",
   "ScoutWeakDefence1": "DERAS FÖRSVAR ÄR SKAKIGT. FORECHECKA HÅRT OCH TVINGA FRAM MISSTAG.",
   "ScoutWeakDefence2": "DERAS BACKAR HAR SVÅRT UNDER PRESS. GÅ PÅ DEM.",
-  "ScoutWeakDefence3": "GÅ PÅ DERAS BACKAR. DE TAPPAR PUCKEN."
+  "ScoutWeakDefence3": "GÅ PÅ DERAS BACKAR. DE TAPPAR PUCKEN.",
+  "RuleDevelopment": "SPELARUTVECKLING",
+  "RuleDevelopmentStrength": "UTVECKLINGENS STYRKA",
+  "NewsDevelopUp": "{0} ({1}) TAR ETT KLIV: {2}",
+  "NewsDevelopDown": "{0} ({1}) TAPPAR FART: {2}"
 }

@@ -30,6 +30,7 @@
       "lastName": "Hofer",
       "position": "G",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Binnington",
       "position": "G",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Thomas",
       "position": "C",
       "shoots": "Right",
+      "age": 27,
       "traits": {
         "acceleration": 68,
         "topSpeed": 70,
@@ -89,6 +92,7 @@
       "lastName": "Holloway",
       "position": "LW",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 77,
         "topSpeed": 78,
@@ -106,6 +110,7 @@
       "lastName": "Snuggerud",
       "position": "RW",
       "shoots": "Right",
+      "age": 22,
       "traits": {
         "acceleration": 75,
         "topSpeed": 77,
@@ -123,6 +128,7 @@
       "lastName": "Broberg",
       "position": "D",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 69,
         "topSpeed": 74,
@@ -140,6 +146,7 @@
       "lastName": "Fowler",
       "position": "D",
       "shoots": "Left",
+      "age": 34,
       "traits": {
         "acceleration": 67,
         "topSpeed": 66,
@@ -157,6 +164,7 @@
       "lastName": "McTavish",
       "position": "C",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 63,
         "topSpeed": 70,
@@ -174,6 +182,7 @@
       "lastName": "Buchnevich",
       "position": "LW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 62,
         "topSpeed": 64,
@@ -191,6 +200,7 @@
       "lastName": "Berggren",
       "position": "RW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 62,
         "topSpeed": 63,
@@ -208,6 +218,7 @@
       "lastName": "Parayko",
       "position": "D",
       "shoots": "Right",
+      "age": 33,
       "traits": {
         "acceleration": 56,
         "topSpeed": 58,
@@ -225,6 +236,7 @@
       "lastName": "Carlo",
       "position": "D",
       "shoots": "Right",
+      "age": 29,
       "traits": {
         "acceleration": 61,
         "topSpeed": 65,
@@ -242,6 +254,7 @@
       "lastName": "Suter",
       "position": "C",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 63,
         "topSpeed": 62,
@@ -259,6 +272,7 @@
       "lastName": "McMichael",
       "position": "LW",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 62,
         "topSpeed": 61,
@@ -276,6 +290,7 @@
       "lastName": "Dvorsky",
       "position": "RW",
       "shoots": "Left",
+      "age": 21,
       "traits": {
         "acceleration": 61,
         "topSpeed": 64,
@@ -293,6 +308,7 @@
       "lastName": "Jiricek",
       "position": "D",
       "shoots": "Right",
+      "age": 20,
       "traits": {
         "acceleration": 63,
         "topSpeed": 69,
@@ -310,6 +326,7 @@
       "lastName": "Barron",
       "position": "D",
       "shoots": "Right",
+      "age": 24,
       "traits": {
         "acceleration": 63,
         "topSpeed": 64,
@@ -327,6 +344,7 @@
       "lastName": "Peterson",
       "position": "C",
       "shoots": "Right",
+      "age": 24,
       "traits": {
         "acceleration": 52,
         "topSpeed": 52,
@@ -344,6 +362,7 @@
       "lastName": "Neighbours",
       "position": "LW",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 58,
         "topSpeed": 57,
@@ -361,6 +380,7 @@
       "lastName": "Johnston",
       "position": "RW",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 46,
         "topSpeed": 45,

@@ -30,6 +30,7 @@
       "lastName": "Lankinen",
       "position": "G",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Meriläinen",
       "position": "G",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Chytil",
       "position": "C",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 71,
         "topSpeed": 68,
@@ -89,6 +92,7 @@
       "lastName": "DeBrusk",
       "position": "LW",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 69,
         "topSpeed": 70,
@@ -106,6 +110,7 @@
       "lastName": "Boeser",
       "position": "RW",
       "shoots": "Right",
+      "age": 29,
       "traits": {
         "acceleration": 71,
         "topSpeed": 69,
@@ -123,6 +128,7 @@
       "lastName": "Hronek",
       "position": "D",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 69,
         "topSpeed": 74,
@@ -140,6 +146,7 @@
       "lastName": "Buium",
       "position": "D",
       "shoots": "Left",
+      "age": 20,
       "traits": {
         "acceleration": 77,
         "topSpeed": 77,
@@ -157,6 +164,7 @@
       "lastName": "Pettersson",
       "position": "C",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 64,
         "topSpeed": 66,
@@ -174,6 +182,7 @@
       "lastName": "O'Connor",
       "position": "LW",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 61,
         "topSpeed": 67,
@@ -191,6 +200,7 @@
       "lastName": "Lekkerimäki",
       "position": "RW",
       "shoots": "Right",
+      "age": 22,
       "traits": {
         "acceleration": 69,
         "topSpeed": 68,
@@ -208,6 +218,7 @@
       "lastName": "Willander",
       "position": "D",
       "shoots": "Right",
+      "age": 21,
       "traits": {
         "acceleration": 69,
         "topSpeed": 74,
@@ -225,6 +236,7 @@
       "lastName": "Pettersson",
       "position": "D",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 68,
         "topSpeed": 70,
@@ -242,6 +254,7 @@
       "lastName": "Karlsson",
       "position": "C",
       "shoots": "Right",
+      "age": 26,
       "traits": {
         "acceleration": 64,
         "topSpeed": 63,
@@ -259,6 +272,7 @@
       "lastName": "Cotter",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 58,
         "topSpeed": 63,
@@ -276,6 +290,7 @@
       "lastName": "Bains",
       "position": "RW",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 59,
         "topSpeed": 64,
@@ -293,6 +308,7 @@
       "lastName": "Oleksiak",
       "position": "D",
       "shoots": "Left",
+      "age": 33,
       "traits": {
         "acceleration": 46,
         "topSpeed": 51,
@@ -310,6 +326,7 @@
       "lastName": "Mancini",
       "position": "D",
       "shoots": "Right",
+      "age": 24,
       "traits": {
         "acceleration": 57,
         "topSpeed": 59,
@@ -327,6 +344,7 @@
       "lastName": "Sasson",
       "position": "C",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 48,
         "topSpeed": 54,
@@ -344,6 +362,7 @@
       "lastName": "Ohgren",
       "position": "LW",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 60,
         "topSpeed": 60,
@@ -361,6 +380,7 @@
       "lastName": "Gallagher",
       "position": "RW",
       "shoots": "Right",
+      "age": 34,
       "traits": {
         "acceleration": 49,
         "topSpeed": 52,

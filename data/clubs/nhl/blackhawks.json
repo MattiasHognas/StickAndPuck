@@ -30,6 +30,7 @@
       "lastName": "Knight",
       "position": "G",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -51,6 +52,7 @@
       "lastName": "Soderblom",
       "position": "G",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -72,6 +74,7 @@
       "lastName": "Bedard",
       "position": "C",
       "shoots": "Right",
+      "age": 21,
       "traits": {
         "acceleration": 76,
         "topSpeed": 75,
@@ -89,6 +92,7 @@
       "lastName": "Bertuzzi",
       "position": "LW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 68,
         "topSpeed": 70,
@@ -106,6 +110,7 @@
       "lastName": "Kane",
       "position": "RW",
       "shoots": "Left",
+      "age": 37,
       "traits": {
         "acceleration": 65,
         "topSpeed": 71,
@@ -123,6 +128,7 @@
       "lastName": "Levshunov",
       "position": "D",
       "shoots": "Right",
+      "age": 21,
       "traits": {
         "acceleration": 77,
         "topSpeed": 78,
@@ -140,6 +146,7 @@
       "lastName": "Vlasic",
       "position": "D",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 72,
         "topSpeed": 71,
@@ -157,6 +164,7 @@
       "lastName": "Nazar",
       "position": "C",
       "shoots": "Right",
+      "age": 22,
       "traits": {
         "acceleration": 69,
         "topSpeed": 71,
@@ -174,6 +182,7 @@
       "lastName": "Greenway",
       "position": "LW",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 60,
         "topSpeed": 59,
@@ -191,6 +200,7 @@
       "lastName": "Kantserov",
       "position": "RW",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 70,
         "topSpeed": 74,
@@ -208,6 +218,7 @@
       "lastName": "Kaiser",
       "position": "D",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 71,
         "topSpeed": 67,
@@ -225,6 +236,7 @@
       "lastName": "Rinzel",
       "position": "D",
       "shoots": "Right",
+      "age": 22,
       "traits": {
         "acceleration": 71,
         "topSpeed": 68,
@@ -242,6 +254,7 @@
       "lastName": "Frondell",
       "position": "C",
       "shoots": "Left",
+      "age": 19,
       "traits": {
         "acceleration": 68,
         "topSpeed": 72,
@@ -259,6 +272,7 @@
       "lastName": "Moore",
       "position": "LW",
       "shoots": "Left",
+      "age": 21,
       "traits": {
         "acceleration": 62,
         "topSpeed": 67,
@@ -276,6 +290,7 @@
       "lastName": "Greene",
       "position": "RW",
       "shoots": "Right",
+      "age": 23,
       "traits": {
         "acceleration": 61,
         "topSpeed": 64,
@@ -293,6 +308,7 @@
       "lastName": "Cole",
       "position": "D",
       "shoots": "Left",
+      "age": 37,
       "traits": {
         "acceleration": 46,
         "topSpeed": 50,
@@ -310,6 +326,7 @@
       "lastName": "Del Mastro",
       "position": "D",
       "shoots": "Left",
+      "age": 23,
       "traits": {
         "acceleration": 61,
         "topSpeed": 60,
@@ -327,6 +344,7 @@
       "lastName": "Teravainen",
       "position": "C",
       "shoots": "Left",
+      "age": 32,
       "traits": {
         "acceleration": 48,
         "topSpeed": 51,
@@ -344,6 +362,7 @@
       "lastName": "Donato",
       "position": "LW",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 54,
         "topSpeed": 52,
@@ -361,6 +380,7 @@
       "lastName": "Smith",
       "position": "RW",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 47,
         "topSpeed": 55,

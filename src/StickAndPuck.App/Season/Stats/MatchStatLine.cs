@@ -61,6 +61,9 @@ namespace StickAndPuck.App.Season.Stats
         /// overtime winner, or the winning club's last shootout goal.</summary>
         public bool Decider { get; set; }
 
+        /// <summary>Gets or sets the player's age from the club file, for development (W132); 0 when unknown.</summary>
+        public int Age { get; set; }
+
         /// <summary>Gets the points.</summary>
         public int Points => Goals + Assists;
 
@@ -80,6 +83,7 @@ namespace StickAndPuck.App.Season.Stats
                 Number = player.Number,
                 Name = player.LastName,
                 Position = player.Position,
+                Age = player.Age,
             };
         }
     }

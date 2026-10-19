@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, strong form swings, no dressing room, no pre-game talk, no injuries and no suspensions.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, strong form swings, no dressing room, no pre-game talk, no injuries, no suspensions and no player development.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -53,11 +53,12 @@ namespace StickAndPuck.App.Core
             Suspensions = false,
             TooManyMen = TooManyMenCall.Off,
             Rivalries = false,
+            Development = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
-        /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice, stronger team morale
-        /// a delay-of-game minor for a second faceoff violation and hotter rivalry games.</summary>
+        /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice, stronger team morale,
+        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games and milder player development over its longer season.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -74,6 +75,7 @@ namespace StickAndPuck.App.Core
             CoachTemper = CoachTemper.Strong,
             IntermissionTalkStrength = TalkStrength.Strong,
             RivalryStrength = RivalryStrength.Strong,
+            DevelopmentStrength = DevelopmentStrength.Mild,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -360,6 +362,28 @@ namespace StickAndPuck.App.Core
                     RivalryStrength.Strong => 1.5f,
                     RivalryStrength.Normal => 1f,
                     _ => throw new NotSupportedException("no rivalry scale for " + RivalryStrength),
+                };
+
+        /// <summary>Gets a value indicating whether season players develop with age: young players gain trait points from
+        /// ice time and form over the season, veterans may lose some (W132).</summary>
+        public bool Development { get; init; } = true;
+
+        /// <summary>Gets how fast season players develop and decline.</summary>
+        public DevelopmentStrength DevelopmentStrength { get; init; } = DevelopmentStrength.Normal;
+
+        /// <summary>Gets the factor on development's trait points for <see cref="DevelopmentStrength"/>, 0 with <see cref="Development"/> off.</summary>
+        [JsonIgnore]
+        public float DevelopmentScale =>
+            !Development
+                ? 0f
+                : DevelopmentStrength switch
+                {
+                    DevelopmentStrength.Mild => 0.5f,
+                    DevelopmentStrength.Strong => 1.5f,
+                    DevelopmentStrength.Normal => 1f,
+                    _ => throw new NotSupportedException(
+                        "no development scale for " + DevelopmentStrength
+                    ),
                 };
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>

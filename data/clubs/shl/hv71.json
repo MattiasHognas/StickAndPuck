@@ -27,6 +27,7 @@
       "lastName": "Sandström",
       "position": "G",
       "shoots": "Left",
+      "age": 29,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -48,6 +49,7 @@
       "lastName": "Liv",
       "position": "G",
       "shoots": "Left",
+      "age": 20,
       "traits": {
         "acceleration": 35,
         "topSpeed": 35,
@@ -69,6 +71,7 @@
       "lastName": "Kloos",
       "position": "C",
       "shoots": "Right",
+      "age": 32,
       "traits": {
         "acceleration": 67,
         "topSpeed": 67,
@@ -86,6 +89,7 @@
       "lastName": "Regenda",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 62,
         "topSpeed": 66,
@@ -103,6 +107,7 @@
       "lastName": "Heponiemi",
       "position": "RW",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 70,
         "topSpeed": 70,
@@ -120,6 +125,7 @@
       "lastName": "Borgman",
       "position": "D",
       "shoots": "Left",
+      "age": 31,
       "traits": {
         "acceleration": 63,
         "topSpeed": 65,
@@ -137,6 +143,7 @@
       "lastName": "Lagerberg",
       "position": "D",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 72,
         "topSpeed": 74,
@@ -154,6 +161,7 @@
       "lastName": "Lindström",
       "position": "C",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 58,
         "topSpeed": 60,
@@ -171,6 +179,7 @@
       "lastName": "Pasic",
       "position": "LW",
       "shoots": "Left",
+      "age": 26,
       "traits": {
         "acceleration": 62,
         "topSpeed": 62,
@@ -188,6 +197,7 @@
       "lastName": "Woods",
       "position": "RW",
       "shoots": "Left",
+      "age": 28,
       "traits": {
         "acceleration": 62,
         "topSpeed": 62,
@@ -205,6 +215,7 @@
       "lastName": "Hatakka",
       "position": "D",
       "shoots": "Left",
+      "age": 25,
       "traits": {
         "acceleration": 58,
         "topSpeed": 60,
@@ -222,6 +233,7 @@
       "lastName": "Alsing",
       "position": "D",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 55,
         "topSpeed": 57,
@@ -239,6 +251,7 @@
       "lastName": "Mysak",
       "position": "C",
       "shoots": "Left",
+      "age": 24,
       "traits": {
         "acceleration": 51,
         "topSpeed": 53,
@@ -256,6 +269,7 @@
       "lastName": "Rousek",
       "position": "LW",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 51,
         "topSpeed": 53,
@@ -273,6 +287,7 @@
       "lastName": "Ang",
       "position": "RW",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 51,
         "topSpeed": 53,
@@ -290,6 +305,7 @@
       "lastName": "Fransson",
       "position": "D",
       "shoots": "Left",
+      "age": 22,
       "traits": {
         "acceleration": 57,
         "topSpeed": 59,
@@ -307,6 +323,7 @@
       "lastName": "Gustafsson",
       "position": "D",
       "shoots": "Left",
+      "age": 18,
       "traits": {
         "acceleration": 53,
         "topSpeed": 57,
@@ -324,6 +341,7 @@
       "lastName": "Laz",
       "position": "C",
       "shoots": "Left",
+      "age": 30,
       "traits": {
         "acceleration": 41,
         "topSpeed": 43,
@@ -341,6 +359,7 @@
       "lastName": "Hardman",
       "position": "LW",
       "shoots": "Left",
+      "age": 27,
       "traits": {
         "acceleration": 44,
         "topSpeed": 46,
@@ -358,6 +377,7 @@
       "lastName": "Stål-Lyrenäs",
       "position": "RW",
       "shoots": "Right",
+      "age": 28,
       "traits": {
         "acceleration": 44,
         "topSpeed": 46,
