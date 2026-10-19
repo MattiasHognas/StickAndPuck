@@ -45,6 +45,7 @@ namespace StickAndPuck.App.Core
             News = false,
             CoachReaction = false,
             PreGameTalk = false,
+            ScoutingTips = false,
             PuckOverGlass = false,
             OverGlassMinor = false,
             IntermissionTalk = false,
@@ -302,6 +303,10 @@ namespace StickAndPuck.App.Core
                     TalkStrength.Normal => 1f,
                     _ => throw new NotSupportedException("no talk scale for " + TalkStrength),
                 };
+
+        /// <summary>Gets a value indicating whether the coach's pre-game talk includes a scouting tip about tonight's
+        /// opponent (its forecheck, entries, style, power play, top scorer or a strength gap), read from the club's real data.</summary>
+        public bool ScoutingTips { get; init; } = true;
 
         /// <summary>Gets a value indicating whether a puck flying over the glass leaves the rink and stops play, with the faceoff where it was last played; otherwise netting keeps it in play.</summary>
         public bool PuckOverGlass { get; init; } = true;

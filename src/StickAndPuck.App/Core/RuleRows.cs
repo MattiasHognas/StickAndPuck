@@ -457,6 +457,14 @@ namespace StickAndPuck.App.Core
                 r => r.IntermissionTalkStrength,
                 (r, v) => r with { IntermissionTalkStrength = v }
             ),
+            Flag(
+                nameof(RuleSet.ScoutingTips),
+                K.RuleScoutingTips,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.ScoutingTips,
+                (r, v) => r with { ScoutingTips = v }
+            ),
         ];
 
         /// <summary>Gets the rules the game plays, grouped as the rules page shows them.</summary>
