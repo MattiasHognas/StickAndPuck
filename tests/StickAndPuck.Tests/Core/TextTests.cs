@@ -13,9 +13,8 @@ namespace StickAndPuck.Tests.Core
     /// </summary>
     public sealed partial class TextTests : CheckedTest
     {
-        /// <summary>Characters the pixel font draws (art/ui/font.fnt); text is upper-cased before drawing.</summary>
-        private const string FontGlyphs =
-            " !\"#%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ_ÅÄÖÉÜ";
+        /// <summary>Characters the pixel font draws (read from art/ui/font.fnt); text is upper-cased before drawing.</summary>
+        private static readonly HashSet<char> FontGlyphs = FontTests.Glyphs();
 
         private static IReadOnlyDictionary<string, string> Table(Language language)
         {
@@ -97,7 +96,7 @@ namespace StickAndPuck.Tests.Core
                         .. PlaceholderPattern
                             .Replace(text, "")
                             .ToUpperInvariant()
-                            .Where(c => !FontGlyphs.Contains(c, StringComparison.Ordinal))
+                            .Where(c => !FontGlyphs.Contains(c))
                             .Distinct(),
                     ]);
                     Check(
