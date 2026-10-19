@@ -111,6 +111,10 @@ namespace StickAndPuck.App.Replay
                     $"{f.Side} {f.PlayerId} {V(f.Position)} {f.TakerId}"
                 ),
                 TimeOutCalled t => $"{t.Side}",
+                PuckOverGlass o => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{V(o.Position)} {o.PlayerId} {V(o.From)} {o.Direct}"
+                ),
                 _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
             };
             return string.Create(

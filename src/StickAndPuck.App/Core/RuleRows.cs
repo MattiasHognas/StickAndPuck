@@ -253,6 +253,22 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { TimeOut = v }
             ),
             Flag(
+                nameof(RuleSet.PuckOverGlass),
+                K.RulePuckOverGlass,
+                K.RuleGroupGame,
+                plays: true,
+                r => r.PuckOverGlass,
+                (r, v) => r with { PuckOverGlass = v }
+            ),
+            Flag(
+                nameof(RuleSet.OverGlassMinor),
+                K.RuleOverGlassMinor,
+                K.RuleGroupInfractions,
+                plays: true,
+                r => r.OverGlassMinor,
+                (r, v) => r with { OverGlassMinor = v }
+            ),
+            Flag(
                 nameof(RuleSet.Fights),
                 K.RuleFights,
                 K.RuleGroupFights,

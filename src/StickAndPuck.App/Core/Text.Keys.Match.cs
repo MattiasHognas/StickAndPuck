@@ -88,6 +88,9 @@ namespace StickAndPuck.App.Core
             /// <summary>#{0} {1} OUT, #{2} {3} IN</summary>
             public const string FaceoffViolationSwap = nameof(FaceoffViolationSwap);
 
+            /// <summary>PUCK OVER THE GLASS</summary>
+            public const string PuckOverGlass = nameof(PuckOverGlass);
+
             /// <summary>PENALTY</summary>
             public const string InfPenalty = nameof(InfPenalty);
 

@@ -170,6 +170,12 @@ namespace StickAndPuck.App.Rules.Match
                 return;
             }
 
+            if (OutOfPlay.Whistle(world))
+            {
+                Log(world, s, "puck over the glass");
+                return;
+            }
+
             if (Frozen(world, s, dt))
             {
                 return;

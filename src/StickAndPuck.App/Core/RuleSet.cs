@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale,
-        /// plain faceoffs (no violations, nearest dot), strong form swings, no dressing room and no pre-game talk.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, strong form swings, no dressing room and no pre-game talk.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -45,6 +45,8 @@ namespace StickAndPuck.App.Core
             News = false,
             CoachReaction = false,
             PreGameTalk = false,
+            PuckOverGlass = false,
+            OverGlassMinor = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -257,6 +259,12 @@ namespace StickAndPuck.App.Core
                     TalkStrength.Normal => 1f,
                     _ => throw new NotSupportedException("no talk scale for " + TalkStrength),
                 };
+
+        /// <summary>Gets a value indicating whether a puck flying over the glass leaves the rink and stops play, with the faceoff where it was last played; otherwise netting keeps it in play.</summary>
+        public bool PuckOverGlass { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether a skater who shoots or clears the puck directly over the glass from his own defending zone takes a delay-of-game minor (not for a deflection); needs <see cref="PuckOverGlass"/>.</summary>
+        public bool OverGlassMinor { get; init; } = true;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]
