@@ -25,7 +25,7 @@ namespace StickAndPuck.Tests.Support
         private readonly List<Action<World>> after = [];
         private readonly List<Action<WorldSwitches>> switches = [];
 
-        /// <summary>Gets every club from data/clubs/, loaded once.</summary>
+        /// <summary>Gets every SHL club from data/clubs/shl/, loaded once.</summary>
         public static IReadOnlyList<ClubData> Clubs => AllClubs.Value;
 
         /// <summary>Gets the default exhibition between the first two clubs.</summary>

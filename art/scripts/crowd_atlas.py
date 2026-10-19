@@ -99,7 +99,7 @@ def contact(atlas, scale=5):
     """the five poses for every look: own clothes, then tinted with a club's home colour as the game draws it"""
     clubs = {}
     import json, glob
-    for f in glob.glob(os.path.dirname(ART) + '/data/clubs/*.json'):
+    for f in glob.glob(os.path.dirname(ART) + '/data/clubs/shl/*.json'):
         d = json.load(open(f)); clubs[d['id']] = d['home']['primary']
     shown = [c for c in ('frolunda', 'brynas', 'lulea', 'djurgarden') if c in clubs]
     pad, head = 6, 18

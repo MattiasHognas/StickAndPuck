@@ -332,7 +332,7 @@ namespace StickAndPuck.App.Benches
 
             string role = p.IsGoalie ? "goalie" : (bare ? "skater_bare" : "skater");
             return Texture(
-                Assets.KitAtlas(world.Setup.Club(p.Side).Id, side, role, bare ? 0 : p.Data.Number)
+                Assets.KitAtlas(world.Setup.Club(p.Side), side, role, bare ? 0 : p.Data.Number)
             );
         }
 

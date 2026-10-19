@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace StickAndPuck.App.AI.Tactics
 {
-    /// <summary>How a club plays, from the <c language="C#">tactics</c> field of its file in data/clubs/. A club with
+    /// <summary>How a club plays, from the <c language="C#">tactics</c> field of its file in data/clubs/{league}/. A club with
     /// no field plays balanced, carries the puck in, mixes its power play and has no style of its own
     /// (a missing <c language="C#">style</c> is balanced too). An unknown key or value
     /// fails the club load, as an unknown trait does.</summary>

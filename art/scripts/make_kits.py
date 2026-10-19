@@ -1,19 +1,21 @@
 """Builds every club's kit atlases from the club data files, never by hand.
 
     python3 art/scripts/make_kits.py palette        # refresh the kit colours at the end of the palette
-    python3 art/scripts/make_kits.py [club ...]     # write art/kits/{club}_{home|away}_{skater|goalie}_64.png
+    python3 art/scripts/make_kits.py [club ...]     # write art/kits/{league}/{club}_{home|away}_{skater|goalie}_64.png
     python3 art/scripts/make_kits.py check [club ...]   # only report how each kit snaps, write nothing
+    Add --league shl (the default), --league nhl, or another data/clubs/ folder name.
 
 Besides the club kit, every rostered player gets his own atlas with his number on the back,
-art/kits/numbers/{club}_{home|away}_{skater|goalie}_{number}_64.png (A4); the game picks it by number.
+art/kits/{league}/numbers/{club}_{home|away}_{skater|goalie}_{number}_64.png (A4); the game picks it by number.
 
 Each kit is a recolour of the generic home kit in art/player/{role}_home_64.png (exported from its
 .aseprite source), so the sweater cut, stripes, number and face stay as drawn there. The template's
-four kit colours are swapped per body part for the club's colours from data/clubs/{id}.json,
+four kit colours are swapped per body part for the club's colours from data/clubs/{league}/{id}.json,
 each snapped to one of the kit bases below. The palette keeps a reserved block of kit colours:
 for every kit base, the mid and shadow tones the toon shader turns it into, so a lit, half-lit or
 shadowed sweater still snaps to its own hue in the post pass. Needs Pillow; aseprite is optional.
 """
+import argparse
 import json
 import os
 import shutil
@@ -28,7 +30,6 @@ ROOT = os.path.dirname(ART)
 GPL = os.path.join(ART, 'palette', 'stickandpuck_dusk.gpl')
 CLUBS = os.path.join(ROOT, 'data', 'clubs')
 OUT = os.path.join(ART, 'kits')
-NUMBERS = os.path.join(OUT, 'numbers')
 MARK = '# kit colours: written by art/scripts/make_kits.py palette, do not edit below'
 MAX_COLOURS = 64                     # the post shader's palette size (src/Render/Palette.cs)
 
@@ -281,12 +282,12 @@ def indexed(img):
     return out
 
 
-def template(role):
+def template(role, output):
     """The generic home kit for a role, exported fresh from its .aseprite source when aseprite is here."""
     png = os.path.join(ART, 'player', '%s_home_64.png' % role)
     src = os.path.join(ART, 'player', '%s_home.aseprite' % role)
     if shutil.which('aseprite') and os.path.exists(src):
-        tmp = os.path.join(OUT, '.template_%s.png' % role)
+        tmp = os.path.join(output, '.template_%s.png' % role)
         subprocess.run(['aseprite', '-b', src, '--save-as', tmp], check=True, capture_output=True, timeout=120)
         img = Image.open(tmp).convert('RGB')
         os.remove(tmp)
@@ -306,31 +307,40 @@ def report(club, side, c):
 
 
 def main(args):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--league', default='shl', choices=sorted(
+        name for name in os.listdir(CLUBS) if os.path.isdir(os.path.join(CLUBS, name))))
+    parser.add_argument('actions', nargs='*', help='palette, check, or club ids')
+    options = parser.parse_args(args)
+    args = options.actions
+    club_folder = os.path.join(CLUBS, options.league)
+    output = os.path.join(OUT, options.league)
+    numbers = os.path.join(output, 'numbers')
     if args[:1] == ['palette']:
         make_palette()
         return
     check = args[:1] == ['check']
     if check: args = args[1:]
-    files = sorted(f for f in os.listdir(CLUBS) if f.endswith('.json'))
-    clubs = [json.load(open(os.path.join(CLUBS, f), encoding='utf-8')) for f in files]
+    files = sorted(f for f in os.listdir(club_folder) if f.endswith('.json'))
+    clubs = [json.load(open(os.path.join(club_folder, f), encoding='utf-8')) for f in files]
     if args: clubs = [c for c in clubs if c['id'] in args]
-    os.makedirs(NUMBERS, exist_ok=True)
+    if not check: os.makedirs(numbers, exist_ok=True)
     if not check and not args:            # a full run rewrites every numbered atlas, so dropped players go
-        for f in os.listdir(NUMBERS):
-            if f.endswith('_64.png'): os.remove(os.path.join(NUMBERS, f))
-    templates = {} if check else {role: template(role) for role in ('skater', 'goalie')}
+        for f in os.listdir(numbers):
+            if f.endswith('_64.png'): os.remove(os.path.join(numbers, f))
+    templates = {} if check else {role: template(role, output) for role in ('skater', 'goalie')}
     for club in clubs:
         for side in ('home', 'away'):
             c = colours_for(club, side)
             report(club, side, c)
             if check: continue
             for role in ('skater', 'goalie'):
-                path = os.path.join(OUT, '%s_%s_%s_64.png' % (club['id'], side, role))
+                path = os.path.join(output, '%s_%s_%s_64.png' % (club['id'], side, role))
                 indexed(recolour(templates[role], c, role)).save(path)
                 print('  wrote', os.path.relpath(path, ROOT))
                 players = [p for p in club['roster'] if (p['position'] == 'G') == (role == 'goalie')]
                 for p in players:
-                    path = os.path.join(NUMBERS, '%s_%s_%s_%d_64.png' % (club['id'], side, role, p['number']))
+                    path = os.path.join(numbers, '%s_%s_%s_%d_64.png' % (club['id'], side, role, p['number']))
                     indexed(recolour(templates[role], c, role, p['number'])).save(path)
                 print('  wrote %d numbered %s atlases' % (len(players), role))
 

@@ -224,12 +224,7 @@ namespace StickAndPuck.App.Players.Movement
         private Texture2D Kit(World world, Player p)
         {
             Side side = swapKits ? (p.Side == Side.Home ? Side.Away : Side.Home) : p.Side;
-            string path = Assets.KitAtlas(
-                world.Setup.Club(p.Side).Id,
-                side,
-                "skater",
-                p.Data.Number
-            );
+            string path = Assets.KitAtlas(world.Setup.Club(p.Side), side, "skater", p.Data.Number);
             if (!kits.TryGetValue(path, out Texture2D tex))
             {
                 tex = Camera.FarTexture.Load(path); // mipmapped so stripes hold still at broadcast range

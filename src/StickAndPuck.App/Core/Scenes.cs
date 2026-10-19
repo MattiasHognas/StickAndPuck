@@ -45,7 +45,7 @@ namespace StickAndPuck.App.Core
         {
             if (clubs.Count == 0)
             {
-                throw new InvalidOperationException($"no club files in {Assets.ClubFolder}");
+                throw new InvalidOperationException("no clubs loaded from data/clubs/{league}/");
             }
 
             ClubData home = Pick(clubs, "SAP_HOME").Or(clubs[0]);

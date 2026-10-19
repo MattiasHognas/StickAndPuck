@@ -3,7 +3,7 @@ using StickAndPuck.App.AI.Tactics;
 
 namespace StickAndPuck.App.Core
 {
-    /// <summary>A club as written in its data file under data/clubs/: names, kit colours and the roster.</summary>
+    /// <summary>A club as written in its data file under data/clubs/{league}/: names, kit colours and the roster.</summary>
     public sealed record ClubData
     {
         /// <summary>Gets the file-safe id, also used for kit atlas names (for example "frolunda").</summary>

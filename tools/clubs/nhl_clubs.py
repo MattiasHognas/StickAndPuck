@@ -7,7 +7,7 @@ Downloads go to the cache dir (kept between runs, delete it to fetch again) and 
 Each club's squad is the 20 players it dressed in its latest regular-season game, filled from its
 current roster when that game was short of a position. Lines are ordered by average ice time this
 season (last game's when a player has fewer than three games). Traits are seeded the same way as the
-SHL clubs (see data/clubs/README.md), on an NHL scale a few points above the SHL's.
+SHL clubs (see data/clubs/shl/README.md), on an NHL scale a few points above the SHL's.
 """
 
 import hashlib

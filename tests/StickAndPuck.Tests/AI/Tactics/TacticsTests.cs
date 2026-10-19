@@ -36,7 +36,7 @@ namespace StickAndPuck.Tests.AI.Tactics
         public void Data()
         {
             IReadOnlyList<ClubData> clubs = WorldBuilder.Clubs;
-            string[] raw = [.. ResourceLoader.List(Assets.ClubFolder, ".json")];
+            string[] raw = [.. ResourceLoader.List(Assets.ShlClubFolder, ".json")];
             bool all =
                 raw.Length > 0
                 && raw.All(f =>

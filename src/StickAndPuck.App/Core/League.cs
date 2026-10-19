@@ -6,7 +6,7 @@ namespace StickAndPuck.App.Core
     [JsonConverter(typeof(JsonStringEnumConverter<League>))]
     public enum League
     {
-        /// <summary>The Swedish Hockey League: the 14 clubs in data/clubs/ (the default).</summary>
+        /// <summary>The Swedish Hockey League: the 14 clubs in data/clubs/shl/ (the default).</summary>
         [JsonStringEnumMemberName("SHL")]
         Shl,
 

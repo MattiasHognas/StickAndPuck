@@ -129,7 +129,7 @@ These are set by the game, rather than player-facing options:
 
 ## Art and data
 
-Club names, colours, rosters and traits are editable files in [data/clubs](../data/clubs/README.md). English and Swedish strings live in `data/lang/`. Asset paths are centralised in `Core/Assets.cs`.
+Club names, colours, rosters and traits are editable files in [data/clubs/{league}/](../data/clubs/README.md), with matching textures under `art/kits/{league}/` (player numbers in `numbers/`). Kit generation accepts `--league shl|nhl`. English and Swedish strings live in `data/lang/`. Asset paths are centralised in `Core/Assets.cs`.
 
 Models, the rink and stepped animation clips are generated with Blender scripts under `art/scripts/`; `.blend` sources and exported `.glb` files live under `art/`. Aseprite sources and Lua/Python scripts produce the pixel atlases, kits and UI. Keep changes in their scripts and source assets so exports can be regenerated. Run only one Blender job at a time.
 

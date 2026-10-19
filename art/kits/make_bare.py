@@ -6,7 +6,7 @@ figures with the helmet off.
 1. The base texture: art/player/skater_{home|away}_bare.aseprite is the source once it exists and
    is only exported to skater_{kit}_bare_64.png. Without it, the hair is painted over
    skater_{kit}_64.png and both the png and the .aseprite are written (repaint in Aseprite after).
-2. Every club kit art/kits/{club}_{home|away}_skater_64.png gets {club}_{kit}_skater_bare_64.png:
+2. Every club kit art/kits/{league}/{club}_{home|away}_skater_64.png gets {club}_{kit}_skater_bare_64.png:
    the helmet strip and the ear-guard swatch copied from the base home bare atlas, with its three
    hair tones swapped for the club's hair set, so the hair is drawn once and only recoloured.
 
@@ -94,16 +94,20 @@ def main():
     home = base('home'); base('away')
     box = lambda r: (r[0], r[1], r[0] + r[2], r[1] + r[3])
     hair, ears = home.crop(box(HELMET)), home.crop(box(EARS))
-    kits = sorted(p for p in glob.glob(os.path.join(HERE, '*_skater_64.png')))
-    clubs = sorted({os.path.basename(p).split('_')[0] for p in kits})
     n = 0
-    for p in kits:
-        club = os.path.basename(p).split('_')[0]
-        tones = HAIR[ORDER[clubs.index(club) % len(ORDER)]]
-        im = Image.open(p).convert('RGB')
-        im.paste(recolour(hair, tones), HELMET[:2]); im.paste(ears, EARS[:2])
-        im.save(p.replace('_skater_64.png', '_skater_bare_64.png'), optimize=True); n += 1
-    print('%d bare-head club atlases, %d clubs' % (n, len(clubs)))
+    club_count = 0
+    for folder in sorted(glob.glob(os.path.join(HERE, '*'))):
+        if not os.path.isdir(folder): continue
+        kits = sorted(glob.glob(os.path.join(folder, '*_skater_64.png')))
+        clubs = sorted({os.path.basename(p).rsplit('_', 3)[0] for p in kits})
+        club_count += len(clubs)
+        for p in kits:
+            club = os.path.basename(p).rsplit('_', 3)[0]
+            tones = HAIR[ORDER[clubs.index(club) % len(ORDER)]]
+            im = Image.open(p).convert('RGB')
+            im.paste(recolour(hair, tones), HELMET[:2]); im.paste(ears, EARS[:2])
+            im.save(p.replace('_skater_64.png', '_skater_bare_64.png'), optimize=True); n += 1
+    print('%d bare-head club atlases, %d clubs' % (n, club_count))
 
 
 if __name__ == '__main__':

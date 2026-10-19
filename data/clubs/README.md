@@ -1,50 +1,23 @@
 # Club files
 
-One JSON file per club. The game loads every `*.json` here; `SAP_HOME` and `SAP_AWAY` pick clubs by `id`, otherwise the first two by id play.
+One JSON file per club under `data/clubs/{league}/`: [SHL](shl/README.md) and [NHL](nhl/README.md). The game loads only the selected league; `SAP_HOME` and `SAP_AWAY` pick clubs by `id`, otherwise the first two by id play.
 
-- `id`: file-safe name, also used for kit atlases (`art/kits/{id}_{home|away}_{skater|goalie}_64.png`).
-- `name`, `shortName`: full name and the club's SHL code for the scorebug (three letters, four for HV71 and SAIK).
+- `id`: file-safe name, also used for kit atlases (`art/kits/{league}/{id}_{home|away}_{skater|goalie}_64.png`).
+- `name`, `shortName`: full name and the club's code for the scorebug (three letters, four for HV71 and SAIK).
 - `home`, `away`: kit colours as hex (`primary` jersey, `secondary` stripes and numbers, `accent` trim, `helmet`). The visiting club wears `away`. These are the club's real colours; the kit script snaps them to the palette.
 - `roster`: the match squad in line order: two goalies (starter first), then four forward lines and three defence pairs as C, LW, RW, D, D per line (line 4 has no D). The first player of each position starts.
 - `traits`: 0 to 100, 50 is an average SHL player: `acceleration`, `topSpeed`, `shotAccuracy`, `shotPower`, `checking`, `puckControl`, `hockeyIq`, `goalieReflexes`, and for goalies `goalieGlove`, `goalieBlocker`, `goalieReboundControl`, `goaliePuckHandling`. `hockeyIq` is how well the player reads the play and feeds every AI read (vision, passing lanes, re-think interval, positioning, getting open); it sets the odds, and the AI's skill-scaled randomness rolls against them. For a goalie `hockeyIq` is positioning: how far out and how square to the puck it stands. `goalieGlove` and `goalieBlocker` are the reach and sureness of each hand; the weaker one is the weak side AI shooters pick, and a goalie's `shoots` is its catching hand (Left puts the glove on the left). `goalieReboundControl` is how often a shot is held and how soft and wide the rebounds are; `goaliePuckHandling` is whether the goalie passes a held puck to a teammate and leaves the crease to move a loose puck on from behind the net. A trait name the game does not know fails the load.
 
 - `tactics` (W22d): how the club plays at even strength. `forecheck` is `balanced` (one forward on the puck, the rest in shape), `aggressive` (2-1-2: two forwards in on the puck and its outlet, one high, the defence pinching at the blue line) or `trap` (1-3-1: one forward angling at their blue line, three across the red line, one back). `entry` is `carry` or `dumpAndChase` (with defenders ahead, take it wide, fire it into the emptier corner from over the red line and send two forwards after it). `powerPlay` is `umbrella`, `oneThreeOne` or `mixed` (either, at random). `style` (W140) is `balanced` (none of its own), `physical` (the skater nearest the carrier skates at him and lines up hits three times as often), `shootFromAnywhere` (shoots from anywhere in the attacking zone with a lane, slap shots from distance) or `defensiveShell` (collapses into a box in front of its own net while the other side has the puck in its zone; with a balanced forecheck it sends nobody in on the breakout and waits in its own half). A missing field plays balanced, carry, mixed, balanced; an unknown key or value fails the load.
 
-## Tactics
+## League folders
 
-Each club's tactics are a judgement from how the club is known to play, not official data; change them freely. Aggressive forecheck: Björklöven, Djurgården, Färjestad, Frölunda, Skellefteå. Trap: HV71, Luleå, Malmö, Växjö. Balanced: Brynäs, Linköping, Örebro, Rögle, Timrå. Dump and chase: Björklöven, HV71, Linköping, Luleå, Timrå; the rest carry the puck in. Physical: Luleå, Skellefteå, Timrå. Shoot from anywhere: Färjestad, Frölunda, Rögle. Defensive shell: HV71, Växjö, Örebro. The rest play balanced.
+Use the same stable league id across league-specific assets:
 
-## Sources
+- `data/clubs/{league}/{id}.json`: club colours, roster, traits and tactics.
+- `art/kits/{league}/{id}_{home|away}_{skater|goalie}_64.png`: club kits.
+- `art/kits/{league}/numbers/{id}_{home|away}_{skater|goalie}_{number}_64.png`: player kits.
 
-Rosters, numbers, handedness and lines come from SHL's official team pages (shl.se) as of 2026-10-09, using each club's latest SHL lineup. Players outside the 20-man squad (injured or extra) are left out.
+`Leagues.Id` defines folder ids, and `Assets.ClubFolder` / `Assets.KitFolder` resolve them. Add league-specific data under its asset category using this convention. Keep shared translations, news cards, UI atlases and model templates shared. Club ids must remain globally unique while replay and UI references identify clubs by id.
 
-The other twelve (D1b) follow the same rules: squads are each club's SHL lineup from 2026-10-08, with gaps (a missing backup goalie or an empty line slot) filled from the club's earlier 2026-27 lineups. Handedness missing on shl.se comes from the NHL's player records or, failing that, Wikipedia, hockeydb and Hockey Canada profiles; Andro Kaderli (Skellefteå) is set Left but sources disagree.
-
-Kit colours were checked against each club's 2026-27 replica jerseys (A6, 2026-10-12): club shops and Intersport supporter pages, with colours sampled from product photos where no brand hex exists. Helmets could not be confirmed and follow the home sweater. Djurgården, HV71, Luleå and Skellefteå wear a coloured away kit; the rest wear white.
-
-| Club | Home primary / secondary / accent | Away | Source |
-|---|---|---|---|
-| Björklöven | green `#0b5640`, yellow `#ffd000`, white | white | [club shop](https://bjorklovenshopen.se/) |
-| Brynäs | black `#1a1a1a`, yellow `#ffcc00`, red `#e30613` | white, yellow and red trim | [Intersport](https://www.intersport.se/supporterklubbar/brynas-if) |
-| Djurgården | navy `#2b3a6e`, yellow `#ffec0d`, dark red `#a6192e` | yellow `#f6b83c`, navy and dark red | [DIF butiken](https://difbutiken.se/ccm/) |
-| Färjestad | green `#008e52`, white, gold `#e9b646` | white | [club shop](https://shop.farjestadbk.se/matchtrojor) |
-| Frölunda | red `#c8102e`, green `#00573f`, white | white, green shoulders | [Intersport](https://www.intersport.se/products/frolunda-hockey-home-26-27-matchtroja/red-168435801), [club](https://www.frolundahockey.com/article/b0datje-24601/view) |
-| HV71 | navy `#002d59`, yellow `#ffd500`, white | yellow, navy | [Intersport](https://www.intersport.se/products/hv71-away-26-27-jr-matchtroja-barn/yellow-168436101) |
-| Linköping | navy `#002e5f`, white, red `#c8102e` | white (away not found) | [Hockeytown](https://www.hockeytown.se/sv/articles/2.1343.37642/ccm-matchtroja-replica-lhc-2627-sr) |
-| Luleå | red `#d20a11`, black, yellow `#ffcc00` | yellow, black (white on some away games) | [club](https://www.luleahockey.se/article/qkjeajktm-30c4d/view) |
-| Malmö | black `#1a1a1a`, red `#ba0c2f`, white | white (away not found) | [club shop](https://redhawksshop.com/products/matchreplica-hemma-2026-27) |
-| Örebro | red `#d70728`, black, white | white (a black alternate exists) | [club shop](https://shop.orebrohockey.se/matchtrojor) |
-| Rögle | green `#007a33`, white, yellow `#f6be00` | white (away not found) | [club shop](https://1932store.roglebk.se/collections/alla-matchtrojor) |
-| Skellefteå | black `#1a1a1a`, yellow `#fbb906`, red `#c8102e` | yellow, black | [Intersport](https://www.intersport.se/products/skelleftea-aik-pro-7000-home-26-27-matchtroja/black-169164301) |
-| Timrå | red `#c8102e`, white, blue `#124a97` | white, red | [club shop](https://clubshopen.timraik.se/) |
-| Växjö | navy `#002f60`, orange `#ec732b`, white | white | [club shop](https://teamstore.vaxjolakers.se/products/matchtroja-navy-s) |
-
-Traits are seeded, not official: line (1st line higher), position, age, size and 2026-27 per-game goals, assists, shots and hits so far, clamped to 25..92. Goalies are seeded from save percentage; their glove, blocker, rebound control and puck handling come from `add_goalie_traits.py` (2026-10-11): one weaker hand per goalie, picked from the name. `hockeyIq` folds the earlier `smartPasses` and `smartPositioning` (2026-10-10): the rounded average for skaters, the positioning value for goalies. Edit any value by hand; nothing in code overrides these files.
-
-## NHL clubs (W115)
-
-`nhl/` holds the 32 NHL clubs in the same shape, plus `league` (`NHL`), `conference` and `division` for the NHL season (W116): a season of these clubs builds the 82-game schedule from them, groups the standings by them and seeds the playoffs by division and wild card. Each NHL club also has a tactics `style`. They are not in the SHL club list: `Clubs.LoadAll()` reads only the files directly in this folder, `Clubs.LoadNhl()` reads `nhl/`, and `SAP_HOME`/`SAP_AWAY` accept an NHL id (for example `SAP_HOME=oilers SAP_AWAY=maple_leafs`). Ids are the club's nickname (`maple_leafs`, `golden_knights`), `shortName` is the NHL code.
-
-`tools/clubs/nhl_clubs.py <cache dir>` rebuilds them from the NHL API (api-web.nhle.com and api.nhle.com/stats), last run 2026-10-18: each squad is the 20 players the club dressed in its latest 2026-27 regular-season game (2026-10-15 to 2026-10-17), with any short position filled from the current roster. Lines follow 2026-27 average ice time (last game's ice time for players with fewer than three games), the goalie with more starts starts, and forwards are moved to the thinnest wing or centre slot when a game dressed more than four at one position.
-
-Traits are seeded like the SHL ones, from 2026-27 plus 2025-26 per-game goals, assists, shots and hits, age and weight, on the SHL line averages plus 7 (an NHL line is better than the same SHL line), clamped to 30..95. Goalies come from blended save percentage, with one weaker hand and puck handling picked from the name. Colours are each club's official home colours with white away kits, placeholders until the kits and crests (A16) are made; the tactics are a judgement, like the SHL ones. Edit any value by hand; the script overwrites the files when run again.
+Run `python3 art/scripts/make_kits.py --league shl` (or `nhl`) to build that league's kits. Add `check` to inspect colours without writing assets. Missing kits use the shared generic player textures.

@@ -107,7 +107,7 @@ namespace StickAndPuck.App.Goalie
         private Texture2D Kit(World world, Player g)
         {
             string path = Assets.KitAtlas(
-                world.Setup.Club(g.Side).Id,
+                world.Setup.Club(g.Side),
                 g.Side,
                 "goalie",
                 g.Data.Number

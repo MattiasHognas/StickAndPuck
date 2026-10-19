@@ -1,0 +1,9 @@
+# NHL clubs
+
+See the [club format and folder convention](../README.md).
+
+This folder holds the 32 NHL clubs in the same shape, plus `league` (`NHL`), `conference` and `division` for the NHL season (W116): a season of these clubs builds the 82-game schedule from them, groups the standings by them and seeds the playoffs by division and wild card. Each NHL club also has a tactics `style`. They are not in the SHL club list: `Clubs.LoadAll()` defaults to `shl/`, while `Clubs.Load(League.Nhl)` (or `Clubs.LoadNhl()`) reads this folder, and `SAP_HOME`/`SAP_AWAY` accept an NHL id (for example `SAP_HOME=oilers SAP_AWAY=maple_leafs`). Ids are the club's nickname (`maple_leafs`, `golden_knights`), `shortName` is the NHL code.
+
+`tools/clubs/nhl_clubs.py <cache dir>` rebuilds them from the NHL API (api-web.nhle.com and api.nhle.com/stats), last run 2026-10-18: each squad is the 20 players the club dressed in its latest 2026-27 regular-season game (2026-10-15 to 2026-10-17), with any short position filled from the current roster. Lines follow 2026-27 average ice time (last game's ice time for players with fewer than three games), the goalie with more starts starts, and forwards are moved to the thinnest wing or centre slot when a game dressed more than four at one position.
+
+Traits are seeded like the SHL ones, from 2026-27 plus 2025-26 per-game goals, assists, shots and hits, age and weight, on the SHL line averages plus 7 (an NHL line is better than the same SHL line), clamped to 30..95. Goalies come from blended save percentage, with one weaker hand and puck handling picked from the name. Colours are each club's official home colours with white away kits, placeholders until the kits and crests (A16) are made; the tactics are a judgement, like the SHL ones. Edit any value by hand; the script overwrites the files when run again.

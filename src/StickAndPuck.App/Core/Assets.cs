@@ -5,11 +5,23 @@ namespace StickAndPuck.App.Core
     /// <summary>Every bundled asset name in one place, resolved by <see cref="ResourceLoader"/>.</summary>
     public static class Assets
     {
-        /// <summary>The club data files.</summary>
-        public const string ClubFolder = "data.clubs";
+        /// <summary>The SHL club data files.</summary>
+        public const string ShlClubFolder = "data.clubs.shl";
 
-        /// <summary>The NHL club data files (W115), kept apart from the SHL clubs in <see cref="ClubFolder"/>.</summary>
+        /// <summary>The NHL club data files.</summary>
         public const string NhlClubFolder = "data.clubs.nhl";
+
+        /// <summary>Gets the club data folder for a league.</summary>
+        public static string ClubFolder(League league)
+        {
+            return $"data.clubs.{Leagues.Id(league)}";
+        }
+
+        /// <summary>Gets the kit atlas folder for a league.</summary>
+        public static string KitFolder(League league)
+        {
+            return $"art.kits.{Leagues.Id(league)}";
+        }
 
         /// <summary>The skater model with its idle, skate and shoot clips.</summary>
         public const string Skater = "art.player.skater.glb";
@@ -76,23 +88,24 @@ namespace StickAndPuck.App.Core
         /// <summary>The shader folder.</summary>
         public const string Shaders = "shaders";
 
-        /// <summary>The 64x64 kit atlas for a club, side and role, from art/kits/ (made by the kit script).
-        /// A numbered atlas from art/kits/numbers/ carries the player's number on the back (A4); without one
+        /// <summary>The 64x64 kit atlas for a club, side and role, from art/kits/{league}/.
+        /// A numbered atlas from its numbers/ folder carries the player's number on the back (A4); without one
         /// it falls back to the club kit, then to the generic home or away kit in art/player/.</summary>
-        public static string KitAtlas(string clubId, Side side, string role, int number = 0)
+        public static string KitAtlas(ClubData club, Side side, string role, int number = 0)
         {
             string kit = side == Side.Home ? "home" : "away";
+            string folder = KitFolder(club.League);
             string numbered = string.Create(
                 CultureInfo.InvariantCulture,
-                $"art.kits.numbers.{clubId}_{kit}_{role}_{number}_64.png"
+                $"{folder}.numbers.{club.Id}_{kit}_{role}_{number}_64.png"
             );
             if (number > 0 && ResourceLoader.Exists(numbered))
             {
                 return numbered;
             }
 
-            string club = $"art.kits.{clubId}_{kit}_{role}_64.png";
-            return ResourceLoader.Exists(club) ? club : $"art.player.{role}_{kit}_64.png";
+            string atlas = $"{folder}.{club.Id}_{kit}_{role}_64.png";
+            return ResourceLoader.Exists(atlas) ? atlas : $"art.player.{role}_{kit}_64.png";
         }
     }
 }

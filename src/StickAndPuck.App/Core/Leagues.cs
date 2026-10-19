@@ -9,6 +9,21 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets both leagues, SHL first.</summary>
         public static IReadOnlyList<League> All { get; } = [League.Shl, League.Nhl];
 
+        /// <summary>Gets the stable folder and save suffix for a league.</summary>
+        public static string Id(League league)
+        {
+            return league switch
+            {
+                League.Shl => "shl",
+                League.Nhl => "nhl",
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(league),
+                    league,
+                    "Unknown league"
+                ),
+            };
+        }
+
         /// <summary>Gets the league's name as the menus show it.</summary>
         public static string Name(League league)
         {
@@ -44,7 +59,10 @@ namespace StickAndPuck.App.Core
             }
 
             string name =
-                Path.GetFileNameWithoutExtension(shlPath) + "_nhl" + Path.GetExtension(shlPath);
+                Path.GetFileNameWithoutExtension(shlPath)
+                + "_"
+                + Id(league)
+                + Path.GetExtension(shlPath);
             string folder = Path.GetDirectoryName(shlPath) ?? "";
             return folder.Length > 0 ? Path.Combine(folder, name) : name;
         }
