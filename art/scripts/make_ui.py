@@ -7,8 +7,9 @@ These PNGs are only the starting point. make_ui.lua turns them into .aseprite fi
 the source of truth from then on; after editing one in Aseprite, export it back to its PNG and
 run `python3 make_ui.py fnt` if the font changed, so font.fnt follows the new glyph widths.
 
-Run: python3 art/scripts/make_ui.py [all|fnt|title|crests [club ...]]  (title rebuilds only title.png and its ui.json entry;
-  crests only crests.png and its entry: clubs new to CRESTS, plus any named, are drawn)
+Run: python3 art/scripts/make_ui.py [all|fnt|title|crests [club ...]]  (title rebuilds only title.png, the intro's
+  title_letters.png and their ui.json entries; crests only crests.png and its entry: clubs new to CRESTS, plus any
+  named, are drawn)
 """
 import json
 import os
@@ -443,8 +444,28 @@ def build_title(meta):
     """The title logo, drawn by title_logo.py: gold italic block letters over a blue extrusion,
     a red ampersand, and a gold-rimmed puck sliding out after the K."""
     out = title_logo.build()
-    out.save(os.path.join(UI, "title.png"))
+    path = os.path.join(UI, "title.png")
+    # title.png goes through Aseprite (make_ui.lua), whose indexed palette may shift a colour; when the
+    # drawing has not changed, keep that export and give the letters its colours
+    shipped = Image.open(path).convert("RGBA") if os.path.exists(path) else None
+    mapping = title_logo.colour_map(out, shipped) if shipped else None
+    if mapping is None:
+        out.save(path)
+        shipped, mapping = out, {}
     meta["title"] = {"file": "art/ui/title.png", "size": list(out.size)}
+    # the same logo cut into its letters for the title intro, and the mask its shine sweeps over
+    sheet, pieces, shine = title_logo.build_letters()
+    sheet = title_logo.recolour(sheet, pieces, mapping)
+    if not title_logo.same_picture(title_logo.assemble(sheet, pieces, out.size), shipped):
+        raise SystemExit("title_letters.png does not assemble into title.png")
+    sheet.save(os.path.join(UI, "title_letters.png"))
+    meta["title_letters"] = {
+        "file": "art/ui/title_letters.png",
+        "note": "The title intro's pieces in drop order: rect on the sheet, offset of its top left in title.png. "
+                "shine: a white mask of title.png's gold, the same size.",
+        "pieces": pieces,
+        "shine": shine,
+    }
 
 
 def build_crests_only(redraw):
