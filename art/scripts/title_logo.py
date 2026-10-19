@@ -178,5 +178,12 @@ def build():
     out = Image.new("RGBA", (w, h), CLEAR)
     out.alpha_composite(puck)
     out.alpha_composite(words)
+    # the canvas is centred on the words, so the puck hangs out to the right and the game can
+    # simply centre the image; the empty left side mirrors the puck's width
     left, top, right, bottom = out.getbbox()
-    return out.crop((left - 1, top - 1, right + 1, bottom + 1))
+    words_left, _, words_right, _ = words.getbbox()
+    centre = (words_left + words_right) // 2
+    half = max(centre - left, right - centre) + 1
+    pad = Image.new("RGBA", (w + 2 * half, h), CLEAR)
+    pad.alpha_composite(out, (half, 0))
+    return pad.crop((half + centre - half, top - 1, half + centre + half, bottom + 1))
