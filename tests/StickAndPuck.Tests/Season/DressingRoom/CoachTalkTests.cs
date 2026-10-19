@@ -223,6 +223,12 @@ namespace StickAndPuck.Tests.Season.DressingRoom
                     ]),
                 "the talk offers three tones: calm, fire up, discipline"
             );
+            Check(
+                CoachTalkScreen.Mood(TalkTone.Discipline) == CoachMood.Angry
+                    && CoachTalkScreen.Mood(TalkTone.FireUp) == CoachMood.Pleased
+                    && CoachTalkScreen.Mood(TalkTone.Calm) == CoachMood.Neutral,
+                "the coach's face follows the tone: shouting for discipline, a grin for firing up"
+            );
 
             Fixture game = season.NextGame.TryGet(out Fixture g)
                 ? g

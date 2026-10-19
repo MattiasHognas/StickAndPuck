@@ -79,7 +79,13 @@ namespace StickAndPuck.App.Screens
                 return;
             }
 
-            _ = art.DrawDressingRoom();
+            KitColours kit = Flow
+                .Clubs.FirstOrNone(c =>
+                    string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)
+                )
+                .Select(c => c.Home)
+                .Or(new KitColours());
+            bool room = art.DrawDressingRoom(kit);
             DressingRoomContext context = DressingRoomContext.Of(
                 season,
                 Flow.Clubs,
@@ -96,12 +102,10 @@ namespace StickAndPuck.App.Screens
                 + 4
                 + Line
                 + 6;
-            (int x, int top) = art.Panel(
-                Text.Get(K.PreGameTalk),
-                PanelW,
-                h,
-                Math.Max(2, (Game.Height - h - 14) / 2)
-            );
+            int py = Math.Max(2, (Game.Height - h - 14) / 2);
+            (int x, int top) = room
+                ? art.RoomPanel(kit, Text.Get(K.PreGameTalk), PanelW, h, py)
+                : art.Panel(Text.Get(K.PreGameTalk), PanelW, h, py);
 
             string coach = Text.Get(K.RoomCoach);
             TalkTone selected = Tones[Math.Clamp(Selected, 0, Tones.Count - 1)];
@@ -110,14 +114,14 @@ namespace StickAndPuck.App.Screens
             int tw = PanelW - (tx - x) - 10;
             art.Left(coach, tx, top, art.Gold);
             int y = top + Line + 2;
-            int room = TalkLines;
+            int left = TalkLines;
             foreach (DressingRoomEntry said in PreGameTalkSources.Build(context).All)
             {
-                foreach (string line in DressingRoomScreen.Wrap(art, said.Text, tw).Take(room))
+                foreach (string line in DressingRoomScreen.Wrap(art, said.Text, tw).Take(left))
                 {
                     art.Left(line, tx, y, said.Highlight ? art.Gold : art.Text);
                     y += Line;
-                    room--;
+                    left--;
                 }
 
                 y += 3; // a little air between the coach's points
