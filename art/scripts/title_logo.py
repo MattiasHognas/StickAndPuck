@@ -1,8 +1,7 @@
 """The title logo: 'STICK & PUCK' in chunky italic block letters, gold faces over a deep blue 3D
-extrusion with a red ampersand, and a puck with a gold rim sliding out after the K with speed lines
-and a few ice chips behind it. Every colour is on art/palette/stickandpuck_dusk.gpl.
+extrusion with a red ampersand. Every colour is on art/palette/stickandpuck_dusk.gpl.
 
-Called from make_ui.py (build_title); returns an RGBA image trimmed to the logo plus a 1 px margin.
+Called from make_ui.py (build_title); returns an RGBA image trimmed to the letters plus a 1 px margin.
 """
 from PIL import Image
 
@@ -15,10 +14,6 @@ INK = _hex("#18131f")
 NAVY = _hex("#2a2c40")
 STEEL = _hex("#31556e")
 BLUE = _hex("#2f5f8f")
-SKY = _hex("#7f9cae")
-FROST = _hex("#bdb9c4")
-SNOW = _hex("#ccc9d2")
-CREAM = _hex("#efe0c2")
 GOLD_D = _hex("#c8963c")
 GOLD = _hex("#f2c14e")
 GOLD_L = _hex("#f9da93")
@@ -27,7 +22,6 @@ RED = _hex("#c8574a")
 RED_L = _hex("#e96f5d")
 BRICK = _hex("#613b3a")
 CLEAR = (0, 0, 0, 0)
-COLOURS = [INK, NAVY, STEEL, BLUE, SKY, FROST, SNOW, CREAM, GOLD_D, GOLD, GOLD_L, RED_D, RED, RED_L, BRICK]
 
 # Block letters, 10 rows tall with 3 px strokes; drawn at 2x and slanted.
 GLYPHS = {
@@ -129,61 +123,12 @@ def _stamp(img, mask, ox, oy, face, depth, side, top):
                 _put(img, ox + x, oy + y, c)
 
 
-def _ellipse(img, cx, cy, rx, ry, col):
-    for y in range(cy - ry, cy + ry + 1):
-        for x in range(cx - rx, cx + rx + 1):
-            if ((x - cx) / (rx + 0.5)) ** 2 + ((y - cy) / (ry + 0.5)) ** 2 <= 1:
-                _put(img, x, y, col)
-
-
-def _puck(img, cx, cy):
-    """A puck seen a little from above: dark side, steel top face with a centred blue face,
-    a glint, and a gold rim round the upper half of the top face."""
-    rx, ry = 11, 4
-    for dy in range(4, 0, -1):
-        _ellipse(img, cx, cy + dy, rx, ry, INK if dy > 1 else NAVY)
-    _ellipse(img, cx, cy, rx, ry, STEEL)
-    _ellipse(img, cx, cy - 1, rx - 3, ry - 2, BLUE)
-    for x in range(cx - 6, cx - 1):
-        _put(img, x, cy - 2, CREAM)
-    _put(img, cx - 7, cy - 1, SNOW)
-    for y in range(cy - ry - 1, cy + ry + 2):
-        for x in range(cx - rx - 1, cx + rx + 2):
-            d = ((x - cx) / (rx + 0.5)) ** 2 + ((y - cy) / (ry + 0.5)) ** 2
-            if 0.78 < d <= 1 and y <= cy:
-                _put(img, x, y, GOLD_L)
-
-
-def _speed(img, x_end, cy):
-    """Speed lines and ice chips behind the puck."""
-    for dy, length, c in ((0, 26, SKY), (3, 38, FROST), (6, 18, SKY)):
-        for i in range(length):
-            _put(img, x_end - i, cy + dy, c if i < length * 2 // 3 else STEEL)
-    for dx, dy, c in ((0, 0, CREAM), (2, -2, SNOW), (-2, -3, FROST), (4, -4, SNOW), (1, -5, CREAM),
-                      (-4, -1, FROST), (5, -1, CREAM), (-1, -7, SNOW), (3, -7, FROST)):
-        _put(img, x_end + 4 + dx, cy - 2 + dy, c)
-
-
 def build():
     w, h = 292, 42
-    puck = Image.new("RGBA", (w, h), CLEAR)
-    _speed(puck, 258, 32)
-    _puck(puck, 275, 30)
-    _outline(puck)
-    words = Image.new("RGBA", (w, h), CLEAR)
-    _stamp(words, _letters("STICK"), 8, 4, GOLD_FACE, 5, BLUE_SIDE, GOLD_L)
-    _stamp(words, _letters(AMP), 122, 9, RED_FACE, 3, RED_SIDE, GOLD_L)
-    _stamp(words, _letters("PUCK"), 146, 4, GOLD_FACE, 5, BLUE_SIDE, GOLD_L)
-    _outline(words)
     out = Image.new("RGBA", (w, h), CLEAR)
-    out.alpha_composite(puck)
-    out.alpha_composite(words)
-    # the canvas is centred on the words, so the puck hangs out to the right and the game can
-    # simply centre the image; the empty left side mirrors the puck's width
+    _stamp(out, _letters("STICK"), 8, 4, GOLD_FACE, 5, BLUE_SIDE, GOLD_L)
+    _stamp(out, _letters(AMP), 122, 9, RED_FACE, 3, RED_SIDE, GOLD_L)
+    _stamp(out, _letters("PUCK"), 146, 4, GOLD_FACE, 5, BLUE_SIDE, GOLD_L)
+    _outline(out)
     left, top, right, bottom = out.getbbox()
-    words_left, _, words_right, _ = words.getbbox()
-    centre = (words_left + words_right) // 2
-    half = max(centre - left, right - centre) + 1
-    pad = Image.new("RGBA", (w + 2 * half, h), CLEAR)
-    pad.alpha_composite(out, (half, 0))
-    return pad.crop((half + centre - half, top - 1, half + centre + half, bottom + 1))
+    return out.crop((left - 1, top - 1, right + 1, bottom + 1))
