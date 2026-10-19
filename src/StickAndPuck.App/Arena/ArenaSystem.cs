@@ -10,7 +10,7 @@ using static Raylib_cs.Raylib;
 namespace StickAndPuck.App.Arena
 {
     /// <summary>The arena from arena.glb: ice, markings, boards, glass, nets, ad boards, benches, penalty boxes and stands,
-    /// with the animated crowd on the stands drawn by <see cref="CrowdRenderer"/>.
+    /// with the animated crowd on the stands drawn by <see cref="CrowdRenderer"/> and reacting to the match through <see cref="CrowdReactions"/>.
     /// arena_meshes.json says which part and material each mesh is, since Raylib keeps no names.
     /// Lit parts use the toon shader; ad boards, lanterns and LEDs are unlit; the ice sheet is a
     /// flat cold grey and the glass a flat translucent tint, both from <see cref="ArenaLook"/> so
@@ -40,6 +40,8 @@ namespace StickAndPuck.App.Arena
         private readonly IceBands bands = new();
         private readonly IceScratches scratches = new();
         private readonly CrowdRenderer crowd = new();
+        private readonly CrowdReactions reactions = new();
+        private bool posed;
         private Model model;
         private Material maskMaterial;
 
@@ -101,6 +103,7 @@ namespace StickAndPuck.App.Arena
             if (Enum.TryParse(Env.Get("SAP_CROWD_POSE"), ignoreCase: true, out CrowdPose pose))
             {
                 world.Crowd.SetAll(pose, world.Time); // a fixed pose for previews of the crowd frames
+                posed = true;
             }
         }
 
@@ -116,7 +119,13 @@ namespace StickAndPuck.App.Arena
             return new Color(F(c.R), F(c.G), F(c.B), c.A);
         }
 
-        public void Update(World world, float dt) { }
+        public void Update(World world, float dt)
+        {
+            if (!posed)
+            {
+                reactions.Update(world); // the crowd answers this step's goals, hits, saves, fights and calls
+            }
+        }
 
         private Material MaterialOf(int mesh)
         {
