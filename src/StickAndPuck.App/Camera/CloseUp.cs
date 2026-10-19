@@ -21,6 +21,13 @@ namespace StickAndPuck.App.Camera
             WarmupDistance = 11f,
             PileDistance = 13f;
 
+        /// <summary>The flyover's close-up frames nothing nearer the camera than this (z, metres), so the camera,
+        /// <see cref="WarmupDistance"/> back along its view, stays inside the near boards and out of the stands.</summary>
+        private static readonly float NearestWarmupZ =
+            RinkSpec.HalfWidth
+            - 0.75f
+            - (WarmupDistance * MathF.Cos(MathF.PI * TiltDegrees / 180f));
+
         /// <summary>The close-ups look this many degrees down, lower than the gameplay camera's 28.2, so faces and kits show.</summary>
         private const float TiltDegrees = 15f;
 
@@ -181,15 +188,21 @@ namespace StickAndPuck.App.Camera
                 spot = c.Pile with { Y = PileAim };
                 return Shot.Pile;
             }
+            Pregame.FlyoverPhase flyover = Pregame.ArenaFlyover.Phase(world);
+            bool flying = flyover == Pregame.FlyoverPhase.CloseUp;
             if (
                 Pregame.PregameFlow.IsWarmingUp(world)
-                && Pregame.ArenaFlyover.Phase(world)
-                    is Pregame.FlyoverPhase.Off
-                        or Pregame.FlyoverPhase.CloseUp
-                && WarmupSubject(world).TryGet(out Vector3 p)
+                && (flying || flyover == Pregame.FlyoverPhase.Off)
+                && WarmupSubject(world, squad: flying).TryGet(out Vector3 p)
             )
             {
-                spot = p with { Y = Chest };
+                // the flyover's close-up stays on the home squad and keeps the camera inside the near
+                // boards: a skater close to them would put the camera in the near stands
+                spot = p with
+                {
+                    Y = Chest,
+                    Z = flying ? Math.Min(p.Z, NearestWarmupZ) : p.Z,
+                };
                 return Shot.Warmup;
             }
             return Shot.None;
@@ -218,10 +231,10 @@ namespace StickAndPuck.App.Camera
             }
         }
 
-        /// <summary>The warm-up frames the skater a person controls, else the middle of the home squad.</summary>
-        private static Maybe<Vector3> WarmupSubject(World world)
+        /// <summary>The warm-up frames the skater a person controls, else (and always in the flyover's close-up, <paramref name="squad"/>) the middle of the home squad.</summary>
+        private static Maybe<Vector3> WarmupSubject(World world, bool squad)
         {
-            if (world.Players.Find(p => p.OnIce && p.Slot >= 0) is { } human)
+            if (!squad && world.Players.Find(p => p.OnIce && p.Slot >= 0) is { } human)
             {
                 return human.Position;
             }

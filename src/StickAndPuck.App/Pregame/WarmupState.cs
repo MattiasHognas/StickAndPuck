@@ -23,6 +23,9 @@ namespace StickAndPuck.App.Pregame
         /// <summary>Gets or sets a value indicating whether start was pressed during the arena flyover, which skips it.</summary>
         public bool FlyoverSkipped { get; set; }
 
+        /// <summary>Gets or sets the warm-up's elapsed seconds when the flyover was skipped, so the stats card can slide out from there.</summary>
+        public float SkippedAt { get; set; }
+
         /// <summary>Gets the route of each skater, by player id.</summary>
         public Dictionary<int, WarmupRoute> Routes { get; } = [];
     }

@@ -551,5 +551,12 @@
   "CoachReactPenaltyTrouble3": "{1} TRIPS TO THE BOX. {0} KNOWS WHO I AM TALKING TO.",
   "CoachReactWonFight1": "{0} STOOD UP FOR HIS TEAMMATES. THE BENCH LOVED IT.",
   "CoachReactWonFight2": "{0} WON THAT FIGHT AND THE BUILDING WOKE UP.",
-  "CoachReactWonFight3": "NOBODY PUSHES US AROUND. GOOD ON {0}."
+  "CoachReactWonFight3": "NOBODY PUSHES US AROUND. GOOD ON {0}.",
+  "StyleBalanced": "BALANCED",
+  "StylePhysical": "PHYSICAL",
+  "StyleShootFromAnywhere": "SHOOT-HAPPY",
+  "StyleDefensiveShell": "DEF. SHELL",
+  "TeamCardRecord": "{0}-{1}-{2}  {3} PTS",
+  "TeamCardPlace": "#{0} OF {1}",
+  "TeamCardScorer": "#{0} {1}  {2} G"
 }

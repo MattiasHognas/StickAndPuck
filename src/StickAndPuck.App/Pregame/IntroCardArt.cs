@@ -34,6 +34,9 @@ namespace StickAndPuck.App.Pregame
         /// <summary>Gets where the card's top-left corner sits on screen (centred at 480x270).</summary>
         public (int X, int Y) Position { get; private set; }
 
+        /// <summary>Gets or sets how far the card is pushed down from <see cref="Position"/>, in pixels, as it slides in and out.</summary>
+        public int Slide { get; set; }
+
         /// <summary>Gets the card's size.</summary>
         public (int W, int H) Size => (card.Width, card.Height);
 
@@ -149,7 +152,7 @@ namespace StickAndPuck.App.Pregame
         /// <summary>Draws the empty card.</summary>
         public void DrawCard()
         {
-            DrawTexture(card, Position.X, Position.Y, Color.White);
+            DrawTexture(card, Position.X, Position.Y + Slide, Color.White);
         }
 
         /// <summary>Draws a club's crest at 2x into its well.</summary>
@@ -221,7 +224,7 @@ namespace StickAndPuck.App.Pregame
 
         private Rectangle Screen(Rectangle r)
         {
-            return new Rectangle(Position.X + r.X, Position.Y + r.Y, r.Width, r.Height);
+            return new Rectangle(Position.X + r.X, Position.Y + Slide + r.Y, r.Width, r.Height);
         }
 
         private static string Prefix(Side side)

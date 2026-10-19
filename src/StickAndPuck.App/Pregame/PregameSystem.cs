@@ -22,7 +22,11 @@ namespace StickAndPuck.App.Pregame
         private const float StickDead = 0.15f; // a human stick shorter than this leaves the skater on its loop
         private const float Lead = 1f; // the chased point runs this many seconds ahead, so nobody eases off onto it
 
+        private const int PromptTop = 48; // the warm-up prompt's top, under the HUD's intro panel
+        private const int PromptUnderCard = 238; // and under the stats card while that shows
+
         private Maybe<IntroCardArt> introCard;
+        private Maybe<(World World, TeamCard Card)> cardData;
 
         public void Update(World world, float dt)
         {
@@ -86,23 +90,10 @@ namespace StickAndPuck.App.Pregame
                 return;
             }
 
-            if (world.Switches.IntroCardPreview)
-            {
-                // SAP_SCENE=introcard: the A22 card art with made-up numbers, loaded on first use
-                if (!introCard.HasValue)
-                {
-                    introCard = IntroCardArt.Load(HudArt.Load());
-                }
+            float shown = TeamCard.Shown(world);
+            int slide = shown > 0 ? DrawCard(world, shown) : 0;
 
-                if (introCard.TryGet(out IntroCardArt card))
-                {
-                    Dev.IntroCardPreview.Draw(world, card);
-                }
-
-                return;
-            }
-
-            // a blinking prompt under the intro card
+            // a blinking prompt, under the stats card (sliding with it) while it shows, else under the intro panel
             if ((int)(world.Time * 2) % 2 == 0)
             {
                 return;
@@ -110,8 +101,38 @@ namespace StickAndPuck.App.Pregame
 
             string text = Text.Get(K.WarmUp);
             int w = MeasureText(text, 10);
-            DrawRectangle(((Game.Width - w) / 2) - 4, 48, w + 8, 14, new Color(24, 19, 31, 255));
-            DrawText(text, (Game.Width - w) / 2, 50, 10, new Color(239, 224, 194, 255));
+            int y = shown > 0 ? PromptUnderCard + slide : PromptTop;
+            DrawRectangle(((Game.Width - w) / 2) - 4, y, w + 8, 14, new Color(24, 19, 31, 255));
+            DrawText(text, (Game.Width - w) / 2, y + 2, 10, new Color(239, 224, 194, 255));
+        }
+
+        /// <summary>Draws the stats card (W139) over the flyover, slid down by how far it is out; its art
+        /// loads on first use and its numbers are gathered once per match. Returns how far down it slid.</summary>
+        private int DrawCard(World world, float shown)
+        {
+            if (!introCard.HasValue)
+            {
+                introCard = IntroCardArt.Load(HudArt.Load());
+            }
+
+            if (!cardData.TryGet(out (World World, TeamCard Card) cached) || cached.World != world)
+            {
+                cached = (world, TeamCard.For(world));
+                cardData = cached;
+            }
+
+            if (introCard.TryGet(out IntroCardArt card))
+            {
+                card.Slide = (int)
+                    MathF.Round(
+                        (1 - shown) * (Game.Height - card.Position.Y),
+                        MidpointRounding.ToEven
+                    );
+                TeamCardView.Draw(world, cached.Card, card);
+                return card.Slide;
+            }
+
+            return 0;
         }
 
         /// <summary>Whether start was pressed this step: space, enter, or A or start on either pad, once every one of them has been seen up.</summary>

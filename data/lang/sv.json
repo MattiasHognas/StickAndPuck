@@ -551,5 +551,12 @@
   "CoachReactPenaltyTrouble3": "{1} BESÖK I BÅSET. {0} VET VEM JAG PRATAR MED.",
   "CoachReactWonFight1": "{0} STOD UPP FÖR LAGKAMRATERNA. BÄNKEN ÄLSKADE DET.",
   "CoachReactWonFight2": "{0} VANN SLAGSMÅLET OCH HELA ARENAN VAKNADE.",
-  "CoachReactWonFight3": "INGEN KNUFFAR RUNT OSS. BRA AV {0}."
+  "CoachReactWonFight3": "INGEN KNUFFAR RUNT OSS. BRA AV {0}.",
+  "StyleBalanced": "BALANSERAT",
+  "StylePhysical": "FYSISKT",
+  "StyleShootFromAnywhere": "SKJUTGLATT",
+  "StyleDefensiveShell": "FÖRSVARSMUR",
+  "TeamCardRecord": "{0}-{1}-{2}  {3} P",
+  "TeamCardPlace": "#{0} AV {1}",
+  "TeamCardScorer": "#{0} {1}  {2} M"
 }

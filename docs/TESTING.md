@@ -57,7 +57,7 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `match`: full exhibition, 3 x 20 minute periods, intro and clock, you on the home centre.
 - `aimatch`: full exhibition with every skater played by the AI.
 - `warmup`: full exhibition opened with the pre-game warm-up: the arena flyover (a high sweep, a close-up on the home squad, then the broadcast view; the first start press skips it) while both squads skate round their own ends until space, enter or a pad's A or start is pressed, then the opening faceoff.
-- `introcard`: the warm-up scene with the A22 pre-game stats card art over the flyover, filled with both clubs' real ratings and playstyle badges and made-up record, place, form and top scorer numbers (the real card is W139).
+- `introcard`: the warm-up scene with the pre-game stats card (W139) held on screen through the whole warm-up instead of sliding out with the flyover: both clubs' ratings, playstyles and badges; an exhibition, so record, place, form and top scorer show a dash. A season game (`season`) shows the card with the season's numbers during the flyover.
 - `lineup`: both clubs' starters at the opening faceoff, you on the home centre.
 - `practice`: one home skater with the puck on an empty rink.
 - `overtime`: a match that ends 0-0, then 3 on 3 overtime and a shootout; `SAP_PLAYOFF=1` plays the SHL playoff format instead (5 on 5 periods until a goal, no shootout), each overtime after a Zamboni break; with `SAP_START=overtime` it opens in the break before the first, and `SAP_ZAMBONI_AT` starts that drive that many seconds in.

@@ -2,10 +2,9 @@ using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Pregame.Dev
 {
-    /// <summary>SAP_SCENE=introcard: the warm-up scene (arena flyover and both squads skating) with the A22 stats
-    /// card art over it, filled by <see cref="IntroCardPreview"/>: the real ratings and tactics of SAP_HOME and
-    /// SAP_AWAY with made-up record, place, form and top scorer numbers. Shows the art in game until the real
-    /// card (W139) draws it.</summary>
+    /// <summary>SAP_SCENE=introcard: the warm-up scene (arena flyover and both squads skating) with the W139 stats
+    /// card (<see cref="TeamCard"/>) held on screen through the whole warm-up instead of sliding out with the
+    /// flyover, for looking at the card. An exhibition, so the season rows show a dash.</summary>
     public sealed class IntroCardScene : IScene
     {
         /// <inheritdoc/>

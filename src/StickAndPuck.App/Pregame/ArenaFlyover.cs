@@ -74,7 +74,9 @@ namespace StickAndPuck.App.Pregame
                 return false;
             }
 
-            PregameFlow.State(world).FlyoverSkipped = true;
+            WarmupState s = PregameFlow.State(world);
+            s.FlyoverSkipped = true;
+            s.SkippedAt = s.Elapsed;
             Console.WriteLine("SAP: arena flyover skipped");
             return true;
         }
