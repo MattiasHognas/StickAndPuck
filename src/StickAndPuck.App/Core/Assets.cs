@@ -47,6 +47,14 @@ namespace StickAndPuck.App.Core
         /// <summary>The HUD layout from A3: font, scorebug slots, panels, icons and crests, each naming its PNG under art/ui/.</summary>
         public const string UiLayout = "art.ui.ui.json";
 
+        /// <summary>The dressing room backdrop behind the screen between season games, 480x270 (A20). Until it is
+        /// drawn the screen dims the rink instead.</summary>
+        public const string DressingRoomBackdrop = "art.ui.dressing_room.png";
+
+        /// <summary>The coach's portrait on the dressing room screen, 64x80 (A20). Until it is drawn the
+        /// screen shows a framed placeholder.</summary>
+        public const string CoachPortrait = "art.ui.coach_portrait.png";
+
         /// <summary>The shader folder.</summary>
         public const string Shaders = "shaders";
 

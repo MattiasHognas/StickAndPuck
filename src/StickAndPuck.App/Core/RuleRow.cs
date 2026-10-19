@@ -44,6 +44,7 @@ namespace StickAndPuck.App.Core
                 "LoserMinor" => Text.Get(K.RuleValueLoserMinor),
                 "Major" => Text.Get(K.RuleValueMajor),
                 "Full" => Text.Get(K.RuleValueFull),
+                "Brief" => Text.Get(K.RuleValueBrief),
                 "MinorsOnly" => Text.Get(K.RuleValueMinorsOnly),
                 "Substitute" => Text.Get(K.RuleValueSubstitute),
                 "FourOnFour" => Text.Get(K.RuleValueFourOnFour),

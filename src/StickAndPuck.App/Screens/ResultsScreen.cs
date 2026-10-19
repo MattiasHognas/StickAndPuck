@@ -9,7 +9,8 @@ namespace StickAndPuck.App.Screens
 {
     /// <summary>Results: the final score with crests, how it was decided, shots and the goals, each club's in its
     /// own column (period, clock, scorer cut to fit), and the player of the game. Season games go on to
-    /// the standings, the season stats or the trophy once the champion is crowned; an arcade run that is
+    /// the dressing room (<see cref="ScreenFlow.AfterSeasonGame"/>; the standings when it is off or the
+    /// season has no game left), the season stats or the trophy once the champion is crowned; an arcade run that is
     /// over goes on to its trophy or the best runs board.</summary>
     internal sealed class ResultsScreen(AppState app, MatchResult result) : MenuScreen(app)
     {
@@ -43,7 +44,13 @@ namespace StickAndPuck.App.Screens
                 );
             }
 
-            items.Add(new MenuItem(Text.Get(K.Standings), () => Flow.Replace(Flow.Overview())));
+            Screen after = Flow.AfterSeasonGame();
+            items.Add(
+                new MenuItem(
+                    Text.Get(after is DressingRoomScreen ? K.DressingRoom : K.Standings),
+                    () => Flow.Replace(after)
+                )
+            );
             if (Flow.CanSimGame())
             {
                 items.Add(new MenuItem(Text.Get(K.SimNextGame), Flow.SimSeasonGame));

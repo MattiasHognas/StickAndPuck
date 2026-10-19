@@ -41,6 +41,7 @@ namespace StickAndPuck.App.Core
             IntentionalOffside = false,
             FormStrength = FormStrength.Strong,
             TimeOut = false,
+            DressingRoom = DressingRoomStyle.Off,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -203,6 +204,9 @@ namespace StickAndPuck.App.Core
                     FormStrength.Normal => 1f,
                     _ => throw new NotSupportedException("no form scale for " + FormStrength),
                 };
+
+        /// <summary>Gets how much the dressing room between season games shows, or Off to go straight to the table.</summary>
+        public DressingRoomStyle DressingRoom { get; init; } = DressingRoomStyle.Full;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]
