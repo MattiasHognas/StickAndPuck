@@ -114,7 +114,9 @@ namespace StickAndPuck.App.Season.Playoffs
         {
             if (playoffs.IsOver)
             {
-                Console.WriteLine($"SAP: {playoffs.Champion.Or("")} are SHL champions");
+                Console.WriteLine(
+                    $"SAP: {playoffs.Champion.Or("")} are {(playoffs.League == League.Nhl ? "NHL" : "SHL")} champions"
+                );
             }
             else if (playoffs.UserSeries.TryGet(out PlayoffSeries s))
             {

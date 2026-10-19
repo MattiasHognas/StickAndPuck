@@ -8,9 +8,10 @@ using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Screens
 {
-    /// <summary>Standings: the SHL table of the season being played (<see cref="SeasonState.Table"/>),
-    /// the human's club in gold, each club's team morale while the season plays with it, and the next game.
-    /// Enter plays it.</summary>
+    /// <summary>Standings: the SHL table of the season being played (<see cref="SeasonState.Table"/>), or the
+    /// NHL standings by division and conference with the playoff spots as they stand, the human's
+    /// club in gold, each club's team morale while the season plays with it (SHL table), and the next
+    /// game. Enter plays it.</summary>
     internal sealed class StandingsScreen(AppState app) : MenuScreen(app)
     {
         private const int PanelW = 380,
@@ -79,6 +80,12 @@ namespace StickAndPuck.App.Screens
             }
 
             IReadOnlyList<ClubData> clubs = Flow.Clubs;
+            if (season.League == League.Nhl)
+            {
+                DrawNhl(art, season, clubs);
+                return;
+            }
+
             IReadOnlyList<StandingRow> table = season.Table;
             IReadOnlyList<MenuItem> items = Items();
             int h = PanelHeight(table, items.Count);
@@ -98,6 +105,45 @@ namespace StickAndPuck.App.Screens
             top = DrawTable(art, x, top, table, clubs, season, morale);
             DrawNextGame(art, top, season, clubs);
             art.Menu(items, Selected, x + 100, w - 200, top + Line + 4);
+        }
+
+        /// <summary>The NHL standings: the four divisions side by side under their conferences, with the
+        /// playoff spots as they stand (<see cref="NhlStandingsDraw"/>), the next game and the menu.</summary>
+        private void DrawNhl(ScreenArt art, SeasonState season, IReadOnlyList<ClubData> clubs)
+        {
+            const int W = 468;
+            IReadOnlyList<MenuItem> items = Items();
+            int lines = NhlStandingsDraw.Lines(season);
+            int h =
+                5
+                + ScreenArt.Row
+                + 2
+                + (lines * Line)
+                + 4
+                + Line
+                + 4
+                + (items.Count * ScreenArt.Row)
+                + 4;
+            (int x, int top) = art.Panel(
+                season.IsOver
+                    ? Text.Get(K.NhlFinalTable)
+                    : Text.Format(K.NhlRound, Round(season), season.Rounds),
+                W,
+                h,
+                Math.Max(2, (Game.Height - h - 14) / 2)
+            );
+            top = NhlStandingsDraw.Draw(
+                art.Hud,
+                season,
+                clubs,
+                x + 6,
+                top,
+                W - 12,
+                Line,
+                new NhlStandingsDraw.Inks(art.Text, art.Gold, ScreenArt.Muted)
+            );
+            DrawNextGame(art, top + 4, season, clubs);
+            art.Menu(items, Selected, x + 144, W - 288, top + 4 + Line + 4);
         }
 
         private static int PanelHeight(IReadOnlyList<StandingRow> table, int itemCount)

@@ -30,6 +30,12 @@ namespace StickAndPuck.App.Season.Schedule
         /// <summary>Draws the table centred on the 480x270 frame.</summary>
         public static void Draw(HudArt art, SeasonState season, IReadOnlyList<ClubData> clubs)
         {
+            if (season.League == League.Nhl)
+            {
+                DrawNhl(art, season, clubs);
+                return;
+            }
+
             IReadOnlyList<StandingRow> table = season.Table;
             int w = 340,
                 h = (Pad * 2) + ((table.Count + 2) * Line);
@@ -76,6 +82,30 @@ namespace StickAndPuck.App.Season.Schedule
                     art.DrawText(cells[c], x + Columns[c].X, top, ink);
                 }
             }
+        }
+
+        /// <summary>The NHL standings by division (<see cref="NhlStandingsDraw"/>) under the same header.</summary>
+        private static void DrawNhl(HudArt art, SeasonState season, IReadOnlyList<ClubData> clubs)
+        {
+            int w = 468,
+                h = (Pad * 2) + ((NhlStandingsDraw.Lines(season) + 1) * Line);
+            int x = (Game.Width - w) / 2,
+                y = Math.Max(2, (Game.Height - h) / 2);
+            art.DrawPanel("panel", x, y, w, h);
+            string title = season.IsOver
+                ? Text.Get(K.NhlFinalTable)
+                : Text.Format(K.NhlRound, Screens.StandingsScreen.Round(season), season.Rounds);
+            art.DrawText(title, x + Pad + 4, y + Pad - 2, art.Score);
+            _ = NhlStandingsDraw.Draw(
+                art,
+                season,
+                clubs,
+                x + Pad,
+                y + Pad - 2 + Line,
+                w - (Pad * 2),
+                Line,
+                new NhlStandingsDraw.Inks(art.Text, art.Score, Raylib.ColorAlpha(art.Text, 0.5f))
+            );
         }
 
         private static string Num(int n)

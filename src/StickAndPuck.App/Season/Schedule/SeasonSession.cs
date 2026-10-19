@@ -51,6 +51,14 @@ namespace StickAndPuck.App.Season.Schedule
                 return Maybe.None<SeasonState>();
             }
 
+            if (clubs.Count > 0 && season.League != clubs[0].League)
+            {
+                Console.WriteLine(
+                    $"SAP: season save {path} is a {season.League} season, not one of these {clubs[0].League} clubs"
+                );
+                return Maybe.None<SeasonState>();
+            }
+
             Use(season, clubs, path);
             Unsaved = false;
             return season;
@@ -120,7 +128,12 @@ namespace StickAndPuck.App.Season.Schedule
             }
 
             season.Record(game.Number, result);
-            _ = season.SimulateUpTo(game.Round, Clubs);
+            // once the human's club has played its last game, the rounds after it (an NHL schedule's
+            // last rounds need not hold every club) are settled too, so the playoffs can start
+            _ = season.SimulateUpTo(
+                season.NextGame.HasValue ? game.Round : season.Rounds - 1,
+                Clubs
+            );
             Playing = Maybe.None<Fixture>();
             Unsaved = true;
             return true;

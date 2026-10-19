@@ -5,8 +5,8 @@ using StickAndPuck.App.Season.Stats;
 
 namespace StickAndPuck.App.Season.Schedule
 {
-    /// <summary>A whole regular season: the clubs, the human's club, the 52-round schedule and every result so
-    /// far. This is exactly what the save file holds; the table is worked out from the results. The
+    /// <summary>A whole regular season: the clubs, the human's club, the schedule (52 games a club in the SHL,
+    /// 82 in the NHL, see <see cref="NhlSchedule"/>) and every result so far. This is exactly what the save file holds; the table is worked out from the results. The
     /// human's club plays its game of each round; the other games of that round are settled by
     /// <see cref="QuickSim"/> when the human's game ends. The playoffs read <see cref="IsOver"/> and
     /// <see cref="Table"/> to seed them; the screens show <see cref="Table"/> and <see cref="NextGame"/>.</summary>
@@ -23,6 +23,18 @@ namespace StickAndPuck.App.Season.Schedule
 
         /// <summary>Gets or sets the id of the club the human plays.</summary>
         public string UserClub { get; set; } = "";
+
+        /// <summary>Gets or sets the league the season is played in, which sets its schedule, its standings
+        /// groups and its playoff format; SHL in an older save.</summary>
+        public League League { get; set; } = League.Shl;
+
+        /// <summary>Gets or sets each club's conference, by club id; empty in a league without conferences.</summary>
+        public IDictionary<string, string> Conferences { get; set; } =
+            new Dictionary<string, string>(StringComparer.Ordinal);
+
+        /// <summary>Gets or sets each club's division, by club id; empty in a league without divisions.</summary>
+        public IDictionary<string, string> Divisions { get; set; } =
+            new Dictionary<string, string>(StringComparer.Ordinal);
 
         /// <summary>Gets or sets every club id in the season.</summary>
         public ICollection<string> Clubs { get; set; } = [];
@@ -66,20 +78,59 @@ namespace StickAndPuck.App.Season.Schedule
         public IReadOnlyList<StandingRow> Table =>
             Standings.Compute(Clubs, Games, Rules.Or(RuleSet.Shl));
 
-        /// <summary>Starts a new season for every club, with the human on one of them.</summary>
+        /// <summary>Starts a new season for every club, with the human on one of them. The clubs' league sets the
+        /// format: the SHL's four meetings of every pair (<see cref="SeasonSchedule"/>), or the NHL's 82
+        /// games by division and conference (<see cref="NhlSchedule"/>), with NHL rules and the 16-club
+        /// division playoff (<see cref="NhlSeeding"/>).</summary>
         public static SeasonState New(IReadOnlyList<ClubData> clubs, string userClub, int seed)
         {
             List<string> ids = [.. clubs.Select(c => c.Id)];
-            return !ids.Contains(userClub, StringComparer.Ordinal)
-                ? throw new ArgumentException($"{userClub} is not a club", nameof(userClub))
-                : new SeasonState
+            if (!ids.Contains(userClub, StringComparer.Ordinal))
+            {
+                throw new ArgumentException($"{userClub} is not a club", nameof(userClub));
+            }
+
+            League league = clubs[0].League;
+            if (clubs.Any(c => c.League != league))
+            {
+                throw new ArgumentException("a season's clubs play in one league", nameof(clubs));
+            }
+
+            bool nhl = league == League.Nhl;
+            return new SeasonState
+            {
+                Seed = seed,
+                UserClub = userClub,
+                League = league,
+                Conferences = Groups(clubs, c => c.Conference),
+                Divisions = Groups(clubs, c => c.Division),
+                Clubs = ids,
+                Games = [.. nhl ? NhlSchedule.Build(clubs, seed) : SeasonSchedule.Build(ids, seed)],
+                Rules = nhl ? RuleSet.Nhl : Maybe.None<RuleSet>(),
+                Started = DateTime.UtcNow,
+            };
+        }
+
+        /// <summary>Starts a new season of a league with every club in its data folder.</summary>
+        public static SeasonState New(League league, string userClub, int seed)
+        {
+            return New(Core.Clubs.Load(league), userClub, seed);
+        }
+
+        private static Dictionary<string, string> Groups(
+            IReadOnlyList<ClubData> clubs,
+            Func<ClubData, Maybe<string>> group
+        )
+        {
+            Dictionary<string, string> groups = [with(StringComparer.Ordinal)];
+            foreach (ClubData c in clubs)
+            {
+                if (group(c).TryGet(out string name))
                 {
-                    Seed = seed,
-                    UserClub = userClub,
-                    Clubs = ids,
-                    Games = [.. SeasonSchedule.Build(ids, seed)],
-                    Started = DateTime.UtcNow,
-                };
+                    groups[c.Id] = name;
+                }
+            }
+            return groups;
         }
 
         /// <summary>Gets the games of one round.</summary>
