@@ -18,15 +18,20 @@ namespace StickAndPuck.App.Screens
         /// <inheritdoc/>
         public override IReadOnlyList<MenuItem> Items()
         {
-            List<MenuItem> items =
-            [
-                new MenuItem(
-                    Text.Get(K.PlayNextGame),
-                    Flow.PlaySeasonGame,
-                    enabled: Flow.SeasonHasNextGame()
-                ),
-            ];
-            if (Flow.Settings.SimGame)
+            List<MenuItem> items = [];
+            bool decided = App.Playoffs.Current.Is(p => p.Champion.HasValue);
+            if (!decided) // no games are left once the final is won, and the menu has to fit the frame
+            {
+                items.Add(
+                    new MenuItem(
+                        Text.Get(K.PlayNextGame),
+                        Flow.PlaySeasonGame,
+                        enabled: Flow.SeasonHasNextGame()
+                    )
+                );
+            }
+
+            if (Flow.Settings.SimGame && !decided)
             {
                 items.Add(
                     new MenuItem(
@@ -37,7 +42,7 @@ namespace StickAndPuck.App.Screens
                 );
             }
 
-            if (App.Playoffs.Current.Is(p => p.Champion.HasValue))
+            if (decided)
             {
                 items.Add(
                     new MenuItem(Text.Get(K.Trophy), () => Flow.Push(TrophyScreen.Season(App)))
@@ -71,7 +76,7 @@ namespace StickAndPuck.App.Screens
             int h = BracketHeight(rows, items.Count);
             bool nhl = playoffs.League == League.Nhl;
             (int x, int top) = art.Panel(
-                Text.Get(nhl ? K.NhlPlayoffs : K.ShlPlayoffs),
+                Text.Get(LeagueText.Of(playoffs.League).Playoffs),
                 PanelW,
                 h,
                 Math.Max(2, (Game.Height - h - 15) / 2)
@@ -209,7 +214,7 @@ namespace StickAndPuck.App.Screens
             if (playoffs.IsOver)
             {
                 return Text.Format(
-                    playoffs.League == League.Nhl ? K.NhlChampionsOf : K.ShlChampionsOf,
+                    LeagueText.Of(playoffs.League).ChampionsOf,
                     Name(clubs, playoffs.Champion.Or(""))
                 );
             }

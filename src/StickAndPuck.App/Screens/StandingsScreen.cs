@@ -93,9 +93,7 @@ namespace StickAndPuck.App.Screens
             bool morale = TeamMorale.Scale(season) > 0f;
             int w = PanelW + (morale ? MoraleW : 0);
             (int x, int top) = art.Panel(
-                season.IsOver
-                    ? Text.Get(K.ShlFinalTable)
-                    : Text.Format(K.ShlRound, round, season.Rounds),
+                LeagueText.Of(season.League).TableHeading(season.IsOver, round, season.Rounds),
                 w,
                 h,
                 Math.Max(2, (Game.Height - h - 14) / 2)
@@ -107,43 +105,68 @@ namespace StickAndPuck.App.Screens
             art.Menu(items, Selected, x + 100, w - 200, top + Line + 4);
         }
 
+        /// <summary>Gets a value indicating whether the NHL standings show the wild card view rather than the divisions.</summary>
+        public bool WildCardView { get; private set; }
+
+        /// <inheritdoc/>
+        public override void Update(World world, IReadOnlySet<MenuButton> press)
+        {
+            bool nhl = App.Season.Current.Is(s => s.League == League.Nhl);
+            if (nhl && (press.Contains(MenuButton.Left) || press.Contains(MenuButton.Right)))
+            {
+                WildCardView = !WildCardView; // no row here changes with left and right
+                return;
+            }
+
+            base.Update(world, press);
+        }
+
         /// <summary>The NHL standings: the four divisions side by side under their conferences, with the
-        /// playoff spots as they stand (<see cref="NhlStandingsDraw"/>), the next game and the menu.</summary>
+        /// playoff spots as they stand (<see cref="NhlStandingsDraw"/>), or with left and right the wild
+        /// card view (each conference's division leaders and its wild card race), the next game and the menu.</summary>
         private void DrawNhl(ScreenArt art, SeasonState season, IReadOnlyList<ClubData> clubs)
         {
-            const int W = 468;
+            const int W = 468,
+                WildCardLine = 10; // a pixel tighter, so the longer view clears the hint
             IReadOnlyList<MenuItem> items = Items();
-            int lines = NhlStandingsDraw.Lines(season);
+            int line = WildCardView ? WildCardLine : Line;
+            int lines = WildCardView
+                ? NhlStandingsDraw.WildCardLines(season)
+                : NhlStandingsDraw.Lines(season);
             int h =
                 5
                 + ScreenArt.Row
                 + 2
-                + (lines * Line)
+                + (lines * line)
                 + 4
                 + Line
                 + 4
                 + (items.Count * ScreenArt.Row)
                 + 4;
             (int x, int top) = art.Panel(
-                season.IsOver
-                    ? Text.Get(K.NhlFinalTable)
-                    : Text.Format(K.NhlRound, Round(season), season.Rounds),
+                LeagueText
+                    .Of(season.League)
+                    .TableHeading(season.IsOver, Round(season), season.Rounds),
                 W,
                 h,
                 Math.Max(2, (Game.Height - h - 14) / 2)
             );
-            top = NhlStandingsDraw.Draw(
-                art.Hud,
-                season,
-                clubs,
-                x + 6,
-                top,
-                W - 12,
-                Line,
-                new NhlStandingsDraw.Inks(art.Text, art.Gold, ScreenArt.Muted)
-            );
+            NhlStandingsDraw.Inks inks = new(art.Text, art.Gold, ScreenArt.Muted);
+            top = WildCardView
+                ? NhlStandingsDraw.DrawWildCard(
+                    art.Hud,
+                    season,
+                    clubs,
+                    x + 6,
+                    top,
+                    W - 12,
+                    line,
+                    inks
+                )
+                : NhlStandingsDraw.Draw(art.Hud, season, clubs, x + 6, top, W - 12, line, inks);
             DrawNextGame(art, top + 4, season, clubs);
             art.Menu(items, Selected, x + 144, W - 288, top + 4 + Line + 4);
+            art.Hint(Text.Get(WildCardView ? K.HintStandingsDivisions : K.HintStandingsWildCard));
         }
 
         private static int PanelHeight(IReadOnlyList<StandingRow> table, int itemCount)

@@ -136,7 +136,7 @@ Use these with `SAP_SCENE=start` (the default scene). `SAP_LEAGUE=nhl` loads the
 | `teams` | Exhibition team selection, club strengths, league and rules choice (`SAP_LEAGUE=nhl` opens it on the 32 NHL clubs). |
 | `pause` | A match paused with the pause menu open. |
 | `results` | A sample 4–3 overtime result with long player names and a goal list. |
-| `standings` | The saved season's table; starts a season if none exists. With `SAP_LEAGUE=nhl`, the NHL standings: the four divisions side by side under their conferences, with the playoff spots as they stand (1-3 and WC1/WC2). |
+| `standings` | The saved season's table; starts a season if none exists. With `SAP_LEAGUE=nhl`, the NHL standings: the four divisions side by side under their conferences, with the playoff spots as they stand (1-3 and WC1/WC2); `SAP_SCREEN_KEYS=right` switches to the wild card view (each conference's division leaders beside its wild card race). |
 | `bracket` | The playoff test season's bracket. With `SAP_LEAGUE=nhl`, the NHL bracket (its own test save, `playoffs-test-nhl.json`): 16 clubs by division and wild card, first round on the outside, final in the middle. |
 | `leaders` | Alias of `stats`. |
 | `stats` | Season statistics and player of the game from a fresh test season with 12 user games simulated. |

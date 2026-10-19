@@ -71,13 +71,13 @@ namespace StickAndPuck.App.Screens
                 art.Gold
             );
             art.Right(
-                art.Clip(Name(clubs, game.Home), cx - 52 - x - 8),
+                art.ClubName(Name(clubs, game.Home), cx - 52 - x - 8),
                 cx - 30 - 22,
                 top + 3,
                 homeWon ? art.Gold : art.Text
             );
             art.Left(
-                art.Clip(Name(clubs, game.Away), x + PanelW - 8 - (cx + 52)),
+                art.ClubName(Name(clubs, game.Away), x + PanelW - 8 - (cx + 52)),
                 cx + 30 + 22,
                 top + 3,
                 homeWon ? art.Text : art.Gold

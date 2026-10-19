@@ -15,7 +15,7 @@ A silly attempt at rendering 3D as pixel art in the form of a hockey game. Pick 
 
 (Replace `vX.Y.Z` with the version you downloaded.)
 
-Start an exhibition, take one of the 14 clubs through a 52-game season and playoffs, or try arcade mode with one loss or three lives. Seasons autosave after matches. Menus are available in English and Swedish.
+Pick a league, the SHL (14 clubs, a 52-game season) or the NHL (32 clubs, an 82-game season by division and conference), then start an exhibition, take a club through a season and playoffs for the Le Mat trophy or the Stanley Cup, or try arcade mode with one loss or three lives. Seasons autosave after matches. Menus are available in English and Swedish.
 
 ## One or two players
 

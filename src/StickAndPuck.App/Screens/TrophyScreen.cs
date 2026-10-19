@@ -45,7 +45,7 @@ namespace StickAndPuck.App.Screens
             this.items = items;
         }
 
-        /// <summary>The SHL champion of the season being played.</summary>
+        /// <summary>The champion of the season being played, under its league's trophy.</summary>
         public static TrophyScreen Season(AppState app)
         {
             IReadOnlyList<ClubData> clubs = app.Screens.Clubs;
@@ -59,7 +59,7 @@ namespace StickAndPuck.App.Screens
             List<(string, string)> statLines = BuildSeasonLines(current, playoffs, champion, clubs);
             return new TrophyScreen(
                 app,
-                Text.Get(current.Is(s => s.League == League.Nhl) ? K.NhlChampions : K.ShlChampions),
+                LeagueText.Of(current.Select(s => s.League).Or(League.Shl)).TrophyHeading(),
                 champion,
                 Name(clubs, champion),
                 statLines,
@@ -203,6 +203,11 @@ namespace StickAndPuck.App.Screens
         )
         {
             string user = Name(clubs, season.UserClub);
+            if (season.League == League.Nhl)
+            {
+                user = TeamSelectScreen.Nickname(user); // BLUE JACKETS MISSED THE PLAYOFFS fits the line
+            }
+
             string playoffResultKey = playoffs.Is(p => !p.UserQualified)
                 ? K.MissedPlayoffs
                 : K.WentOut;

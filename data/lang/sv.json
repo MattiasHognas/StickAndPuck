@@ -580,5 +580,14 @@
   "TalkPatientHint": "HÅLL FORMEN, SÄKRA PASSNINGAR",
   "TalkKeys": "VÄNSTER/HÖGER VÄLJ   MELLANSLAG SÄG DET",
   "TalkPushSaid": "TRYCK PÅ! KORTA BYTEN OCH GÅ PÅ DEM.",
-  "TalkPatientSaid": "HA TÅLAMOD. VÅRA LÄGEN KOMMER."
+  "TalkPatientSaid": "HA TÅLAMOD. VÅRA LÄGEN KOMMER.",
+  "NhlLeadersHeadingSeason": "NHL  SÄSONGENS BÄSTA  -  {0}",
+  "NhlLeadersHeadingPlayoff": "NHL  SLUTSPELETS BÄSTA  -  {0}",
+  "RoundStanleyCupFinal": "STANLEY CUP-FINAL",
+  "TrophyLeMat": "LE MAT-POKALEN",
+  "TrophyStanleyCup": "STANLEY CUP",
+  "TrophyHeading": "{0}  -  {1}",
+  "WildCardHeading": "WILD CARD",
+  "HintStandingsWildCard": "VÄNSTER HÖGER VISAR WILD CARD-RACET",
+  "HintStandingsDivisions": "VÄNSTER HÖGER VISAR DIVISIONERNA"
 }

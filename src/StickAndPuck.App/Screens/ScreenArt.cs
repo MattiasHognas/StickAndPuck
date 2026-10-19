@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Text;
 using Raylib_cs;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Hud;
@@ -207,21 +206,16 @@ namespace StickAndPuck.App.Screens
         /// <summary>Shortens text to a width, ending it with a dot when letters had to go.</summary>
         public string Clip(string text, int width)
         {
-            text = Fit(text);
-            if (Hud.Measure(text) <= width)
-            {
-                return text;
-            }
+            return Hud.Clip(text, width);
+        }
 
-            for (int n = text.Length - 1; n > 0; n--)
-            {
-                string cut = text[..n].TrimEnd() + ".";
-                if (Hud.Measure(cut) <= width)
-                {
-                    return cut;
-                }
-            }
-            return "";
+        /// <summary>A club's name in a width: the full name when it fits, else the name without its city
+        /// ("Columbus Blue Jackets" shows BLUE JACKETS), shortened with a dot only when even that is too long.</summary>
+        public string ClubName(string name, int width)
+        {
+            return Hud.Measure(name) <= width
+                ? Hud.Printable(name)
+                : Clip(TeamSelectScreen.Nickname(name), width);
         }
 
         /// <summary>Draws a season player's form arrow with its left edge on a column: a green arrow up for a
@@ -260,26 +254,12 @@ namespace StickAndPuck.App.Screens
             );
         }
 
-        /// <summary>Upper-cases text and swaps letters the pixel font lacks for their plain form (Á becomes A),
-        /// keeping the Swedish Å, Ä, Ö and the É and Ü the font has.</summary>
+        /// <summary>Upper-cases text. The letters the pixel font lacks are swapped for their plain form (Á becomes
+        /// A) where <see cref="HudArt"/> measures and draws, against the glyphs the font really has, so a
+        /// glyph added to the font shows without a change here.</summary>
         public static string Fit(string text)
         {
-            StringBuilder sb = new(text.Length);
-            foreach (char c in text.ToUpperInvariant())
-            {
-                if (c < 128 || "ÅÄÖÉÜ".Contains(c, StringComparison.Ordinal))
-                {
-                    _ = sb.Append(c);
-                    continue;
-                }
-                foreach (
-                    char d in c.ToString().Normalize(NormalizationForm.FormD).Where(d => d < 128)
-                )
-                {
-                    _ = sb.Append(d);
-                }
-            }
-            return sb.ToString();
+            return text.ToUpperInvariant();
         }
 
         /// <summary>Draws a panel with a heading in gold, centred on the frame, and returns where its body starts.</summary>

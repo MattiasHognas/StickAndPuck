@@ -243,12 +243,16 @@ namespace StickAndPuck.App.Screens
             }
         }
 
-        /// <summary>The round under the heading: the SHL round, or the playoff round once the playoffs are on.</summary>
+        /// <summary>The round under the heading: the league round, or the playoff round once the playoffs are on.</summary>
         private static string Stage(SeasonState season)
         {
             return season.Playoffs.TryGet(out PlayoffState playoffs)
                 ? playoffs.CurrentTitle
-                : Text.Format(K.ShlRound, StandingsScreen.Round(season), season.Rounds);
+                : Text.Format(
+                    LeagueText.Of(season.League).Round,
+                    StandingsScreen.Round(season),
+                    season.Rounds
+                );
         }
 
         /// <summary>The next game: the human's next fixture or playoff game, else where the season stands.</summary>

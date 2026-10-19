@@ -26,7 +26,7 @@ namespace StickAndPuck.App.Season.Playoffs
             art.DrawPanel("panel", x, y, Width, Height);
             bool nhl = playoffs.League == League.Nhl;
             art.DrawText(
-                Text.Get(nhl ? K.NhlPlayoffs : K.ShlPlayoffs),
+                Text.Get(LeagueText.Of(playoffs.League).Playoffs),
                 x + Pad + 4,
                 y + Pad - 2,
                 art.Score
@@ -143,7 +143,7 @@ namespace StickAndPuck.App.Season.Playoffs
             if (playoffs.IsOver)
             {
                 return Text.Format(
-                    playoffs.League == League.Nhl ? K.NhlChampionsOf : K.ShlChampionsOf,
+                    LeagueText.Of(playoffs.League).ChampionsOf,
                     Name(clubs, playoffs.Champion.Or(""))
                 );
             }

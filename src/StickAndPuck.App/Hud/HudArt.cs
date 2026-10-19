@@ -32,7 +32,9 @@ namespace StickAndPuck.App.Hud
         [
             with(StringComparer.Ordinal),
         ];
+        private readonly Dictionary<char, bool> glyphs = [];
         private string crestFallback = "generic";
+        private int fallbackGlyph;
         private Font font;
         private Texture2D scorebug,
             crestSheet,
@@ -51,6 +53,7 @@ namespace StickAndPuck.App.Hud
                 root.GetProperty("font").GetProperty("file").GetString()
             );
             SetTextureFilter(art.font.Texture, TextureFilter.Point);
+            art.fallbackGlyph = GetGlyphIndex(art.font, '?');
 
             JsonElement bug = root.GetProperty("scorebug");
             art.scorebug = ResourceLoader.Texture(bug.GetProperty("file").GetString());
@@ -146,24 +149,68 @@ namespace StickAndPuck.App.Hud
             DrawTextureNPatch(tex, info, new Rectangle(x, y, w, h), new(0, 0), 0, Color.White);
         }
 
-        /// <summary>Measures text in the pixel font, without the trailing one-pixel gap.</summary>
+        /// <summary>Measures text as <see cref="DrawText"/> draws it, without the trailing one-pixel gap.</summary>
         public int Measure(string text)
         {
+            text = Printable(text);
             return text.Length == 0 ? 0 : (int)MeasureTextEx(font, text, font.BaseSize, 0).X - 1;
         }
 
-        /// <summary>Draws text with its top-left corner on a whole pixel. The font has no lowercase, so text is upper-cased.</summary>
+        /// <summary>Draws text with its top-left corner on a whole pixel. The font has no lowercase, so text is
+        /// upper-cased, and letters it lacks are drawn plain (<see cref="Printable"/>).</summary>
         public void DrawText(string text, int x, int y, Color colour)
         {
-            DrawTextEx(font, text.ToUpperInvariant(), new(x, y), font.BaseSize, 0, colour);
+            DrawTextEx(font, Printable(text), new(x, y), font.BaseSize, 0, colour);
+        }
+
+        /// <summary>Gets text as the font can draw it: upper-cased, each letter the font lacks swapped for its
+        /// plain form (<see cref="Letters"/>), so a name like Slafkovský shows SLAFKOVSKY, not a question mark.</summary>
+        public string Printable(string text)
+        {
+            return Letters.Plain(text.ToUpperInvariant(), HasGlyph);
+        }
+
+        /// <summary>Shortens text to a width, ending it with a dot when letters had to go.</summary>
+        public string Clip(string text, int width)
+        {
+            text = Printable(text);
+            if (Measure(text) <= width)
+            {
+                return text;
+            }
+
+            for (int n = text.Length - 1; n > 0; n--)
+            {
+                string cut = text[..n].TrimEnd() + ".";
+                if (Measure(cut) <= width)
+                {
+                    return cut;
+                }
+            }
+            return "";
         }
 
         /// <summary>Draws text centred in a 7 px capital slot from the scorebug layout.</summary>
         public void DrawInSlot(string text, Rectangle slot, Color colour)
         {
-            text = text.ToUpperInvariant();
+            text = Printable(text);
             int x = (int)slot.X + (((int)slot.Width - Measure(text)) / 2);
             DrawText(text, x, (int)slot.Y - 2, colour);
+        }
+
+        private bool HasGlyph(char c)
+        {
+            if (c < 128)
+            {
+                return true;
+            }
+
+            if (!glyphs.TryGetValue(c, out bool has))
+            {
+                has = GetGlyphIndex(font, c) != fallbackGlyph;
+                glyphs[c] = has;
+            }
+            return has;
         }
 
         /// <summary>Releases the textures.</summary>
