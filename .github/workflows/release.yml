@@ -1,7 +1,8 @@
 # Builds and tests every pull request (the test job runs tests/StickAndPuck.Tests). On each merge to main it publishes one self-contained executable per
 # platform (tools/publish.sh), tags the commit and creates a GitHub Release with the executables and browser site ZIP.
 # Versioning: a merge bumps the patch (v0.0.1 -> v0.0.2). A milestone bumps the minor (v0.0.5 -> v0.1.0):
-# put [milestone] in the squash-commit message or give the PR the label "milestone".
+# put [milestone] in the squash-commit message or give the PR the label "milestone". Every commit since
+# the last release tag is checked, so a milestone still counts when its own run was dropped from the queue.
 name: Build and release
 
 on:
@@ -52,9 +53,20 @@ jobs:
           elif [ "$EVENT" = pull_request ] && grep -qi '\[milestone\]' <<< "$PR_TITLE"; then
             bump="minor"
           elif [ "$EVENT" = push ]; then
-            labels=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[].labels[].name' || true)
-            if grep -qi '\[milestone\]' <<< "$MESSAGE" || grep -qix milestone <<< "$labels"; then
+            # A queued release run is dropped when a newer merge queues behind it, so look at every
+            # commit since the last release tag, not only this one, for a milestone marker or label.
+            last=$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+            range=${last:+$last..}$GITHUB_SHA
+            if grep -qi '\[milestone\]' <<< "$MESSAGE$(git log --format=%B "$range")"; then
               bump="minor"
+            else
+              for sha in $(git rev-list "$range"); do
+                labels=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/pulls" --jq '.[].labels[].name' || true)
+                if grep -qix milestone <<< "$labels"; then
+                  bump="minor"
+                  break
+                fi
+              done
             fi
           fi
           tag=$(tools/next_version.sh "$bump")
