@@ -356,6 +356,23 @@ namespace StickAndPuck.App.Core
                 r => r.NewsFrequency,
                 (r, v) => r with { NewsFrequency = v }
             ),
+            Flag(
+                nameof(RuleSet.CoachReaction),
+                K.RuleCoachReaction,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.CoachReaction,
+                (r, v) => r with { CoachReaction = v }
+            ),
+            Choice(
+                nameof(RuleSet.CoachTemper),
+                K.RuleCoachTemper,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<CoachTemper>(),
+                r => r.CoachTemper,
+                (r, v) => r with { CoachTemper = v }
+            ),
         ];
 
         /// <summary>Gets the rules the game plays, grouped as the rules page shows them.</summary>

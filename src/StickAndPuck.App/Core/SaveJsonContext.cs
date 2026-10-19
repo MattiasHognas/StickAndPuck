@@ -21,6 +21,8 @@ namespace StickAndPuck.App.Core
             typeof(MaybeJsonConverter<FixtureResult>),
             typeof(MaybeJsonConverter<string>),
             typeof(MaybeJsonConverter<PlayerOfGameAward>),
+            typeof(MaybeJsonConverter<MatchStatSheet>),
+            typeof(MaybeJsonConverter<MatchStatLine>),
         ]
     )]
     [JsonSerializable(typeof(ScreenPrefs))]
@@ -31,6 +33,8 @@ namespace StickAndPuck.App.Core
     [JsonSerializable(typeof(Fixture))]
     [JsonSerializable(typeof(FixtureResult))]
     [JsonSerializable(typeof(PlayerOfGameAward))]
+    [JsonSerializable(typeof(MatchStatSheet))]
+    [JsonSerializable(typeof(MatchStatLine))]
     [JsonSerializable(typeof(string))]
     internal sealed partial class SaveJsonContext : JsonSerializerContext;
 }

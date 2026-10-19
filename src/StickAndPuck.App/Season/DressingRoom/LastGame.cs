@@ -1,6 +1,7 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Schedule;
+using StickAndPuck.App.Season.Stats;
 
 namespace StickAndPuck.App.Season.DressingRoom
 {
@@ -18,6 +19,12 @@ namespace StickAndPuck.App.Season.DressingRoom
         string UserClub
     )
     {
+        /// <summary>Gets the game's stats key (<see cref="SeasonStats.GameKey"/> or <see cref="SeasonStats.PlayoffKey"/>), or "" when unknown.</summary>
+        public string Key { get; init; } = "";
+
+        /// <summary>Gets the game's sim seed, the one its paper stats are drawn from.</summary>
+        public int Seed { get; init; }
+
         /// <summary>Gets the human's club's goals.</summary>
         public int GoalsFor => AtHome ? Result.HomeGoals : Result.AwayGoals;
 
@@ -47,7 +54,13 @@ namespace StickAndPuck.App.Season.DressingRoom
                     )
                     {
                         PlayoffGame g = series.Games[^1];
-                        return new LastGame(g.Home, g.Away, g.Result, Playoff: true, user);
+                        int s = playoffs.Rounds[r].Series.IndexOf(series),
+                            i = series.Games.Count - 1;
+                        return new LastGame(g.Home, g.Away, g.Result, Playoff: true, user)
+                        {
+                            Key = SeasonStats.PlayoffKey(r, s, i),
+                            Seed = playoffs.GameSeed(r, s, i),
+                        };
                     }
                 }
             }
@@ -56,7 +69,11 @@ namespace StickAndPuck.App.Season.DressingRoom
             {
                 if (f.Result.TryGet(out FixtureResult result))
                 {
-                    return new LastGame(f.Home, f.Away, result, Playoff: false, user);
+                    return new LastGame(f.Home, f.Away, result, Playoff: false, user)
+                    {
+                        Key = SeasonStats.GameKey(f.Number),
+                        Seed = season.GameSeed(f.Number),
+                    };
                 }
             }
             return Maybe.None<LastGame>();

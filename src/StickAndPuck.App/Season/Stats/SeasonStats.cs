@@ -28,6 +28,12 @@ namespace StickAndPuck.App.Season.Stats
         /// <summary>Gets or sets the keys of the games credited: "g12" for season game 13, "p0.1.2" for playoff round 1 series 2 game 3.</summary>
         public ISet<string> Credited { get; set; } = new HashSet<string>(StringComparer.Ordinal);
 
+        /// <summary>Gets or sets the sheet of the latest game the human played (not simmed), for the coach's post-game reaction; None before one.</summary>
+        public Maybe<MatchStatSheet> LastPlayed { get; set; }
+
+        /// <summary>Gets or sets the key of <see cref="LastPlayed"/>'s game (see <see cref="GameKey"/> and <see cref="PlayoffKey"/>).</summary>
+        public string LastPlayedKey { get; set; } = "";
+
         /// <summary>The key of a regular-season game.</summary>
         public static string GameKey(int number)
         {

@@ -160,7 +160,14 @@ namespace StickAndPuck.App.Screens
         )
         {
             string coach = Text.Get(K.RoomCoach);
-            art.DrawCoach(x + 10, top, PortraitW, PortraitH, coach);
+            art.DrawCoach(
+                x + 10,
+                top,
+                PortraitW,
+                PortraitH,
+                coach,
+                report.Coach.Select(c => c.Mood).Or(CoachMood.Neutral)
+            );
             int tx = x + 10 + PortraitW + 10;
             int tw = PanelW - (tx - x) - 10;
             art.Left(coach, tx, top, art.Gold);

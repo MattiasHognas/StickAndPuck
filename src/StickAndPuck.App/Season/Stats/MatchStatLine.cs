@@ -48,6 +48,19 @@ namespace StickAndPuck.App.Season.Stats
         /// <summary>Gets or sets the seconds on the ice with the puck in play; 0 in a sheet from before it was kept.</summary>
         public float IceTime { get; set; }
 
+        /// <summary>Gets or sets the penalties called on the player.</summary>
+        public int Penalties { get; set; }
+
+        /// <summary>Gets or sets the fights won.</summary>
+        public int FightsWon { get; set; }
+
+        /// <summary>Gets or sets the fights lost.</summary>
+        public int FightsLost { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether the player decided the game after regulation: the
+        /// overtime winner, or the winning club's last shootout goal.</summary>
+        public bool Decider { get; set; }
+
         /// <summary>Gets the points.</summary>
         public int Points => Goals + Assists;
 
