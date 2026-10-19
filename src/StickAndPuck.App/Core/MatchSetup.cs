@@ -40,6 +40,12 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets both clubs' team morale as a season game starts, or None outside a season; the momentum meter starts from it.</summary>
         public Maybe<MatchMorale> Morale { get; init; }
 
+        /// <summary>Gets the carry-over form nudges a season match plays with, trait points by "club#number"; empty
+        /// outside the season. <see cref="Home"/> and <see cref="Away"/> already carry them in their traits;
+        /// a replay stores these to build the same clubs again.</summary>
+        public IReadOnlyDictionary<string, int> Form { get; init; } =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+
         /// <summary>This setup played by a rule set: the set goes on <see cref="Rules"/>, and its overtime
         /// switch picks the format. A setup whose mode pinned its own <see cref="OvertimeFormat"/> is a
         /// playoff game and takes <see cref="RuleSet.PlayoffOvertime"/>, keeping the mode's own

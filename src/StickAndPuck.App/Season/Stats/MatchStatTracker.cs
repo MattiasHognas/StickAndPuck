@@ -3,7 +3,7 @@ using StickAndPuck.App.Core;
 namespace StickAndPuck.App.Season.Stats
 {
     /// <summary>Follows one match step by step: who was on the ice, the shots, hits and saves from the event
-    /// log, the goals, and the assists worked out from the puck's touches, since the event log carries
+    /// log, the goals, the plus/minus and ice time, and the assists worked out from the puck's touches, since the event log carries
     /// no assist of its own: the last one or two teammates to touch the puck before the scorer, with
     /// no opponent touch in between and within <see cref="AssistWindow"/> seconds, get the assists.
     /// Shootout goals go to the score but to nobody's line, as in the SHL.</summary>
@@ -20,6 +20,7 @@ namespace StickAndPuck.App.Season.Stats
         private readonly Dictionary<int, MatchStatLine> lines = [];
         private readonly List<(int Id, Side Side, float Time)> touches = [];
         private int lastTouch = -1;
+        private float lastTime;
         private bool shootout;
 
         /// <summary>Gets the sheet so far, with no player of the game until <see cref="Finish"/>.</summary>
@@ -48,11 +49,14 @@ namespace StickAndPuck.App.Season.Stats
                 shootout = true;
             }
 
+            float played = w.Match.Phase == MatchPhase.Play ? Math.Max(0f, w.Time - lastTime) : 0f;
+            lastTime = w.Time;
             foreach (Player p in w.Players)
             {
                 if (p.OnIce && lines.TryGetValue(p.Id, out MatchStatLine l))
                 {
                     l.Played = true;
+                    l.IceTime += played;
                 }
             }
         }
@@ -164,6 +168,7 @@ namespace StickAndPuck.App.Season.Stats
             lines.Clear();
             touches.Clear();
             lastTouch = -1;
+            lastTime = w.Time;
             shootout = false;
             Sheet.Home = w.Setup.Home.Id;
             Sheet.Away = w.Setup.Away.Id;
@@ -177,6 +182,28 @@ namespace StickAndPuck.App.Season.Stats
             }
         }
 
+        /// <summary>+1 to the scoring side's skaters on the ice and -1 to the other side's, unless the scorers had
+        /// more skaters with their goalie in (a power-play goal); an empty-net goal counts.</summary>
+        private void PlusMinus(World w, Side side)
+        {
+            Side other = side == Side.Home ? Side.Away : Side.Home;
+            int scorers = w.Players.Count(p => p.OnIce && !p.IsGoalie && p.Side == side);
+            int against = w.Players.Count(p => p.OnIce && !p.IsGoalie && p.Side == other);
+            bool goalieIn = w.Players.Any(p => p.OnIce && p.IsGoalie && p.Side == side);
+            if (scorers > against && goalieIn)
+            {
+                return;
+            }
+
+            foreach (Player p in w.Players)
+            {
+                if (p.OnIce && !p.IsGoalie && lines.TryGetValue(p.Id, out MatchStatLine l))
+                {
+                    l.PlusMinus += p.Side == side ? 1 : -1;
+                }
+            }
+        }
+
         private Maybe<MatchStatLine> Line(int id)
         {
             return lines.TryGetValue(id, out MatchStatLine l) ? l : Maybe.None<MatchStatLine>();
@@ -184,6 +211,7 @@ namespace StickAndPuck.App.Season.Stats
 
         private void Goal(World w, Side side, int playerId, float time)
         {
+            PlusMinus(w, side);
             int scorer =
                 playerId >= 0 && playerId < w.Players.Count && w.Players[playerId].Side == side
                     ? playerId

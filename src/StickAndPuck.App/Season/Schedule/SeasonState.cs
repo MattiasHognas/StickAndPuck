@@ -124,10 +124,26 @@ namespace StickAndPuck.App.Season.Schedule
                     continue;
                 }
 
-                Record(g.Number, TeamMorale.Sim(this, home, away, GameSeed(g.Number)));
+                Record(
+                    g.Number,
+                    TeamMorale.Sim(this, InForm(home), InForm(away), GameSeed(g.Number))
+                );
                 count++;
             }
             return count;
+        }
+
+        /// <summary>The club as this season's games play it: its players' traits moved by their carry-over form,
+        /// under the season's stored rules (SHL until its first game stores them).</summary>
+        public ClubData InForm(ClubData club)
+        {
+            return Stats.Form.Apply(club, Rules.Or(RuleSet.Shl));
+        }
+
+        /// <summary>Gets the trait points a player's carry-over form moves in this season, for the arrow by the name.</summary>
+        public int FormNudge(string club, int number)
+        {
+            return Stats.Form.Nudge(club, number, Rules.Or(RuleSet.Shl));
         }
 
         /// <summary>Gets the seed for one simulated game: fixed per season and game, the same on every machine and run.</summary>
@@ -159,13 +175,26 @@ namespace StickAndPuck.App.Season.Schedule
                 ? Side.Home
                 : Side.Away;
             Side other = side == Side.Home ? Side.Away : Side.Home;
+            RuleSet rules = Rules.Or(RuleSet.Shl);
+            ClubData home = Find(game.Home),
+                away = Find(game.Away);
+            Dictionary<string, int> form = new(
+                Stats.Form.Nudges(home, rules),
+                StringComparer.Ordinal
+            );
+            foreach ((string key, int nudge) in Stats.Form.Nudges(away, rules))
+            {
+                form[key] = nudge;
+            }
+
             return new MatchSetup
             {
-                Home = Find(game.Home),
-                Away = Find(game.Away),
+                Home = FormTable.Apply(home, form),
+                Away = FormTable.Apply(away, form),
                 Inputs = [new InputSlot(device, side), new InputSlot(InputDevice.None, other)],
                 Overtime = OvertimeRule.Shl,
                 Morale = TeamMorale.ForGame(this, game.Home, game.Away),
+                Form = form,
             };
         }
     }

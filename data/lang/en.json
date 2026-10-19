@@ -355,6 +355,8 @@
   "RuleMoraleStrength": "MORALE STRENGTH",
   "RuleValueMild": "MILD",
   "RuleValueStrong": "STRONG",
+  "RuleForm": "CARRY-OVER FORM",
+  "RuleFormStrength": "FORM STRENGTH",
   "Preset": "PRESET",
   "RuleGroupHeading": "- {0} -",
   "ResetToPreset": "RESET TO PRESET",

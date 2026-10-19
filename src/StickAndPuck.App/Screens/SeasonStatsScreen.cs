@@ -11,7 +11,8 @@ namespace StickAndPuck.App.Screens
     /// <summary>The season stats page, opened between games from the results, the table or the bracket.
     /// Left and right on SHOW pick points, goals, assists, hits, goalies, player-of-the-game stars or
     /// the human's own club; GAMES switches between the regular season and the playoffs once they run.
-    /// The latest player of the game sits underneath. Reads <see cref="SeasonStats"/>.</summary>
+    /// The latest player of the game sits underneath; an arrow by a name shows a player in form (up) or out of it
+    /// (down). Reads <see cref="SeasonStats"/>.</summary>
     internal sealed class SeasonStatsScreen(AppState app) : MenuScreen(app)
     {
         private const int PanelW = 440,
@@ -113,7 +114,7 @@ namespace StickAndPuck.App.Screens
                 goalies
             );
 
-            top = DrawTableRows(art, lines, x, top, columns, season.UserClub, post);
+            top = DrawTableRows(art, lines, x, top, columns, season, post);
             string star = season.Stats.LastAward.TryGet(out PlayerOfGameAward a)
                 ? Text.Format(
                     K.StarLine,
@@ -198,7 +199,7 @@ namespace StickAndPuck.App.Screens
             int x,
             int top,
             (string Head, int X)[] columns,
-            string user,
+            SeasonState season,
             bool post
         )
         {
@@ -206,7 +207,7 @@ namespace StickAndPuck.App.Screens
             {
                 if (i < lines.Count)
                 {
-                    DrawLine(art, lines[i], i, x, top, columns, user);
+                    DrawLine(art, lines[i], i, x, top, columns, season);
                 }
                 else if (i == 0)
                 {
@@ -224,7 +225,7 @@ namespace StickAndPuck.App.Screens
             return top + 4;
         }
 
-        /// <summary>One player's line: place, name, club (or position on the club view) and the view's columns.</summary>
+        /// <summary>One player's line: place, name with the form arrow, club (or position on the club view) and the view's columns.</summary>
         private void DrawLine(
             ScreenArt art,
             PlayerStats p,
@@ -232,15 +233,21 @@ namespace StickAndPuck.App.Screens
             int x,
             int top,
             (string Head, int X)[] columns,
-            string user
+            SeasonState season
         )
         {
             Color ink =
-                view != 6 && string.Equals(p.Club, user, StringComparison.Ordinal)
+                view != 6 && string.Equals(p.Club, season.UserClub, StringComparison.Ordinal)
                     ? art.Gold
                     : art.Text;
             art.Right(N(i + 1), x + 22, top, ink);
-            art.Left(art.Clip(p.Label, 136), x + 30, top, ink);
+            string label = art.Clip(p.Label, 128);
+            art.Left(label, x + 30, top, ink);
+            _ = ScreenArt.FormArrow(
+                season.FormNudge(p.Club, p.Number),
+                x + 30 + art.Hud.Measure(label) + 3,
+                top
+            );
             art.Left(
                 view == 6 ? p.Position.ToString() : Short(Flow.Clubs, p.Club),
                 x + 170,

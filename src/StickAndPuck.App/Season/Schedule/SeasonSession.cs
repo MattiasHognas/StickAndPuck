@@ -155,12 +155,18 @@ namespace StickAndPuck.App.Season.Schedule
             }
 
             Playing = game;
-            FixtureResult result = TeamMorale.Sim(season, home, away, season.GameSeed(game.Number));
+            FixtureResult result = TeamMorale.Sim(
+                season,
+                season.InForm(home),
+                season.InForm(away),
+                season.GameSeed(game.Number)
+            );
             if (!Finish(result))
             {
                 return Maybe.None<SimmedGame>();
             }
 
+            _ = season.Stats.CatchUp(season, Clubs); // the round's lines now, so the next sim plays with the form they leave
             Save();
             Console.WriteLine(
                 string.Create(

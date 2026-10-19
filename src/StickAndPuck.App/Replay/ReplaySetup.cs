@@ -1,5 +1,6 @@
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Rules.Overtime;
+using StickAndPuck.App.Season.Stats;
 
 namespace StickAndPuck.App.Replay
 {
@@ -16,6 +17,10 @@ namespace StickAndPuck.App.Replay
         Maybe<MatchMorale> Morale = default
     )
     {
+        /// <summary>Gets the season's carry-over form nudges, as <see cref="MatchSetup.Form"/>; empty in an older replay.</summary>
+        public IReadOnlyDictionary<string, int> Form { get; init; } =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+
         /// <summary>Gets the stored form of a setup.</summary>
         public static ReplaySetup Of(MatchSetup s)
         {
@@ -29,7 +34,10 @@ namespace StickAndPuck.App.Replay
                 s.OvertimeFormat,
                 s.Rules,
                 s.Morale
-            );
+            )
+            {
+                Form = s.Form,
+            };
         }
 
         /// <summary>Builds the setup again from the clubs on this machine.</summary>
@@ -48,8 +56,9 @@ namespace StickAndPuck.App.Replay
 
             return new MatchSetup
             {
-                Home = Club(Home),
-                Away = Club(Away),
+                Home = FormTable.Apply(Club(Home), Form),
+                Away = FormTable.Apply(Club(Away), Form),
+                Form = Form,
                 Inputs = Inputs,
                 PeriodSeconds = PeriodSeconds,
                 Periods = Periods,

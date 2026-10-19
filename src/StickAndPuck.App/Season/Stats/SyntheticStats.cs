@@ -49,8 +49,92 @@ namespace StickAndPuck.App.Season.Stats
             Score(away, awayLines, awayGoals, dice);
             Shots(home, homeLines, awayLines, awayGoals, dice);
             Shots(away, awayLines, homeLines, homeGoals, dice);
+            IceAndPlusMinus(homeLines, awayLines, homeGoals, awayGoals, seed);
             sheet.PickPlayerOfGame();
             return sheet;
+        }
+
+        /// <summary>Ice time by line (the roster order: first line, second line and so on) and a plus/minus for
+        /// each goal: five skaters on the ice for it, the busiest and the ones with points most likely,
+        /// minus the one in five that is a power-play goal. Drawn from dice of their own, so the scorers
+        /// and shots of a seed stay what they were before these were kept.</summary>
+        private static void IceAndPlusMinus(
+            List<MatchStatLine> home,
+            List<MatchStatLine> away,
+            int homeGoals,
+            int awayGoals,
+            int seed
+        )
+        {
+            Random dice = Seeds.Dice(unchecked(seed ^ 0x2F0E));
+            IceTimes(home);
+            IceTimes(away);
+            PlusMinus(home, away, homeGoals, dice);
+            PlusMinus(away, home, awayGoals, dice);
+        }
+
+        private static void IceTimes(List<MatchStatLine> lines)
+        {
+            float[] forwards = [19, 16, 13, 10],
+                defence = [23, 20, 17];
+            int f = 0,
+                d = 0;
+            foreach (MatchStatLine l in lines.Where(l => l.Played))
+            {
+                float minutes = l.Position switch
+                {
+                    PlayingPosition.G => 60,
+                    PlayingPosition.D => defence[Math.Min(d++ / 2, defence.Length - 1)],
+                    PlayingPosition.C or PlayingPosition.LW or PlayingPosition.RW => forwards[
+                        Math.Min(f++ / 3, forwards.Length - 1)
+                    ],
+                    _ => throw new NotSupportedException("no ice time for " + l.Position),
+                };
+                l.IceTime = minutes * 60;
+            }
+        }
+
+        private static void PlusMinus(
+            List<MatchStatLine> scorers,
+            List<MatchStatLine> against,
+            int goals,
+            Random dice
+        )
+        {
+            for (int g = 0; g < goals; g++)
+            {
+                if (dice.NextDouble() < 0.2)
+                {
+                    continue; // a power-play goal
+                }
+
+                foreach (MatchStatLine l in OnIce(scorers, l => l.IceTime * (1 + l.Points), dice))
+                {
+                    l.PlusMinus++;
+                }
+
+                foreach (MatchStatLine l in OnIce(against, l => l.IceTime, dice))
+                {
+                    l.PlusMinus--;
+                }
+            }
+        }
+
+        private static List<MatchStatLine> OnIce(
+            List<MatchStatLine> lines,
+            Func<MatchStatLine, double> weight,
+            Random dice
+        )
+        {
+            List<MatchStatLine> left = [.. lines.Where(l => l.Played && !l.IsGoalie)];
+            List<MatchStatLine> on = [];
+            while (on.Count < 5 && left.Count > 0)
+            {
+                MatchStatLine picked = Pick(left, l => Math.Max(1, weight(l)), dice);
+                on.Add(picked);
+                _ = left.Remove(picked);
+            }
+            return on;
         }
 
         /// <summary>Every roster skater plays; the better goalie starts.</summary>

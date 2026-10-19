@@ -16,6 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, a lenient referee, the game's original penalty and fight rules, no team morale and plain faceoffs (no violations, nearest dot).</summary>
+        /// <summary>Arcade: no offside, no icing, a lenient referee, the game's original penalty and fight rules and strong form swings.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -38,6 +39,7 @@ namespace StickAndPuck.App.Core
             FaceoffViolations = false,
             SmartDots = false,
             IntentionalOffside = false,
+            FormStrength = FormStrength.Strong,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -178,6 +180,25 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets a value indicating whether an intentional offside moves the faceoff to the offending club's own end-zone dot.</summary>
         public bool IntentionalOffside { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether a season player's recent games carry over as a hidden form nudge to their traits.</summary>
+        public bool Form { get; init; } = true;
+
+        /// <summary>Gets how hard carry-over form pushes the traits.</summary>
+        public FormStrength FormStrength { get; init; } = FormStrength.Normal;
+
+        /// <summary>Gets the factor on the form nudge for <see cref="FormStrength"/>, 0 with <see cref="Form"/> off.</summary>
+        [JsonIgnore]
+        public float FormScale =>
+            !Form
+                ? 0f
+                : FormStrength switch
+                {
+                    FormStrength.Mild => 0.5f,
+                    FormStrength.Strong => 1.5f,
+                    FormStrength.Normal => 1f,
+                    _ => throw new NotSupportedException("no form scale for " + FormStrength),
+                };
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

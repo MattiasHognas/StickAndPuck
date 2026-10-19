@@ -355,6 +355,8 @@
   "RuleMoraleStrength": "MORALENS STYRKA",
   "RuleValueMild": "MILD",
   "RuleValueStrong": "STARK",
+  "RuleForm": "FORMKURVA",
+  "RuleFormStrength": "FORMENS STYRKA",
   "Preset": "FÖRVAL",
   "RuleGroupHeading": "- {0} -",
   "ResetToPreset": "ÅTERSTÄLL FÖRVAL",
