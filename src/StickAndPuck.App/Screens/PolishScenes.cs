@@ -134,7 +134,8 @@ namespace StickAndPuck.App.Screens
         {
             string path = TestPath(SeasonSave.DefaultPath, name);
             SeasonState season = app.Season.StartNew(clubs, Club(clubs), Seed(), path);
-            season.Rules = RulePicks.Choice(app).Resolve(); // as the first played game would store them
+            RuleSet rules = RulePicks.Choice(app).Resolve(); // as the first played game would store them
+            season.Rules = games == int.MaxValue ? rules with { HotSeat = HotSeat.Off } : rules; // a whole season on paper runs to its end, whatever the board thinks
             int settled = 0;
             while (settled < games && app.Season.SimCurrentGame().HasValue)
             {
