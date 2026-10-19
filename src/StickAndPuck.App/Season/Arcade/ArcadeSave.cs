@@ -14,6 +14,13 @@ namespace StickAndPuck.App.Season.Arcade
                 ? Path.GetFullPath(p)
                 : SavedFiles.DefaultPath("arcade.json");
 
+        /// <summary>Gets a league's arcade save: <see cref="DefaultPath"/> for the SHL (so a run from before
+        /// league choice is the SHL run), arcade_nhl.json beside it for the NHL.</summary>
+        public static string PathFor(League league)
+        {
+            return Leagues.SavePath(league, DefaultPath);
+        }
+
         /// <summary>Gets a value indicating whether an arcade save exists (finished or not).</summary>
         public static bool Exists()
         {

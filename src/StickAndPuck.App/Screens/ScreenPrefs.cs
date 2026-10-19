@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
 
 namespace StickAndPuck.App.Screens
@@ -14,6 +15,11 @@ namespace StickAndPuck.App.Screens
 
         /// <summary>Gets the rule preset and the rules changed from it; <see cref="RuleChoice.Resolve"/> gives the rules a match plays.</summary>
         public RuleChoice Rules { get; init; } = new();
+
+        /// <summary>Gets the league the menus play in: its clubs on team select and its season and arcade
+        /// saves. SHL (the default) is left out of the written file.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public League League { get; init; } = League.Shl;
 
         /// <summary>Gets the period length in minutes of game clock.</summary>
         public int PeriodMinutes { get; init; } = 5;

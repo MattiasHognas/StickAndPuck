@@ -92,6 +92,10 @@ namespace StickAndPuck.App.Core
                 );
         }
 
+        /// <summary>Gets the league the match is played in: the home club's (league choice keeps both clubs in
+        /// one league). Presentation that depends on the league, such as the arena ads, reads it here.</summary>
+        public League League => Home.League;
+
         /// <summary>Gets the club playing on the given side.</summary>
         public ClubData Club(Side side)
         {

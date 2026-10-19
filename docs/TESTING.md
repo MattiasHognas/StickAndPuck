@@ -130,7 +130,7 @@ Use these with `SAP_SCENE=start` (the default scene). `SAP_LEAGUE=nhl` loads the
 | `start` | Start screen; also the default when unset. |
 | `settings` | Settings, including controls, rules, language, GPU and volumes. |
 | `modes` | Game mode selection. |
-| `teams` | Exhibition team selection, club strengths and rules choice. |
+| `teams` | Exhibition team selection, club strengths, league and rules choice (`SAP_LEAGUE=nhl` opens it on the 32 NHL clubs). |
 | `pause` | A match paused with the pause menu open. |
 | `results` | A sample 4–3 overtime result with long player names and a goal list. |
 | `standings` | The saved season's table; starts a season if none exists. With `SAP_LEAGUE=nhl`, the NHL standings: the four divisions side by side under their conferences, with the playoff spots as they stand (1-3 and WC1/WC2). |

@@ -39,9 +39,10 @@ namespace StickAndPuck.App.Screens
                     ModeScreen.Choose(app, new ExhibitionMode());
                     break;
                 case "standings":
-                    if (!app.Season.Continue(clubs).HasValue)
+                    IReadOnlyList<ClubData> league = app.Screens.Clubs; // the league picked, its own save
+                    if (!app.Season.Continue(league).HasValue)
                     {
-                        _ = app.Season.StartNew(clubs, Scenes.DefaultSetup(clubs).Home.Id, 1);
+                        _ = app.Season.StartNew(league, Scenes.DefaultSetup(league).Home.Id, 1);
                     }
 
                     app.Screens.Push(new StandingsScreen(app));

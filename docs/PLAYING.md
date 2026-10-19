@@ -19,6 +19,8 @@ The default port is 7777 (TCP); the host must accept connections on it. INPUT DE
 
 In a season, players carry their form from game to game: points, plus/minus and ice time (a goalie's save percentage) nudge every trait by up to 5 points either way. The stats page shows it as a green arrow up or a red arrow down by the name. The rules page's Season group turns it off or sets its strength (mild, normal, strong; Arcade plays strong).
 
+Pick the SHL or the NHL with LEAGUE on the start screen or on team select. The league decides the clubs you choose from, the season and arcade run that Continue resumes, and the rule preset (picking a league selects its preset; you can still change the rules after). Each league has its own season and arcade save: the SHL keeps `season.json` and `arcade.json`, so saves from earlier versions continue as SHL saves, and the NHL uses `season_nhl.json` and `arcade_nhl.json` beside them. Arcade runs always play the Arcade rules. The NHL clubs use placeholder crests and kits for now.
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |

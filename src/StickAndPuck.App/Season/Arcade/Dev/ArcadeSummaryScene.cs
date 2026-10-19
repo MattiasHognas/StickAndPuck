@@ -11,6 +11,7 @@ namespace StickAndPuck.App.Season.Arcade.Dev
         /// <inheritdoc/>
         public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
         {
+            clubs = Leagues.ClubsFromEnvironment(clubs); // SAP_LEAGUE=nhl, or an NHL id in SAP_CLUB or SAP_HOME, plays the NHL
             _ = ArcadeScenes.Open(app, clubs);
             return ArcadeScenes.SummaryWorld(clubs, settings);
         }

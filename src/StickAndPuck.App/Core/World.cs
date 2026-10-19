@@ -24,6 +24,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets the match setup.</summary>
         public MatchSetup Setup { get; }
 
+        /// <summary>Gets the league the match is played in (<see cref="MatchSetup.League"/>).</summary>
+        public League League => Setup.League;
+
         /// <summary>Gets or sets the player options.</summary>
         public Settings Settings { get; set; }
 

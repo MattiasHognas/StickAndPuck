@@ -113,7 +113,7 @@ namespace StickAndPuck.App.Season.Playoffs.Dev
         public static void OpenTestSeason(AppState app, IReadOnlyList<ClubData> clubs)
         {
             string path = Env.Get("SAP_SAVE") is { Length: > 0 }
-                ? SeasonSave.DefaultPath
+                ? SeasonSave.PathFor(Leagues.Of(clubs)) // each league its own save
                 : Path.Combine(
                     Path.GetDirectoryName(SeasonSave.DefaultPath) ?? "",
                     clubs.Count > 0 && clubs[0].League == League.Nhl

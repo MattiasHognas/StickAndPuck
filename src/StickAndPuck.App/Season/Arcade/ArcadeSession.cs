@@ -27,16 +27,22 @@ namespace StickAndPuck.App.Season.Arcade
             return CanContinue(ArcadeSave.DefaultPath);
         }
 
+        /// <summary>Gets a value indicating whether there is an unfinished run to continue in a league (<see cref="ArcadeSave.PathFor"/>), for the start screen.</summary>
+        public static bool CanContinue(League league)
+        {
+            return CanContinue(ArcadeSave.PathFor(league));
+        }
+
         /// <summary>Gets a value indicating whether there is an unfinished run to continue, for the start screen.</summary>
         public static bool CanContinue(string path)
         {
             return ArcadeSave.Read(path).Is(run => !run.IsOver);
         }
 
-        /// <summary>Continues the run saved at <see cref="ArcadeSave.DefaultPath"/>; a finished run is loaded too, so its summary can show.</summary>
+        /// <summary>Continues the run saved for the clubs' league (<see cref="ArcadeSave.PathFor"/>); a finished run is loaded too, so its summary can show.</summary>
         public Maybe<ArcadeRun> Continue(IReadOnlyList<ClubData> clubs)
         {
-            return Continue(clubs, ArcadeSave.DefaultPath);
+            return Continue(clubs, ArcadeSave.PathFor(Leagues.Of(clubs)));
         }
 
         /// <summary>Continues the saved run; a finished run is loaded too, so its summary can show.</summary>
@@ -51,13 +57,13 @@ namespace StickAndPuck.App.Season.Arcade
             return run;
         }
 
-        /// <summary>Starts a new run with a random opponent order at <see cref="ArcadeSave.DefaultPath"/>, replacing any arcade save, and saves it at once.</summary>
+        /// <summary>Starts a new run with a random opponent order at the clubs' league save (<see cref="ArcadeSave.PathFor"/>), replacing that arcade save, and saves it at once.</summary>
         public ArcadeRun StartNew(IReadOnlyList<ClubData> clubs, string userClub, ArcadeRule rule)
         {
-            return StartNew(clubs, userClub, rule, Maybe.None<int>(), ArcadeSave.DefaultPath);
+            return StartNew(clubs, userClub, rule, Maybe.None<int>());
         }
 
-        /// <summary>Starts a new run at <see cref="ArcadeSave.DefaultPath"/>, replacing any arcade save, and saves it at once.</summary>
+        /// <summary>Starts a new run at the clubs' league save (<see cref="ArcadeSave.PathFor"/>), replacing that arcade save, and saves it at once.</summary>
         public ArcadeRun StartNew(
             IReadOnlyList<ClubData> clubs,
             string userClub,
@@ -65,7 +71,7 @@ namespace StickAndPuck.App.Season.Arcade
             Maybe<int> seed
         )
         {
-            return StartNew(clubs, userClub, rule, seed, ArcadeSave.DefaultPath);
+            return StartNew(clubs, userClub, rule, seed, ArcadeSave.PathFor(Leagues.Of(clubs)));
         }
 
         /// <summary>Starts a new run, replacing any arcade save, and saves it at once.</summary>

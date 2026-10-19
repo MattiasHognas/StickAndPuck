@@ -13,15 +13,15 @@ namespace StickAndPuck.App.Screens
         private const int PanelW = 200;
 
         private Maybe<SeasonState> save;
-        private bool read;
+        private Maybe<League> read;
 
         /// <inheritdoc/>
         public override IReadOnlyList<MenuItem> Items()
         {
-            if (!read)
+            if (read != Flow.League)
             {
-                save = SeasonSave.Read();
-                read = true;
+                save = SeasonSave.Read(SeasonSave.PathFor(Flow.League)); // each league has its own save
+                read = Flow.League;
             }
             bool saved = save.HasValue;
             List<MenuItem> items =
@@ -42,6 +42,13 @@ namespace StickAndPuck.App.Screens
             items.Add(new MenuItem(Text.Get(K.NewSeason), NewSeason));
             items.Add(new MenuItem(Text.Get(K.NewGame), () => Flow.Push(new ModeScreen(App))));
             items.Add(new MenuItem(Text.Get(K.Standings), Standings, enabled: saved));
+            items.Add(
+                new MenuItem(
+                    Text.Get(K.League),
+                    Leagues.Name(Flow.League),
+                    d => PickLeague(Leagues.Next(Flow.League, d))
+                )
+            ); // continue, sim and standings follow the league's own save
             items.Add(new MenuItem(Text.Get(K.Settings), () => Flow.Push(new SettingsScreen(App))));
             items.Add(new MenuItem(Text.Get(K.Quit), Flow.Quit));
             return items;
@@ -109,14 +116,20 @@ namespace StickAndPuck.App.Screens
                     {
                         void Begin()
                         {
-                            SeasonState season = App.Season.StartNew(Flow.Clubs, club.Id);
+                            SeasonState season = App.Season.StartNew(
+                                Flow.ClubsOf(club.League),
+                                club.Id
+                            ); // at the league's own save
+                            season.Rules = RulePicks.Choice(App).Resolve(); // the rules picked on team select (the league's preset unless changed), in either league
+                            SeasonSave.Write(season, App.Season.SavePath);
+
                             Console.WriteLine(
                                 $"SAP: screens: new season for {club.Id}, {season.Games.Count} games, saved to {App.Season.SavePath}"
                             );
                             Flow.PlaySeasonGame();
                         }
 
-                        if (!save.HasValue)
+                        if (!SeasonSave.Read(SeasonSave.PathFor(club.League)).HasValue)
                         {
                             Begin();
                         }
@@ -127,6 +140,13 @@ namespace StickAndPuck.App.Screens
                     }
                 )
             );
+        }
+
+        /// <summary>Picks the league from the start screen and saves the choice.</summary>
+        private void PickLeague(League league)
+        {
+            Flow.PickLeague(league);
+            ScreenPrefsFile.Write(Flow.Prefs);
         }
 
         private void Standings()
