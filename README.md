@@ -14,7 +14,13 @@ A silly attempt at rendering 3D as pixel art in the form of a hockey game. Pick 
 
 (Replace `vX.Y.Z` with the version you downloaded.)
 
-Start an exhibition, take one of the 14 clubs through a 52-game season and playoffs, or try arcade mode with one loss or three lives. Local versus lets two people share the ice. Seasons autosave after matches. Menus are available in English and Swedish.
+Start an exhibition, take one of the 14 clubs through a 52-game season and playoffs, or try arcade mode with one loss or three lives. Seasons autosave after matches. Menus are available in English and Swedish.
+
+## One or two players
+
+- **Single player:** play an exhibition, a season or an arcade run against the computer.
+- **Local versus:** two people share one computer, one on the keyboard and one on a gamepad (or two gamepads).
+- **Online versus:** two people play over the network, one hosting and one joining by address (desktop only). See [Playing: online versus](docs/PLAYING.md#online-versus).
 
 ![Choose clubs and rules before an exhibition](docs/images/teams.png)
 
