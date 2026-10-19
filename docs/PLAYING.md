@@ -23,6 +23,8 @@ Pick the SHL or the NHL with LEAGUE on the start screen or on team select. The l
 
 Hard checks, blocked slap shots and fights can injure a skater (goalies are spared). He plays the game out, then misses his club's next 1 to 6 games: the players behind him move up the lines and the fourth line fills the gap. Games simulated on paper injure a player now and then too. The dressing room lists your club's injured players and the games they still miss. The rules page's Season group turns injuries off or sets how often they happen (rare, normal, frequent; Arcade has none).
 
+A second fight in one game, or a match penalty (a game misconduct, or a major and game misconduct: every fight under SHL rules, a dangerous hit), suspends the player for his club's next 1 to 3 games: one game, two for a dangerous hit or for two offences in the same game. He is left out of the lines until he has sat them out, and the dressing room lists him as suspended. The rules page's Season group turns suspensions off or sets their length (mild takes a game off, strong adds one; Arcade has none).
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |

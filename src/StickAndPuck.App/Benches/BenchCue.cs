@@ -52,6 +52,7 @@ namespace StickAndPuck.App.Benches
                 PuckHitPost => [new(BenchReaction.Ooh, 3, 1.5f)],
                 ShotBlocked b when b.Side == bench && b.Slap => [new(BenchReaction.Bang, 3, 1.5f)],
                 PlayerInjured i when i.Side == bench => [new(BenchReaction.Trainer, 1, 4f)],
+                PlayerSuspended s when s.Side == bench => [new(BenchReaction.Argue, 2, 3f)],
                 OffsideCalled o when o.Attacker == bench => [new(BenchReaction.Point, 1, 1.5f)],
                 IcingCalled i when i.Offender == bench => [new(BenchReaction.Point, 1, 1.5f)],
                 TimeOutCalled t when t.Side == bench =>

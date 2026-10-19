@@ -95,6 +95,9 @@ namespace StickAndPuck.App.Season.Stats
                     case PlayerInjured injury:
                         HandleInjury(injury);
                         break;
+                    case PlayerSuspended suspension:
+                        HandleSuspension(suspension);
+                        break;
                     case GoalScored goal when !shootout:
                         HandleGoal(w, goal);
                         break;
@@ -219,6 +222,40 @@ namespace StickAndPuck.App.Season.Stats
                     }
                 );
             }
+        }
+
+        /// <summary>Writes a suspension on the sheet (a longer one replaces his shorter one), so a season game's
+        /// suspension reaches the season's absence list.</summary>
+        private void HandleSuspension(PlayerSuspended suspension)
+        {
+            if (!Line(suspension.PlayerId).TryGet(out MatchStatLine line))
+            {
+                return;
+            }
+
+            foreach (
+                Injuries.Absence old in Sheet
+                    .Absences.Where(a =>
+                        a.Reason == Injuries.AbsenceReason.Suspension
+                        && a.Is(line.Club, line.Number)
+                    )
+                    .ToList()
+            )
+            {
+                _ = Sheet.Absences.Remove(old);
+            }
+
+            Sheet.Absences.Add(
+                new Injuries.Absence
+                {
+                    Club = line.Club,
+                    Number = line.Number,
+                    Reason = Injuries.AbsenceReason.Suspension,
+                    Cause = InjuryCause.None,
+                    Games = suspension.Games,
+                    GamesLeft = suspension.Games,
+                }
+            );
         }
 
         private void HandleShotSaved(ShotSaved save)

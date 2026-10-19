@@ -363,6 +363,23 @@ namespace StickAndPuck.App.Core
                 r => r.InjuryRate,
                 (r, v) => r with { InjuryRate = v }
             ),
+            Flag(
+                nameof(RuleSet.Suspensions),
+                K.RuleSuspensions,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.Suspensions,
+                (r, v) => r with { Suspensions = v }
+            ),
+            Choice(
+                nameof(RuleSet.SuspensionStrength),
+                K.RuleSuspensionStrength,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<SuspensionStrength>(),
+                r => r.SuspensionStrength,
+                (r, v) => r with { SuspensionStrength = v }
+            ),
             Choice(
                 nameof(RuleSet.DressingRoom),
                 K.RuleDressingRoom,

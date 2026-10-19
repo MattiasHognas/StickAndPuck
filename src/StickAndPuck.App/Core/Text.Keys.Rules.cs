@@ -252,6 +252,12 @@ namespace StickAndPuck.App.Core
             /// <summary>FREQUENT</summary>
             public const string RuleValueFrequent = nameof(RuleValueFrequent);
 
+            /// <summary>SUSPENSIONS</summary>
+            public const string RuleSuspensions = nameof(RuleSuspensions);
+
+            /// <summary>SUSPENSION LENGTH</summary>
+            public const string RuleSuspensionStrength = nameof(RuleSuspensionStrength);
+
             /// <summary>PRESET</summary>
             public const string Preset = nameof(Preset);
 

@@ -83,6 +83,7 @@ namespace StickAndPuck.App.Screens
                 or "sim"
                 or "dressingroom"
                 or "coachtalk"
+                or "suspension"
                 or "trophy"
                 or "arcadetrophy"
                 or "bestruns":
@@ -90,7 +91,7 @@ namespace StickAndPuck.App.Screens
                     break;
                 default:
                     throw new InvalidOperationException(
-                        $"SAP_SCREEN={screen}: use start, settings, modes, teams, pause, results, standings, table, stats, sim, dressingroom, coachtalk, trophy, arcadetrophy, bestruns or bracket"
+                        $"SAP_SCREEN={screen}: use start, settings, modes, teams, pause, results, standings, table, stats, sim, dressingroom, coachtalk, suspension, trophy, arcadetrophy, bestruns or bracket"
                     );
             }
             Console.WriteLine($"SAP: screens: {screen}");

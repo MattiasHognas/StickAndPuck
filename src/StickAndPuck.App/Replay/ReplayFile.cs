@@ -119,17 +119,30 @@ namespace StickAndPuck.App.Replay
                     CultureInfo.InvariantCulture,
                     $"{b.Side} {b.BlockerId} {V(b.Position)} {b.Speed:R} {b.Slap}"
                 ),
-                PlayerInjured i => string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"{i.Side} {i.PlayerId} {V(i.Position)} {i.Games} {i.Cause}"
-                ),
-                _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
+                _ => SeasonFields(e),
             };
             return string.Create(
                     CultureInfo.InvariantCulture,
                     $"{e.GetType().Name} {e.Time:R} {fields}"
                 )
                 .TrimEnd();
+        }
+
+        /// <summary>The fields of the events that reach the season: an injury, a suspension.</summary>
+        private static string SeasonFields(MatchEvent e)
+        {
+            return e switch
+            {
+                PlayerInjured i => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{i.Side} {i.PlayerId} {V(i.Position)} {i.Games} {i.Cause}"
+                ),
+                PlayerSuspended s => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{s.Side} {s.PlayerId} {V(s.Position)} {s.Games} {s.Cause}"
+                ),
+                _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
+            };
         }
 
         private static string V(Vector3 v)
