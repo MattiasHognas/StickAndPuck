@@ -6,7 +6,8 @@ namespace StickAndPuck.App.Season.DressingRoom
     public static class PreGameTalkSources
     {
         /// <summary>Gets the sources.</summary>
-        public static IReadOnlyList<IPreGameTalkSource> All { get; } = [new TalkOpening()];
+        public static IReadOnlyList<IPreGameTalkSource> All { get; } =
+        [new TalkOpening(), new ScoutingTip()];
 
         /// <summary>Gets what the coach says before a game.</summary>
         public static PreGameTalkLines Build(DressingRoomContext context)
