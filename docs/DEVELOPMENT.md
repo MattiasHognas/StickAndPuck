@@ -86,6 +86,8 @@ in sync when upgrading.
 - `SAP_FIGHT_CHANCE`: 0 to 1, the chance a hard check drops the gloves in the `fight` scene. Default 0.4.
 - `SAP_HUD_MESSAGE`: the banner in the `hud` scene: `goal` (default), `period`, `final`, `tie`, `offside`, `icing`, `intro` or `none`.
 - `SAP_WARMUP`: `0` skips the pre-game warm-up in every match you play; a number of seconds starts the game by itself after that long. Default: warm up until start is pressed.
+- `SAP_INTRO`: `0` leaves out the title intro on launch (the letters dropping in, then the camera coming down from the rafters into the arena); `1` plays it even in a scripted or recorded run. Default: it plays when the game opens on the start screen with no `SAP_SCREEN_KEYS`, `SAP_SCREENSHOT`, `SAP_RECORD`, `SAP_STEPS`, `SAP_REPLAY`, or `SAP_SCREEN`/`SAP_SCENE` other than `start`; any key, button or click skips it. It plays only on launch, never when a match returns to the menus.
+- `SAP_INTRO_SEED`: integer; fixes the two clubs drawn at random for the rink behind the title intro and the start menu (only when the intro plays). `SAP_HOME`/`SAP_AWAY` pick them instead. Default: a new pair each launch.
 - `SAP_FLYOVER`: `0` leaves out the arena flyover at the start of the warm-up (the warm-up keeps its plain close-up). Default: the flyover plays, and the first start press skips it.
 - `SAP_REPLAY_AT`: seconds; fakes a goal at that time so the replay plays (used with the `camera` scene). Default off.
 

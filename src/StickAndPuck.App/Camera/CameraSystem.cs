@@ -19,6 +19,7 @@ namespace StickAndPuck.App.Camera
         private readonly CloseUp closeUp = new();
         private readonly Flyover flyover = new();
         private int scale = 1;
+        private bool inIntro;
 
         public bool RunsWhilePaused => true;
 
@@ -44,6 +45,21 @@ namespace StickAndPuck.App.Camera
 
         public void Update(World world, float dt)
         {
+            if (Screens.TitleIntroScreen.Playing(world).TryGet(out Screens.TitleIntro intro))
+            {
+                world.Camera = TitleCamera.At(follow.Camera, intro.CameraMove); // the launch's title intro comes down from the rafters
+                inIntro = true;
+                scale = 1;
+                world.App.Scale.Request(scale);
+                return;
+            }
+
+            if (inIntro)
+            {
+                inIntro = false;
+                world.Camera = follow.Camera; // played out or skipped: straight to the menu's view
+            }
+
             if (world.Match.Paused)
             {
                 return; // the frame holds while a screen is up
