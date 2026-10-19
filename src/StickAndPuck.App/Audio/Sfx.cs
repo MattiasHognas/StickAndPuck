@@ -49,5 +49,17 @@ namespace StickAndPuck.App.Audio
 
         /// <summary>The end-of-match cadence.</summary>
         Final,
+
+        /// <summary>The home fans' clap chant: clap, clap, clap-clap-clap, hey.</summary>
+        ChantClap,
+
+        /// <summary>The home fans' "let's go" chant: two sung syllables and two claps.</summary>
+        ChantLetsGo,
+
+        /// <summary>The home end's goal song swelling up after a home goal.</summary>
+        GoalSong,
+
+        /// <summary>The away section's thinner chant.</summary>
+        ChantAway,
     }
 }

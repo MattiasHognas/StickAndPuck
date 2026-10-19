@@ -306,11 +306,104 @@ def final():
     return [lead, harm, bass]
 
 
+# ---- crowd chants (W121) -------------------------------------------------------------------
+# The chants share one noise voice between the claps and the crowd's hiss, and sing on the two
+# pulses: a voice and a slightly sharp double, so a thousand throats beat against each other.
+
+BEAT = 13                    # frames to a beat: about 138 beats a minute
+
+
+def terraces(frames, hiss, claps, rng, clap=15):
+    """The noise voice: a low flickering hiss under sharp claps on the given frames."""
+    n = Voice("noise")
+    claps = set(claps)
+    i = 0
+    while i < frames:
+        if i in claps:
+            n.add(lambda k: [1, 2, 3][min(k, 2)], [clap, clap - 4, clap - 9])
+            i += 3
+        else:
+            n.add(rng.choice([6, 7, 7, 8]), [max(0, hiss + rng.randint(-1, 1))])
+            i += 1
+    return n
+
+
+def sung(voice, notes, duty=0.5, sharp=1.0, scale=1.0):
+    """Sings (note, beats, volume) syllables: a scooped attack, a wobble, a short gap after each."""
+    for name, beats, vol in notes:
+        frames = round(beats * BEAT)
+        if name is None:
+            voice.rest(frames)
+            continue
+        hz = note(name) * sharp
+        wobble = vibrato(hz, 0.012, 7)
+        pitch = lambda i, hz=hz, wobble=wobble: hz * 0.95 if i < 2 else wobble(i)
+        held = max(1, frames - 3)
+        voice.add(pitch, [v * scale for v in [vol - 3] + hold(vol, held - 1) + [vol - 4, 0, 0]], duty)
+    return voice
+
+
+def chant_clap():
+    """The home end's clap chant: clap, clap, clap-clap-clap, HEY! twice over."""
+    rng = random.Random(21)
+    bar = 5 * BEAT
+    claps = []
+    for b in range(2):
+        start = b * bar
+        claps += [start, start + BEAT, start + 2 * BEAT, start + round(2.5 * BEAT), start + 3 * BEAT]
+    frames = 2 * bar + 10
+    n = terraces(frames, 5, claps, rng)
+    hey = [(None, 4, 0), ("A4", 1, 12)]
+    p1 = sung(Voice("pulse"), hey + hey, 0.5)
+    p2 = sung(Voice("pulse"), hey + hey, 0.25, sharp=1.26)   # a ragged third above
+    return [n, p1, p2]
+
+
+def chant_letsgo():
+    """The "let's go" chant: two sung syllables, then two claps, three times."""
+    rng = random.Random(22)
+    words = [("D5", 1, 12), ("B4", 1, 13), (None, 2, 0)]
+    claps = [b * 4 * BEAT + k * BEAT for b in range(3) for k in (2, 3)]
+    n = terraces(12 * BEAT + 8, 4, claps, rng, clap=14)
+    p1 = sung(Voice("pulse"), words * 3, 0.5)
+    p2 = sung(Voice("pulse"), words * 3, 0.5, sharp=1.012)
+    return [n, p1, p2]
+
+
+def goal_song():
+    """The goal song: the home end roaring up into an olé, olé, olé over a rising crowd."""
+    rng = random.Random(23)
+    melody = [("E5", 1, 12), ("C5", 2, 13), ("E5", 1, 12), ("C5", 1, 12), ("D5", 1, 12),
+              ("C5", 1.5, 13), (None, 0.5, 0)]
+    melody = melody + melody[:-1] + [("C5", 3, 14)]
+    p1 = sung(Voice("pulse").rest(10), melody, 0.5)
+    p2 = sung(Voice("pulse").rest(10), [(None if m is None else m.replace("5", "4"), b, v - 2)
+                                       for m, b, v in melody], 0.25, sharp=1.5)
+    frames = max(len(p1.frames), len(p2.frames)) + 10
+    n = Voice("noise")
+    for i in range(frames):
+        swell = min(1.0, i / 20) * (1.0 if i < frames - 30 else (frames - i) / 30)
+        n.add(rng.choice([5, 6, 6, 7]), [round(9 * swell) + rng.randint(-1, 1)])
+    return [n, p1, p2]
+
+
+def chant_away():
+    """The away section: a thinner two-note chant and a few claps, from the corner of the arena."""
+    rng = random.Random(24)
+    words = [("G4", 1, 11), ("E4", 1, 11), ("G4", 1, 11), ("E4", 1, 11), (None, 1, 0), (None, 1, 0)]
+    claps = [b * 6 * BEAT + k * BEAT for b in range(2) for k in (4, 5)]
+    n = terraces(12 * BEAT + 6, 3, claps, rng, clap=11)
+    p = sung(Voice("pulse"), words * 2, 0.25)
+    return [n, p]
+
+
 SOUNDS = {
     "shot": shot, "pass": passing, "stick": stick, "boards": boards, "post": post,
     "whistle": whistle, "horn": horn, "goal": goal, "save": save, "check": check,
     "faceoff": faceoff, "crowd": crowd, "penalty": penalty, "fight": fight,
     "linechange": linechange, "final": final,
+    "chant_clap": chant_clap, "chant_letsgo": chant_letsgo, "goal_song": goal_song,
+    "chant_away": chant_away,
 }
 
 

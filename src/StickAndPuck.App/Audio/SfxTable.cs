@@ -27,6 +27,11 @@ namespace StickAndPuck.App.Audio
                 Sfx.Fight => new("fight.wav", 0.6f, 1.0f, Spatial: false),
                 Sfx.LineChange => new("linechange.wav", 0.4f, 0.3f, Spatial: false),
                 Sfx.Final => new("final.wav", 0.6f, 2.0f, Spatial: false),
+                // the chants sit just under the momentum crowd swell (crowd.wav) they play over
+                Sfx.ChantClap => new("chant_clap.wav", 0.5f, 2.0f, Spatial: false),
+                Sfx.ChantLetsGo => new("chant_letsgo.wav", 0.5f, 2.0f, Spatial: false),
+                Sfx.GoalSong => new("goal_song.wav", 0.55f, 3.0f, Spatial: false),
+                Sfx.ChantAway => new("chant_away.wav", 0.4f, 2.0f, Spatial: true), // heard from the visitors' corner
                 _ => throw new ArgumentOutOfRangeException(nameof(sfx), sfx, "unknown sound"),
             };
         }

@@ -14,13 +14,15 @@ namespace StickAndPuck.App.Arena
     /// Each seat keeps a look, a shirt and an animation phase of its own; about two in five wear the home
     /// club's main colour and one in five its second colour, drawn as the look's shirt mask over his own
     /// clothes in that colour snapped to the arena palette, so the stands take the club's colours
-    /// without leaving the palette. The spectators stand upright facing the camera (turned about
+    /// without leaving the palette; the visitors' corner (<see cref="CrowdFans"/>) wears the away club's. The spectators stand upright facing the camera (turned about
     /// the vertical only), back rows first with no depth writes, so each row covers the one behind
     /// and their empty texels hide nothing. Render only: it reads the world and changes nothing.</summary>
     internal sealed class CrowdRenderer
     {
         private const float PrimaryShare = 0.42f;
         private const float SecondaryShare = 0.18f;
+        private const float AwayPrimaryShare = 0.62f; // the travelling fans nearly all wear the shirt
+        private const float AwaySecondaryShare = 0.24f;
         private const float ClothesLight = 0.72f; // own clothes, skin and hair sit darker than the club colours, under the roof
 
         private Texture2D atlas;
@@ -35,15 +37,18 @@ namespace StickAndPuck.App.Arena
             bool Tinted
         );
 
-        /// <summary>Loads the atlas and the seats, and dresses the seats in the home club's colours.</summary>
+        /// <summary>Loads the atlas and the seats, and dresses the seats in the home club's colours, the
+        /// visitors' corner (<see cref="CrowdFans"/>) in the away club's.</summary>
         public void Load(World world)
         {
             atlas = Camera.FarTexture.Load(Assets.CrowdAtlas);
-            KitColours kit = world.Setup.Home.Home;
+            KitColours home = world.Setup.Home.Home;
+            KitColours away = world.Setup.Away.Home; // supporters wear their club's home shirt
             seats = Seats(
                 ResourceLoader.ReadText(Assets.CrowdSeats),
-                Snap(kit.Primary),
-                Snap(kit.Secondary)
+                (Snap(home.Primary), Snap(home.Secondary)),
+                (Snap(away.Primary), Snap(away.Secondary)),
+                CrowdFans.Of
             );
         }
 
@@ -53,6 +58,23 @@ namespace StickAndPuck.App.Arena
         /// <param name="secondary">The home club's second colour, on the palette.</param>
         /// <returns>The seats, back rows first.</returns>
         internal static Seat[] Seats(string json, Color primary, Color secondary)
+        {
+            return Seats(json, (primary, secondary), (primary, secondary), _ => Side.Home);
+        }
+
+        /// <summary>Reads the seats file and gives every seat its look, shirt and phase, in the colours of
+        /// the club its section supports; the away fans wear their shirts more often.</summary>
+        /// <param name="json">art/scene/crowd_seats.json.</param>
+        /// <param name="home">The home club's main and second colour, on the palette.</param>
+        /// <param name="away">The away club's main and second colour, on the palette.</param>
+        /// <param name="fans">The club each section supports.</param>
+        /// <returns>The seats, back rows first.</returns>
+        internal static Seat[] Seats(
+            string json,
+            (Color Primary, Color Secondary) home,
+            (Color Primary, Color Secondary) away,
+            Func<CrowdSection, Side> fans
+        )
         {
             using JsonDocument doc = JsonDocument.Parse(json);
             JsonElement root = doc.RootElement;
@@ -71,15 +93,20 @@ namespace StickAndPuck.App.Arena
             foreach (JsonElement s in root.GetProperty("seats").EnumerateArray())
             {
                 int i = list.Count;
+                CrowdSection section = (CrowdSection)s[4].GetInt32();
+                bool visitors = fans(section) == Side.Away;
+                (Color primary, Color secondary) = visitors ? away : home;
+                float primaryShare = visitors ? AwayPrimaryShare : PrimaryShare;
+                float secondaryShare = visitors ? AwaySecondaryShare : SecondaryShare;
                 float shirt = CrowdFrames.Unit(i, 1);
-                bool tinted = shirt < PrimaryShare + SecondaryShare;
+                bool tinted = shirt < primaryShare + secondaryShare;
                 list.Add(
                     new Seat(
                         new Vector3(s[0].GetSingle(), s[1].GetSingle(), s[2].GetSingle()),
-                        (CrowdSection)s[4].GetInt32(),
+                        section,
                         (int)(CrowdFrames.Hash(i, 2) % CrowdFrames.Looks),
                         CrowdFrames.Unit(i, 3),
-                        shirt < PrimaryShare ? primary : secondary,
+                        shirt < primaryShare ? primary : secondary,
                         tinted
                     )
                 );

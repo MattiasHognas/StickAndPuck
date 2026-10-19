@@ -100,6 +100,7 @@ namespace StickAndPuck.App.Arena
             bands.Build();
             scratches.Load();
             crowd.Load(world);
+            CrowdFans.Seat(reactions); // the visitors' corner reacts for the away club
             if (Enum.TryParse(Env.Get("SAP_CROWD_POSE"), ignoreCase: true, out CrowdPose pose))
             {
                 world.Crowd.SetAll(pose, world.Time); // a fixed pose for previews of the crowd frames
