@@ -43,6 +43,7 @@ Stick and puck is a C# game using Raylib_cs. Simulation runs at a fixed 60 Hz; t
 | `Hud/`, `Screens/`, `Audio/` | Scorebug/messages, menus and mode flow, generated effects and streamed music. |
 | `Season/`, `Versus/` | Schedule, standings, stats, team morale, saves, playoffs, arcade and local two-player setup. |
 | `Replay/` | Input-log recording, replay execution, scrubbing, state dumps and checksums. |
+| `Network/` | Online versus: host/join lobby, TCP link, lockstep input exchange and checksum desync detection (desktop only). |
 
 `MatchEvents` is the current step's typed event list. The simulation publishes goals, calls, saves and other outcomes; readers react during that step. AI command ownership and merge rules live in `AI/AiCommand.cs` and the AI layers, so evaluating a candidate pass does not mutate committed player intent.
 
@@ -51,6 +52,8 @@ Stick and puck is a C# game using Raylib_cs. Simulation runs at a fixed 60 Hz; t
 `SimClock` converts render time into whole `Game.Step` updates. `World.Tick` counts simulation steps; `World.Time` advances with them. Captures use one step per frame, while fast-forward runs many steps per frame. Simulation uses `SimMath` where platform-dependent transcendental results would affect replay checks.
 
 `Seeds` derives independent random streams from the match seed and each system's name. Seed zero selects the fixed fallback streams used by dev scenes. `DeviceInput` snapshots human input and supplies recorded frames during playback. A replay stores setup, settings, seed, inputs at their ticks, events and checksums; `WorldChecksum` checks simulation state while `StateDump` makes a selected tick readable.
+
+Online versus builds on the same determinism. The host sends the joiner the match as a replay header (clubs, rules, settings, seed). Each machine turns its own player's device into one gamepad frame with default bindings and sends it for the step a few steps ahead. A step runs only when both sides' frames for it have arrived (`NetPlay`, consulted by the game loop before each step), and both machines play the same two-pad frame through `DeviceInput`. Every 30 steps the sides exchange `WorldChecksum`s; a mismatch ends the match. Network matches record ordinary replays.
 
 Rendering-only changes should preserve simulation checksums. Gameplay changes may intentionally change them and require reviewed golden updates. Replay compatibility should be checked against the same revision, not assumed across releases. See [Testing: replays](TESTING.md#replays) for recording, scrubbing and take-over commands.
 

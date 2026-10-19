@@ -18,6 +18,16 @@ namespace StickAndPuck.App.Screens
             [
                 .. modes.Select(m => new MenuItem(m.Title, () => Choose(App, m))),
             ];
+            if (!OperatingSystem.IsBrowser())
+            {
+                // online versus opens its lobby rather than team select; it sits after player vs player
+                int versus = modes.ToList().FindIndex(m => m is Versus.VersusMode);
+                items.Insert(
+                    versus < 0 ? items.Count : versus + 1,
+                    new MenuItem(Text.Get(K.OnlineVersus), () => Network.NetLobby.Open(App))
+                );
+            }
+
             if (board)
             {
                 items.Add(

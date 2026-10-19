@@ -76,7 +76,7 @@ namespace StickAndPuck.App.Replay
                 Env = Variables(),
                 Setup = screensMatch ? started.Select(ReplaySetup.Of) : Maybe.None<ReplaySetup>(),
                 Mode = screensMatch ? playing.Select(ModeName).Or("") : "",
-                Prefs = screensMatch ? ScreenPrefsFile.ToJson(world.App.Screens.Prefs) : "",
+                Prefs = screensMatch ? ScreenPrefsFile.ToJson(world.App.Screens.RecordedPrefs) : "",
                 Clubs = ClubsHash(world.Setup.Home, world.Setup.Away),
                 Recorded = string.Create(
                     CultureInfo.InvariantCulture,

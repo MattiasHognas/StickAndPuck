@@ -394,9 +394,15 @@ namespace StickAndPuck.App.Core
 
                 for (int i = 0; i < steps; i++)
                 {
+                    if (!world.App.Network.Ready(world))
+                    {
+                        break; // a network match waits for the other side's input for this step
+                    }
+
                     motion.Capture(world);
                     StepWorld(world, systems);
                     ulong sum = WorldChecksum.Of(world);
+                    world.App.Network.AfterStep(world, sum);
                     if (Recorder.HasValue || Replay.HasValue)
                     {
                         Sums.Write(world.Tick - 1, sum); // the recorded or replayed match only

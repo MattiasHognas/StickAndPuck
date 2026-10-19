@@ -36,6 +36,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets a value indicating whether a replay supplies the frames.</summary>
         public static bool Playing { get; private set; }
 
+        /// <summary>Gets a value indicating whether a network match supplies the frames (<see cref="PlayRemote"/>) while the devices are still read for the local player through <see cref="ReadLocal"/>.</summary>
+        public static bool Remote { get; private set; }
+
         /// <summary>Lets a replay supply the frames from now on.</summary>
         public static void Play(Func<long, Maybe<InputFrame>> frames)
         {
@@ -43,11 +46,25 @@ namespace StickAndPuck.App.Core
             Playing = true;
         }
 
+        /// <summary>Lets a network match supply the frames from now on; the devices are still polled, so <see cref="ReadLocal"/> gives the local player's presses.</summary>
+        public static void PlayRemote(Func<long, Maybe<InputFrame>> frames)
+        {
+            Play(frames);
+            Remote = true;
+        }
+
         /// <summary>Goes back to reading the devices.</summary>
         public static void StopPlaying()
         {
             playback = _ => Maybe.None<InputFrame>();
             Playing = false;
+            Remote = false;
+        }
+
+        /// <summary>Reads the local devices now with the presses noted since the last read, without making it the step's frame: what a network match sends for this machine's player.</summary>
+        public static InputFrame ReadLocal()
+        {
+            return IsWindowReady() ? ReadFrameFromDevices() : InputFrame.Empty;
         }
 
         /// <summary>Clears devices and replay state before starting another browser session.</summary>
@@ -63,7 +80,7 @@ namespace StickAndPuck.App.Core
         /// <summary>Notes this drawn frame's presses, so the next step sees them even when this frame runs no step.</summary>
         public static void Poll()
         {
-            if (Playing || !IsWindowReady())
+            if ((Playing && !Remote) || !IsWindowReady())
             {
                 return;
             }
@@ -190,7 +207,7 @@ namespace StickAndPuck.App.Core
         /// <summary>Keeps a browser mouse tap until a simulation step consumes it.</summary>
         public static void NoteMousePress(int button)
         {
-            if (!Playing && button is >= 0 and < 3)
+            if ((!Playing || Remote) && button is >= 0 and < 3)
             {
                 pendingMouse |= (byte)(1 << button);
             }

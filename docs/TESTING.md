@@ -93,6 +93,9 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `benches`: cycles through bench reactions to goals, penalties, fights, hits, stoppages and a tired line, with a close camera and draw-time logging.
 - `penaltybox`: box entry, sitting and release; `SAP_BOX=in` (default), `two` or `out` chooses the script.
 - `zamboni`: opens in the first intermission; `SAP_ZAMBONI_AT` starts the drive that many seconds in. The corner tag shows the next period, the time left and the skip button; the rules' intermission length (Standard, Quick in Arcade, or Off) sets how long it lasts.
+- `netlobby`: the start screen flow opened on the online versus lobby.
+- `nethost`: the lobby's host flow with `SAP_HOME` and `SAP_AWAY` picked, listening on `SAP_NET_PORT` until a player joins, then the network match.
+- `netjoin`: the lobby's join flow, connecting to `SAP_NET_ADDRESS` on `SAP_NET_PORT`, then the network match.
 
 `lineup` is a static starter layout rather than the timed faceoff flow; use `referee` or `faceoff` to inspect the crouch and drop. Scene implementations are discovered automatically through `IScene`; most live in their system's `Dev/` folder. General match and rendering overrides, including `SAP_TACTICS_LINE` and `SAP_ST_SPOTS`, are in [Development](DEVELOPMENT.md#visuals-sound-and-input).
 
@@ -104,9 +107,15 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 | `SAP_PENALTY_MAJOR` | `1` changes the penalty scene's scripted tripping minor into boarding with a major and game misconduct. The skater is ejected and the line refills; `SAP_LINES_DEBUG=1` shows the units. Unset or `0` keeps the minor. |
 | `SAP_PENALTY_SKIP` | A positive number of seconds to simulate before rendering in `penalty` or `goaliepull`. Unset, zero or negative means no skip; useful for capturing the box or extra attacker. |
 
+### Network play on one machine
+
+Run two game processes on localhost with separate settings and save paths: one with `SAP_SCENE=nethost`, the other with `SAP_SCENE=netjoin` (same `SAP_NET_PORT`). `SAP_HUMAN=0` on a side lets the AI play its club while inputs still go through lockstep, and `SAP_WARMUP=0` skips the warm-up. `SAP_CHECKSUMS=file` on both writes every step's checksum; the match's lines must be identical. Both processes record a replay that verifies with `SAP_REPLAY=file SAP_SCREENSHOT=1`. `SAP_NET_DESYNC=step` on one side nudges its skaters after that step, so both sides show the out-of-sync message at the next checksum exchange.
+
+The `NetworkTests` class runs two lockstep peers over a real loopback TCP connection with scripted inputs and checks every step's checksum; it also checks that a divergence on one side is caught.
+
 ### Variable coverage
 
-The reference covers all 85 current `SAP_*` names found in the app, tests and recording tools: 83 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
+The reference covers all 89 current `SAP_*` names found in the app, tests and recording tools: 87 in app code, `SAP_REPLAYTEST_PRINT` in the test harness, and `SAP_AUDIO` in `tools/record.sh`. The GPU relaunch variables are internal and documented separately in [Development](DEVELOPMENT.md#internal-gpu-relaunch-variables).
 
 `SAP_MATCHES` appears only in an old comment in `DefenceTests.cs`; no current code reads it. It is not a supported override for the TUnit suite.
 
