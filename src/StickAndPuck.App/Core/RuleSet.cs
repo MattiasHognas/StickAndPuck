@@ -43,6 +43,7 @@ namespace StickAndPuck.App.Core
             TimeOut = false,
             DressingRoom = DressingRoomStyle.Off,
             News = false,
+            CoachReaction = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -61,6 +62,7 @@ namespace StickAndPuck.App.Core
             MoraleStrength = MoraleStrength.Strong,
             FaceoffViolationMinor = true,
             NewsFrequency = NewsFrequency.Often,
+            CoachTemper = CoachTemper.Strong,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -228,6 +230,13 @@ namespace StickAndPuck.App.Core
                     NewsFrequency.Normal => 5,
                     _ => throw new NotSupportedException("no news odds for " + NewsFrequency),
                 };
+
+        /// <summary>Gets a value indicating whether the coach reacts in the dressing room to what happened in the
+        /// human's last game (a hat trick, a blown lead, a shutout, a lost fight and more), naming the player.</summary>
+        public bool CoachReaction { get; init; } = true;
+
+        /// <summary>Gets how readily the coach reacts: how big a lead, a loss or a pile of saves or penalties it takes.</summary>
+        public CoachTemper CoachTemper { get; init; } = CoachTemper.Normal;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

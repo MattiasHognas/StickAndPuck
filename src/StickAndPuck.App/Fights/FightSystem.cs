@@ -328,6 +328,17 @@ namespace StickAndPuck.App.Fights
                     p.Begin(PlayerAction.None);
                 }
             }
+            if (fight.Of(fight.LoserId).TryGet(out Fighter lost))
+            {
+                world.Events.Publish(
+                    new FightEnded(
+                        world.Time,
+                        fight.Other(lost).PlayerId,
+                        fight.LoserId,
+                        fight.Spot
+                    )
+                );
+            }
             if (!penalise || fight.LoserId < 0)
             {
                 return;

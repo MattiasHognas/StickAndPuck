@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Arcade;
+using StickAndPuck.App.Season.DressingRoom.Dev;
 using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Save;
@@ -48,6 +49,17 @@ namespace StickAndPuck.App.Screens
                     )
                     {
                         _ = NewsDesk.Force(room, clubs, NewsDeck.Default, news.ToLowerInvariant()); // a news card in play, whatever the dice said
+                    }
+
+                    if (
+                        Env.Get("SAP_REACTION") is { Length: > 0 } reaction
+                        && app.Season.Current.TryGet(out SeasonState staged)
+                        && !StagedReaction.Stage(staged, clubs, reaction.ToLowerInvariant())
+                    )
+                    {
+                        throw new InvalidOperationException(
+                            $"SAP_REACTION={reaction}: use {StagedReaction.Kinds}"
+                        );
                     }
 
                     break;

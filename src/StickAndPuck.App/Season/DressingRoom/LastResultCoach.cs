@@ -15,7 +15,19 @@ namespace StickAndPuck.App.Season.DressingRoom
         /// <inheritdoc/>
         public void Fill(DressingRoomContext context, DressingRoomReport report)
         {
-            report.Say(new DressingRoomEntry(Text.Get(LineFor(context.Last))));
+            string key = LineFor(context.Last);
+            report.Say(new DressingRoomEntry(Text.Get(key), Mood: MoodFor(key)));
+        }
+
+        /// <summary>Gets the coach's face for a placeholder line: pleased after a win, angry after a regulation loss.</summary>
+        public static CoachMood MoodFor(string key)
+        {
+            return key switch
+            {
+                K.CoachBigWin or K.CoachWin or K.CoachExtraWin => CoachMood.Pleased,
+                K.CoachLoss or K.CoachBigLoss => CoachMood.Angry,
+                _ => CoachMood.Neutral,
+            };
         }
 
         /// <summary>Gets the string key of the coach line for a last game.</summary>

@@ -22,6 +22,8 @@ namespace StickAndPuck.App.Season.Stats
         private int lastTouch = -1;
         private float lastTime;
         private bool shootout;
+        private readonly int[] goals = new int[2];
+        private readonly int[] shootoutScorer = [-1, -1];
 
         /// <summary>Gets the sheet so far, with no player of the game until <see cref="Finish"/>.</summary>
         public MatchStatSheet Sheet { get; } = new();
@@ -91,7 +93,24 @@ namespace StickAndPuck.App.Season.Stats
                         HandleShotSaved(save);
                         break;
                     case GoalScored goal when !shootout:
-                        Goal(w, goal.Side, goal.ScorerId, goal.Time);
+                        HandleGoal(w, goal);
+                        break;
+                    case GoalScored goal:
+                        if (Line(goal.ScorerId).Is(l => l.Side == goal.Side))
+                        {
+                            shootoutScorer[(int)goal.Side] = goal.ScorerId;
+                        }
+
+                        break;
+                    case PenaltyCalled penalty:
+                        if (Line(penalty.PlayerId).TryGet(out MatchStatLine offender))
+                        {
+                            offender.Penalties++;
+                        }
+
+                        break;
+                    case FightEnded fight:
+                        HandleFightEnded(fight);
                         break;
                     case PuckDropped:
                         touches.Clear();
@@ -106,7 +125,6 @@ namespace StickAndPuck.App.Season.Stats
                     or PuckHitBoards
                     or LineChanged
                     or FightStarted
-                    or PenaltyCalled
                     or IcingCalled
                     or OffsideCalled
                     or FaceoffViolated
@@ -135,6 +153,42 @@ namespace StickAndPuck.App.Season.Stats
             }
         }
 
+        private void HandleGoal(World w, GoalScored goal)
+        {
+            int side = (int)goal.Side;
+            goals[side]++;
+            int lead = goals[side] - goals[1 - side];
+            if (goal.Side == Side.Home)
+            {
+                Sheet.HomeMaxLead = Math.Max(Sheet.HomeMaxLead, lead);
+            }
+            else
+            {
+                Sheet.AwayMaxLead = Math.Max(Sheet.AwayMaxLead, lead);
+            }
+
+            if (
+                Goal(w, goal.Side, goal.ScorerId, goal.Time).TryGet(out MatchStatLine scorer)
+                && w.Match.Period > w.Setup.Periods
+            )
+            {
+                scorer.Decider = true; // the overtime winner
+            }
+        }
+
+        private void HandleFightEnded(FightEnded fight)
+        {
+            if (Line(fight.WinnerId).TryGet(out MatchStatLine winner))
+            {
+                winner.FightsWon++;
+            }
+
+            if (Line(fight.LoserId).TryGet(out MatchStatLine loser))
+            {
+                loser.FightsLost++;
+            }
+        }
+
         private void HandleCheckLanded(CheckLanded check)
         {
             if (Line(check.CheckerId).TryGet(out MatchStatLine checker))
@@ -158,6 +212,14 @@ namespace StickAndPuck.App.Season.Stats
             {
                 Sheet.HomeGoals = w.Match.Score[(int)Side.Home];
                 Sheet.AwayGoals = w.Match.Score[(int)Side.Away];
+                if (shootout && Sheet.HomeGoals != Sheet.AwayGoals)
+                {
+                    int won = Sheet.HomeGoals > Sheet.AwayGoals ? 0 : 1;
+                    if (Line(shootoutScorer[won]).TryGet(out MatchStatLine decider))
+                    {
+                        decider.Decider = true; // the winning club's last shootout goal
+                    }
+                }
             }
             Sheet.PickPlayerOfGame();
             return Sheet;
@@ -171,6 +233,9 @@ namespace StickAndPuck.App.Season.Stats
             lastTouch = -1;
             lastTime = w.Time;
             shootout = false;
+            goals[0] = goals[1] = 0;
+            shootoutScorer[0] = shootoutScorer[1] = -1;
+            Sheet.HomeMaxLead = Sheet.AwayMaxLead = 0;
             Sheet.Home = w.Setup.Home.Id;
             Sheet.Away = w.Setup.Away.Id;
             Sheet.Lines.Clear();
@@ -210,7 +275,7 @@ namespace StickAndPuck.App.Season.Stats
             return lines.TryGetValue(id, out MatchStatLine l) ? l : Maybe.None<MatchStatLine>();
         }
 
-        private void Goal(World w, Side side, int playerId, float time)
+        private Maybe<MatchStatLine> Goal(World w, Side side, int playerId, float time)
         {
             PlusMinus(w, side);
             int scorer =
@@ -237,7 +302,7 @@ namespace StickAndPuck.App.Season.Stats
             if (scorer < 0 || !Line(scorer).TryGet(out MatchStatLine line))
             {
                 touches.Clear();
-                return;
+                return Maybe.None<MatchStatLine>();
             }
             line.Goals++;
 
@@ -270,6 +335,7 @@ namespace StickAndPuck.App.Season.Stats
             }
 
             touches.Clear();
+            return line;
         }
     }
 }

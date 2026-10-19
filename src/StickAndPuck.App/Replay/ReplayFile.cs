@@ -70,6 +70,10 @@ namespace StickAndPuck.App.Replay
                     CultureInfo.InvariantCulture,
                     $"{f.Side} {f.PlayerId} {V(f.Position)}"
                 ),
+                FightEnded f => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{f.WinnerId} {f.LoserId} {V(f.Position)}"
+                ),
                 ShotSaved s => string.Create(
                     CultureInfo.InvariantCulture,
                     $"{s.Side} {s.GoalieId} {V(s.Position)} {s.Speed:R}"

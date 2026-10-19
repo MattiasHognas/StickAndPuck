@@ -77,7 +77,12 @@ namespace StickAndPuck.App.Season.Stats
                 && Matches(world, game.Home, game.Away)
             )
             {
-                _ = season.Stats.Credit(SeasonStats.GameKey(game.Number), sheet);
+                string key = SeasonStats.GameKey(game.Number);
+                if (season.Stats.Credit(key, sheet))
+                {
+                    season.Stats.LastPlayed = sheet;
+                    season.Stats.LastPlayedKey = key;
+                }
             }
             else if (
                 world.App.Season.Current.TryGet(out SeasonState current)
@@ -90,10 +95,12 @@ namespace StickAndPuck.App.Season.Stats
                 int index = playoffs.Current.Series.IndexOf(series);
                 if (index >= 0)
                 {
-                    _ = current.Stats.Credit(
-                        SeasonStats.PlayoffKey(round, index, series.Games.Count),
-                        sheet
-                    );
+                    string key = SeasonStats.PlayoffKey(round, index, series.Games.Count);
+                    if (current.Stats.Credit(key, sheet))
+                    {
+                        current.Stats.LastPlayed = sheet;
+                        current.Stats.LastPlayedKey = key;
+                    }
                 }
             }
             else if (

@@ -1,3 +1,5 @@
+using StickAndPuck.App.Core;
+
 namespace StickAndPuck.App.Season.DressingRoom
 {
     /// <summary>One line on the dressing room screen: a coach line, a news item, an injury or a board note,
@@ -5,5 +7,11 @@ namespace StickAndPuck.App.Season.DressingRoom
     /// <param name="Text">The line as shown.</param>
     /// <param name="Priority">Higher shows first; the placeholder lines are 0.</param>
     /// <param name="Highlight">True draws the line in gold.</param>
-    public sealed record DressingRoomEntry(string Text, int Priority = 0, bool Highlight = false);
+    /// <param name="Mood">The coach's face while he says it (coach lines only; the portrait shows it).</param>
+    public sealed record DressingRoomEntry(
+        string Text,
+        int Priority = 0,
+        bool Highlight = false,
+        CoachMood Mood = CoachMood.Neutral
+    );
 }

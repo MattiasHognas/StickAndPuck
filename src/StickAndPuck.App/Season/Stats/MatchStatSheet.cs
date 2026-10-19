@@ -23,6 +23,18 @@ namespace StickAndPuck.App.Season.Stats
         /// <summary>Gets or sets the player of the game, None only when nobody played.</summary>
         public Maybe<MatchStatLine> PlayerOfGame { get; set; }
 
+        /// <summary>Gets or sets the biggest lead the home club held during the game (0 in a sheet settled on paper).</summary>
+        public int HomeMaxLead { get; set; }
+
+        /// <summary>Gets or sets the biggest lead the away club held during the game (0 in a sheet settled on paper).</summary>
+        public int AwayMaxLead { get; set; }
+
+        /// <summary>Gets the biggest lead a side held during the game.</summary>
+        public int MaxLead(Side side)
+        {
+            return side == Side.Home ? HomeMaxLead : AwayMaxLead;
+        }
+
         /// <summary>Gets a value indicating whether a side won the match.</summary>
         public bool Won(Side side)
         {
