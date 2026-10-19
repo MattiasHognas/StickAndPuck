@@ -431,6 +431,7 @@ namespace StickAndPuck.App.Rules.Penalties
                 >= foul.Chance
                     * world.Switches.PenaltyStrictness
                     * world.Setup.Rules.StrictnessScale
+                    * Talk(world, foul.PlayerId)
             )
             {
                 return;
@@ -443,6 +444,14 @@ namespace StickAndPuck.App.Rules.Penalties
                 book.Rng.NextSingle()
             );
             _ = PenaltyCalls.Signal(world, foul.PlayerId, foul.Infraction, severity, afterWhistle);
+        }
+
+        /// <summary>The coach's pre-game talk on the offender's club: calm and discipline draw fewer calls, firing up more.</summary>
+        private static float Talk(World world, int playerId)
+        {
+            return playerId >= 0 && playerId < world.Players.Count
+                ? CoachTalk.PenaltyScale(world.Setup, world.Players[playerId].Side)
+                : 1f;
         }
 
         /// <summary>Gets the offending club once it touches the puck: it carries it, or last played it.</summary>

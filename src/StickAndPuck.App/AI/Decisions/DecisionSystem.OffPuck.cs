@@ -265,7 +265,9 @@ namespace StickAndPuck.App.AI.Decisions
             if (world.Time >= brain.CheckReady && d < CheckFrom)
             {
                 float checking = Traits.Unit(p.Data.Traits.Checking);
-                float style = Tactics.TacticsState.HitScale(world, p.Side); // a physical club finishes its checks
+                float style =
+                    Tactics.TacticsState.HitScale(world, p.Side) // a physical club finishes its checks
+                    * CoachTalk.HitScale(world.Setup, p.Side); // and the pre-game talk fires it up or calms it
                 brain.HitUntil =
                     rng.NextSingle()
                     < (0.04f + (0.15f * checking)) * style * HumanEdge.HitChance(world, carrier)

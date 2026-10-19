@@ -230,7 +230,10 @@ namespace StickAndPuck.App.Players.Puck
                 receiver = PuckHandling.PickOpen(world, passer);
             }
 
-            int smart = passer.Data.Traits.HockeyIq;
+            int smart = Math.Min(
+                100,
+                passer.Data.Traits.HockeyIq + CoachTalk.PassIq(world.Setup, passer.Side)
+            ); // a calm pre-game talk steadies the passes
             Vector3 velocity;
             if (receiver.TryGet(out Player lead))
             {

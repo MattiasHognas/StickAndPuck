@@ -373,6 +373,23 @@ namespace StickAndPuck.App.Core
                 r => r.CoachTemper,
                 (r, v) => r with { CoachTemper = v }
             ),
+            Flag(
+                nameof(RuleSet.PreGameTalk),
+                K.RulePreGameTalk,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.PreGameTalk,
+                (r, v) => r with { PreGameTalk = v }
+            ),
+            Choice(
+                nameof(RuleSet.TalkStrength),
+                K.RuleTalkStrength,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<TalkStrength>(),
+                r => r.TalkStrength,
+                (r, v) => r with { TalkStrength = v }
+            ),
         ];
 
         /// <summary>Gets the rules the game plays, grouped as the rules page shows them.</summary>

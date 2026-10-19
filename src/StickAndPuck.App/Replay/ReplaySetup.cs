@@ -24,6 +24,9 @@ namespace StickAndPuck.App.Replay
         /// <summary>Gets the energy each club started with, as <see cref="MatchSetup.StartEnergy"/>; full in an older replay.</summary>
         public IReadOnlyList<float> StartEnergy { get; init; } = [1f, 1f];
 
+        /// <summary>Gets the coach's pre-game talk, as <see cref="MatchSetup.Talk"/>; None in an older replay.</summary>
+        public Maybe<CoachTalk> Talk { get; init; }
+
         /// <summary>Gets the stored form of a setup.</summary>
         public static ReplaySetup Of(MatchSetup s)
         {
@@ -41,6 +44,7 @@ namespace StickAndPuck.App.Replay
             {
                 Form = s.Form,
                 StartEnergy = s.StartEnergy,
+                Talk = s.Talk,
             };
         }
 
@@ -71,6 +75,7 @@ namespace StickAndPuck.App.Replay
                 Rules = Rules,
                 Morale = Morale,
                 StartEnergy = StartEnergy,
+                Talk = Talk,
             };
         }
     }

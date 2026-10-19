@@ -203,6 +203,19 @@ namespace StickAndPuck.App.Screens
         /// (the playoffs start from the final table). With nothing left to play, shows the table or bracket.</summary>
         public void PlaySeasonGame()
         {
+            PlaySeasonGame(Maybe.None<TalkTone>());
+        }
+
+        /// <summary>Plays the human's next season or playoff game after the coach's pre-game talk (W125): the
+        /// tone goes on the setup (<see cref="MatchSetup.Talk"/>, for the human's club's side) so the match
+        /// and its replay play it.</summary>
+        public void PlaySeasonGameAfterTalk(TalkTone tone)
+        {
+            PlaySeasonGame(Maybe.Some(tone));
+        }
+
+        private void PlaySeasonGame(Maybe<TalkTone> talk)
+        {
             app.Arcade.End();
             if (!app.Season.Current.HasValue)
             {
@@ -220,7 +233,26 @@ namespace StickAndPuck.App.Screens
                 ToMenus(Overview());
                 return;
             }
-            Start(play.Setup, MatchPlan.SeasonGame());
+            Start(WithTalk(play.Setup, talk), MatchPlan.SeasonGame());
+        }
+
+        /// <summary>A season setup with the coach's talk to the human's club, when one was given and the rules play it.</summary>
+        private MatchSetup WithTalk(MatchSetup setup, Maybe<TalkTone> talk)
+        {
+            if (
+                !talk.TryGet(out TalkTone tone)
+                || !setup.Rules.PreGameTalk
+                || !app.Season.Current.TryGet(out SeasonState season)
+            )
+            {
+                return setup;
+            }
+
+            Side side = string.Equals(setup.Home.Id, season.UserClub, StringComparison.Ordinal)
+                ? Side.Home
+                : Side.Away;
+            Console.WriteLine($"SAP: screens: pre-game talk {tone} to {season.UserClub}");
+            return setup with { Talk = new CoachTalk(side, tone) };
         }
 
         /// <summary>Settles the human's next season or playoff game on paper instead of playing it
