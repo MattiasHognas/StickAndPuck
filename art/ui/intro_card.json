@@ -1,0 +1,614 @@
+{
+  "card": {
+    "file": "art/ui/intro_card.png",
+    "size": [
+      300,
+      196
+    ],
+    "position": [
+      90,
+      37
+    ],
+    "slots": {
+      "home_crest": [
+        60,
+        8,
+        32,
+        32
+      ],
+      "home_name": [
+        13,
+        47,
+        127,
+        7
+      ],
+      "home_stripe": [
+        56,
+        58,
+        40,
+        2
+      ],
+      "away_crest": [
+        207,
+        8,
+        32,
+        32
+      ],
+      "away_name": [
+        160,
+        47,
+        127,
+        7
+      ],
+      "away_stripe": [
+        203,
+        58,
+        40,
+        2
+      ],
+      "vs": [
+        125,
+        14,
+        52,
+        26
+      ]
+    },
+    "rows": [
+      {
+        "name": "overall",
+        "y": 68,
+        "height": 12,
+        "icon": [
+          146,
+          70,
+          8,
+          8
+        ],
+        "home_bar": [
+          40,
+          72,
+          96,
+          4
+        ],
+        "away_bar": [
+          164,
+          72,
+          96,
+          4
+        ],
+        "home_value": [
+          8,
+          71,
+          29,
+          7
+        ],
+        "away_value": [
+          263,
+          71,
+          29,
+          7
+        ],
+        "barFill": "home fills right to left from the chip, away left to right; 0..100 maps to the well width"
+      },
+      {
+        "name": "attack",
+        "y": 80,
+        "height": 12,
+        "icon": [
+          146,
+          82,
+          8,
+          8
+        ],
+        "home_bar": [
+          40,
+          84,
+          96,
+          4
+        ],
+        "away_bar": [
+          164,
+          84,
+          96,
+          4
+        ],
+        "home_value": [
+          8,
+          83,
+          29,
+          7
+        ],
+        "away_value": [
+          263,
+          83,
+          29,
+          7
+        ],
+        "barFill": "home fills right to left from the chip, away left to right; 0..100 maps to the well width"
+      },
+      {
+        "name": "defence",
+        "y": 92,
+        "height": 12,
+        "icon": [
+          146,
+          94,
+          8,
+          8
+        ],
+        "home_bar": [
+          40,
+          96,
+          96,
+          4
+        ],
+        "away_bar": [
+          164,
+          96,
+          96,
+          4
+        ],
+        "home_value": [
+          8,
+          95,
+          29,
+          7
+        ],
+        "away_value": [
+          263,
+          95,
+          29,
+          7
+        ],
+        "barFill": "home fills right to left from the chip, away left to right; 0..100 maps to the well width"
+      },
+      {
+        "name": "speed",
+        "y": 104,
+        "height": 12,
+        "icon": [
+          146,
+          106,
+          8,
+          8
+        ],
+        "home_bar": [
+          40,
+          108,
+          96,
+          4
+        ],
+        "away_bar": [
+          164,
+          108,
+          96,
+          4
+        ],
+        "home_value": [
+          8,
+          107,
+          29,
+          7
+        ],
+        "away_value": [
+          263,
+          107,
+          29,
+          7
+        ],
+        "barFill": "home fills right to left from the chip, away left to right; 0..100 maps to the well width"
+      },
+      {
+        "name": "goalie",
+        "y": 116,
+        "height": 12,
+        "icon": [
+          146,
+          118,
+          8,
+          8
+        ],
+        "home_bar": [
+          40,
+          120,
+          96,
+          4
+        ],
+        "away_bar": [
+          164,
+          120,
+          96,
+          4
+        ],
+        "home_value": [
+          8,
+          119,
+          29,
+          7
+        ],
+        "away_value": [
+          263,
+          119,
+          29,
+          7
+        ],
+        "barFill": "home fills right to left from the chip, away left to right; 0..100 maps to the well width"
+      },
+      {
+        "name": "record",
+        "y": 128,
+        "height": 12,
+        "icon": [
+          146,
+          130,
+          8,
+          8
+        ],
+        "home_value": [
+          8,
+          131,
+          126,
+          7
+        ],
+        "away_value": [
+          166,
+          131,
+          126,
+          7
+        ]
+      },
+      {
+        "name": "place",
+        "y": 140,
+        "height": 12,
+        "icon": [
+          146,
+          142,
+          8,
+          8
+        ],
+        "home_value": [
+          8,
+          143,
+          126,
+          7
+        ],
+        "away_value": [
+          166,
+          143,
+          126,
+          7
+        ]
+      },
+      {
+        "name": "form",
+        "y": 152,
+        "height": 12,
+        "icon": [
+          146,
+          154,
+          8,
+          8
+        ],
+        "home_dots": [
+          [
+            90,
+            154,
+            8,
+            8
+          ],
+          [
+            99,
+            154,
+            8,
+            8
+          ],
+          [
+            108,
+            154,
+            8,
+            8
+          ],
+          [
+            117,
+            154,
+            8,
+            8
+          ],
+          [
+            126,
+            154,
+            8,
+            8
+          ]
+        ],
+        "away_dots": [
+          [
+            166,
+            154,
+            8,
+            8
+          ],
+          [
+            175,
+            154,
+            8,
+            8
+          ],
+          [
+            184,
+            154,
+            8,
+            8
+          ],
+          [
+            193,
+            154,
+            8,
+            8
+          ],
+          [
+            202,
+            154,
+            8,
+            8
+          ]
+        ],
+        "home_value": [
+          8,
+          155,
+          126,
+          7
+        ],
+        "away_value": [
+          166,
+          155,
+          126,
+          7
+        ]
+      },
+      {
+        "name": "scorer",
+        "y": 164,
+        "height": 12,
+        "icon": [
+          146,
+          166,
+          8,
+          8
+        ],
+        "home_value": [
+          8,
+          167,
+          126,
+          7
+        ],
+        "away_value": [
+          166,
+          167,
+          126,
+          7
+        ]
+      },
+      {
+        "name": "style",
+        "y": 176,
+        "height": 16,
+        "icon": [
+          146,
+          180,
+          8,
+          8
+        ],
+        "home_badges": [
+          [
+            122,
+            178,
+            12,
+            12
+          ],
+          [
+            108,
+            178,
+            12,
+            12
+          ],
+          [
+            94,
+            178,
+            12,
+            12
+          ]
+        ],
+        "home_value": [
+          8,
+          181,
+          82,
+          7
+        ],
+        "away_badges": [
+          [
+            166,
+            178,
+            12,
+            12
+          ],
+          [
+            180,
+            178,
+            12,
+            12
+          ],
+          [
+            194,
+            178,
+            12,
+            12
+          ]
+        ],
+        "away_value": [
+          210,
+          181,
+          82,
+          7
+        ]
+      }
+    ],
+    "note": "Card-local rects. Crests: crests.png cell drawn at 2x into *_crest. Text slots are the 7 px capital box (draw at slot y - 2): home values right-aligned towards the chip, away values left-aligned. Bars: 0..100 of the well width, home growing left from the chip, away right. Form dots: oldest first, the home row's newest next to the chip. Style badges: the style, forecheck and entry badge per side, the home row's first next to the chip."
+  },
+  "icons": {
+    "file": "art/ui/intro_icons.png",
+    "stat": {
+      "overall": [
+        0,
+        0,
+        8,
+        8
+      ],
+      "attack": [
+        8,
+        0,
+        8,
+        8
+      ],
+      "defence": [
+        16,
+        0,
+        8,
+        8
+      ],
+      "speed": [
+        24,
+        0,
+        8,
+        8
+      ],
+      "goalie": [
+        32,
+        0,
+        8,
+        8
+      ],
+      "record": [
+        40,
+        0,
+        8,
+        8
+      ],
+      "place": [
+        48,
+        0,
+        8,
+        8
+      ],
+      "form": [
+        56,
+        0,
+        8,
+        8
+      ],
+      "scorer": [
+        64,
+        0,
+        8,
+        8
+      ],
+      "style": [
+        72,
+        0,
+        8,
+        8
+      ]
+    },
+    "form": {
+      "win": [
+        0,
+        8,
+        8,
+        8
+      ],
+      "loss": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "otloss": [
+        16,
+        8,
+        8,
+        8
+      ],
+      "none": [
+        24,
+        8,
+        8,
+        8
+      ]
+    },
+    "style": {
+      "balanced": [
+        0,
+        16,
+        12,
+        12
+      ],
+      "physical": [
+        12,
+        16,
+        12,
+        12
+      ],
+      "shootFromAnywhere": [
+        24,
+        16,
+        12,
+        12
+      ],
+      "defensiveShell": [
+        36,
+        16,
+        12,
+        12
+      ],
+      "forecheck_aggressive": [
+        48,
+        16,
+        12,
+        12
+      ],
+      "forecheck_trap": [
+        60,
+        16,
+        12,
+        12
+      ],
+      "entry_carry": [
+        72,
+        16,
+        12,
+        12
+      ],
+      "entry_dumpAndChase": [
+        84,
+        16,
+        12,
+        12
+      ],
+      "forecheck_balanced": [
+        0,
+        16,
+        12,
+        12
+      ]
+    },
+    "note": "Stat and form cells are 8x8, style badges 12x12; style keys are the PlayStyle names in camelCase, forecheck_<value> and entry_<value>."
+  },
+  "colours": {
+    "text": "#efe0c2",
+    "value": "#f2c14e",
+    "muted": "#8a8790",
+    "barHome": "#f2c14e",
+    "barAway": "#7f9cae"
+  }
+}

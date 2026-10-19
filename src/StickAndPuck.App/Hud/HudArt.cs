@@ -103,6 +103,24 @@ namespace StickAndPuck.App.Hud
             DrawTextureRec(crestSheet, src, new(x, y), Color.White);
         }
 
+        /// <summary>Draws a club's crest scaled by a whole factor (the intro card's wells take it at 2x).</summary>
+        public void DrawCrest(string clubId, int x, int y, int scale)
+        {
+            if (!crests.TryGetValue(clubId, out Rectangle src))
+            {
+                src = crests[crestFallback];
+            }
+
+            DrawTexturePro(
+                crestSheet,
+                src,
+                new Rectangle(x, y, src.Width * scale, src.Height * scale),
+                new(0, 0),
+                0,
+                Color.White
+            );
+        }
+
         /// <summary>Draws one 8x8 icon.</summary>
         public void DrawIcon(string name, int x, int y)
         {
