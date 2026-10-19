@@ -3,8 +3,12 @@
 
 /** Every AudioContext the page created. */
 declare var __audio: AudioContext[];
-/** Sum of squared output samples, to prove the game makes sound. */
+/** Sum of squared samples read from the analyser taps, to prove the game makes sound. */
 declare var __audioEnergy: number;
+/** AnalyserNodes tapping every node the game connects to an AudioContext destination. */
+declare var __audioTaps: AnalyserNode[];
+/** Adds the squared samples currently in every tap to __audioEnergy and returns the total. */
+declare function __sampleAudio(): number;
 /** The simulated standard gamepad navigator.getGamepads() returns. */
 declare var __pad: {
     id: string;
