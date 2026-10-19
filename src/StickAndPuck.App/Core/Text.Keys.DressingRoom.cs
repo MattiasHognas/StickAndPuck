@@ -85,6 +85,9 @@ namespace StickAndPuck.App.Core
             /// <summary>FIGHT</summary>
             public const string InjuryFight = nameof(InjuryFight);
 
+            /// <summary>SUSPENDED</summary>
+            public const string Suspended = nameof(Suspended);
+
             /// <summary>OUT 1 GAME</summary>
             public const string InjuryOutOne = nameof(InjuryOutOne);
 

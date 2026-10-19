@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, strong form swings, no dressing room, no pre-game talk and no injuries.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, strong form swings, no dressing room, no pre-game talk, no injuries and no suspensions.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -49,6 +49,7 @@ namespace StickAndPuck.App.Core
             OverGlassMinor = false,
             IntermissionTalk = false,
             Injuries = false,
+            Suspensions = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -233,6 +234,26 @@ namespace StickAndPuck.App.Core
                     InjuryRate.Normal => 1f,
                     _ => throw new NotSupportedException("no injury scale for " + InjuryRate),
                 };
+
+        /// <summary>Gets a value indicating whether a second fight in a game or a match penalty (a game misconduct, or a
+        /// major and game misconduct) suspends the player for 1 to 3 of his club's next season games.</summary>
+        public bool Suspensions { get; init; } = true;
+
+        /// <summary>Gets how long suspensions are.</summary>
+        public SuspensionStrength SuspensionStrength { get; init; } = SuspensionStrength.Normal;
+
+        /// <summary>Gets the games <see cref="SuspensionStrength"/> adds to (or takes from) a suspension's offences.</summary>
+        [JsonIgnore]
+        public int SuspensionShift =>
+            SuspensionStrength switch
+            {
+                SuspensionStrength.Mild => -1,
+                SuspensionStrength.Strong => 1,
+                SuspensionStrength.Normal => 0,
+                _ => throw new NotSupportedException(
+                    "no suspension shift for " + SuspensionStrength
+                ),
+            };
 
         /// <summary>Gets how much the dressing room between season games shows, or Off to go straight to the table.</summary>
         public DressingRoomStyle DressingRoom { get; init; } = DressingRoomStyle.Full;

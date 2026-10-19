@@ -73,6 +73,7 @@ namespace StickAndPuck.App.Core
                 new Season.Injuries.InjurySystem(
                     Seeds.Dice(seed, "injuries", Season.Injuries.InjurySystem.Fallback)
                 ), // injuries from hard checks, blocked slap shots and punches
+                new Season.Suspensions.SuspensionSystem(), // suspensions for a second fight or a match penalty
                 new RefereeSystem(Seeds.Dice(seed, "referee", RefereeSystem.Fallback)), // skates, drops the puck, signals
                 new StatsSystem(), // player stats, player of the game
                 new ScheduleSystem(), // season schedule and standings

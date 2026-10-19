@@ -2,6 +2,7 @@ using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Arcade;
 using StickAndPuck.App.Season.DressingRoom.Dev;
+using StickAndPuck.App.Season.Injuries;
 using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Save;
@@ -10,7 +11,7 @@ using StickAndPuck.App.Season.Schedule;
 namespace StickAndPuck.App.Screens
 {
     /// <summary>The saves behind the headless captures of the polished screens (SAP_SCREEN=stats, table, sim,
-    /// trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
+    /// dressingroom, suspension, trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
     /// player's season and arcade saves are left alone.</summary>
     internal static class PolishScenes
     {
@@ -35,8 +36,20 @@ namespace StickAndPuck.App.Screens
                     Season(app, clubs, "sim-test.json", 5);
                     app.Screens.SimSeasonGame();
                     break;
-                case "dressingroom" or "coachtalk":
-                    Season(app, clubs, "dressingroom-test.json", 6);
+                case "dressingroom" or "coachtalk" or "suspension":
+                    Season(
+                        app,
+                        clubs,
+                        string.Equals(screen, "suspension", StringComparison.Ordinal)
+                            ? "suspension-test.json"
+                            : "dressingroom-test.json",
+                        6
+                    );
+                    if (string.Equals(screen, "suspension", StringComparison.Ordinal))
+                    {
+                        Suspend(app, clubs);
+                    }
+
                     app.Screens.SimSeasonGame(); // a season result: the dressing room under its score
                     if (app.Screens.Top.Is(t => t is SimResultScreen))
                     {
@@ -108,6 +121,41 @@ namespace StickAndPuck.App.Screens
                     $"SAP: screens: test season in {path}, {app.Season.Current.Select(s => s.Games.Count(g => g.Played)).Or(0)} games played"
                 )
             );
+        }
+
+        /// <summary>Suspends the human club's first centre for three games and its first right wing for one, as a
+        /// second fight and a match penalty in its last game would (SAP_SCREEN=suspension); the game settled
+        /// next serves one of them.</summary>
+        private static void Suspend(AppState app, IReadOnlyList<ClubData> clubs)
+        {
+            if (!app.Season.Current.TryGet(out SeasonState season))
+            {
+                return;
+            }
+
+            ClubData user = clubs.First(c =>
+                string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)
+            );
+            foreach (
+                (PlayingPosition position, int games) in new[]
+                {
+                    (PlayingPosition.C, 3),
+                    (PlayingPosition.RW, 2),
+                }
+            )
+            {
+                PlayerData p = user.Roster.First(x => x.Position == position);
+                season.Stats.Absences.Add(
+                    new Absence
+                    {
+                        Club = user.Id,
+                        Number = p.Number,
+                        Reason = AbsenceReason.Suspension,
+                        Games = games,
+                        GamesLeft = games,
+                    }
+                );
+            }
         }
 
         /// <summary>A fresh test season settled on paper to the end of the playoffs, so there is a champion.</summary>

@@ -39,6 +39,7 @@ namespace StickAndPuck.App.Audio
                 PuckOverGlass => [], // the whistle that follows is its own event
                 ShotBlocked b => [new(Sfx.Check, Hardness(b.Speed, 40) * 0.8f)],
                 PlayerInjured => [new(Sfx.Crowd, 0.4f)],
+                PlayerSuspended => [],
                 _ => throw new UnreachableException($"no sound cues for {e.GetType().Name}"),
             };
         }
@@ -68,6 +69,7 @@ namespace StickAndPuck.App.Audio
                 PuckOverGlass o => o.Position,
                 ShotBlocked b => b.Position,
                 PlayerInjured i => i.Position,
+                PlayerSuspended s => s.Position,
                 _ => throw new UnreachableException($"no position for {e.GetType().Name}"),
             };
         }
@@ -99,6 +101,7 @@ namespace StickAndPuck.App.Audio
                 new PuckOverGlass(time, at, 0, at, Direct: true),
                 new ShotBlocked(time, Side.Home, 0, at, 0, Slap: true),
                 new PlayerInjured(time, Side.Home, 0, at, 1, InjuryCause.Check),
+                new PlayerSuspended(time, Side.Home, 0, at, 1, SuspensionCause.MatchPenalty),
             ];
         }
 
