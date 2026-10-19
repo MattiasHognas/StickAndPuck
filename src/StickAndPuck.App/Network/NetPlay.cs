@@ -76,6 +76,39 @@ namespace StickAndPuck.App.Network
             return match.Is(m => ReferenceEquals(m, world));
         }
 
+        /// <summary>Gets the local device a slot's rumble goes to. Outside a network match (no local side) that is the
+        /// slot's own device. In one, both machines play two virtual pads whose numbers say nothing about this
+        /// machine's devices: the local player's slot rumbles the device they actually play with (no rumble
+        /// for keyboard and mouse), and the other player's slot rumbles nothing here.</summary>
+        /// <param name="slot">The slot the rumble is for.</param>
+        /// <param name="local">The club this machine's player plays in a network match; none otherwise.</param>
+        /// <param name="localDevice">This machine's player's device.</param>
+        public static InputDevice RumbleDevice(
+            InputSlot slot,
+            Maybe<Side> local,
+            InputDevice localDevice
+        )
+        {
+            bool network = local.TryGet(out Side mine);
+            bool mineAndPad =
+                slot.Side == mine
+                && slot.Device != InputDevice.None
+                && localDevice is InputDevice.Gamepad1 or InputDevice.Gamepad2;
+            return !network ? slot.Device
+                : mineAndPad ? localDevice
+                : InputDevice.None;
+        }
+
+        /// <summary>Gets the local device a slot of a world rumbles; see <see cref="RumbleDevice(InputSlot, Maybe{Side}, InputDevice)"/>.</summary>
+        public InputDevice RumbleDevice(World world, InputSlot slot)
+        {
+            return RumbleDevice(
+                slot,
+                Owns(world) ? Local : Maybe.None<Side>(),
+                LocalDevice(world.App)
+            );
+        }
+
         /// <summary>Starts lockstep on a match world the screens just started, over a session with the other side.</summary>
         public void Begin(World world, LockstepSession lockstep)
         {
@@ -219,9 +252,7 @@ namespace StickAndPuck.App.Network
             try
             {
                 Settings mine = app.Screens.Settings;
-                InputDevice device = Env.Is("SAP_HUMAN", "0")
-                    ? InputDevice.None
-                    : app.Screens.Prefs.Controls;
+                InputDevice device = LocalDevice(app);
                 DeviceState state = device switch
                 {
                     InputDevice.KeyboardMouse => InputDevices.Merge(
@@ -253,6 +284,12 @@ namespace StickAndPuck.App.Network
             {
                 DeviceInput.Set(shared);
             }
+        }
+
+        /// <summary>Gets this machine's player's device; SAP_HUMAN=0 lets the AI play this side.</summary>
+        private static InputDevice LocalDevice(AppState app)
+        {
+            return Env.Is("SAP_HUMAN", "0") ? InputDevice.None : app.Screens.Prefs.Controls;
         }
 
         private void AskToLeave()

@@ -130,7 +130,7 @@ namespace StickAndPuck.App.Camera
             {
                 bool scored = world.Setup.Inputs[slot].Side == e.Side;
                 world.App.Rumble.Pulse(
-                    world.Setup.Inputs[slot].Device,
+                    world.App.Network.RumbleDevice(world, world.Setup.Inputs[slot]),
                     scored ? 0.6f : 0.3f,
                     scored ? 1f : 0.3f,
                     scored ? 0.5f : 0.2f
@@ -192,7 +192,12 @@ namespace StickAndPuck.App.Camera
                 return;
             }
 
-            world.App.Rumble.Pulse(world.Setup.Inputs[slot].Device, strong, weak, seconds);
+            world.App.Rumble.Pulse(
+                world.App.Network.RumbleDevice(world, world.Setup.Inputs[slot]),
+                strong,
+                weak,
+                seconds
+            );
         }
     }
 }

@@ -103,6 +103,50 @@ namespace StickAndPuck.Tests.Network
         }
 
         [Test]
+        public void RumbleGoesToTheLocalPlayersDevice()
+        {
+            InputSlot host = new(InputDevice.Gamepad1, Side.Home);
+            InputSlot joiner = new(InputDevice.Gamepad2, Side.Away);
+            Maybe<Side> joining = Maybe.Some(Side.Away);
+            Maybe<Side> hosting = Maybe.Some(Side.Home);
+
+            Check(
+                NetPlay.RumbleDevice(joiner, joining, InputDevice.Gamepad1) == InputDevice.Gamepad1,
+                "the joiner on local pad 1 feels its slot-2 rumble on pad 1"
+            );
+            Check(
+                NetPlay.RumbleDevice(host, joining, InputDevice.Gamepad1) == InputDevice.None,
+                "the joiner does not feel the host's slot"
+            );
+            Check(
+                NetPlay.RumbleDevice(host, hosting, InputDevice.Gamepad2) == InputDevice.Gamepad2,
+                "the host on local pad 2 feels its slot-1 rumble on pad 2"
+            );
+            Check(
+                NetPlay.RumbleDevice(joiner, hosting, InputDevice.Gamepad2) == InputDevice.None,
+                "the host does not feel the joiner's slot"
+            );
+            Check(
+                NetPlay.RumbleDevice(joiner, joining, InputDevice.KeyboardMouse)
+                    == InputDevice.None,
+                "a keyboard player gets no rumble"
+            );
+            Check(
+                NetPlay.RumbleDevice(
+                    new InputSlot(InputDevice.None, Side.Away),
+                    joining,
+                    InputDevice.Gamepad1
+                ) == InputDevice.None,
+                "an AI-played local slot gets no rumble"
+            );
+            Check(
+                NetPlay.RumbleDevice(joiner, Maybe.None<Side>(), InputDevice.Gamepad1)
+                    == InputDevice.Gamepad2,
+                "outside a network match a slot rumbles its own device"
+            );
+        }
+
+        [Test]
         public void SessionWaitsForTheOtherSide()
         {
             (LoopLink a, LoopLink b) = LoopLink.Pair();
