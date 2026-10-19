@@ -7,7 +7,7 @@ These PNGs are only the starting point. make_ui.lua turns them into .aseprite fi
 the source of truth from then on; after editing one in Aseprite, export it back to its PNG and
 run `python3 make_ui.py fnt` if the font changed, so font.fnt follows the new glyph widths.
 
-Run: python3 art/scripts/make_ui.py [all|fnt]
+Run: python3 art/scripts/make_ui.py [all|fnt|title]  (title rebuilds only title.png and its ui.json entry)
 """
 import json
 import os
@@ -16,6 +16,7 @@ import sys
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import title_logo  # noqa: E402
 import ui_glyphs  # noqa: E402
 
 ART = os.environ.get("SAP_ART") or os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -372,40 +373,9 @@ def build_crests(meta):
 # ---------------------------------------------------------------- title logo
 
 def build_title(meta):
-    """'STICK & PUCK' in the font at 3x, gold with a light top, dark outline and a brick
-    drop shadow, over a stick and puck."""
-    text, s = "STICK & PUCK", 3
-    tw, th = text_width(text) * s, 7 * s
-    pad = 4
-    w, h = tw + 2 * pad, th + 2 * pad + 10
-    ink = Image.new("RGBA", (w, h), CLEAR)
-    draw_text(ink, pad, pad, text, GOLD, s)
-    # light top third, darker bottom row of each letter
-    for y in range(h):
-        for x in range(w):
-            if ink.getpixel((x, y)) == GOLD:
-                ry = (y - pad) % th
-                if ry < s:
-                    ink.putpixel((x, y), GOLD_L)
-                elif ry >= th - s:
-                    ink.putpixel((x, y), GOLD_D)
-    # stick under the words, with the blade at the right and a puck in front of it
-    sy = pad + th + 4
-    rect(ink, pad + 6, sy, tw - 22, 2, CREAM)
-    rect(ink, pad + tw - 16, sy, 10, 3, CREAM)
-    rect(ink, pad + tw - 16, sy + 2, 10, 1, GOLD_D)
-    rect(ink, pad + tw - 4, sy - 1, 5, 3, INK)
-    rect(ink, pad + tw - 3, sy - 1, 3, 1, PLUM2)
-    out = Image.new("RGBA", (w + 2, h + 2), CLEAR)
-    solid = [(x, y) for y in range(h) for x in range(w) if ink.getpixel((x, y))[3]]
-    for x, y in solid:                     # shadow one down-right
-        out.putpixel((x + 2, y + 2), BRICK)
-    for x, y in solid:                     # outline
-        for dx in (-1, 0, 1):
-            for dy in (-1, 0, 1):
-                out.putpixel((x + 1 + dx, y + 1 + dy), INK)
-    for x, y in solid:
-        out.putpixel((x + 1, y + 1), ink.getpixel((x, y)))
+    """The title logo, drawn by title_logo.py: gold italic block letters over a blue extrusion,
+    a red ampersand, and a gold-rimmed puck sliding out after the K."""
+    out = title_logo.build()
     out.save(os.path.join(UI, "title.png"))
     meta["title"] = {"file": "art/ui/title.png", "size": list(out.size)}
 
@@ -415,6 +385,15 @@ def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "all"
     if mode == "fnt":
         write_fnt()
+        return
+    if mode == "title":            # only the logo; keeps every other (hand-edited) PNG as it is
+        path = os.path.join(UI, "ui.json")
+        with open(path, encoding="utf-8") as f:
+            meta = json.load(f)
+        build_title(meta)
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(meta, f, indent=2, ensure_ascii=False)
+            f.write("\n")
         return
     meta = {"font": {"file": "art/ui/font.fnt", "image": "art/ui/font.png", "lineHeight": CELL_H + 1,
                      "capHeight": 7,

@@ -4,11 +4,13 @@
 --   scorebug slots, the panels' 9-slice centre, every crest cell and every icon cell.
 -- mode=export: saves every art/ui/*.aseprite back to its PNG after hand edits. If the font
 --   changed, run `python3 art/scripts/make_ui.py fnt` afterwards to refresh font.fnt.
--- Run: aseprite -b --script-param ui=<art/ui> --script-param pal=<.gpl> [--script-param mode=export] --script make_ui.lua
+-- only=<name>: handles just that one file, e.g. only=title after `make_ui.py title`.
+-- Run: aseprite -b --script-param ui=<art/ui> --script-param pal=<.gpl> [--script-param mode=export] [--script-param only=<name>] --script make_ui.lua
 local p = app.params
 local ui = p["ui"]
 local mode = p["mode"] or "make"
 local names = { "font", "scorebug", "panel", "panel_gold", "panel_red", "icons", "crests", "title" }
+if p["only"] then names = { p["only"] } end
 
 local function path(name, ext) return app.fs.joinPath(ui, name .. "." .. ext) end
 
