@@ -268,6 +268,15 @@ namespace StickAndPuck.App.Core
                 r => r.OverGlassMinor,
                 (r, v) => r with { OverGlassMinor = v }
             ),
+            Choice(
+                nameof(RuleSet.TooManyMen),
+                K.RuleTooManyMen,
+                K.RuleGroupInfractions,
+                plays: true,
+                Enum.GetValues<TooManyMenCall>(),
+                r => r.TooManyMen,
+                (r, v) => r with { TooManyMen = v }
+            ),
             Flag(
                 nameof(RuleSet.Fights),
                 K.RuleFights,

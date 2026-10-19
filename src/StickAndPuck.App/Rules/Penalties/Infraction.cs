@@ -39,6 +39,9 @@ namespace StickAndPuck.App.Rules.Penalties
         /// <summary>Delay of game: a club's second faceoff violation in the same faceoff (<see cref="RuleSet.FaceoffViolationMinor"/>), or the puck shot directly over the glass from the defending zone (<see cref="RuleSet.OverGlassMinor"/>).</summary>
         public const string DelayOfGame = "delay of game";
 
+        /// <summary>Too many men on the ice: a bench minor for a rushed change stepping on too early (<see cref="RuleSet.TooManyMen"/>).</summary>
+        public const string TooManyMen = "too many men";
+
         /// <summary>Gets an infraction's name as the penalty banner shows it, in the language shown.</summary>
         public static string Label(string infraction)
         {
@@ -56,13 +59,14 @@ namespace StickAndPuck.App.Rules.Penalties
                     Roughing => K.InfRoughing,
                     CheckingFromBehind => K.InfCheckingFromBehind,
                     DelayOfGame => K.InfDelayOfGame,
+                    TooManyMen => K.InfTooManyMen,
                     Fights.FightTuning.Infraction => K.InfFighting,
                     _ => K.InfPenalty,
                 }
             );
         }
 
-        /// <summary>Gets whether the rules let the referee call an infraction: six each have a switch, the rest are always called.</summary>
+        /// <summary>Gets whether the rules let the referee call an infraction: six each have a switch, too many men has its own rule, the rest are always called.</summary>
         public static bool Called(RuleSet rules, string infraction)
         {
             return infraction switch
@@ -74,6 +78,7 @@ namespace StickAndPuck.App.Rules.Penalties
                 Boarding => rules.Boarding,
                 Roughing => rules.Roughing,
                 CheckingFromBehind => rules.PenaltySeverity == PenaltySeverity.Full,
+                TooManyMen => rules.TooManyMen != TooManyMenCall.Off,
                 _ => true,
             };
         }

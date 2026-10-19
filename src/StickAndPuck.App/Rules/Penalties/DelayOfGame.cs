@@ -46,15 +46,14 @@ namespace StickAndPuck.App.Rules.Penalties
                 : offender;
         }
 
-        private static Maybe<Player> Teammate(World world, Player goalie)
+        /// <summary>Gets the skater of <paramref name="near"/>'s club on the ice and out of the box who is nearest him.</summary>
+        internal static Maybe<Player> Teammate(World world, Player near)
         {
             return
                 world
-                    .OnIce(goalie.Side)
+                    .OnIce(near.Side)
                     .Where(p => !p.IsGoalie && !PenaltyCalls.InBox(world, p.Id))
-                    .MinBy(p =>
-                        System.Numerics.Vector3.DistanceSquared(p.Position, goalie.Position)
-                    )
+                    .MinBy(p => System.Numerics.Vector3.DistanceSquared(p.Position, near.Position))
                     is { } skater
                 ? skater
                 : Maybe.None<Player>();

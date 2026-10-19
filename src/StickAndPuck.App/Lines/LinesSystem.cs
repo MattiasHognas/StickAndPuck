@@ -25,7 +25,9 @@ namespace StickAndPuck.App.Lines
     /// skaters head for the bench door and each one coming on steps out as one goes off; at a faceoff
     /// the change is instant. With <see cref="LineChanges.Automatic"/> the bench calls changes by
     /// itself; with <see cref="LineChanges.Manual"/> a human's club changes only on the change line
-    /// button, which works in both modes. AI clubs always change by themselves.</item>
+    /// button, which works in both modes. AI clubs always change by themselves. A second press while the
+    /// human's change on the fly is under way rushes it: the skaters coming on step out at once while those
+    /// going off still skate for the door, which can be too many men on the ice (<see cref="RuleSet.TooManyMen"/>).</item>
     /// <item>The goalie stays in unless he lets in <see cref="LinesTuning.GoalieGoals"/> in a short
     /// spell; then the backup comes in before the next faceoff.</item>
     /// <item>A club pulls its goalie for an extra attacker on a delayed call against the other
@@ -70,6 +72,7 @@ namespace StickAndPuck.App.Lines
             Tire(world, m.Phase == MatchPhase.Play, dt);
             CountGoals(world, b);
             GoaliePull.Update(world);
+            Dev.TooManyMenDemo.Update(world);
             Buttons(world, b);
             if (m.Phase == MatchPhase.Intermission && b.LastPhase != MatchPhase.Intermission)
             {
@@ -87,6 +90,7 @@ namespace StickAndPuck.App.Lines
                 {
                     if (b.Changing[(int)side].TryGet(out ShiftChange change))
                     {
+                        TooManyMen(world, change);
                         Progress(world, b, change);
                     }
                     else
@@ -186,7 +190,20 @@ namespace StickAndPuck.App.Lines
         {
             foreach (Player p in world.Players)
             {
-                if (p.Slot >= 0 && p.Command.ChangeLine)
+                if (p.Slot < 0 || !p.Command.ChangeLine)
+                {
+                    continue;
+                }
+
+                // a second press while the club's change is under way rushes it
+                if (
+                    world.Match.Phase == MatchPhase.Play
+                    && b.Changing[(int)p.Side].TryGet(out ShiftChange under)
+                )
+                {
+                    Rush(world, b, under);
+                }
+                else
                 {
                     b.Requested[(int)p.Side] = true;
                 }
@@ -363,6 +380,15 @@ namespace StickAndPuck.App.Lines
         private static void Hold(World world, LinesBoard b, Side side)
         {
             int s = (int)side;
+            if (b.Changing[s].TryGet(out ShiftChange change))
+            {
+                // a rushed change has both on the ice: the one who was going off goes now, so the club still has its skaters
+                foreach (Swap early in change.Swaps.Where(w => w.Early && !w.Done && w.Out.OnIce))
+                {
+                    Leave(early.Out);
+                }
+            }
+
             b.Changing[s] = Maybe.None<ShiftChange>();
             foreach (Group group in BothGroups)
             {

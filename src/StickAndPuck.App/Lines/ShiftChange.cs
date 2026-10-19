@@ -13,5 +13,11 @@ namespace StickAndPuck.App.Lines
     {
         /// <summary>Gets or sets a value indicating whether the line change event went out.</summary>
         public bool Announced { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether a human rushed the change: the skaters coming on stepped out at once.</summary>
+        public bool Rushed { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether the change drew a too many men call, so it draws no second one.</summary>
+        public bool Called { get; set; }
     }
 }
