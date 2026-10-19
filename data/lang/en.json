@@ -110,6 +110,7 @@
   "NhlChampions": "NHL CHAMPIONS",
   "NhlFinalTable": "NHL  FINAL STANDINGS",
   "NhlRound": "NHL  ROUND {0} OF {1}",
+  "ColOt": "OT",
   "WildCardTag": "WC{0}",
   "MissedPlayoffsPlace": "{0} MISSED THE PLAYOFFS ({1}TH)",
   "NextPlayoffGameV": "NEXT: {0} GAME {1} V {2}",

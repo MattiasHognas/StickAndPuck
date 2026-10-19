@@ -37,6 +37,9 @@ namespace StickAndPuck.App.Core
             /// <summary>NHL  ROUND {0} OF {1}</summary>
             public const string NhlRound = nameof(NhlRound);
 
+            /// <summary>OT: the overtime losses column of the NHL standings.</summary>
+            public const string ColOt = nameof(ColOt);
+
             /// <summary>WC{0}: a wild card's tag in the standings and the bracket.</summary>
             public const string WildCardTag = nameof(WildCardTag);
         }

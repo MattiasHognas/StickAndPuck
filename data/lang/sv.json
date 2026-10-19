@@ -110,6 +110,7 @@
   "NhlChampions": "NHL-MÄSTARE",
   "NhlFinalTable": "NHL  SLUTTABELL",
   "NhlRound": "NHL  OMGÅNG {0} AV {1}",
+  "ColOt": "ÖF",
   "WildCardTag": "WC{0}",
   "MissedPlayoffsPlace": "{0} MISSADE SLUTSPELET ({1}:A)",
   "NextPlayoffGameV": "NÄSTA: {0} MATCH {1} MOT {2}",

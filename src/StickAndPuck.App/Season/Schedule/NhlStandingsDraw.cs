@@ -9,7 +9,7 @@ using K = StickAndPuck.App.Core.Text.Keys;
 namespace StickAndPuck.App.Season.Schedule
 {
     /// <summary>The NHL standings by division: four blocks side by side, each conference's two divisions under
-    /// its name, every club as its code with games, wins, losses, overtime losses and points. The
+    /// its name, every club as its code with wins, losses, overtime losses and points (the round in the header gives the games played). The
     /// place column shows who would make the playoffs if the season ended now (1 to 3 in the division,
     /// WC1 and WC2 in the conference, <see cref="NhlSeeding"/>); the clubs outside are dimmed there.
     /// Used by the standings screen and the table panel after a season game.</summary>
@@ -119,15 +119,15 @@ namespace StickAndPuck.App.Season.Schedule
             }
         }
 
-        /// <summary>The column right edges in a block: games, wins, losses, overtime losses, points.</summary>
+        /// <summary>The column right edges in a block: wins, losses, overtime losses, points.</summary>
         private static int[] Columns(int block)
         {
-            return [block - 64, block - 50, block - 36, block - 22, block - 4];
+            return [block - 60, block - 45, block - 30, block - 4];
         }
 
         private static void DrawHeads(HudArt art, int bx, int block, int y, Color muted)
         {
-            string[] heads = [K.ColGp, K.ColW, K.ColL, K.ColOtl, K.ColPts];
+            string[] heads = [K.ColW, K.ColL, K.ColOt, K.ColPts];
             int[] cols = Columns(block);
             for (int c = 0; c < heads.Length; c++)
             {
@@ -160,7 +160,6 @@ namespace StickAndPuck.App.Season.Schedule
             int[] cols = Columns(block);
             string[] cells =
             [
-                N(r.Played),
                 N(r.Wins + r.OvertimeWins),
                 N(r.Losses),
                 N(r.OvertimeLosses),
