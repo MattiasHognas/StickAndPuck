@@ -172,6 +172,15 @@ namespace StickAndPuck.App.Core
             /// <summary>OVERTIME IN {0}</summary>
             public const string IntermissionOvertime = nameof(IntermissionOvertime);
 
+            /// <summary>TIME-OUT</summary>
+            public const string TimeOut = nameof(TimeOut);
+
+            /// <summary>PLAY RESUMES IN {0}</summary>
+            public const string TimeOutLeft = nameof(TimeOutLeft);
+
+            /// <summary>TIME-OUT {0}, the pause menu row that calls a club's time-out</summary>
+            public const string CallTimeOut = nameof(CallTimeOut);
+
             /// <summary>MOMENTUM</summary>
             public const string Momentum = nameof(Momentum);
 

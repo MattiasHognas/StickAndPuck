@@ -48,6 +48,7 @@ namespace StickAndPuck.App.Players.Input
                 Punch = shoot,
                 Block = Key(GameAction.Block),
                 Accept = Key(GameAction.AcceptFight),
+                TimeOut = Key(GameAction.TimeOut),
                 Pause = Key(GameAction.Pause),
             };
         }
@@ -96,6 +97,7 @@ namespace StickAndPuck.App.Players.Input
                 Punch = shoot,
                 Block = Button(GameAction.Block),
                 Accept = Button(GameAction.AcceptFight),
+                TimeOut = Button(GameAction.TimeOut),
                 Pause = Button(GameAction.Pause),
             };
         }
@@ -158,6 +160,7 @@ namespace StickAndPuck.App.Players.Input
                 Punch = a.Punch || b.Punch,
                 Block = a.Block || b.Block,
                 Accept = a.Accept || b.Accept,
+                TimeOut = a.TimeOut || b.TimeOut,
                 Pause = a.Pause || b.Pause,
             };
         }

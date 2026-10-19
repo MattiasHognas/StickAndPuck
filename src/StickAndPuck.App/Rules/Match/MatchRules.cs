@@ -42,6 +42,11 @@ namespace StickAndPuck.App.Rules.Match
 
                     break;
                 case MatchPhase.Faceoff:
+                    if (TimeOuts.Update(world, s))
+                    {
+                        break; // a time-out called before the drop: back to the stoppage
+                    }
+
                     // players hold their spots until the puck drops
                     FaceoffFormation.Place(world, s.Dot, s.Draw.Kicked);
                     FaceoffDraw.Step(world, s, dt);
@@ -55,8 +60,10 @@ namespace StickAndPuck.App.Rules.Match
                     Play(world, s, dt);
                     break;
                 case MatchPhase.Stopped:
+                    _ = TimeOuts.Update(world, s);
                     if (Wait(s, dt))
                     {
+                        s.TimeOut.Running = Maybe.None<Side>();
                         MatchFlow.SetUpFaceoff(world, s.Dot);
                     }
 

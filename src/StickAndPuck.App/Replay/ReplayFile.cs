@@ -106,6 +106,7 @@ namespace StickAndPuck.App.Replay
                     CultureInfo.InvariantCulture,
                     $"{f.Side} {f.PlayerId} {V(f.Position)} {f.TakerId}"
                 ),
+                TimeOutCalled t => $"{t.Side}",
                 _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
             };
             return string.Create(

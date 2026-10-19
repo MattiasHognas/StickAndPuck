@@ -150,6 +150,9 @@ namespace StickAndPuck.App.Core
             /// <summary>INTERMISSION</summary>
             public const string RuleIntermission = nameof(RuleIntermission);
 
+            /// <summary>TIME-OUT</summary>
+            public const string RuleTimeOut = nameof(RuleTimeOut);
+
             /// <summary>STANDARD</summary>
             public const string RuleValueStandard = nameof(RuleValueStandard);
 

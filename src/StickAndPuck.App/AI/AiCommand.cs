@@ -23,7 +23,7 @@ namespace StickAndPuck.App.AI
     /// another action for that skater (<see cref="Committed"/>).</item>
     /// <item>Pass, Check and Deke: decisions only (<see cref="Act"/>). Decisions also tap Shoot for a
     /// receiver one-timing a pass, before the puck reaches him.</item>
-    /// <item>SwitchPlayer, ChangeLine, Punch, Block, AcceptFight, Pause: never the AI's.</item>
+    /// <item>SwitchPlayer, ChangeLine, Punch, Block, AcceptFight, TimeOut, Pause: never the AI's.</item>
     /// </list>
     /// <para>Merge rules, in one place:</para>
     /// <list type="number">

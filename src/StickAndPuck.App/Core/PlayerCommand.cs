@@ -39,6 +39,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets or sets a value indicating whether the player accepts a fight that was offered.</summary>
         public bool AcceptFight { get; set; }
 
+        /// <summary>Gets or sets a value indicating whether the human asked for the club's time-out this step.</summary>
+        public bool TimeOut { get; set; }
+
         /// <summary>Gets or sets a value indicating whether pause was pressed this step.</summary>
         public bool Pause { get; set; }
     }

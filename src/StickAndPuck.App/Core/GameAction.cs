@@ -48,6 +48,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Toggle the camera zoom.</summary>
         Zoom,
 
+        /// <summary>Call the club's time-out at a stoppage.</summary>
+        TimeOut,
+
         /// <summary>Pause the match.</summary>
         Pause,
     }
