@@ -58,19 +58,34 @@ const origin = `http://127.0.0.1:${server.address().port}`;
 async function instrument(page) {
     await instrumentRendering(page);
     await page.addInitScript(() => {
+        // Tap whatever the game connects to an AudioContext's destination with an AnalyserNode,
+        // so the check reads the PCM that actually reaches the speakers.
         window.__audio = [];
+        window.__audioTaps = [];
         window.__audioEnergy = 0;
         const NativeAudio = window.AudioContext;
         window.AudioContext = class extends NativeAudio {
             constructor(...args) { super(...args); window.__audio.push(this); }
-            createScriptProcessor(...args) {
-                const processor = super.createScriptProcessor(...args);
-                queueMicrotask(() => processor.addEventListener('audioprocess', event => {
-                    const samples = event.outputBuffer.getChannelData(0);
-                    for (const value of samples) window.__audioEnergy += value * value;
-                }));
-                return processor;
+        };
+        const connect = AudioNode.prototype.connect;
+        AudioNode.prototype.connect = function (destination, ...rest) {
+            const result = connect.call(this, destination, ...rest);
+            if (destination instanceof AudioDestinationNode) {
+                const analyser = this.context.createAnalyser();
+                analyser.fftSize = 2048;
+                connect.call(this, analyser);
+                window.__audioTaps.push(analyser);
             }
+            return result;
+        };
+        // Adds the squared samples currently in every tap's window; silence keeps it at zero.
+        window.__sampleAudio = () => {
+            for (const analyser of window.__audioTaps) {
+                const samples = new Float32Array(analyser.fftSize);
+                analyser.getFloatTimeDomainData(samples);
+                for (const value of samples) window.__audioEnergy += value * value;
+            }
+            return window.__audioEnergy;
         };
         window.__pad = { id: 'Browser Standard Gamepad', index: 0, connected: true, mapping: 'standard', timestamp: 1,
             axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
@@ -136,7 +151,7 @@ async function verifyBrowser(name) {
         await open(page);
         assert.equal(await page.evaluate(() => __audio.length), 0, 'Audio starts only after Start.');
         await start(page);
-        await page.waitForFunction(() => __audio.some(audio => audio.state === 'running') && __audioEnergy > 0, null, { timeout: 10000 });
+        await page.waitForFunction(() => __audio.some(audio => audio.state === 'running') && __sampleAudio() > 0, null, { timeout: 10000 });
         assert(logs.some(line => line.includes('3 music tracks loaded')), 'All music loads from shared virtual files.');
         assert(logs.some(line => line.includes('font.fnt] Font loaded successfully')), 'BMFont resolves its adjacent PNG.');
         assert(logs.some(line => line.includes('Loaded animation: skater_')), 'Skater animation clips load.');
@@ -274,7 +289,7 @@ async function verifyBrowser(name) {
     } catch (error) {
         const diagnostics = await page.evaluate(async () => {
             const api = (await getDotnetRuntime(0).getAssemblyExports('StickAndPuck.dll')).StickAndPuck.App.Core.BrowserHost;
-            return { input: api.Input(), audio: __audio.map(audio => audio.state), audioEnergy: __audioEnergy,
+            return { input: api.Input(), audio: __audio.map(audio => audio.state), audioTaps: __audioTaps.length, audioEnergy: __sampleAudio(),
                 frames: __frames.length, pad: __pad };
         }).catch(error => ({ error: String(error) }));
         await writeFile(resolve(artifacts, `${name}-failure.json`), JSON.stringify(diagnostics, null, 2));
