@@ -1,4 +1,5 @@
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Challenges;
 using StickAndPuck.App.Season.Injuries;
 using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.News;
@@ -69,6 +70,9 @@ namespace StickAndPuck.App.Season.Schedule
 
         /// <summary>Gets or sets the trade deadline: its offers and the trades made (see <see cref="TradeDesk"/>); empty in an older save.</summary>
         public SeasonTrades Trades { get; set; } = new();
+
+        /// <summary>Gets or sets the coach's challenges, the open one and those settled (see <see cref="ChallengeDesk"/>); empty in an older save.</summary>
+        public IList<SeasonChallenge> Challenges { get; set; } = [];
 
         /// <summary>Gets the number of rounds.</summary>
         public int Rounds => Games.Count == 0 ? 0 : Games.Max(g => g.Round) + 1;
