@@ -92,6 +92,9 @@ namespace StickAndPuck.App.Season.Stats
                     case ShotSaved save:
                         HandleShotSaved(save);
                         break;
+                    case PlayerInjured injury:
+                        HandleInjury(injury);
+                        break;
                     case GoalScored goal when !shootout:
                         HandleGoal(w, goal);
                         break;
@@ -129,7 +132,8 @@ namespace StickAndPuck.App.Season.Stats
                     or OffsideCalled
                     or FaceoffViolated
                     or TimeOutCalled
-                    or PuckOverGlass:
+                    or PuckOverGlass
+                    or ShotBlocked:
                         break;
                     default:
                         throw new NotSupportedException(
@@ -198,6 +202,25 @@ namespace StickAndPuck.App.Season.Stats
             }
         }
 
+        /// <summary>Writes an injury on the sheet, so a season game's injury reaches the season's absence list.</summary>
+        private void HandleInjury(PlayerInjured injury)
+        {
+            if (Line(injury.PlayerId).TryGet(out MatchStatLine line))
+            {
+                Sheet.Absences.Add(
+                    new Injuries.Absence
+                    {
+                        Club = line.Club,
+                        Number = line.Number,
+                        Reason = Injuries.AbsenceReason.Injury,
+                        Cause = injury.Cause,
+                        Games = injury.Games,
+                        GamesLeft = injury.Games,
+                    }
+                );
+            }
+        }
+
         private void HandleShotSaved(ShotSaved save)
         {
             if (Line(save.GoalieId).TryGet(out MatchStatLine goalie))
@@ -240,6 +263,7 @@ namespace StickAndPuck.App.Season.Stats
             Sheet.Home = w.Setup.Home.Id;
             Sheet.Away = w.Setup.Away.Id;
             Sheet.Lines.Clear();
+            Sheet.Absences.Clear();
             Sheet.PlayerOfGame = Maybe.None<MatchStatLine>();
             foreach (Player p in w.Players)
             {

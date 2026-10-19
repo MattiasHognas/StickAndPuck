@@ -115,6 +115,14 @@ namespace StickAndPuck.App.Replay
                     CultureInfo.InvariantCulture,
                     $"{V(o.Position)} {o.PlayerId} {V(o.From)} {o.Direct}"
                 ),
+                ShotBlocked b => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{b.Side} {b.BlockerId} {V(b.Position)} {b.Speed:R} {b.Slap}"
+                ),
+                PlayerInjured i => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{i.Side} {i.PlayerId} {V(i.Position)} {i.Games} {i.Cause}"
+                ),
                 _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
             };
             return string.Create(

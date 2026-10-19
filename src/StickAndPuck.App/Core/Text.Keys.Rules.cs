@@ -243,6 +243,15 @@ namespace StickAndPuck.App.Core
             /// <summary>FORM STRENGTH</summary>
             public const string RuleFormStrength = nameof(RuleFormStrength);
 
+            /// <summary>INJURIES</summary>
+            public const string RuleInjuries = nameof(RuleInjuries);
+
+            /// <summary>INJURY RATE</summary>
+            public const string RuleInjuryRate = nameof(RuleInjuryRate);
+
+            /// <summary>FREQUENT</summary>
+            public const string RuleValueFrequent = nameof(RuleValueFrequent);
+
             /// <summary>PRESET</summary>
             public const string Preset = nameof(Preset);
 

@@ -70,6 +70,9 @@ namespace StickAndPuck.App.Core
                 new OvertimeRules(Seeds.Dice(seed, "overtime", OvertimeRules.Fallback)), // c 3 on 3, shootout
                 new PenaltyRules(), // calls, box, power play
                 new FightSystem(),
+                new Season.Injuries.InjurySystem(
+                    Seeds.Dice(seed, "injuries", Season.Injuries.InjurySystem.Fallback)
+                ), // injuries from hard checks, blocked slap shots and punches
                 new RefereeSystem(Seeds.Dice(seed, "referee", RefereeSystem.Fallback)), // skates, drops the puck, signals
                 new StatsSystem(), // player stats, player of the game
                 new ScheduleSystem(), // season schedule and standings

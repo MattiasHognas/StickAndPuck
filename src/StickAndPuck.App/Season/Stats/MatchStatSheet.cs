@@ -20,6 +20,10 @@ namespace StickAndPuck.App.Season.Stats
         /// <summary>Gets or sets every player's line, home club first.</summary>
         public ICollection<MatchStatLine> Lines { get; set; } = [];
 
+        /// <summary>Gets or sets the players this match puts out of their club's next season games (an injury, a
+        /// suspension); the season adds them to its <see cref="Injuries.AbsenceTable"/> when it credits the game.</summary>
+        public ICollection<Injuries.Absence> Absences { get; set; } = [];
+
         /// <summary>Gets or sets the player of the game, None only when nobody played.</summary>
         public Maybe<MatchStatLine> PlayerOfGame { get; set; }
 

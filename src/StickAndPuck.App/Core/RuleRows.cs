@@ -346,6 +346,23 @@ namespace StickAndPuck.App.Core
                 r => r.FormStrength,
                 (r, v) => r with { FormStrength = v }
             ),
+            Flag(
+                nameof(RuleSet.Injuries),
+                K.RuleInjuries,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.Injuries,
+                (r, v) => r with { Injuries = v }
+            ),
+            Choice(
+                nameof(RuleSet.InjuryRate),
+                K.RuleInjuryRate,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<InjuryRate>(),
+                r => r.InjuryRate,
+                (r, v) => r with { InjuryRate = v }
+            ),
             Choice(
                 nameof(RuleSet.DressingRoom),
                 K.RuleDressingRoom,

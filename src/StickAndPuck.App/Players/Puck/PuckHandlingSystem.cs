@@ -53,6 +53,7 @@ namespace StickAndPuck.App.Players.Puck
         private Vector3 lastPuck;
         private Maybe<(Side Side, int Passer, float At)> lastPass;
         private Maybe<(Side Side, float At)> lastShot;
+        private bool lastShotSlap;
         private readonly Dictionary<int, float> armed = [];
         private readonly Dictionary<int, (float At, Vector2 Side, float Speed)> deking = [];
         private readonly Dictionary<int, float> dekedAt = [];
@@ -319,6 +320,7 @@ namespace StickAndPuck.App.Players.Puck
             );
             Release(world, p, velocity);
             lastShot = (p.Side, world.Time);
+            lastShotSlap = shot.Kind == ShotKind.Slap;
             world.Events.Publish(new ShotTaken(world.Time, p.Side, p.Id, from, velocity.Length()));
         }
 
@@ -373,6 +375,7 @@ namespace StickAndPuck.App.Players.Puck
             p.Begin(PlayerAction.Shoot);
             p.ActionTime = PuckHandling.StrikeDelay; // the clip at the sweep, where the puck leaves
             lastShot = (p.Side, world.Time);
+            lastShotSlap = true;
             world.Events.Publish(new ShotTaken(world.Time, p.Side, p.Id, from, velocity.Length()));
         }
 
@@ -405,7 +408,7 @@ namespace StickAndPuck.App.Players.Puck
 
             if (block)
             {
-                Block(pk, best);
+                Block(world, best);
                 return;
             }
             if (armed.ContainsKey(best.Id))
@@ -513,9 +516,21 @@ namespace StickAndPuck.App.Players.Puck
                 && relative > BlockSpeed;
         }
 
-        /// <summary>A blocked shot: the puck comes off the stick or the shin pads slower, knocked off to one side, loose.</summary>
-        private void Block(Core.Puck pk, Player p)
+        /// <summary>A blocked shot: the puck comes off the stick or the shin pads slower, knocked off to one side, loose.
+        /// Publishes <see cref="ShotBlocked"/>, from which a blocked slap shot may injure the blocker.</summary>
+        private void Block(World world, Player p)
         {
+            Core.Puck pk = world.Puck;
+            world.Events.Publish(
+                new ShotBlocked(
+                    world.Time,
+                    p.Side,
+                    p.Id,
+                    pk.Position,
+                    (pk.Velocity - p.Velocity).Length(),
+                    lastShotSlap
+                )
+            );
             lastShot = Maybe.None<(Side Side, float At)>();
             float angle = (0.5f + (rng.NextSingle() * 1.2f)) * (rng.Next(2) == 0 ? -1 : 1);
             Vector2 flat = new(pk.Velocity.X, pk.Velocity.Z);

@@ -1,4 +1,5 @@
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Injuries;
 using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
@@ -188,11 +189,12 @@ namespace StickAndPuck.App.Season.Schedule
             return count;
         }
 
-        /// <summary>The club as this season's games play it: its players' traits moved by their carry-over form,
-        /// under the season's stored rules (SHL until its first game stores them).</summary>
+        /// <summary>The club as this season's games play it: without its injured and suspended players, and its
+        /// players' traits moved by their carry-over form, under the season's stored rules (SHL until its
+        /// first game stores them).</summary>
         public ClubData InForm(ClubData club)
         {
-            return Stats.Form.Apply(club, Rules.Or(RuleSet.Shl));
+            return Stats.Form.Apply(Stats.Absences.Without(club), Rules.Or(RuleSet.Shl));
         }
 
         /// <summary>Gets the trait points a player's carry-over form moves in this season, for the arrow by the name.</summary>
@@ -208,7 +210,8 @@ namespace StickAndPuck.App.Season.Schedule
         }
 
         /// <summary>The match setup for a game, so the season starts a match the same way exhibition, arcade and
-        /// versus do: SHL rules, keyboard and mouse on the human's club, and both clubs' morale.</summary>
+        /// versus do: SHL rules, keyboard and mouse on the human's club, both clubs' morale, their form and
+        /// their rosters without the injured and suspended players (<see cref="AbsenceTable"/>).</summary>
         public MatchSetup SetupFor(
             Fixture game,
             IReadOnlyList<ClubData> clubs,
@@ -231,8 +234,10 @@ namespace StickAndPuck.App.Season.Schedule
                 : Side.Away;
             Side other = side == Side.Home ? Side.Away : Side.Home;
             RuleSet rules = Rules.Or(RuleSet.Shl);
-            ClubData home = Find(game.Home),
-                away = Find(game.Away);
+            List<string> absent = [.. Stats.Absences.Out(Find(game.Home))];
+            absent.AddRange(Stats.Absences.Out(Find(game.Away)));
+            ClubData home = AbsenceTable.Without(Find(game.Home), absent),
+                away = AbsenceTable.Without(Find(game.Away), absent);
             Dictionary<string, int> form = new(
                 Stats.Form.Nudges(home, rules),
                 StringComparer.Ordinal
@@ -253,6 +258,7 @@ namespace StickAndPuck.App.Season.Schedule
                 Morale = TeamMorale.ForGame(this, game.Home, game.Away),
                 Form = form,
                 StartEnergy = NewsDesk.StartEnergy(this, game),
+                Absent = absent,
             };
         }
     }
