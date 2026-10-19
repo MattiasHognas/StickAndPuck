@@ -15,6 +15,7 @@ namespace StickAndPuck.App.Core
             typeof(MaybeJsonConverter<OvertimeFormat>),
             typeof(MaybeJsonConverter<float>),
             typeof(MaybeJsonConverter<MatchMorale>),
+            typeof(MaybeJsonConverter<CoachTalk>),
         ]
     )]
     [JsonSerializable(typeof(ReplayHeader))]
@@ -22,5 +23,6 @@ namespace StickAndPuck.App.Core
     [JsonSerializable(typeof(OvertimeFormat))]
     [JsonSerializable(typeof(float))]
     [JsonSerializable(typeof(MatchMorale))]
+    [JsonSerializable(typeof(CoachTalk))]
     internal sealed partial class ReplayJsonContext : JsonSerializerContext;
 }

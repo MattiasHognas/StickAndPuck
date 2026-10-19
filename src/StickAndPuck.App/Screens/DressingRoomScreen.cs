@@ -38,10 +38,7 @@ namespace StickAndPuck.App.Screens
                     ? K.StartPlayoffsItem
                     : K.PlayNextGame
             );
-            List<MenuItem> items =
-            [
-                new MenuItem(play, Flow.PlaySeasonGame, enabled: Flow.SeasonHasNextGame()),
-            ];
+            List<MenuItem> items = [new MenuItem(play, Play, enabled: Flow.SeasonHasNextGame())];
             if (Flow.Settings.SimGame)
             {
                 items.Add(
@@ -61,6 +58,19 @@ namespace StickAndPuck.App.Screens
             );
             items.Add(new MenuItem(Text.Get(K.MainMenu), Back));
             return items;
+        }
+
+        /// <summary>Plays the next game: through the coach's pre-game talk when the season's rules have it
+        /// (<see cref="RuleSet.PreGameTalk"/>), else straight away.</summary>
+        private void Play()
+        {
+            if (Rules(App).PreGameTalk)
+            {
+                Flow.Push(new CoachTalkScreen(App));
+                return;
+            }
+
+            Flow.PlaySeasonGame();
         }
 
         /// <inheritdoc/>
@@ -256,7 +266,7 @@ namespace StickAndPuck.App.Screens
         }
 
         /// <summary>Breaks text into lines that fit a width, at spaces.</summary>
-        private static List<string> Wrap(ScreenArt art, string text, int width)
+        internal static List<string> Wrap(ScreenArt art, string text, int width)
         {
             List<string> lines = [];
             string line = "";
@@ -282,7 +292,8 @@ namespace StickAndPuck.App.Screens
             return lines;
         }
 
-        private static RuleSet Rules(AppState app)
+        /// <summary>Gets the rules the current season plays: those in its save, or the player's choice before its first game stores them.</summary>
+        internal static RuleSet Rules(AppState app)
         {
             return
                 app.Season.Current.TryGet(out SeasonState season)

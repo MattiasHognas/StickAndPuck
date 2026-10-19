@@ -5,7 +5,7 @@ namespace StickAndPuck.App.Momentum
     /// <summary>A short team boost after a goal, a fight won or a big hit. The boost tops up the energy of the
     /// club's skaters on the ice (a second wind: skating and shots already read energy), drains over
     /// about twenty seconds of live play, swells the crowd and shows on the HUD. In a season game a club in
-    /// good spirits starts with some boost already (<see cref="StartLevel"/>). A goal ends the other
+    /// good spirits starts with some boost already (<see cref="StartLevel"/>), more after a fired-up pre-game talk (<see cref="CoachTalk"/>). A goal ends the other
     /// club's boost. Others read it through <see cref="Of"/>.</summary>
     public static class MomentumMeter
     {
@@ -42,12 +42,16 @@ namespace StickAndPuck.App.Momentum
         private static MomentumState Fresh(MatchSetup setup)
         {
             MomentumState s = new();
-            if (setup.Morale.TryGet(out MatchMorale morale))
+            foreach (Side side in new[] { Side.Home, Side.Away })
             {
-                foreach (Side side in new[] { Side.Home, Side.Away })
-                {
-                    s.Level[(int)side] = StartLevel(morale.Of(side), setup.Rules);
-                }
+                float morale = setup.Morale.TryGet(out MatchMorale m)
+                    ? StartLevel(m.Of(side), setup.Rules)
+                    : 0f;
+                s.Level[(int)side] = Math.Clamp(
+                    morale + CoachTalk.MomentumStart(setup, side),
+                    0f,
+                    1f
+                ); // a fired-up club starts with a head start
             }
 
             return s;

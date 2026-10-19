@@ -56,6 +56,10 @@ namespace StickAndPuck.App.Core
             return StartEnergy.Count > (int)side ? StartEnergy[(int)side] : 1f;
         }
 
+        /// <summary>Gets the coach's pre-game talk the human's club heard before a season game, or None
+        /// (<see cref="CoachTalk"/> reads its effects); a replay stores it.</summary>
+        public Maybe<CoachTalk> Talk { get; init; }
+
         /// <summary>This setup played by a rule set: the set goes on <see cref="Rules"/>, and its overtime
         /// switch picks the format. A setup whose mode pinned its own <see cref="OvertimeFormat"/> is a
         /// playoff game and takes <see cref="RuleSet.PlayoffOvertime"/>, keeping the mode's own

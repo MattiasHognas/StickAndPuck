@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale,
-        /// plain faceoffs (no violations, nearest dot) and strong form swings.</summary>
+        /// plain faceoffs (no violations, nearest dot), strong form swings, no dressing room and no pre-game talk.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -44,6 +44,7 @@ namespace StickAndPuck.App.Core
             DressingRoom = DressingRoomStyle.Off,
             News = false,
             CoachReaction = false,
+            PreGameTalk = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -237,6 +238,25 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets how readily the coach reacts: how big a lead, a loss or a pile of saves or penalties it takes.</summary>
         public CoachTemper CoachTemper { get; init; } = CoachTemper.Normal;
+
+        /// <summary>Gets a value indicating whether the coach gives a pre-game talk before a season game played from the dressing room, its tone changing how the club plays that match.</summary>
+        public bool PreGameTalk { get; init; } = true;
+
+        /// <summary>Gets how much the pre-game talk counts.</summary>
+        public TalkStrength TalkStrength { get; init; } = TalkStrength.Normal;
+
+        /// <summary>Gets the factor on the pre-game talk's effects for <see cref="TalkStrength"/>, 0 with <see cref="PreGameTalk"/> off.</summary>
+        [JsonIgnore]
+        public float TalkScale =>
+            !PreGameTalk
+                ? 0f
+                : TalkStrength switch
+                {
+                    TalkStrength.Mild => 0.5f,
+                    TalkStrength.Strong => 1.5f,
+                    TalkStrength.Normal => 1f,
+                    _ => throw new NotSupportedException("no talk scale for " + TalkStrength),
+                };
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

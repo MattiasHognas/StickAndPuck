@@ -140,7 +140,8 @@ Use these with `SAP_SCENE=start` (the default scene). `SAP_LEAGUE=nhl` loads the
 | `stats` | Season statistics and player of the game from a fresh test season with 12 user games simulated. |
 | `table` | The standings of a fresh test season with 20 user games simulated, played by the `SAP_RULES` preset's table points and tiebreak (SHL 3-2-1-0, NHL 2-2-1-0). |
 | `sim` | A test season with five user games simulated, then “sim this game”. |
-| `dressingroom` | The dressing room after a season result: a test season with six user games simulated, then one more settled with “sim this game” and its score closed. Enter on PLAY NEXT GAME starts the next game. `SAP_NEWS=flu` (or `rookie`, `contract`, `travel`, `fannight`) puts that card of data/season/news.json in play first, so the news shows it. `SAP_REACTION=hattrick` (or `shutout`, `blownlead`, `lostfight`) rewrites the last game as one the human played with that moment in it, so the coach reacts to it (W127). |
+| `dressingroom` | The dressing room after a season result: a test season with six user games simulated, then one more settled with “sim this game” and its score closed. Enter on PLAY NEXT GAME opens the pre-game talk (or starts the next game with the talk rule off). `SAP_NEWS=flu` (or `rookie`, `contract`, `travel`, `fannight`) puts that card of data/season/news.json in play first, so the news shows it. `SAP_REACTION=hattrick` (or `shutout`, `blownlead`, `lostfight`) rewrites the last game as one the human played with that moment in it, so the coach reacts to it (W127). |
+| `coachtalk` | The `dressingroom` fixture with PLAY NEXT GAME picked: the coach's pre-game talk and its three tones (keep calm, fire them up, demand discipline), each starting the next game with its effect. |
 | `trophy` | The season champion after a test season and playoffs. |
 | `arcadetrophy` | The trophy for a completed three-lives arcade run. |
 | `bestruns` | The arcade best-run board with sample finished runs. |

@@ -35,7 +35,7 @@ namespace StickAndPuck.App.Screens
                     Season(app, clubs, "sim-test.json", 5);
                     app.Screens.SimSeasonGame();
                     break;
-                case "dressingroom":
+                case "dressingroom" or "coachtalk":
                     Season(app, clubs, "dressingroom-test.json", 6);
                     app.Screens.SimSeasonGame(); // a season result: the dressing room under its score
                     if (app.Screens.Top.Is(t => t is SimResultScreen))
@@ -60,6 +60,11 @@ namespace StickAndPuck.App.Screens
                         throw new InvalidOperationException(
                             $"SAP_REACTION={reaction}: use {StagedReaction.Kinds}"
                         );
+                    }
+
+                    if (string.Equals(screen, "coachtalk", StringComparison.Ordinal))
+                    {
+                        app.Screens.Push(new CoachTalkScreen(app)); // PLAY NEXT GAME: the pre-game talk
                     }
 
                     break;
