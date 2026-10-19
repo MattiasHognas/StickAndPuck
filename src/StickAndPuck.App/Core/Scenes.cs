@@ -69,6 +69,11 @@ namespace StickAndPuck.App.Core
                         .FirstOrDefault(c =>
                             string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase)
                         )
+                    ?? Clubs
+                        .LoadAll()
+                        .FirstOrDefault(c =>
+                            string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase)
+                        ) // an SHL id while the menus list the NHL clubs
                     ?? throw new InvalidOperationException($"{variable}={id} is not a club id")
                 );
         }

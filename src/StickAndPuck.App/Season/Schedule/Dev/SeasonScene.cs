@@ -20,6 +20,7 @@ namespace StickAndPuck.App.Season.Schedule.Dev
         /// <inheritdoc/>
         public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
         {
+            clubs = Leagues.ClubsFromEnvironment(clubs); // SAP_LEAGUE=nhl, or an NHL id in SAP_CLUB or SAP_HOME, plays the NHL
             SeasonState season = SeasonScenes.Open(app, clubs);
             bool human = !Env.Is("SAP_HUMAN", "0");
             if (

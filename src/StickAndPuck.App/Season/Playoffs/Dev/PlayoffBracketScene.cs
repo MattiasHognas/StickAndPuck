@@ -11,6 +11,7 @@ namespace StickAndPuck.App.Season.Playoffs.Dev
         /// <inheritdoc/>
         public World Create(IReadOnlyList<ClubData> clubs, Settings settings, AppState app)
         {
+            clubs = Leagues.ClubsFromEnvironment(clubs); // SAP_LEAGUE=nhl, or an NHL id in SAP_CLUB or SAP_HOME, plays the NHL
             PlayoffScenes.OpenTestSeason(app, clubs);
             _ = app.Playoffs.Open();
             if (app.Playoffs.Current.TryGet(out PlayoffState playoffs))

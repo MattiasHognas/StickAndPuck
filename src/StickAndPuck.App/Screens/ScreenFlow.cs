@@ -15,6 +15,8 @@ namespace StickAndPuck.App.Screens
         private readonly List<Screen> stack = [];
         private Maybe<World> next;
         private Maybe<ScreenPrefs> matchPrefs;
+        private IReadOnlyList<ClubData> shlClubs = [];
+        private IReadOnlyList<ClubData> nhlClubs = [];
 
         /// <summary>Gets a value indicating whether the screens run (the start scene was picked).</summary>
         public bool Active { get; private set; }
@@ -22,7 +24,52 @@ namespace StickAndPuck.App.Screens
         /// <summary>Gets a value indicating whether the player chose Quit.</summary>
         public bool QuitRequested { get; private set; }
 
-        public IReadOnlyList<ClubData> Clubs { get; private set; } = [];
+        /// <summary>Gets the clubs of the league the menus play in (<see cref="League"/>).</summary>
+        public IReadOnlyList<ClubData> Clubs => ClubsOf(League);
+
+        /// <summary>Gets the league the menus play in: the player's pick (<see cref="ScreenPrefs.League"/>), or
+        /// SAP_LEAGUE=shl|nhl, which is never saved.</summary>
+        public League League =>
+            Leagues.Parse(Env.Get("SAP_LEAGUE")).TryGet(out League forced) ? forced : Prefs.League;
+
+        /// <summary>Gets a league's clubs, read once.</summary>
+        public IReadOnlyList<ClubData> ClubsOf(League league)
+        {
+            if (league == League.Nhl && nhlClubs.Count == 0)
+            {
+                nhlClubs = Core.Clubs.LoadNhl();
+            }
+            else if (league == League.Shl && shlClubs.Count == 0)
+            {
+                shlClubs = Core.Clubs.LoadAll();
+            }
+
+            return league == League.Nhl ? nhlClubs : shlClubs;
+        }
+
+        /// <summary>Picks the league the menus play in. Its clubs show on team select, its season and
+        /// arcade saves are the ones continued, and the rules go to the league's preset (the player can
+        /// change them after). The sessions of the other league close and the menu rink shows the new
+        /// league's clubs. The caller saves the settings.</summary>
+        public void PickLeague(League league)
+        {
+            if (league == Prefs.League)
+            {
+                return;
+            }
+
+            Prefs = Prefs with { League = league, Rules = RuleChoice.Of(Leagues.Preset(league)) };
+            EndSessions();
+            if (Active && !Playing.HasValue)
+            {
+                Backdrop = Maybe.None<MatchSetup>();
+                next = MenuWorld();
+            }
+
+            Console.WriteLine(
+                $"SAP: screens: league {league}, {Clubs.Count} clubs, {Prefs.Rules.Resolve().Name} rules"
+            );
+        }
 
         /// <summary>Gets or sets the player's settings as saved; <see cref="Settings"/> is what runs.</summary>
         public ScreenPrefs Prefs { get; set; } = new();
@@ -46,7 +93,7 @@ namespace StickAndPuck.App.Screens
         public World Begin(IReadOnlyList<ClubData> clubs, Screen first)
         {
             Active = true;
-            Clubs = clubs;
+            UseClubs(clubs);
             Prefs = ScreenPrefsFile.Read();
             app.MenuScript.Load();
             stack.Clear();
@@ -386,8 +433,8 @@ namespace StickAndPuck.App.Screens
         )
         {
             Active = true;
-            Clubs = clubs;
-            Prefs = prefs;
+            UseClubs(clubs);
+            Prefs = prefs with { League = setup.League }; // the menus behind the replay list its league's clubs
             stack.Clear();
             World world = Build(setup, seed);
             matchPrefs = Maybe.None<ScreenPrefs>();
@@ -461,6 +508,19 @@ namespace StickAndPuck.App.Screens
             app.Season.End();
             app.Playoffs.End();
             app.Arcade.End();
+        }
+
+        /// <summary>Keeps the clubs the game loaded as their league's list.</summary>
+        private void UseClubs(IReadOnlyList<ClubData> clubs)
+        {
+            if (Leagues.Of(clubs) == League.Nhl)
+            {
+                nhlClubs = clubs;
+            }
+            else
+            {
+                shlClubs = clubs;
+            }
         }
 
         private string Describe()

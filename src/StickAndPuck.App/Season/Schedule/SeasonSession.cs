@@ -37,10 +37,10 @@ namespace StickAndPuck.App.Season.Schedule
         /// <summary>Gets a value indicating whether the season changed since it was last saved.</summary>
         public bool Unsaved { get; internal set; }
 
-        /// <summary>Continues the season saved at <see cref="SeasonSave.DefaultPath"/>.</summary>
+        /// <summary>Continues the season saved for the clubs' league (<see cref="SeasonSave.PathFor"/>).</summary>
         public Maybe<SeasonState> Continue(IReadOnlyList<ClubData> clubs)
         {
-            return Continue(clubs, SeasonSave.DefaultPath);
+            return Continue(clubs, SeasonSave.PathFor(Leagues.Of(clubs)));
         }
 
         /// <summary>Continues the saved season.</summary>
@@ -64,16 +64,16 @@ namespace StickAndPuck.App.Season.Schedule
             return season;
         }
 
-        /// <summary>Starts a new season with a random seed at <see cref="SeasonSave.DefaultPath"/>, replacing any save, and saves it at once.</summary>
+        /// <summary>Starts a new season with a random seed at the clubs' league save (<see cref="SeasonSave.PathFor"/>), replacing that save, and saves it at once.</summary>
         public SeasonState StartNew(IReadOnlyList<ClubData> clubs, string userClub)
         {
-            return StartNew(clubs, userClub, Maybe.None<int>(), SeasonSave.DefaultPath);
+            return StartNew(clubs, userClub, Maybe.None<int>());
         }
 
-        /// <summary>Starts a new season at <see cref="SeasonSave.DefaultPath"/>, replacing any save, and saves it at once.</summary>
+        /// <summary>Starts a new season at the clubs' league save (<see cref="SeasonSave.PathFor"/>), replacing that save, and saves it at once.</summary>
         public SeasonState StartNew(IReadOnlyList<ClubData> clubs, string userClub, Maybe<int> seed)
         {
-            return StartNew(clubs, userClub, seed, SeasonSave.DefaultPath);
+            return StartNew(clubs, userClub, seed, SeasonSave.PathFor(Leagues.Of(clubs)));
         }
 
         /// <summary>Starts a new season, replacing any save, and saves it at once.</summary>

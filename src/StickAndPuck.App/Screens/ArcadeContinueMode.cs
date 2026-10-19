@@ -19,7 +19,7 @@ namespace StickAndPuck.App.Screens
         /// <inheritdoc/>
         public override bool Available(AppState app)
         {
-            return ArcadeSession.CanContinue();
+            return ArcadeSession.CanContinue(app.Screens.League); // the run saved for the league picked
         }
 
         /// <inheritdoc/>

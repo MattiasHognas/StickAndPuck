@@ -18,6 +18,13 @@ namespace StickAndPuck.App.Season.Save
                 ? Path.GetFullPath(p)
                 : SavedFiles.DefaultPath("season.json");
 
+        /// <summary>Gets a league's season save: <see cref="DefaultPath"/> for the SHL (so a save from before
+        /// league choice is the SHL save), season_nhl.json beside it for the NHL.</summary>
+        public static string PathFor(League league)
+        {
+            return Leagues.SavePath(league, DefaultPath);
+        }
+
         /// <summary>Gets a value indicating whether a season save exists, for the start screen's Continue.</summary>
         public static bool Exists()
         {

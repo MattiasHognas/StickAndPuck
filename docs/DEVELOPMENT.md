@@ -67,7 +67,7 @@ in sync when upgrading.
 ## Match settings
 
 - `SAP_HOME`, `SAP_AWAY`: club ids, one of `bjorkloven brynas djurgarden farjestad frolunda hv71 linkoping lulea malmo orebro rogle skelleftea timra vaxjo`, or an NHL club id from data/clubs/nhl/ (for example `oilers`, `maple_leafs`). Default: the first two clubs alphabetically.
-- `SAP_CLUB`: your club id for a new season, playoff or arcade run. Default: `SAP_HOME`, else the first club.
+- `SAP_CLUB`: your club id for a new season, playoff or arcade run; an NHL club id plays that scene in the NHL, on the NHL save. Default: `SAP_HOME`, else the first club.
 - `SAP_PERIOD`: seconds per period. Default: the settings screen's period length in `start`, `season`, `playoffs`, `arcade` and `versussetup`; 1200 in `match`, `aimatch`, `versus`, `positioning`, `lines`, `penalty` and `fight`; 25 in `matchdemo`; 120 in `goalieswap`; 5 in `overtime`.
 - `SAP_OT`: seconds of an overtime period in the `overtime`, `season`, `playoffs` and `arcade` scenes. Default 15 in `overtime`, the normal 5 minutes (20 in `playoffs`) elsewhere.
 - `SAP_START`: `overtime` or `shootout` skips straight there in the `overtime` scene (`overtime` with `SAP_PLAYOFF=1` opens in the Zamboni break before it). Default: play regulation first.
@@ -77,7 +77,7 @@ in sync when upgrading.
 - `SAP_ARCADE=new`: starts a new arcade run over the save. Default: continue the save.
 - `SAP_ARCADE_RULE`: `lives` (default) or `suddendeath`, the rule for a new arcade run.
 - `SAP_SEED`: integer; fixes the season schedule or the arcade opponent order, and is the match seed: every system draws its dice from its own stream of it, so the same seed and the same inputs play the same match on every machine. Default: random for a season or arcade and for a match started from the menus (printed on the "screens: match" line and kept in its replay), fixed test seeds for a scene.
-- `SAP_SAVE`, `SAP_ARCADE_SAVE`: paths for the season and arcade save files. Default: `season.json` and `arcade.json` in the [settings folder](PLAYING.md#settings-and-saves).
+- `SAP_SAVE`, `SAP_ARCADE_SAVE`: paths for the season and arcade save files. Default: `season.json` and `arcade.json` in the [settings folder](PLAYING.md#settings-and-saves). These are the SHL saves; the NHL saves sit beside them with `_nhl` before the extension (`season_nhl.json`).
 - `SAP_VERSUS_P2`: `keyboard`, `pad1` or `pad2`, player two's device in `versus`. Default: the settings screen's player 2 controls (the first gamepad), or the keyboard when player one holds that device; OFF hands the visitors to the AI. Both players never get the same device.
 - `SAP_IQ_HOME`, `SAP_IQ_AWAY`: 0 to 100, sets every skater's hockey IQ for that club in `aimatch`. Default: each player's own value.
 - `SAP_GOALIE_REFLEXES`: 0 to 100, overrides the goalie's reflexes in the `goalie` scene. Default: the goalie's own value.
@@ -91,7 +91,7 @@ in sync when upgrading.
 
 - `SAP_NET_ADDRESS`, `SAP_NET_PORT`, `SAP_NET_DELAY`: the online versus lobby's starting host address to join (default `127.0.0.1`), TCP port (default 7777) and the host's input delay in steps (1 to 15, default 4). The lobby screen changes them for the run. Desktop only.
 
-- `SAP_LEAGUE=shl|nhl`: the league whose clubs the run loads; `nhl` plays the season, playoff and screen scenes as an NHL season (82 games by division and conference, NHL rules, the 16-club division playoff). Default `shl`.
+- `SAP_LEAGUE=shl|nhl`: the league whose clubs the run loads; `nhl` plays the season, playoff and screen scenes as an NHL season (82 games by division and conference, NHL rules, the 16-club division playoff). In the menus it overrides the league picked on the start screen or team select without saving it. Default `shl`; in the `season`, `playoffs`, `arcade`, `seasontable`, `playoffbracket` and `arcadesummary` scenes an NHL id in `SAP_CLUB` or `SAP_HOME` also picks the NHL; in the menus, the league last picked (SHL at first).
 - `SAP_RULES=shl|arcade|nhl`: chooses the rule preset in the menu flow and the overtime and faceoff scenes without saving that override; arcade modes retain their Arcade preset. Individual dev scenes can set up their own rules.
 
 ## Visuals, sound and input

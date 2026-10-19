@@ -123,7 +123,9 @@ namespace StickAndPuck.App.Screens
         private static (IReadOnlyList<ArcadeRecord> Records, int Place) Board(AppState app)
         {
             string path =
-                app.Arcade.SavePath.Length > 0 ? app.Arcade.SavePath : ArcadeSave.DefaultPath;
+                app.Arcade.SavePath.Length > 0 && Leagues.Of(app.Arcade.Clubs) == app.Screens.League
+                    ? app.Arcade.SavePath
+                    : ArcadeSave.PathFor(app.Screens.League); // each league keeps its own board
             Maybe<ArcadeRun> open = app.Arcade.Current.HasValue
                 ? app.Arcade.Current
                 : ArcadeSave.Read(path);
