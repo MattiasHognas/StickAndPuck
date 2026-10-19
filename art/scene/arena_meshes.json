@@ -23,6 +23,78 @@
   },
   {
    "index": 1,
+   "part": "Banners",
+   "material": "banner_0",
+   "vertices": 96,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 2,
+   "part": "Banners",
+   "material": "banner_1",
+   "vertices": 96,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 3,
+   "part": "Banners",
+   "material": "banner_2",
+   "vertices": 96,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 4,
+   "part": "Banners",
+   "material": "banner_3",
+   "vertices": 96,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 5,
+   "part": "Banners",
+   "material": "banner_4",
+   "vertices": 72,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 6,
+   "part": "Banners",
+   "material": "banner_5",
+   "vertices": 72,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 7,
+   "part": "Banners",
+   "material": "banner_stripe",
+   "vertices": 1584,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 8,
+   "part": "Banners",
+   "material": "banner_gold",
+   "vertices": 528,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 9,
+   "part": "Banners",
+   "material": "banner_rod",
+   "vertices": 528,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 10,
    "part": "Bench",
    "material": "bench_deck",
    "vertices": 48,
@@ -30,7 +102,7 @@
    "textured": false
   },
   {
-   "index": 2,
+   "index": 11,
    "part": "Bench",
    "material": "bench_seat",
    "vertices": 48,
@@ -38,7 +110,7 @@
    "textured": false
   },
   {
-   "index": 3,
+   "index": 12,
    "part": "Bench",
    "material": "bench_wall",
    "vertices": 192,
@@ -46,7 +118,7 @@
    "textured": false
   },
   {
-   "index": 4,
+   "index": 13,
    "part": "Bench",
    "material": "bench_cap",
    "vertices": 48,
@@ -54,7 +126,7 @@
    "textured": false
   },
   {
-   "index": 5,
+   "index": 14,
    "part": "Bench",
    "material": "bench_step",
    "vertices": 48,
@@ -62,7 +134,7 @@
    "textured": false
   },
   {
-   "index": 6,
+   "index": 15,
    "part": "BenchDoors",
    "material": "door_panel",
    "vertices": 48,
@@ -70,7 +142,7 @@
    "textured": false
   },
   {
-   "index": 7,
+   "index": 16,
    "part": "BenchDoors",
    "material": "door_edge",
    "vertices": 144,
@@ -78,7 +150,7 @@
    "textured": false
   },
   {
-   "index": 8,
+   "index": 17,
    "part": "Boards",
    "material": "boards",
    "vertices": 520,
@@ -86,7 +158,7 @@
    "textured": false
   },
   {
-   "index": 9,
+   "index": 18,
    "part": "Boards",
    "material": "kick",
    "vertices": 520,
@@ -94,7 +166,7 @@
    "textured": false
   },
   {
-   "index": 10,
+   "index": 19,
    "part": "Boards",
    "material": "cap",
    "vertices": 520,
@@ -102,7 +174,7 @@
    "textured": false
   },
   {
-   "index": 11,
+   "index": 20,
    "part": "BoxDoors",
    "material": "door_panel",
    "vertices": 48,
@@ -110,7 +182,7 @@
    "textured": false
   },
   {
-   "index": 12,
+   "index": 21,
    "part": "BoxDoors",
    "material": "door_edge",
    "vertices": 144,
@@ -118,7 +190,7 @@
    "textured": false
   },
   {
-   "index": 13,
+   "index": 22,
    "part": "Floor",
    "material": "floor",
    "vertices": 4,
@@ -126,7 +198,7 @@
    "textured": false
   },
   {
-   "index": 14,
+   "index": 23,
    "part": "Glass",
    "material": "glass",
    "vertices": 616,
@@ -134,7 +206,7 @@
    "textured": false
   },
   {
-   "index": 15,
+   "index": 24,
    "part": "Ice",
    "material": "ice",
    "vertices": 52,
@@ -142,7 +214,7 @@
    "textured": false
   },
   {
-   "index": 16,
+   "index": 25,
    "part": "Lanterns",
    "material": "lantern",
    "vertices": 648,
@@ -150,7 +222,7 @@
    "textured": false
   },
   {
-   "index": 17,
+   "index": 26,
    "part": "Lanterns",
    "material": "lantern_cap",
    "vertices": 648,
@@ -158,7 +230,7 @@
    "textured": false
   },
   {
-   "index": 18,
+   "index": 27,
    "part": "Lanterns",
    "material": "cable",
    "vertices": 2592,
@@ -166,7 +238,7 @@
    "textured": false
   },
   {
-   "index": 19,
+   "index": 28,
    "part": "LED",
    "material": "led",
    "vertices": 520,
@@ -174,7 +246,15 @@
    "textured": false
   },
   {
-   "index": 20,
+   "index": 29,
+   "part": "Logo",
+   "material": "blue_line",
+   "vertices": 96,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 30,
    "part": "Markings",
    "material": "red_line",
    "vertices": 868,
@@ -182,15 +262,15 @@
    "textured": false
   },
   {
-   "index": 21,
+   "index": 31,
    "part": "Markings",
    "material": "blue_line",
-   "vertices": 276,
+   "vertices": 180,
    "unlit": false,
    "textured": false
   },
   {
-   "index": 22,
+   "index": 32,
    "part": "Markings",
    "material": "crease",
    "vertices": 44,
@@ -198,7 +278,7 @@
    "textured": false
   },
   {
-   "index": 23,
+   "index": 33,
    "part": "Nets",
    "material": "net_frame",
    "vertices": 720,
@@ -206,7 +286,7 @@
    "textured": false
   },
   {
-   "index": 24,
+   "index": 34,
    "part": "Nets",
    "material": "net",
    "vertices": 868,
@@ -214,7 +294,7 @@
    "textured": false
   },
   {
-   "index": 25,
+   "index": 35,
    "part": "PenaltyBox",
    "material": "box_deck",
    "vertices": 48,
@@ -222,7 +302,7 @@
    "textured": false
   },
   {
-   "index": 26,
+   "index": 36,
    "part": "PenaltyBox",
    "material": "box_seat",
    "vertices": 48,
@@ -230,7 +310,7 @@
    "textured": false
   },
   {
-   "index": 27,
+   "index": 37,
    "part": "PenaltyBox",
    "material": "box_wall",
    "vertices": 192,
@@ -238,7 +318,7 @@
    "textured": false
   },
   {
-   "index": 28,
+   "index": 38,
    "part": "PenaltyBox",
    "material": "box_cap",
    "vertices": 48,
@@ -246,7 +326,7 @@
    "textured": false
   },
   {
-   "index": 29,
+   "index": 39,
    "part": "Posts",
    "material": "post",
    "vertices": 1272,
@@ -254,7 +334,7 @@
    "textured": false
   },
   {
-   "index": 30,
+   "index": 40,
    "part": "Stands",
    "material": "stand_a",
    "vertices": 3120,
@@ -262,7 +342,7 @@
    "textured": false
   },
   {
-   "index": 31,
+   "index": 41,
    "part": "Stands",
    "material": "stand_b",
    "vertices": 2600,
@@ -270,10 +350,18 @@
    "textured": false
   },
   {
-   "index": 32,
+   "index": 42,
    "part": "Stands",
    "material": "fascia",
    "vertices": 520,
+   "unlit": false,
+   "textured": false
+  },
+  {
+   "index": 43,
+   "part": "Trapezoid",
+   "material": "red_line",
+   "vertices": 16,
    "unlit": false,
    "textured": false
   }

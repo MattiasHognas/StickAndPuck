@@ -14,7 +14,9 @@ namespace StickAndPuck.App.Arena
     /// arena_meshes.json says which part and material each mesh is, since Raylib keeps no names.
     /// Lit parts use the toon shader; ad boards, lanterns and LEDs are unlit; the ice sheet is a
     /// flat cold grey and the glass a flat translucent tint, both from <see cref="ArenaLook"/> so
-    /// their tones can follow the lighting without taking its warmth.</summary>
+    /// their tones can follow the lighting without taking its warmth. The league layers (A17, <see cref="ArenaLayers"/>)
+    /// pick per match between the 'SHL' centre mark and the home crest (<see cref="CentreIce"/>), the line colours,
+    /// the rafter banners and the trapezoid.</summary>
     internal sealed class ArenaSystem : ISystem, IDisposable
     {
         private enum Kind
@@ -35,8 +37,26 @@ namespace StickAndPuck.App.Arena
             "Posts",
         }.ToFrozenSet(StringComparer.Ordinal);
 
-        private readonly List<(int Mesh, Kind Kind, bool Occludes, bool Ice, bool Sheet)> meshes =
-        [];
+        // the line colour a Markings or Trapezoid mesh takes in an NHL arena, if any
+        private enum Line
+        {
+            None,
+            Red,
+            Blue,
+        }
+
+        private readonly List<(
+            int Mesh,
+            Kind Kind,
+            bool Occludes,
+            bool Ice,
+            bool Sheet,
+            string Part,
+            Line Line
+        )> meshes = [];
+        private readonly Dictionary<int, Color> baseColours = []; // line and banner meshes' own colours
+        private readonly CentreIce centreIce = new();
+        private bool trapezoid;
         private readonly IceBands bands = new();
         private readonly IceScratches scratches = new();
         private readonly CrowdRenderer crowd = new();
@@ -70,12 +90,23 @@ namespace StickAndPuck.App.Arena
                 {
                     "Glass" => Kind.Glass,
                     "LED" => Kind.Unlit,
+                    "Banners" => Kind.Unlit, // flat in the crowd's light: the toon ramp leaves faces square to the rink in shadow
                     "Bench" or "BenchDoors" => Kind.Lit, // the benches behind the far boards and the door outlines on them
                     "PenaltyBox" or "BoxDoors" => Kind.Lit, // the penalty boxes behind the near boards and their door outlines
                     "Lanterns" when string.Equals(name, "lantern", StringComparison.Ordinal) =>
                         Kind.Unlit, // the glowing shade, not cap or cable
                     _ => unlit ? Kind.Unlit : Kind.Lit,
                 };
+                Line line =
+                    string.Equals(part, "Markings", StringComparison.Ordinal)
+                    || string.Equals(part, "Trapezoid", StringComparison.Ordinal)
+                        ? name switch
+                        {
+                            "red_line" => Line.Red,
+                            "blue_line" => Line.Blue,
+                            _ => Line.None,
+                        }
+                        : Line.None;
                 meshes.Add(
                     (
                         index,
@@ -83,7 +114,9 @@ namespace StickAndPuck.App.Arena
                         Occluders.Contains(part),
                         string.Equals(part, "Ice", StringComparison.Ordinal)
                             || string.Equals(part, "Floor", StringComparison.Ordinal),
-                        string.Equals(part, "Ice", StringComparison.Ordinal)
+                        string.Equals(part, "Ice", StringComparison.Ordinal),
+                        part,
+                        line
                     )
                 );
             }
@@ -96,7 +129,16 @@ namespace StickAndPuck.App.Arena
                     SetTextureFilter(albedo.Texture, TextureFilter.Point);
                 }
             }
+            foreach ((int mesh, _, _, _, _, string part, Line line) in meshes)
+            {
+                if (line != Line.None || string.Equals(part, "Banners", StringComparison.Ordinal))
+                {
+                    baseColours[mesh] = MaterialAccess.Albedo(MaterialOf(mesh)).Color; // the dusk colour an SHL arena keeps
+                }
+            }
             maskMaterial = LoadMaterialDefault();
+            centreIce.Load();
+            trapezoid = ArenaLayers.TrapezoidFromEnvironment();
             bands.Build();
             scratches.Load();
             crowd.Load(world);
@@ -136,26 +178,64 @@ namespace StickAndPuck.App.Arena
         public void DrawScene(World world, RenderContext render)
         {
             Shader shaderDefault = OperatingSystem.IsBrowser() ? render.Unlit : maskMaterial.Shader; // Raylib's default shader: texture times colour, no light
+            ArenaLayers layers = ArenaLayers.For(world.League, trapezoid);
             // The goalie, referee and puck are drawn before the arena, so the ice sheet and the bands and
             // skate scratches on it all keep the depth test to stay behind them. The sheet writes no depth
             // while the overlays go down, since millimetres apart they z-fight at rink distance; a depth-only
             // pass of the sheet afterwards puts the ice depth back for the markings and everything else.
-            DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: false);
+            DrawPass(
+                render,
+                shaderDefault,
+                world.Look.Ice,
+                world.Look.Crowd,
+                layers,
+                ice: true,
+                sheet: false
+            );
             Rlgl.DisableDepthMask();
-            DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: true);
+            DrawPass(
+                render,
+                shaderDefault,
+                world.Look.Ice,
+                world.Look.Crowd,
+                layers,
+                ice: true,
+                sheet: true
+            );
             bands.Draw(world.Look.IceBand);
+            if (layers.HomeCrest)
+            {
+                centreIce.Draw(world.Setup.Home.Id, CentreIce.Tone(world.Look.Ice)); // under the scratches, like a logo painted under the ice
+            }
+
             scratches.Draw(world.Look.Scratch);
             Rlgl.EnableDepthMask();
             ColorWrite.Set(enabled: false);
-            DrawPass(render, shaderDefault, world.Look.Ice, ice: true, sheet: true);
+            DrawPass(
+                render,
+                shaderDefault,
+                world.Look.Ice,
+                world.Look.Crowd,
+                layers,
+                ice: true,
+                sheet: true
+            );
             Rlgl.DrawRenderBatchActive();
             ColorWrite.Set(enabled: true);
-            DrawPass(render, shaderDefault, world.Look.Ice, ice: false, sheet: false);
+            DrawPass(
+                render,
+                shaderDefault,
+                world.Look.Ice,
+                world.Look.Crowd,
+                layers,
+                ice: false,
+                sheet: false
+            );
             crowd.Draw(world, render, shaderDefault, world.Look.Crowd);
 
             // glass last and without depth, so players behind it still draw; flat colour over the crowd
             Rlgl.DisableDepthMask();
-            foreach ((int mesh, Kind kind, bool _, bool _, bool _) in meshes)
+            foreach ((int mesh, Kind kind, _, _, _, _, _) in meshes)
             {
                 if (kind != Kind.Glass)
                 {
@@ -174,19 +254,30 @@ namespace StickAndPuck.App.Arena
         /// <param name="render">The scene's shaders.</param>
         /// <param name="unlit">The shader for unlit parts.</param>
         /// <param name="iceTone">The ice sheet's tone.</param>
+        /// <param name="crowdLight">The light on the crowd, which the rafter banners take too.</param>
+        /// <param name="layers">The league layers this match shows.</param>
         /// <param name="ice">Whether to draw the ice group (the sheet and the floor) or everything else.</param>
         /// <param name="sheet">Within the ice group, whether to draw the sheet itself or the rest of it.</param>
         private void DrawPass(
             RenderContext render,
             Shader unlit,
             Color iceTone,
+            Color crowdLight,
+            ArenaLayers layers,
             bool ice,
             bool sheet
         )
         {
-            foreach ((int mesh, Kind kind, bool _, bool isIce, bool isSheet) in meshes)
+            foreach (
+                (int mesh, Kind kind, _, bool isIce, bool isSheet, string part, Line line) in meshes
+            )
             {
-                if (kind == Kind.Glass || isIce != ice || (ice && isSheet != sheet))
+                if (
+                    kind == Kind.Glass
+                    || isIce != ice
+                    || (ice && isSheet != sheet)
+                    || !layers.Shows(part)
+                )
                 {
                     continue;
                 }
@@ -197,6 +288,23 @@ namespace StickAndPuck.App.Arena
                 if (isSheet)
                 {
                     MaterialAccess.Albedo(mat).Color = iceTone;
+                }
+                else if (line != Line.None)
+                {
+                    // set on every draw: the Logo shares blue_line with the markings, and the next match may be the other league
+                    MaterialAccess.Albedo(mat).Color = layers.NhlLines
+                        ? (line == Line.Red ? ArenaLayers.NhlRed : ArenaLayers.NhlBlue)
+                        : baseColours[mesh];
+                }
+                else if (string.Equals(part, "Banners", StringComparison.Ordinal))
+                {
+                    Color c = baseColours[mesh];
+                    MaterialAccess.Albedo(mat).Color = new Color(
+                        (byte)(c.R * crowdLight.R / 255),
+                        (byte)(c.G * crowdLight.G / 255),
+                        (byte)(c.B * crowdLight.B / 255),
+                        c.A
+                    );
                 }
 
                 DrawArenaMesh(mesh, mat);
@@ -214,7 +322,7 @@ namespace StickAndPuck.App.Arena
                 material.Shader = render.Unlit;
             }
 
-            foreach ((int mesh, Kind _, bool occludes, bool _, bool _) in meshes)
+            foreach ((int mesh, _, bool occludes, _, _, _, _) in meshes)
             {
                 if (occludes)
                 {
@@ -245,6 +353,7 @@ namespace StickAndPuck.App.Arena
         public void Dispose()
         {
             scratches.Unload();
+            centreIce.Unload();
             crowd.Unload();
             UnloadMaterial(maskMaterial);
             UnloadModel(model);
