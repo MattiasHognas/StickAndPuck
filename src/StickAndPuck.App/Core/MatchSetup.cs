@@ -40,6 +40,10 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets both clubs' team morale as a season game starts, or None outside a season; the momentum meter starts from it.</summary>
         public Maybe<MatchMorale> Morale { get; init; }
 
+        /// <summary>Gets a value indicating whether the two clubs are rivals (<see cref="Rivals"/>), decided when the
+        /// match is set up and kept in its replay; <see cref="Rivals.Playing"/> also asks the rules.</summary>
+        public bool Rivalry { get; init; }
+
         /// <summary>Gets the carry-over form nudges a season match plays with, trait points by "club#number", with
         /// the season news events' trait points added; empty outside the season. <see cref="Home"/> and <see cref="Away"/> already carry them in their traits;
         /// a replay stores these to build the same clubs again.</summary>

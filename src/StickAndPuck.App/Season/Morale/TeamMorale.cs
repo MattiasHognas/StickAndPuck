@@ -5,7 +5,8 @@ namespace StickAndPuck.App.Season.Morale
 {
     /// <summary>Team morale: one number per club, 0 to 100 with 50 neutral, kept in <see cref="SeasonState.Morale"/>
     /// and saved with the season. Every result moves it (a regulation win more than an overtime one, a big
-    /// margin and a streak of three or more add to it) and it drifts back toward neutral, so it stays a
+    /// margin and a streak of three or more add to it, a result against a rival swings it further,
+    /// <see cref="Rivals.MoraleFactor"/>) and it drifts back toward neutral, so it stays a
     /// story of recent form rather than a running total. It starts the momentum meter of a season game
     /// (<see cref="MatchMorale"/> on the setup) and tilts <see cref="QuickSim"/>. <see cref="RuleSet.Morale"/>
     /// turns it off and <see cref="RuleSet.MoraleStrength"/> scales it; other systems move it with
@@ -161,7 +162,9 @@ namespace StickAndPuck.App.Season.Morale
                 }
             }
 
-            change = (change * scale) - ((Of(season, club) - Neutral) * Drift);
+            // a result against a rival counts for more (W131)
+            float rivalry = Rivals.MoraleFactor(season.Rules.Or(RuleSet.Shl), game.Home, game.Away);
+            change = (change * scale * rivalry) - ((Of(season, club) - Neutral) * Drift);
             return (int)MathF.Round(change, MidpointRounding.AwayFromZero);
         }
 

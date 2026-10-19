@@ -256,6 +256,7 @@ namespace StickAndPuck.App.Season.Schedule
                 Inputs = [new InputSlot(device, side), new InputSlot(InputDevice.None, other)],
                 Overtime = OvertimeRule.Shl,
                 Morale = TeamMorale.ForGame(this, game.Home, game.Away),
+                Rivalry = Rivals.Are(game.Home, game.Away),
                 Form = form,
                 StartEnergy = NewsDesk.StartEnergy(this, game),
                 Absent = absent,

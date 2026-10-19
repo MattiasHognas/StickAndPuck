@@ -1,0 +1,14 @@
+{
+  // SHL rival pairs by club id (data/clubs/shl/). A game between the two is a derby: a pre-game banner,
+  // more checking and fights, and a bigger team morale swing. The order inside a pair does not matter.
+  // Sources are in data/clubs/README.md (Rivals).
+  "pairs": [
+    ["frolunda", "farjestad"],
+    ["frolunda", "skelleftea"],
+    ["lulea", "skelleftea"],
+    ["skelleftea", "bjorkloven"],
+    ["malmo", "rogle"],
+    ["hv71", "vaxjo"],
+    ["brynas", "djurgarden"]
+  ]
+}

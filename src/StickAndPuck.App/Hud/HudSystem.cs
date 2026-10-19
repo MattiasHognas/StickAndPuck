@@ -333,6 +333,35 @@ namespace StickAndPuck.App.Hud
             art.DrawText(away, cx, ty, art.Text);
             cx += art.Measure(away) + gap;
             art.DrawCrest(world.Setup.Away.Id, cx, y + 6);
+            if (Rivals.Playing(world.Setup))
+            {
+                DrawRivalry(world, art, y + h + 3);
+            }
+        }
+
+        /// <summary>Gets the rivalry banner's two lines for a rivalry game (W131): DERBY between SHL rivals,
+        /// RIVALRY NIGHT between NHL ones, and the bad-blood note.</summary>
+        internal static (string Title, string Note) RivalryText(MatchSetup setup)
+        {
+            return (
+                Text.Get(setup.Home.League == League.Nhl ? K.RivalryGame : K.RivalryDerby),
+                Text.Get(K.RivalryDerbyNote)
+            );
+        }
+
+        /// <summary>The rivalry banner under the opening card: a gold panel with the derby title and the note.</summary>
+        private static void DrawRivalry(World world, HudArt art, int y)
+        {
+            const int pad = 5,
+                line = 11;
+            (string title, string note) = RivalryText(world.Setup);
+            int w = pad + Math.Max(art.Measure(title), art.Measure(note)) + pad,
+                h = pad + line + 7 + pad + 1;
+            int x = (Game.Width - w) / 2;
+            art.DrawPanel("panel_gold", x, y, w, h);
+            int top = y + pad - 2; // text y is 2 px above the capitals
+            art.DrawText(title, x + ((w - art.Measure(title)) / 2), top, art.Text);
+            art.DrawText(note, x + ((w - art.Measure(note)) / 2), top + line, art.Text);
         }
 
         private static void DrawBanner(HudMessage m, HudArt art)

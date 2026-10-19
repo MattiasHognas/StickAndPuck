@@ -52,7 +52,12 @@ namespace StickAndPuck.App.Core
             ClubData away = Pick(clubs, "SAP_AWAY").TryGet(out ClubData picked)
                 ? picked
                 : clubs.FirstOrDefault(c => c != home) ?? home;
-            return new MatchSetup { Home = home, Away = away };
+            return new MatchSetup
+            {
+                Home = home,
+                Away = away,
+                Rivalry = Rivals.Are(home.Id, away.Id),
+            };
         }
 
         private static Maybe<ClubData> Pick(IReadOnlyList<ClubData> clubs, string variable)
