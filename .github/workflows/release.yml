@@ -116,11 +116,80 @@ jobs:
       - name: Test
         run: dotnet test --project tests/StickAndPuck.Tests -c Release
 
-  browser:
-    name: Browser test
+  # Browser verification: the wasm site and the desktop Release build run in parallel, then one job per
+  # browser, then the "Browser test" check that the release job and branch protection rely on.
+  browser-site:
+    name: Browser site
     needs: version
     env:
       VERSION: ${{ needs.version.outputs.number }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # A job-local SDK directory, so the SDK and its wasm-tools workload are cached together.
+      - name: Use a cacheable .NET directory
+        run: echo "DOTNET_INSTALL_DIR=$HOME/.dotnet-wasm" >> "$GITHUB_ENV"
+      # The saved key ends in a fingerprint of the installed workloads, so a new SDK (global.json) or a
+      # new wasm-tools version saves a fresh cache instead of reusing a stale one.
+      - name: Restore .NET SDK and wasm-tools
+        id: dotnet-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.dotnet-wasm
+          key: dotnet-wasm-${{ runner.os }}-${{ hashFiles('global.json') }}-
+          restore-keys: dotnet-wasm-${{ runner.os }}-${{ hashFiles('global.json') }}-
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: Install wasm-tools
+        id: workload
+        run: |
+          dotnet workload install wasm-tools
+          echo "fingerprint=$(dotnet workload list | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+      - name: Save .NET SDK and wasm-tools
+        if: steps.dotnet-cache.outputs.cache-matched-key != format('dotnet-wasm-{0}-{1}-{2}', runner.os, hashFiles('global.json'), steps.workload.outputs.fingerprint)
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.dotnet-wasm
+          key: dotnet-wasm-${{ runner.os }}-${{ hashFiles('global.json') }}-${{ steps.workload.outputs.fingerprint }}
+      - name: Publish browser site
+        run: tools/publish.sh browser-wasm
+      - name: Upload browser site
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-site
+          path: publish/browser-wasm/wwwroot
+          if-no-files-found: error
+
+  desktop-build:
+    name: Desktop build
+    needs: version
+    env:
+      VERSION: ${{ needs.version.outputs.number }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      # The browser jobs record and check their desktop replay fixtures with this Release build.
+      - name: Build desktop Release
+        run: dotnet build src/StickAndPuck.App -c Release
+      - name: Upload desktop Release build
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-release
+          path: src/StickAndPuck.App/bin/Release/net11.0
+          if-no-files-found: error
+          retention-days: 1
+
+  browser-verify:
+    name: Browser test (${{ matrix.browser }})
+    needs: [browser-site, desktop-build]
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -132,12 +201,17 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: tools/browser/package-lock.json
-      - name: Install browser toolchains
+      # Browser binaries are cached per Playwright version (pinned in package-lock.json).
+      - name: Restore Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('tools/browser/package-lock.json') }}
+      - name: Install browser toolchain
         run: |
-          dotnet workload install wasm-tools
           npm ci --prefix tools/browser
           cd tools/browser
-          npx playwright install --with-deps chromium firefox
+          npx playwright install --with-deps ${{ matrix.browser }}
       - name: Start virtual audio output
         run: |
           sudo apt-get update
@@ -145,20 +219,40 @@ jobs:
           pulseaudio --start --exit-idle-time=-1
           pactl load-module module-null-sink sink_name=browser_test
           pactl set-default-sink browser_test
-      - name: Verify browser publish and desktop replay parity
-        run: xvfb-run -a tools/verify-browser.sh
-      - name: Upload browser site
-        uses: actions/upload-artifact@v7
+      - name: Download browser site
+        uses: actions/download-artifact@v8
         with:
           name: browser-site
           path: publish/browser-wasm/wwwroot
-          if-no-files-found: error
+      - name: Download desktop Release build
+        uses: actions/download-artifact@v8
+        with:
+          name: desktop-release
+          path: src/StickAndPuck.App/bin/Release/net11.0
+      - name: Verify browser publish and desktop replay parity
+        env:
+          BROWSERS: ${{ matrix.browser }}
+          BROWSER_VERIFY_PREBUILT: '1'
+        run: xvfb-run -a tools/verify-browser.sh
       - name: Upload browser verification reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: browser-verification
+          name: browser-verification-${{ matrix.browser }}
           path: TestResults/browser
+
+  browser:
+    name: Browser test
+    needs: [browser-site, desktop-build, browser-verify]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the site, the desktop build and every browser to pass
+        env:
+          RESULTS: ${{ needs.browser-site.result }} ${{ needs.desktop-build.result }} ${{ needs.browser-verify.result }}
+        run: |
+          echo "Browser site, desktop build, browser verification: $RESULTS"
+          [ "$RESULTS" = "success success success" ]
 
   build:
     name: Build
