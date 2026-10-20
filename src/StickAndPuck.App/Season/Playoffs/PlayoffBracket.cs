@@ -50,6 +50,7 @@ namespace StickAndPuck.App.Season.Playoffs
             else
             {
                 DrawShlRounds(art, playoffs, clubs, x, top);
+                DrawPlayout(art, playoffs, clubs, x + Pad + 4, top + Line + 4 + (7 * Line));
             }
 
             art.DrawText(Footer(playoffs, clubs), x + Pad + 4, y + Height - Pad - Line, art.Score);
@@ -81,6 +82,33 @@ namespace StickAndPuck.App.Season.Playoffs
                     int sy = top + Line + 4 + (s * gap);
                     DrawSeries(art, series[s], playoffs.UserClub, clubs, cx, sy);
                 }
+            }
+        }
+
+        /// <summary>The SHL playout (W76) under the play-in, and who goes down once it is decided.</summary>
+        private static void DrawPlayout(
+            HudArt art,
+            PlayoffState playoffs,
+            IReadOnlyList<ClubData> clubs,
+            int x,
+            int y
+        )
+        {
+            if (!playoffs.Playout.TryGet(out PlayoffSeries playout))
+            {
+                return;
+            }
+
+            art.DrawText(Text.Get(K.PlayoutTitle), x, y, art.Text);
+            DrawSeries(art, playout, playoffs.UserClub, clubs, x, y + Line + 4);
+            if (playoffs.Relegated.TryGet(out string down))
+            {
+                art.DrawText(
+                    Text.Format(K.RelegatedShort, Short(clubs, down)),
+                    x,
+                    y + (3 * Line) + 6,
+                    Raylib.ColorAlpha(art.Text, 0.4f)
+                );
             }
         }
 
@@ -140,7 +168,12 @@ namespace StickAndPuck.App.Season.Playoffs
 
         private static string Footer(PlayoffState playoffs, IReadOnlyList<ClubData> clubs)
         {
-            if (playoffs.IsOver)
+            if (playoffs.UserRelegated)
+            {
+                return Text.Format(K.Relegated, Name(clubs, playoffs.UserClub));
+            }
+
+            if (playoffs.IsOver && !playoffs.UserSeries.HasValue)
             {
                 return Text.Format(
                     LeagueText.Of(playoffs.League).ChampionsOf,
@@ -149,7 +182,7 @@ namespace StickAndPuck.App.Season.Playoffs
             }
 
             string user = Name(clubs, playoffs.UserClub);
-            if (!playoffs.UserQualified)
+            if (!playoffs.UserQualified && !playoffs.UserInPlayout)
             {
                 return playoffs.League == League.Nhl
                     ? Text.Format(K.MissedPlayoffs, user)
@@ -166,11 +199,16 @@ namespace StickAndPuck.App.Season.Playoffs
                 );
                 return Text.Format(
                     K.NextPlayoffGameV,
-                    playoffs.CurrentTitle,
+                    playoffs.UserTitle,
                     s.Games.Count + 1,
                     other
                 );
             }
+            if (playoffs.UserInPlayout)
+            {
+                return Text.Format(K.StayedUp, user);
+            }
+
             string wait = playoffs.League == League.Nhl ? K.WaitForNextRound : K.WaitForPlayIn;
             return Text.Format(playoffs.UserAlive ? wait : K.AreOut, user);
         }

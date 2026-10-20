@@ -719,5 +719,14 @@
   "TradeNewsOffer": "TRADE DEADLINE: AN OFFER ON THE TABLE",
   "TradeNewsOffers": "TRADE DEADLINE: {0} OFFERS ON THE TABLE",
   "TradeNewsDone": "TRADE WITH {1}: {0} IN, {2} OUT",
-  "TradeNewsDeclined": "NO DEAL: {0} STAYS"
+  "TradeNewsDeclined": "NO DEAL: {0} STAYS",
+  "RulePlayout": "RELEGATION PLAYOUT",
+  "PlayoutTitle": "PLAYOUT",
+  "RelegatedShort": "{0} GO DOWN",
+  "Relegated": "{0} ARE RELEGATED",
+  "RelegatedLabel": "RELEGATED",
+  "StayedUp": "{0} STAYED UP",
+  "Relegation": "RELEGATION",
+  "PlayoutLine": "{0}-{1} V {2}",
+  "RelegationNote": "DOWN TO HOCKEYALLSVENSKAN"
 }

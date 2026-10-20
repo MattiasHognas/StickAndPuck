@@ -22,6 +22,15 @@ namespace StickAndPuck.App.Season.Playoffs
         /// <summary>The last place that reaches the play-in.</summary>
         public const int LastPlayIn = 10;
 
+        /// <summary>The higher place in the playout (W76): 13th plays 14th, best of seven, the loser goes down.</summary>
+        public const int PlayoutHigh = 13;
+
+        /// <summary>The lower place in the playout.</summary>
+        public const int PlayoutLow = 14;
+
+        /// <summary>The round index the playout's games use in stats keys and game seeds, past every playoff round.</summary>
+        public const int PlayoutRound = 8;
+
         private static readonly ImmutableArray<(string Name, int BestOf)> Format =
         [
             ("PLAY-IN", 3),
@@ -64,6 +73,34 @@ namespace StickAndPuck.App.Season.Playoffs
 
         /// <summary>Gets or sets the rounds started so far; the last one is being played.</summary>
         public IList<PlayoffRound> Rounds { get; set; } = [];
+
+        /// <summary>Gets or sets the SHL playout (W76): 13th against 14th, best of seven, played alongside the
+        /// playoffs; its loser is relegated. None in the NHL, with <see cref="RuleSet.Playout"/> off, with
+        /// fewer than 14 clubs, and in an older save.</summary>
+        public Maybe<PlayoffSeries> Playout { get; set; }
+
+        /// <summary>Gets the relegated club's id: the playout's loser, or None while it is open or without a playout.</summary>
+        [JsonIgnore]
+        public Maybe<string> Relegated =>
+            Playout.TryGet(out PlayoffSeries p) && p.Winner.TryGet(out string winner)
+                ? (Same(winner, p.High) ? p.Low : p.High)
+                : Maybe.None<string>();
+
+        /// <summary>Gets a value indicating whether the human's club plays the playout.</summary>
+        [JsonIgnore]
+        public bool UserInPlayout => Playout.Is(p => p.Involves(UserClub));
+
+        /// <summary>Gets a value indicating whether the human's club lost the playout and goes down.</summary>
+        [JsonIgnore]
+        public bool UserRelegated => Relegated.Is(r => Same(r, UserClub));
+
+        /// <summary>Gets a value indicating whether the season is over: a champion, and the playout settled too.</summary>
+        [JsonIgnore]
+        public bool IsDone => IsOver && !Playout.Is(p => !p.IsOver);
+
+        /// <summary>Gets the name of the stage the human's club plays: the playout, else the playoff round being played.</summary>
+        [JsonIgnore]
+        public string UserTitle => UserInPlayout ? Text.Get(Text.Keys.PlayoutTitle) : CurrentTitle;
 
         /// <summary>Gets a round's name in the language shown: play-in, quarter-finals, semi-finals, final.</summary>
         public static string RoundTitle(int round)
@@ -109,9 +146,10 @@ namespace StickAndPuck.App.Season.Playoffs
         /// <summary>Gets the human's open series, or None when the human's club is out, waiting for a round, or done.</summary>
         [JsonIgnore]
         public Maybe<PlayoffSeries> UserSeries =>
-            Rounds.Count == 0
-                ? Maybe.None<PlayoffSeries>()
-                : Current.Series.FirstOrNone(s => !s.IsOver && s.Involves(UserClub));
+            Playout.TryGet(out PlayoffSeries playout) && playout.Involves(UserClub)
+                ? (playout.IsOver ? Maybe.None<PlayoffSeries>() : playout)
+            : Rounds.Count == 0 ? Maybe.None<PlayoffSeries>()
+            : Current.Series.FirstOrNone(s => !s.IsOver && s.Involves(UserClub));
 
         /// <summary>Gets a value indicating whether the human's club made the playoffs.</summary>
         [JsonIgnore]
@@ -140,6 +178,11 @@ namespace StickAndPuck.App.Season.Playoffs
             if (season.League != League.Nhl)
             {
                 state.Rounds.Add(state.Pair(0, Enumerable.Range(Direct + 1, LastPlayIn - Direct)));
+                if (season.Rules.Or(RuleSet.Shl).Playout && state.Seeds.Count >= PlayoutLow)
+                {
+                    state.Playout = state.NewSeries(PlayoutHigh, PlayoutLow, 7);
+                }
+
                 return state;
             }
 
@@ -186,7 +229,7 @@ namespace StickAndPuck.App.Season.Playoffs
             if (
                 series.IsOver
                 || result.HomeGoals == result.AwayGoals
-                || !Current.Series.Contains(series)
+                || !(Current.Series.Contains(series) || Playout.Is(p => p == series))
             )
             {
                 return false;
@@ -206,20 +249,33 @@ namespace StickAndPuck.App.Season.Playoffs
                 StringComparer.Ordinal
             );
             int count = 0;
-            while (!IsOver)
+            while (true)
             {
                 Maybe<PlayoffSeries> user = UserSeries;
                 int upTo = user.TryGet(out PlayoffSeries mine) ? mine.Games.Count : int.MaxValue;
-                for (int i = 0; i < Current.Series.Count; i++)
+                for (int i = 0; !IsOver && i < Current.Series.Count; i++)
                 {
                     PlayoffSeries s = Current.Series[i];
                     while (!user.Is(u => u == s) && !s.IsOver && s.Games.Count < upTo)
                     {
-                        _ = Record(s, Simulate(byId, s, i, rules));
+                        _ = Record(s, Simulate(byId, s, Rounds.Count - 1, i, rules));
                         count++;
                     }
                 }
-                if (user.HasValue || !NextRound())
+
+                // the playout keeps pace with the human's series too, and is played out once the human is done
+                if (Playout.TryGet(out PlayoffSeries playout) && !user.Is(u => u == playout))
+                {
+                    while (!playout.IsOver && playout.Games.Count < upTo)
+                    {
+                        _ = Record(playout, Simulate(byId, playout, PlayoutRound, 0, rules));
+                        count++;
+                    }
+                }
+
+                // the human in the playout: the playoff rounds go on beside it, each kept level with it
+                bool userInRound = user.HasValue && !UserInPlayout;
+                if (IsOver || userInRound || !NextRound())
                 {
                     break;
                 }
@@ -257,6 +313,25 @@ namespace StickAndPuck.App.Season.Playoffs
             return true;
         }
 
+        /// <summary>Gets where a series sits for stats keys and game seeds: its round and index in the round being
+        /// played, or <see cref="PlayoutRound"/> and 0 for the playout; (-1, -1) when it is neither.</summary>
+        public (int Round, int Index) Locate(PlayoffSeries series)
+        {
+            if (Playout.Is(p => p == series))
+            {
+                return (PlayoutRound, 0);
+            }
+
+            int index = Rounds.Count == 0 ? -1 : Current.Series.IndexOf(series);
+            return index < 0 ? (-1, -1) : (Rounds.Count - 1, index);
+        }
+
+        /// <summary>Gets the name of a series' stage: the playout, else the round being played.</summary>
+        public string TitleOf(PlayoffSeries series)
+        {
+            return Playout.Is(p => p == series) ? Text.Get(Text.Keys.PlayoutTitle) : CurrentTitle;
+        }
+
         /// <summary>Gets the seed for one simulated game: fixed per playoffs, round, series and game.</summary>
         public int GameSeed(int round, int series, int game)
         {
@@ -266,6 +341,7 @@ namespace StickAndPuck.App.Season.Playoffs
         private FixtureResult Simulate(
             Dictionary<string, ClubData> byId,
             PlayoffSeries s,
+            int round,
             int index,
             PlayoffRules rules
         )
@@ -280,11 +356,7 @@ namespace StickAndPuck.App.Season.Playoffs
                 : throw new InvalidOperationException(
                     $"club {s.NextAway} from the save has no data file"
                 );
-            FixtureResult r = QuickSim.Play(
-                home,
-                away,
-                GameSeed(Rounds.Count - 1, index, s.Games.Count)
-            );
+            FixtureResult r = QuickSim.Play(home, away, GameSeed(round, index, s.Games.Count));
 
             // a simulated game follows the mode's overtime rules like a played one: with no shootout in
             // the format, a tie is settled in sudden death overtime instead

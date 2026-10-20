@@ -158,7 +158,7 @@ namespace StickAndPuck.Tests.Season.Playoffs
             );
 
             // play the whole bracket on paper with the human out of it
-            p.UserClub = table[^1];
+            p.UserClub = table[10]; // 11th: out of the playoffs and the playout
             _ = p.SimulateUntilUser(clubs, PlayoffRules.Shl);
             PlayoffRound qf = p.Rounds[1];
             List<int> direct = [.. Enumerable.Range(1, PlayoffState.Direct)];
@@ -233,7 +233,7 @@ namespace StickAndPuck.Tests.Season.Playoffs
                 "no playoff game is a tie or a shootout"
             );
             PlayoffState again = PlayoffState.New(season);
-            again.UserClub = table[^1];
+            again.UserClub = table[10];
             _ = again.SimulateUntilUser(clubs, PlayoffRules.Shl);
             Check(again.Champion == p.Champion, "the same season gives the same champion");
         }

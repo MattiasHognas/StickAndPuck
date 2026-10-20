@@ -34,12 +34,12 @@ namespace StickAndPuck.App.Screens
         private List<MenuItem> SeasonItems()
         {
             List<MenuItem> items = [];
-            if (App.Playoffs.Current.Is(p => p.Champion.HasValue))
+            if (App.Playoffs.Current.Is(p => p.IsDone))
             {
                 items.Add(
                     new MenuItem(
-                        Text.Get(K.Champions),
-                        () => Flow.Replace(TrophyScreen.Season(App))
+                        SeasonEnd.Label(App, K.Champions),
+                        () => Flow.Replace(SeasonEnd.Screen(App))
                     )
                 );
             }

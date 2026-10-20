@@ -19,7 +19,7 @@ namespace StickAndPuck.App.Screens
         public override IReadOnlyList<MenuItem> Items()
         {
             List<MenuItem> items = [];
-            bool decided = App.Playoffs.Current.Is(p => p.Champion.HasValue);
+            bool decided = App.Playoffs.Current.Is(p => p.IsDone);
             if (!decided) // no games are left once the final is won, and the menu has to fit the frame
             {
                 items.Add(
@@ -45,7 +45,10 @@ namespace StickAndPuck.App.Screens
             if (decided)
             {
                 items.Add(
-                    new MenuItem(Text.Get(K.Trophy), () => Flow.Push(TrophyScreen.Season(App)))
+                    new MenuItem(
+                        SeasonEnd.Label(App, K.Trophy),
+                        () => Flow.Push(SeasonEnd.Screen(App))
+                    )
                 );
             }
 
@@ -99,6 +102,7 @@ namespace StickAndPuck.App.Screens
             else
             {
                 DrawRounds(art, playoffs, clubs, x, top, rows);
+                DrawPlayout(art, playoffs, clubs, x + 10, top + Line + 4 + (7 * Line));
             }
             top += Line + 4 + (rows * Line) + 6;
             art.Centred(Footer(playoffs, clubs), Game.Width / 2, top, art.Gold);
@@ -160,6 +164,33 @@ namespace StickAndPuck.App.Screens
             }
         }
 
+        /// <summary>The SHL playout (W76) under the play-in: 13th against 14th, and who goes down once it is decided.</summary>
+        private static void DrawPlayout(
+            ScreenArt art,
+            PlayoffState playoffs,
+            IReadOnlyList<ClubData> clubs,
+            int x,
+            int y
+        )
+        {
+            if (!playoffs.Playout.TryGet(out PlayoffSeries playout))
+            {
+                return;
+            }
+
+            art.Left(Text.Get(K.PlayoutTitle), x, y, art.Text);
+            DrawSeries(art, playout, playoffs.UserClub, clubs, x, y + Line + 4);
+            if (playoffs.Relegated.TryGet(out string down))
+            {
+                art.Left(
+                    Text.Format(K.RelegatedShort, Short(clubs, down)),
+                    x,
+                    y + (3 * Line) + 6,
+                    ScreenArt.Muted
+                );
+            }
+        }
+
         private static void DrawSeries(
             ScreenArt art,
             PlayoffSeries series,
@@ -211,18 +242,18 @@ namespace StickAndPuck.App.Screens
 
         private static string Footer(PlayoffState playoffs, IReadOnlyList<ClubData> clubs)
         {
-            if (playoffs.IsOver)
+            string user = Name(clubs, playoffs.UserClub);
+            if (playoffs.UserRelegated)
+            {
+                return Text.Format(K.Relegated, user);
+            }
+
+            if (playoffs.IsOver && !playoffs.UserSeries.HasValue)
             {
                 return Text.Format(
                     LeagueText.Of(playoffs.League).ChampionsOf,
                     Name(clubs, playoffs.Champion.Or(""))
                 );
-            }
-
-            string user = Name(clubs, playoffs.UserClub);
-            if (!playoffs.UserQualified)
-            {
-                return Text.Format(K.MissedPlayoffs, user);
             }
 
             if (playoffs.UserSeries.TryGet(out PlayoffSeries s))
@@ -233,14 +264,18 @@ namespace StickAndPuck.App.Screens
                         ? s.Low
                         : s.High
                 );
-                return Text.Format(
-                    K.NextPlayoffGame,
-                    playoffs.CurrentTitle,
-                    s.Games.Count + 1,
-                    other
-                );
+                return Text.Format(K.NextPlayoffGame, playoffs.UserTitle, s.Games.Count + 1, other);
             }
-            return Text.Format(playoffs.UserAlive ? K.WaitForNextRound : K.AreOut, user);
+            if (playoffs.UserInPlayout)
+            {
+                return Text.Format(K.StayedUp, user);
+            }
+
+            string key =
+                !playoffs.UserQualified ? K.MissedPlayoffs
+                : playoffs.UserAlive ? K.WaitForNextRound
+                : K.AreOut;
+            return Text.Format(key, user);
         }
 
         private static string Short(IReadOnlyList<ClubData> clubs, string id)

@@ -235,11 +235,10 @@ namespace StickAndPuck.App.Season.Schedule
                 return Maybe.None<SimmedGame>();
             }
 
-            int round = playoffs.Rounds.Count - 1,
-                index = playoffs.Current.Series.IndexOf(series),
-                gameNo = series.Games.Count;
-            string stage = playoffs.Current.Name,
-                title = playoffs.CurrentTitle; // read before Finish, which may draw the next round
+            (int round, int index) = playoffs.Locate(series);
+            int gameNo = series.Games.Count;
+            string stage = round == PlayoffState.PlayoutRound ? "PLAYOUT" : playoffs.Current.Name,
+                title = playoffs.TitleOf(series); // read before Finish, which may draw the next round
             FixtureResult result = QuickSim.Play(
                 setup.Home,
                 setup.Away,

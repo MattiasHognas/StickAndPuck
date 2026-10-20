@@ -161,7 +161,7 @@ namespace StickAndPuck.App.Season.DressingRoom
                     .UserSeries.Select(s =>
                         string.Create(
                             CultureInfo.InvariantCulture,
-                            $"p{playoffs.Rounds.Count - 1}.{s.Games.Count}"
+                            $"p{playoffs.Locate(s).Round}.{s.Games.Count}"
                         )
                     )
                     .Or("p")

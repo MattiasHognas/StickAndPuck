@@ -151,6 +151,8 @@ Use these with `SAP_SCENE=start` (the default scene). `SAP_LEAGUE=nhl` loads the
 | `suspension` | As `dressingroom`, with the human club's first centre suspended for three games and first right wing for two before that last game, so the dressing room lists them as suspended for two games and one. |
 | `trade` | The trade deadline (W135): a test season settled with “sim this game” up to the deadline game (35 of 52 in the SHL, 55 of 82 with `SAP_LEAGUE=nhl`), then the first trade offer: the club and its place in the table, the player they want and the one they offer side by side, the coach's read, and ACCEPT / DECLINE. Answered offers lead on to the dressing room, whose news shows the trade. |
 | `trophy` | The season champion after a test season and playoffs. |
+| `playout` | The SHL playout (W76) in the bracket: a test season settled on paper, the human's club swapped to the 13th placed club and three playout games simmed (`SAP_PLAYOUT_GAMES=n` sims n) beside the playoffs. |
+| `relegation` | The relegation screen: the same test season with the playout and playoffs played out and the human put on the club that went down; the bracket underneath shows the playout decided. |
 | `arcadetrophy` | The trophy for a completed three-lives arcade run. |
 | `bestruns` | The arcade best-run board with sample finished runs. |
 

@@ -90,6 +90,7 @@ namespace StickAndPuck.App.Screens
             _ = season.Stats.CatchUp(season, clubs); // games settled on paper are credited from their score
             AddRegularLines(statLines, season.Stats, clubs);
             AddPlayoffLine(statLines, season.Stats, clubs);
+            AddRelegatedLine(statLines, playoffs, clubs);
             AddYourClubLine(statLines, season, champion, playoffs, clubs);
             return statLines;
         }
@@ -194,6 +195,19 @@ namespace StickAndPuck.App.Screens
             );
         }
 
+        /// <summary>The club that lost the SHL playout and goes down (W76), when there was one.</summary>
+        private static void AddRelegatedLine(
+            List<(string, string)> statLines,
+            Maybe<PlayoffState> playoffs,
+            IReadOnlyList<ClubData> clubs
+        )
+        {
+            if (playoffs.TryGet(out PlayoffState p) && p.Relegated.TryGet(out string down))
+            {
+                statLines.Add((Text.Get(K.RelegatedLabel), Name(clubs, down)));
+            }
+        }
+
         private static void AddYourClubLine(
             List<(string, string)> statLines,
             SeasonState season,
@@ -211,6 +225,11 @@ namespace StickAndPuck.App.Screens
             string playoffResultKey = playoffs.Is(p => !p.UserQualified)
                 ? K.MissedPlayoffs
                 : K.WentOut;
+            if (playoffs.Is(p => p.UserInPlayout))
+            {
+                playoffResultKey = playoffs.Is(p => p.UserRelegated) ? K.Relegated : K.StayedUp;
+            }
+
             string yourClubLine = string.Equals(season.UserClub, champion, StringComparison.Ordinal)
                 ? Text.Get(K.ChampionsShout)
                 : Text.Format(playoffResultKey, user);

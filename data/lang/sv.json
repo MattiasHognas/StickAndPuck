@@ -719,5 +719,14 @@
   "TradeNewsOffer": "TRADE DEADLINE: ETT BUD PÅ BORDET",
   "TradeNewsOffers": "TRADE DEADLINE: {0} BUD PÅ BORDET",
   "TradeNewsDone": "AFFÄR MED {1}: {0} IN, {2} UT",
-  "TradeNewsDeclined": "INGEN AFFÄR: {0} STANNAR"
+  "TradeNewsDeclined": "INGEN AFFÄR: {0} STANNAR",
+  "RulePlayout": "PLAYOUT (NEDFLYTTNING)",
+  "PlayoutTitle": "PLAYOUT",
+  "RelegatedShort": "{0} ÅKER UR",
+  "Relegated": "{0} ÅKER UR SHL",
+  "RelegatedLabel": "ÅKER UR",
+  "StayedUp": "{0} KLARADE KONTRAKTET",
+  "Relegation": "NEDFLYTTNING",
+  "PlayoutLine": "{0}-{1} MOT {2}",
+  "RelegationNote": "NER I HOCKEYALLSVENSKAN"
 }
