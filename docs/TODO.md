@@ -13,5 +13,4 @@ Tasks not yet done in the build plan. Each Milestone 6 rule becomes a rule setti
 
 | ID | Task | Reason |
 | --- | --- | --- |
-| W85 | Diving | Needs AI divers, a human dive input and a referee who judges dives; the biggest rules job and the most likely to frustrate |
 | W86 | Dressed roster of 22 | Every roster has exactly the 20 players the lines need; spares only matter with injuries or ejections, and it needs 28 more real players |
