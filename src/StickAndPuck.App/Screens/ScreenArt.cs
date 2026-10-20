@@ -27,12 +27,18 @@ namespace StickAndPuck.App.Screens
         private static readonly Color RoomDim = new(0x40, 0x3c, 0x4c, 0xff);
         private static readonly Color PanelLight = new(0x33, 0x29, 0x3a, 0xff);
 
+        // the club's crest printed on the dressing room floor: its 16x16 cell 3x wide and 1x tall inside the
+        // floor ring (art/scripts/make_dressing_room.py has the same box), darkened like ink on the mat
+        private static readonly Rectangle FloorCrest = new((Game.Width / 2) - 24, 248, 48, 16);
+        private static readonly Color FloorInk = new(0xc0, 0xb8, 0xb8, 0xff);
+
         private Texture2D title;
         private Maybe<Texture2D> dressingRoom;
         private Maybe<Texture2D> coach;
         private Maybe<Texture2D> coachMoods;
         private Maybe<Texture2D> roomJersey;
         private Maybe<Texture2D> roomTrim;
+        private Maybe<Texture2D> roomFloor;
 
         private ScreenArt(HudArt hud)
         {
@@ -58,30 +64,38 @@ namespace StickAndPuck.App.Screens
                 coachMoods = Optional(Assets.CoachMoods),
                 roomJersey = Optional(Assets.DressingRoomJersey),
                 roomTrim = Optional(Assets.DressingRoomTrim),
+                roomFloor = Optional(Assets.DressingRoomFloor),
             };
             return art;
         }
 
         /// <summary>Draws the dressing room backdrop over the whole frame (A20), the jerseys in the stalls
-        /// tinted with a kit's colours; false while there is none yet.</summary>
-        public bool DrawDressingRoom(KitColours kit)
+        /// tinted with a kit's colours and the club's crest printed on the floor; false while there is none yet.</summary>
+        public bool DrawDressingRoom(KitColours kit, string crest)
         {
             if (!dressingRoom.HasValue)
             {
                 return false;
             }
 
-            DrawRoom(kit, new Rectangle(0, 0, Game.Width, Game.Height), Color.White);
+            DrawRoom(kit, crest, new Rectangle(0, 0, Game.Width, Game.Height), Color.White);
             return true;
         }
 
         /// <summary>Draws a panel over the dressing room backdrop: the room shows through it, dimmed, so the
         /// text over it stays readable (an opaque draw, so the rink never shows through the HUD target).
         /// Returns where the body starts, like <see cref="Panel"/>.</summary>
-        public (int X, int Top) RoomPanel(KitColours kit, string heading, int w, int h, int y)
+        public (int X, int Top) RoomPanel(
+            KitColours kit,
+            string crest,
+            string heading,
+            int w,
+            int h,
+            int y
+        )
         {
             int x = (Game.Width - w) / 2;
-            DrawRoom(kit, new Rectangle(x, y, w, h), RoomDim);
+            DrawRoom(kit, crest, new Rectangle(x, y, w, h), RoomDim);
             DrawRectangleLines(x, y, w, h, Band);
             DrawRectangle(x + 1, y + 1, w - 2, 1, PanelLight);
             DrawRectangle(x + 1, y + 1, 1, h - 2, PanelLight);
@@ -94,8 +108,8 @@ namespace StickAndPuck.App.Screens
             return (x, y + 5 + Row + 2);
         }
 
-        /// <summary>One region of the backdrop and its jersey masks, every layer multiplied by a shade.</summary>
-        private void DrawRoom(KitColours kit, Rectangle area, Color shade)
+        /// <summary>One region of the backdrop, its jersey masks and the floor crest, every layer multiplied by a shade.</summary>
+        private void DrawRoom(KitColours kit, string crest, Rectangle area, Color shade)
         {
             if (!dressingRoom.TryGet(out Texture2D room))
             {
@@ -112,6 +126,13 @@ namespace StickAndPuck.App.Screens
             if (roomTrim.TryGet(out Texture2D trim))
             {
                 DrawTextureRec(trim, area, at, Multiply(HudArt.Hex(kit.Secondary), shade));
+            }
+
+            // the crest goes on the floor only with the overlay that lets the mat show through it
+            if (roomFloor.TryGet(out Texture2D floor))
+            {
+                Hud.DrawCrest(crest, FloorCrest, area, Multiply(FloorInk, shade));
+                DrawTextureRec(floor, area, at, shade);
             }
         }
 

@@ -124,6 +124,42 @@ namespace StickAndPuck.App.Hud
             );
         }
 
+        /// <summary>Draws a club's crest stretched into a box (whole-pixel factors keep it crisp), only the part
+        /// of it inside a clip box, multiplied by a tint. The dressing room prints the crest on its floor so.</summary>
+        public void DrawCrest(string clubId, Rectangle box, Rectangle clip, Color tint)
+        {
+            if (!crests.TryGetValue(clubId, out Rectangle src))
+            {
+                src = crests[crestFallback];
+            }
+
+            float x0 = Math.Max(box.X, clip.X);
+            float y0 = Math.Max(box.Y, clip.Y);
+            float x1 = Math.Min(box.X + box.Width, clip.X + clip.Width);
+            float y1 = Math.Min(box.Y + box.Height, clip.Y + clip.Height);
+            if (x1 <= x0 || y1 <= y0)
+            {
+                return;
+            }
+
+            float sx = src.Width / box.Width;
+            float sy = src.Height / box.Height;
+            Rectangle part = new(
+                src.X + ((x0 - box.X) * sx),
+                src.Y + ((y0 - box.Y) * sy),
+                (x1 - x0) * sx,
+                (y1 - y0) * sy
+            );
+            DrawTexturePro(
+                crestSheet,
+                part,
+                new Rectangle(x0, y0, x1 - x0, y1 - y0),
+                new(0, 0),
+                0,
+                tint
+            );
+        }
+
         /// <summary>Draws one 8x8 icon.</summary>
         public void DrawIcon(string name, int x, int y)
         {
