@@ -89,7 +89,6 @@ namespace StickAndPuck.App.Screens
                     break;
                 case "fired":
                     Fired(app, clubs);
-                    app.Screens.Push(app.Screens.Overview()); // the fired screen
                     break;
                 case "trophy":
                     Champions(app, clubs);
@@ -289,8 +288,8 @@ namespace StickAndPuck.App.Screens
         }
 
         /// <summary>A fresh test season for the club the board expects most of (SAP_CLUB picks another), under the
-        /// chosen rules with the hot seat at least lenient, losing every game until the board fires the human
-        /// (SAP_SCREEN=fired).</summary>
+        /// chosen rules with the hot seat at least lenient, losing every game until the board fires the human,
+        /// then the fired screen (SAP_SCREEN=fired).</summary>
         public static void Fired(AppState app, IReadOnlyList<ClubData> clubs)
         {
             string path = TestPath(SeasonSave.DefaultPath, "fired-test.json");
@@ -320,6 +319,7 @@ namespace StickAndPuck.App.Screens
                     $"SAP: screens: test season in {path}, {club} fired {season.Fired} after {season.PlayedBy(club).Count()} games, place {BoardExpectation.Place(season)}"
                 )
             );
+            app.Screens.Push(app.Screens.Overview()); // the fired screen
         }
 
         /// <summary>Puts the human on the club that lost the playout, so the season ends on the relegation screen.</summary>
