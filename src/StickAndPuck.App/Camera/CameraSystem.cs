@@ -18,6 +18,7 @@ namespace StickAndPuck.App.Camera
         private readonly Impact impact = new();
         private readonly CloseUp closeUp = new();
         private readonly Flyover flyover = new();
+        private readonly TifoShot tifoShot = new(); // W120: a look up at the home tifo
         private int scale = 1;
         private bool inIntro;
 
@@ -39,6 +40,7 @@ namespace StickAndPuck.App.Camera
 
             follow.Cut(world);
             world.Camera = follow.Camera;
+            tifoShot.Load();
             scale = 1;
             world.App.Scale.Request(scale);
         }
@@ -86,9 +88,10 @@ namespace StickAndPuck.App.Camera
 
             flyover.Update(world, dt);
             follow.Update(world, dt);
+            tifoShot.Update(world, dt, others: flyover.Weight > 0 || closeUp.Weight > 0);
             world.Camera = flyover.Apply(
                 world,
-                impact.Apply(closeUp.Apply(follow.Camera), follow.PixelStep)
+                impact.Apply(closeUp.Apply(tifoShot.Apply(follow.Camera)), follow.PixelStep)
             );
             if (closeUp.Weight > 0)
             {

@@ -160,6 +160,11 @@ namespace StickAndPuck.App.Screens
                     change: _ => Set(s with { Benches = !s.Benches })
                 ),
                 new MenuItem(
+                    Text.Get(K.Supporters),
+                    value: OnOff(s.Supporters),
+                    change: _ => Set(s with { Supporters = !s.Supporters })
+                ),
+                new MenuItem(
                     Text.Get(K.OverallVolume),
                     value: Tenths(s.OverallVolume),
                     change: d => Set(s with { OverallVolume = Step(s.OverallVolume, d) })

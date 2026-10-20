@@ -62,8 +62,11 @@ namespace StickAndPuck.App.Arena
         private readonly CrowdRenderer crowd = new();
         private readonly CrowdReactions reactions = new();
         private readonly TifoRenderer tifo = new();
+        private readonly TifoMoments tifoMoments = new();
+        private readonly SupporterRenderer supporters = new();
         private Maybe<CrowdSection> tifoPreview; // SAP_TIFO: the home tifo held up over this section all match
         private bool posed;
+        private bool standsView; // SAP_STANDS_VIEW=1: a close look at the far stands, for previews of the fans' scarves and flags
         private Model model;
         private Material maskMaterial;
 
@@ -146,24 +149,36 @@ namespace StickAndPuck.App.Arena
             LoadCrowd(world);
         }
 
-        /// <summary>The crowd, its fans' sides, and the dev previews: SAP_CROWD_POSE, and SAP_TIFO (A19) holding
-        /// the home club's tifo up over a section all match.</summary>
+        /// <summary>The crowd, its fans' sides, their scarves, flags and banners and the home tifo (W120), and
+        /// the dev previews: SAP_CROWD_POSE, and SAP_TIFO (A19) holding the home club's tifo up over a section
+        /// all match.</summary>
         private void LoadCrowd(World world)
         {
             crowd.Load(world);
             CrowdFans.Seat(reactions); // the visitors' corner reacts for the away club
+            supporters.Load(world);
             tifoPreview = TifoRenderer.FromEnvironment();
-            if (tifoPreview.HasValue)
-            {
-                tifo.Load(world.Setup.Home);
-            }
+            tifo.Load(world.Setup.Home);
 
+            standsView = Env.Is("SAP_STANDS_VIEW", "1");
             if (Enum.TryParse(Env.Get("SAP_CROWD_POSE"), ignoreCase: true, out CrowdPose pose))
             {
                 world.Crowd.SetAll(pose, world.Time); // a fixed pose for previews of the crowd frames
                 posed = true;
             }
         }
+
+        /// <summary>Gets the SAP_STANDS_VIEW preview camera: from over the near boards at the far stand's -x third
+        /// and the edge of the centre, close enough that a scarf is more than a stripe.</summary>
+        private static Camera3D StandsView =>
+            new()
+            {
+                Position = new Vector3(-16f, 10f, 4f),
+                Target = new Vector3(-12f, 4f, -24f),
+                Up = Vector3.UnitY,
+                FovY = 15f,
+                Projection = CameraProjection.Perspective,
+            };
 
         private static Color ToSrgb(Color c)
         {
@@ -182,6 +197,12 @@ namespace StickAndPuck.App.Arena
             if (!posed)
             {
                 reactions.Update(world); // the crowd answers this step's goals, hits, saves, fights and calls
+            }
+
+            tifoMoments.Update(world); // the home tifo goes up at the start and after home goals
+            if (standsView)
+            {
+                world.Camera = StandsView; // after the camera system, so it holds through goals and replays
             }
         }
 
@@ -247,6 +268,7 @@ namespace StickAndPuck.App.Arena
                 sheet: false
             );
             crowd.Draw(world, render, shaderDefault, world.Look.Crowd);
+            supporters.Draw(world, render, shaderDefault, world.Look.Crowd);
             // glass last and without depth, so players behind it still draw; flat colour over the crowd
             Rlgl.DisableDepthMask();
             foreach ((int mesh, Kind kind, _, _, _, _, _) in meshes)
@@ -266,6 +288,17 @@ namespace StickAndPuck.App.Arena
             if (tifoPreview.TryGet(out CrowdSection tifoSection))
             {
                 tifo.Draw(tifoSection, world.Time, shaderDefault, world.Look.Crowd);
+            }
+            else if (world.Settings.Supporters)
+            {
+                TifoState up = world.Crowd.Tifo;
+                tifo.Draw(
+                    up.Section,
+                    world.Time - up.RaisedAt,
+                    up.Lift(world.Time),
+                    shaderDefault,
+                    world.Look.Crowd
+                );
             }
         }
 
@@ -375,6 +408,7 @@ namespace StickAndPuck.App.Arena
             centreIce.Unload();
             crowd.Unload();
             tifo.Unload();
+            supporters.Unload();
             UnloadMaterial(maskMaterial);
             UnloadModel(model);
         }

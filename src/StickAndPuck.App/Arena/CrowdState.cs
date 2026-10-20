@@ -10,6 +10,9 @@ namespace StickAndPuck.App.Arena
         private readonly CrowdPose[] poses = new CrowdPose[Sections.Length];
         private readonly float[] since = new float[Sections.Length];
 
+        /// <summary>Gets the home tifo (W120): whether it is up, and over which section.</summary>
+        public TifoState Tifo { get; } = new();
+
         /// <summary>Gets a section's pose.</summary>
         /// <param name="section">The section.</param>
         /// <returns>What that section is doing.</returns>

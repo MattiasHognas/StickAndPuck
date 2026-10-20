@@ -96,6 +96,9 @@ namespace StickAndPuck.App.Core
             /// <summary>BENCHES</summary>
             public const string Benches = nameof(Benches);
 
+            /// <summary>FLAGS AND TIFO</summary>
+            public const string Supporters = nameof(Supporters);
+
             /// <summary>OVERALL VOLUME</summary>
             public const string OverallVolume = nameof(OverallVolume);
 

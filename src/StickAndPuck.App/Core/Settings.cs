@@ -44,6 +44,9 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets a value indicating whether both clubs' benches show their players (SAP_BENCHES=0|1). Off leaves the benches empty; the match plays the same either way.</summary>
         public bool Benches { get; init; } = true;
 
+        /// <summary>Gets a value indicating whether the fans hold up their club's scarves, flags and banners and the home tifo goes up (SAP_SUPPORTERS=0|1). Presentation only.</summary>
+        public bool Supporters { get; init; } = true;
+
         /// <summary>Gets a value indicating whether the fps and key help line shows top left (SAP_FPS=0|1).</summary>
         public bool FpsLine { get; init; }
 
@@ -75,7 +78,7 @@ namespace StickAndPuck.App.Core
             new Dictionary<GameAction, KeyBinding>();
 
         /// <summary>Lays the SAP_* overrides over these settings: SAP_DIFFICULTY, SAP_CAMERA_ZOOM, SAP_LIGHTING,
-        /// SAP_CONTROL_MARKER, SAP_SIM_GAME, SAP_AUTO_DEKE, SAP_ONE_TIMERS, SAP_SWAP_KITS, SAP_BENCHES, SAP_FPS,
+        /// SAP_CONTROL_MARKER, SAP_SIM_GAME, SAP_AUTO_DEKE, SAP_ONE_TIMERS, SAP_SWAP_KITS, SAP_BENCHES, SAP_SUPPORTERS, SAP_FPS,
         /// SAP_MATCH_DEBUG, SAP_LINES_DEBUG, SAP_LANGUAGE and SAP_GPU. A variable that is unset or empty changes nothing, so
         /// the saved settings stay in charge; a bad value is an error, like SAP_LIGHTING always was.</summary>
         public static Settings FromEnvironment()
@@ -102,6 +105,10 @@ namespace StickAndPuck.App.Core
                 ),
                 ("SAP_SWAP_KITS", (settings, swap) => settings with { SwapKits = swap }),
                 ("SAP_BENCHES", (settings, benches) => settings with { Benches = benches }),
+                (
+                    "SAP_SUPPORTERS",
+                    (settings, supporters) => settings with { Supporters = supporters }
+                ),
                 ("SAP_FPS", (settings, fps) => settings with { FpsLine = fps }),
                 ("SAP_MATCH_DEBUG", (settings, match) => settings with { MatchDebug = match }),
                 ("SAP_LINES_DEBUG", (settings, lines) => settings with { LinesDebug = lines })
