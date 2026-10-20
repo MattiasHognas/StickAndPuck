@@ -360,7 +360,7 @@
   {
    "index": 43,
    "part": "Trapezoid",
-   "material": "red_line",
+   "material": "trapezoid_line",
    "vertices": 16,
    "unlit": false,
    "textured": false

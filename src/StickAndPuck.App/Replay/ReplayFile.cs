@@ -132,7 +132,7 @@ namespace StickAndPuck.App.Replay
                 .TrimEnd();
         }
 
-        /// <summary>The fields of the events that reach the season: an injury, a suspension.</summary>
+        /// <summary>The fields of the events that reach the season (an injury, a suspension) and of a goalie's trapezoid call.</summary>
         private static string SeasonFields(MatchEvent e)
         {
             return e switch
@@ -144,6 +144,10 @@ namespace StickAndPuck.App.Replay
                 PlayerSuspended s => string.Create(
                     CultureInfo.InvariantCulture,
                     $"{s.Side} {s.PlayerId} {V(s.Position)} {s.Games} {s.Cause}"
+                ),
+                TrapezoidViolated t => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{t.Side} {t.GoalieId} {V(t.Position)}"
                 ),
                 _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
             };

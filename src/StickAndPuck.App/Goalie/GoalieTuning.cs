@@ -147,6 +147,9 @@ namespace StickAndPuck.App.Goalie
         /// <summary>A loose puck behind the net slower than this can be stopped by the goalie.</summary>
         public const float PlaySpeed = 14f;
 
+        /// <summary>Under the trapezoid rule a loose puck behind the net must lie at least this far inside the trapezoid for the goalie to go for it (W72).</summary>
+        public const float TrapezoidMargin = 0.3f;
+
         /// <summary>Skating speed of a goalie going out to play the puck.</summary>
         public const float PlaySkate = 5f;
 

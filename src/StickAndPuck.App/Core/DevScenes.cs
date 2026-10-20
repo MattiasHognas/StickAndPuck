@@ -33,5 +33,8 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets the penalty shot scene's scripted breakaway trip.</summary>
         internal Slot<Rules.Penalties.Dev.PenaltyShotDemo> PenaltyShot { get; } = new();
+
+        /// <summary>Gets the trapezoid scene's script.</summary>
+        internal Slot<Rules.Penalties.Dev.TrapezoidDemo> Trapezoid { get; } = new();
     }
 }

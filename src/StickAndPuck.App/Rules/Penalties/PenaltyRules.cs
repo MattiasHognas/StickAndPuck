@@ -121,7 +121,10 @@ namespace StickAndPuck.App.Rules.Penalties
                 if (world.Settings.Penalties)
                 {
                     Watch(world, book, dt);
+                    _ = TrapezoidRule.Watch(world, book);
                 }
+
+                Dev.TrapezoidDemo.Update(world);
 
                 Dev.PenaltyShotDemo.Update(world);
 

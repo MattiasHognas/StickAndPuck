@@ -97,6 +97,9 @@ namespace StickAndPuck.App.Core
             /// <summary>PUCK OVER THE GLASS</summary>
             public const string PuckOverGlass = nameof(PuckOverGlass);
 
+            /// <summary>TRAPEZOID: #{0} {1}</summary>
+            public const string TrapezoidNote = nameof(TrapezoidNote);
+
             /// <summary>PENALTY</summary>
             public const string InfPenalty = nameof(InfPenalty);
 

@@ -6,7 +6,8 @@ namespace StickAndPuck.App.Arena.Dev
     /// <summary>SAP_SCENE=arena: the empty rink for looking at the arena's league layers (A17): only the
     /// goalies on the ice and the puck on the centre dot, so centre ice shows clear. SAP_HOME picks the
     /// home club (an NHL club for the NHL layers: its crest at centre ice, the NHL line colours, the rafter
-    /// banners) and SAP_TRAPEZOID=1 adds the trapezoids; SAP_ARENA_END=1 puts the puck in front of the
+    /// banners); the trapezoids follow the trapezoid rule (on with the default SHL rules), SAP_TRAPEZOID=0 or 1
+    /// overrides it; SAP_ARENA_END=1 puts the puck in front of the
     /// right-hand net instead, so the camera looks at the end and its trapezoid.</summary>
     public sealed class ArenaScene : IScene
     {

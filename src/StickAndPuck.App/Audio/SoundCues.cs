@@ -41,6 +41,7 @@ namespace StickAndPuck.App.Audio
                 PlayerInjured => [new(Sfx.Crowd, 0.4f)],
                 PlayerSuspended => [],
                 PenaltyShotAwarded => [new(Sfx.Whistle), new(Sfx.Crowd, 0.8f, Delay: 0.4f)],
+                TrapezoidViolated => [], // the penalty call that follows is its own event
                 _ => throw new UnreachableException($"no sound cues for {e.GetType().Name}"),
             };
         }
@@ -72,6 +73,7 @@ namespace StickAndPuck.App.Audio
                 PlayerInjured i => i.Position,
                 PlayerSuspended s => s.Position,
                 PenaltyShotAwarded s => s.Position,
+                TrapezoidViolated t => t.Position,
                 _ => throw new UnreachableException($"no position for {e.GetType().Name}"),
             };
         }
@@ -105,6 +107,7 @@ namespace StickAndPuck.App.Audio
                 new PlayerInjured(time, Side.Home, 0, at, 1, InjuryCause.Check),
                 new PlayerSuspended(time, Side.Home, 0, at, 1, SuspensionCause.MatchPenalty),
                 new PenaltyShotAwarded(time, Side.Home, 0, 1, at),
+                new TrapezoidViolated(time, Side.Home, 0, at),
             ];
         }
 

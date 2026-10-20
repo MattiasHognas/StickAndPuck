@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, no hot seat, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development, no trade deadline and no playout.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, no trapezoid, no hot seat, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development, no trade deadline and no playout.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -59,6 +59,7 @@ namespace StickAndPuck.App.Core
             TradeDeadline = false,
             Playout = false,
             HotSeat = HotSeat.Off,
+            Trapezoid = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
@@ -433,6 +434,11 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets a value indicating whether a trip, hook or slash from behind on a skater on a clean breakaway
         /// (past the last defender in the attacking half, only the goalie to beat) is a penalty shot instead of a minor.</summary>
         public bool PenaltyShot { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether the trapezoid is painted behind each goal line and a goalie who plays
+        /// the puck behind his goal line outside it, in a corner, takes a delay-of-game minor, served by a skater (W72).
+        /// The AI goalie keeps its puck play behind the net inside the trapezoid. The SHL plays it too (IIHF rules since 2021).</summary>
+        public bool Trapezoid { get; init; } = true;
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

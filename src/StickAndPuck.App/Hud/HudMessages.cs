@@ -244,7 +244,28 @@ namespace StickAndPuck.App.Hud
                 Text.Format(K.PlayerTag, who.Number, who.LastName),
                 world.Setup.Club(penalty.Side).Id,
                 at + CallSeconds + 1
-            );
+            )
+            {
+                Notes = TrapezoidNotes(world, penalty.Side),
+            };
+        }
+
+        /// <summary>A goalie's trapezoid minor (W72), which a skater serves: a line naming the goalie.</summary>
+        private static List<string> TrapezoidNotes(World world, Side side)
+        {
+            return
+                world.Events.Of<TrapezoidViolated>().FirstOrDefault(t => t.Side == side) is { } t
+                && t.GoalieId >= 0
+                && t.GoalieId < world.Players.Count
+                ?
+                [
+                    Text.Format(
+                        K.TrapezoidNote,
+                        world.Players[t.GoalieId].Data.Number,
+                        world.Players[t.GoalieId].Data.LastName
+                    ),
+                ]
+                : [];
         }
 
         /// <summary>Gets the player's goals so far this match.</summary>

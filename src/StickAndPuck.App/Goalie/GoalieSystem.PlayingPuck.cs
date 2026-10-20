@@ -38,7 +38,7 @@ namespace StickAndPuck.App.Goalie
             state.PassedOut = mate.HasValue;
         }
 
-        /// <summary>Leaves the crease for a loose, slowish puck behind the net when the goalie gets there first,
+        /// <summary>Leaves the crease for a loose, slowish puck behind the net (inside the trapezoid under its rule) when the goalie gets there first,
         /// as often as its puck handling says (rolled once per loose puck), then moves it on to an open
         /// teammate, or up the boards with none. Gives up when an opponent closes in or it takes too long.</summary>
         private bool PlayPuck(World world, Player g, GoalieState state, int end, float dt)
@@ -83,7 +83,17 @@ namespace StickAndPuck.App.Goalie
                 && new Vector2(pk.Position.X - (end * RinkSpec.GoalLineX), pk.Position.Z).Length()
                     < GoalieTuning.PlayReach
                 && pk.Velocity.Length() < GoalieTuning.PlaySpeed
-                && world.Time >= state.IgnoreUntil;
+                && world.Time >= state.IgnoreUntil
+                && InsideTrapezoid(world, pk);
+        }
+
+        /// <summary>Gets a value indicating whether the goalie may play a puck there: always, or under the trapezoid rule
+        /// only with the puck a margin inside the trapezoid, so the AI goalie never takes the minor (W72). The goalie
+        /// checks it every step it goes for the puck, so it gives up on one that slides out into the corner.</summary>
+        private static bool InsideTrapezoid(World world, Puck pk)
+        {
+            return !world.Setup.Rules.Trapezoid
+                || !RinkSpec.OutsideTrapezoid(pk.Position, GoalieTuning.TrapezoidMargin);
         }
 
         private static float NearestOpponentDistance(World world, Player g, Puck pk)

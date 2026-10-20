@@ -137,7 +137,8 @@ namespace StickAndPuck.App.Season.Stats
                     or TimeOutCalled
                     or PuckOverGlass
                     or ShotBlocked
-                    or PenaltyShotAwarded:
+                    or PenaltyShotAwarded
+                    or TrapezoidViolated:
                         break;
                     default:
                         throw new NotSupportedException(
