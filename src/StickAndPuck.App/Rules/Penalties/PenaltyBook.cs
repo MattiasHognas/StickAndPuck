@@ -52,6 +52,12 @@ namespace StickAndPuck.App.Rules.Penalties
 
         public MatchPhase LastPhase { get; set; } = MatchPhase.Intro;
 
+        /// <summary>Gets or sets who carried or last touched the puck at the last step in play, for the trapezoid (<see cref="TrapezoidRule"/>).</summary>
+        public int TrapezoidTouch { get; set; } = -1;
+
+        /// <summary>Gets or sets where the puck was at the last step in play: where a touch this step was made, before physics moved it on.</summary>
+        public System.Numerics.Vector3 TrapezoidPuck { get; set; }
+
         /// <summary>Gets or sets the dice: the match seed's stream; scenes and tests seed it.</summary>
         public required Random Rng { get; set; }
 

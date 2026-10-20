@@ -181,9 +181,9 @@ PARTS = [('Ice', ['Ice']), ('Floor', ['Floor']), ('Markings', ['Markings']), ('L
          ('Stands', ['Stands']), ('LED', ['LED']), ('Fans', ['Fans']), ('Lanterns', ['Lanterns', 'Cable']),
          ('Bench', ['Bench']), ('BenchDoors', ['BenchDoors']), ('PenaltyBox', ['PenaltyBox']), ('BoxDoors', ['BoxDoors'])]
 build_benches(); build_penalty_boxes()
-# the league layers (A17, nhl_arena.py): the trapezoid in the goal lines' red, and the rafter banners
+# the league layers (A17, nhl_arena.py): the trapezoid in its own lighter red (W72), and the rafter banners
 sys.path.insert(0, ART + '/scripts'); import nhl_arena
-nhl_arena.build_trapezoid(scene.collection, bpy.data.materials['red_line']); nhl_arena.build_banners(scene.collection)
+nhl_arena.build_trapezoid(scene.collection); nhl_arena.build_banners(scene.collection)
 def stem(name): return name.split('.')[0]
 for ob in scene.objects:                 # unparent, keeping world placement, so joins and applies are exact
     if ob.parent: mw = ob.matrix_world.copy(); ob.parent = None; ob.matrix_world = mw

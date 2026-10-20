@@ -186,6 +186,9 @@ namespace StickAndPuck.App.Core
             /// <summary>PENALTY SHOT</summary>
             public const string RulePenaltyShot = nameof(RulePenaltyShot);
 
+            /// <summary>TRAPEZOID</summary>
+            public const string RuleTrapezoid = nameof(RuleTrapezoid);
+
             /// <summary>FIGHTS</summary>
             public const string RuleFights = nameof(RuleFights);
 

@@ -8,7 +8,7 @@ namespace StickAndPuck.App.Arena
     /// An NHL match drops the mark for the home club's crest at centre ice (<see cref="CentreIce"/>),
     /// paints the lines in the NHL's deeper red and blue, and hangs banners in the rafters. The
     /// trapezoid behind the goal lines is its own layer for either league, shown when the trapezoid rule
-    /// is on (for now SAP_TRAPEZOID=1). Render only: nothing here touches the simulation.</summary>
+    /// (<see cref="RuleSet.Trapezoid"/>, W72) is on; SAP_TRAPEZOID=1 or 0 overrides the rule for previews. Render only: nothing here touches the simulation.</summary>
     /// <param name="ShlLogo">Whether the 'SHL' centre-ice mark shows.</param>
     /// <param name="HomeCrest">Whether the home club's crest shows at centre ice.</param>
     /// <param name="Banners">Whether the rafter banners hang.</param>
@@ -43,11 +43,20 @@ namespace StickAndPuck.App.Arena
             );
         }
 
-        /// <summary>Gets a value indicating whether the trapezoid shows: SAP_TRAPEZOID=1 until the
-        /// trapezoid rule (W72) switches it.</summary>
-        public static bool TrapezoidFromEnvironment()
+        /// <summary>Gets SAP_TRAPEZOID's override of the trapezoid rule for the markings: 1 shows them, 0 hides them, else None.</summary>
+        public static Maybe<bool> TrapezoidFromEnvironment()
         {
-            return Env.Is("SAP_TRAPEZOID", "1");
+            bool on = Env.Is("SAP_TRAPEZOID", "1");
+            return on || Env.Is("SAP_TRAPEZOID", "0") ? Maybe.Some(on) : Maybe.None<bool>();
+        }
+
+        /// <summary>Gets a value indicating whether the trapezoid shows: with its rule (<see cref="RuleSet.Trapezoid"/>),
+        /// unless <paramref name="environment"/> overrides it.</summary>
+        /// <param name="rules">The match's rules.</param>
+        /// <param name="environment">The override from <see cref="TrapezoidFromEnvironment"/>.</param>
+        public static bool TrapezoidShown(RuleSet rules, Maybe<bool> environment)
+        {
+            return environment.Or(rules.Trapezoid);
         }
 
         /// <summary>Gets a value indicating whether an arena part shows with these layers.</summary>

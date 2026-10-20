@@ -67,5 +67,26 @@ namespace StickAndPuck.App.Core
         {
             return new Vector3(Math.Sign(end) * GoalLineX, 0, 0);
         }
+
+        /// <summary>Half the trapezoid's width where it meets the goal line (5.49 m apart, as painted by art/scripts/nhl_arena.py).</summary>
+        public const float TrapezoidGoalHalf = 5.49f / 2;
+
+        /// <summary>Half the trapezoid's width at the end boards (8.53 m apart).</summary>
+        public const float TrapezoidBoardHalf = 8.53f / 2;
+
+        /// <summary>Gets the trapezoid's half width across the rink at a distance <paramref name="x"/> along it (behind a goal line).</summary>
+        public static float TrapezoidHalf(float x)
+        {
+            float t = Math.Clamp((MathF.Abs(x) - GoalLineX) / (HalfLength - GoalLineX), 0f, 1f);
+            return TrapezoidGoalHalf + ((TrapezoidBoardHalf - TrapezoidGoalHalf) * t);
+        }
+
+        /// <summary>Gets a value indicating whether a spot is behind a goal line in a corner, outside the trapezoid
+        /// (W72): where a goalie may not play the puck under <see cref="RuleSet.Trapezoid"/>. <paramref name="margin"/>
+        /// widens the corner toward the net, so a spot within that much of a trapezoid line counts as outside.</summary>
+        public static bool OutsideTrapezoid(Vector3 at, float margin = 0f)
+        {
+            return MathF.Abs(at.X) > GoalLineX && MathF.Abs(at.Z) > TrapezoidHalf(at.X) - margin;
+        }
     }
 }

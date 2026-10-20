@@ -1,15 +1,16 @@
 """League dressing for the arena (A17): the swappable layers export_arena.py adds to arena.glb as parts
 of their own, so the game can show or hide each one per match:
 - Trapezoid: the NHL's trapezoid behind each goal line (W72's goalie limit), two red lines (10 cm, to read from the broadcast camera) from
-  5.49 m apart on the goal line to 8.53 m apart at the end boards. Usable in either league; the game
-  shows it when the trapezoid rule is on (for now SAP_TRAPEZOID=1).
+  5.49 m apart on the goal line to 8.53 m apart at the end boards, in their own lighter red (trapezoid_line,
+  palette coral #e96f5d): in the goal lines' red the thin lines came out darker than the other ice lines. Usable
+  in either league, in the same colour in both; the game shows it when the trapezoid rule is on (W72).
 - Banners: championship-style banners hung in the rafters over the stands, made-up and league-neutral
   (a club-less field, a cream stripe, a gold emblem and hanging rod), in dusk palette colours. The
   game hangs them in NHL arenas only; they show in the flyover and the wide shots, above the gameplay frame.
 The centre-ice mark is the third layer: the 'SHL' Logo (centre_logo.py) stays its own part so an
 NHL match can drop it for the home club's crest from art/ui/crests.png, which the game draws itself.
 Blender coordinates: Z up, x along the rink, +y the far side (the game's -z).
-Used by export_arena.py:  import nhl_arena; nhl_arena.build_trapezoid(collection, material); nhl_arena.build_banners(collection)"""
+Used by export_arena.py:  import nhl_arena; nhl_arena.build_trapezoid(collection); nhl_arena.build_banners(collection)"""
 import math
 import bpy, bmesh
 from mathutils import Matrix, Vector
@@ -22,6 +23,7 @@ TRAP_GOAL_HALF = 5.49 / 2    # 18 ft apart where the trapezoid meets the goal li
 TRAP_BOARD_HALF = 8.53 / 2   # 28 ft apart at the end boards
 LINE = 0.1                   # twice the rule's 2 inch line: the broadcast camera squashes lines across the rink to dots
 Z = 0.004                    # the goal line's height above the ice
+TRAP_RED = '#e96f5d'         # palette coral: lighter than the goal lines' red, so the thin lines read like the other ice lines
 
 # dusk palette colours (art/palette/stickandpuck_dusk.gpl)
 BANNER_FIELDS = ['#a34e4d', '#31556e', '#27383e', '#613b3a', '#2b3d6b', '#6e2438']
@@ -49,8 +51,9 @@ def end_board_x(y):
     return HL if dy <= 0 else (HL - R) + math.sqrt(max(0.0, R * R - dy * dy))
 
 
-def build_trapezoid(collection, mat):
-    """Creates the 'Trapezoid' mesh object: two slanted lines behind each goal line, in the given material."""
+def build_trapezoid(collection):
+    """Creates the 'Trapezoid' mesh object: two slanted lines behind each goal line, in its own trapezoid_line material."""
+    mat = material('trapezoid_line', TRAP_RED)
     bm = bmesh.new()
     for sx in (-1, 1):
         for sy in (-1, 1):

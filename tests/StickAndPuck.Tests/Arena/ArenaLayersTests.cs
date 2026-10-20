@@ -89,9 +89,9 @@ namespace StickAndPuck.Tests.Arena
             Check(
                 meshes.Exists(m =>
                     string.Equals(m.Part, "Trapezoid", StringComparison.Ordinal)
-                    && string.Equals(m.Material, "red_line", StringComparison.Ordinal)
+                    && string.Equals(m.Material, "trapezoid_line", StringComparison.Ordinal)
                 ),
-                "the trapezoid is its own part, in the goal lines' red"
+                "the trapezoid is its own part, in its own lighter red (W72)"
             );
             Check(
                 meshes.Exists(m => string.Equals(m.Part, "Banners", StringComparison.Ordinal)),

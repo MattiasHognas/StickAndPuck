@@ -286,6 +286,14 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { PenaltyShot = v }
             ),
             Flag(
+                nameof(RuleSet.Trapezoid),
+                K.RuleTrapezoid,
+                K.RuleGroupInfractions,
+                plays: true,
+                r => r.Trapezoid,
+                (r, v) => r with { Trapezoid = v }
+            ),
+            Flag(
                 nameof(RuleSet.Fights),
                 K.RuleFights,
                 K.RuleGroupFights,

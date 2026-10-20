@@ -56,7 +56,7 @@ namespace StickAndPuck.App.Arena
         )> meshes = [];
         private readonly Dictionary<int, Color> baseColours = []; // line and banner meshes' own colours
         private readonly CentreIce centreIce = new();
-        private bool trapezoid;
+        private Maybe<bool> trapezoid = Maybe.None<bool>();
         private readonly IceBands bands = new();
         private readonly IceScratches scratches = new();
         private readonly CrowdRenderer crowd = new();
@@ -214,7 +214,7 @@ namespace StickAndPuck.App.Arena
         public void DrawScene(World world, RenderContext render)
         {
             Shader shaderDefault = OperatingSystem.IsBrowser() ? render.Unlit : maskMaterial.Shader; // Raylib's default shader: texture times colour, no light
-            ArenaLayers layers = ArenaLayers.For(world.League, trapezoid);
+            ArenaLayers layers = Layers(world);
             // The goalie, referee and puck are drawn before the arena, so the ice sheet and the bands and
             // skate scratches on it all keep the depth test to stay behind them. The sheet writes no depth
             // while the overlays go down, since millimetres apart they z-fight at rink distance; a depth-only
@@ -300,6 +300,15 @@ namespace StickAndPuck.App.Arena
                     world.Look.Crowd
                 );
             }
+        }
+
+        /// <summary>The league layers this match shows, the trapezoid by its rule unless SAP_TRAPEZOID overrides it.</summary>
+        private ArenaLayers Layers(World world)
+        {
+            return ArenaLayers.For(
+                world.League,
+                ArenaLayers.TrapezoidShown(world.Setup.Rules, trapezoid)
+            );
         }
 
         /// <summary>Draws one group of meshes with the current depth and colour state.</summary>
