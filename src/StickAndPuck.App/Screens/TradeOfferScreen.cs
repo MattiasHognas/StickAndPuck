@@ -150,12 +150,12 @@ namespace StickAndPuck.App.Screens
                 )
                 .Select(c => c.Home)
                 .Or(new KitColours());
-            bool room = art.DrawDressingRoom(kit);
+            bool room = art.DrawDressingRoom(kit, season.UserClub);
             IReadOnlyList<MenuItem> items = Items();
             int h = PanelH + (items.Count * ScreenArt.Row);
             int py = Math.Max(2, (Game.Height - h - 14) / 2);
             (int x, int top) = room
-                ? art.RoomPanel(kit, Text.Get(K.TradeOffer), PanelW, h, py)
+                ? art.RoomPanel(kit, season.UserClub, Text.Get(K.TradeOffer), PanelW, h, py)
                 : art.Panel(Text.Get(K.TradeOffer), PanelW, h, py);
             int cx = Game.Width / 2;
             top = DrawCaller(art, season, offer, cx, top);

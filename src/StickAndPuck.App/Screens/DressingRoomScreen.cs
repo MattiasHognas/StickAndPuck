@@ -102,7 +102,7 @@ namespace StickAndPuck.App.Screens
                 )
                 .Select(c => c.Home)
                 .Or(new KitColours());
-            bool room = art.DrawDressingRoom(kit);
+            bool room = art.DrawDressingRoom(kit, season.UserClub);
             DressingRoomReport report = DressingRoomSources.Build(context);
             IReadOnlyList<MenuItem> items = Items();
             bool board = full && report.Board.Count > 0;
@@ -122,7 +122,7 @@ namespace StickAndPuck.App.Screens
                 + 4;
             int py = Math.Max(2, (Game.Height - h - 14) / 2);
             (int x, int top) = room
-                ? art.RoomPanel(kit, Text.Get(K.DressingRoom), PanelW, h, py)
+                ? art.RoomPanel(kit, season.UserClub, Text.Get(K.DressingRoom), PanelW, h, py)
                 : art.Panel(Text.Get(K.DressingRoom), PanelW, h, py);
             int cx = Game.Width / 2;
             art.Centred(Stage(season), cx, top, ScreenArt.Muted);

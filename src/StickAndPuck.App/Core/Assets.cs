@@ -80,6 +80,10 @@ namespace StickAndPuck.App.Core
         /// <summary>White ink mask of the dressing room jerseys' stripes and numbers, 480x270, tinted with the club's secondary colour (A20).</summary>
         public const string DressingRoomTrim = "art.ui.dressing_room_trim.png";
 
+        /// <summary>The dressing room floor's own pixels on an ordered pattern over the floor ring's crest spot, 480x270:
+        /// the screen prints the user club's crest there and draws this over it, so the crest reads as a print on the mat.</summary>
+        public const string DressingRoomFloor = "art.ui.dressing_room_floor.png";
+
         /// <summary>The pre-game stats card's versus panel, 300x196 (A22, art/scripts/make_intro_card.py).</summary>
         public const string IntroCard = "art.ui.intro_card.png";
 

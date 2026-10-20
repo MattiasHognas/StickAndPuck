@@ -15,6 +15,7 @@ namespace StickAndPuck.Tests.Core
                     Assets.DressingRoomBackdrop,
                     Assets.DressingRoomJersey,
                     Assets.DressingRoomTrim,
+                    Assets.DressingRoomFloor,
                 }
             )
             {

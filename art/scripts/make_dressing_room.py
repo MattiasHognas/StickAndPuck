@@ -7,6 +7,9 @@
                             the user club's primary kit colour and draws it over the backdrop.
   dressing_room_trim.png    480x270 white ink mask of the jerseys' stripes and numbers, tinted
                             with the club's secondary colour.
+  dressing_room_floor.png   480x270 the floor's own pixels over the crest spot in the floor ring, on
+                            an ordered pattern; the game prints the user club's crest there and
+                            draws this over it so the crest reads as a print on the floor.
   coach_portrait.png        64x80 coach, neutral (the portrait the screen shows by default).
   coach_moods.png           192x80 the coach as neutral, pleased and angry, 64x80 cells left to right.
 
@@ -45,6 +48,9 @@ DEEP = (140, 140, 140, 255)
 
 STALL_W, STALL_TOP, STALL_BOT = 40, 46, 184
 LIGHTS = (60, 180, 300, 420)     # x of the ceiling lights
+# where the game prints the user club's 16x16 crest on the floor, stretched 3x wide and 1x tall like a
+# carpet logo seen from the bench (ScreenArt.FloorCrest has the same box)
+CREST_X, CREST_Y, CREST_W, CREST_H = W // 2 - 24, 248, 48, 16
 
 
 def dither(img, x, y, w, h, a, b, level):
@@ -245,11 +251,11 @@ def build_backdrop():
     vgrad(img, 0, fy + 2, W, H - fy - 2, [(TEAL_D, STONE_D, 2), (STONE_D, NAVY, 2), (NAVY, PLUM, 2), (PLUM, NIGHT, 2)])
     for x in range(0, W, 24):
         d.line([x, fy + 2, x - 40 + (x - W // 2) // 6, H], fill=STONE_D)
-    # centre logo on the floor: a gold ring with a puck
-    d.ellipse([W // 2 - 60, 226, W // 2 + 60, 262], outline=GOLD_D)
-    d.ellipse([W // 2 - 56, 229, W // 2 + 56, 259], outline=WOOD_D)
-    d.ellipse([W // 2 - 14, 238, W // 2 + 14, 250], fill=INK)
-    d.ellipse([W // 2 - 13, 238, W // 2 + 13, 247], fill=PLUM2)
+    # centre logo on the floor: a gold ring around the spot where the game prints the club's crest, low
+    # enough that it shows under the dressing room panel's bottom edge
+    cx, cy = CREST_X + CREST_W // 2, CREST_Y + CREST_H // 2
+    d.ellipse([cx - 48, cy - 13, cx + 48, cy + 13], outline=GOLD_D)
+    d.ellipse([cx - 45, cy - 11, cx + 45, cy + 11], outline=WOOD_D)
 
     # bench along the stalls: seat, front board and legs
     by0 = fy + 6
@@ -261,7 +267,7 @@ def build_backdrop():
     rect(img, 0, by0 + 13, W, 1, INK)
     for x in range(14, W, 52):
         rect(img, x, by0 + 14, 3, 6, INK)
-    # things on the bench: a towel, water bottles and a bucket of pucks
+    # things on the bench: a towel and water bottles
     for tx in (36, 156, 332, 444):
         rect(img, tx, by0 - 3, 18, 4, INK)
         rect(img, tx + 1, by0 - 2, 16, 2, CREAM)
@@ -271,12 +277,6 @@ def build_backdrop():
             rect(img, wx + k * 6, by0 - 9, 5, 9, INK)
             rect(img, wx + k * 6 + 1, by0 - 8, 3, 7, SKY if k else GREEN_D)
             rect(img, wx + k * 6 + 2, by0 - 11, 1, 2, INK)
-    bkx = 214
-    rect(img, bkx, by0 + 16, 22, 14, INK)
-    rect(img, bkx + 1, by0 + 17, 20, 12, BLUE)
-    rect(img, bkx + 1, by0 + 17, 20, 2, SKY)
-    for k in range(5):
-        rect(img, bkx + 2 + k * 4, by0 + 14 - (k % 2), 4, 3, INK)
 
     # sticks leaning in the corners
     for sx in (6, 466):
@@ -293,9 +293,18 @@ def build_backdrop():
             if e < 6 and (x + y) % (e + 2) == 0:
                 img.putpixel((x, y), INK)
 
+    # the floor print: the room's own floor pixels over the crest's spot on an ordered pattern, drawn over
+    # the crest so the mat's weave shows through it and it reads as printed on the floor, not a sticker
+    floor = Image.new("RGBA", (W, H), CLEAR)
+    for y in range(CREST_Y, CREST_Y + CREST_H):
+        for x in range(CREST_X, CREST_X + CREST_W):
+            if (x + y) % 2 == 0 and (y % 4 < 2 or x % 4 < 2):
+                floor.putpixel((x, y), img.getpixel((x, y)))
+
     img.save(os.path.join(UI, "dressing_room.png"))
     jersey.save(os.path.join(UI, "dressing_room_jersey.png"))
     trim.save(os.path.join(UI, "dressing_room_trim.png"))
+    floor.save(os.path.join(UI, "dressing_room_floor.png"))
     return img, jersey, trim
 
 
