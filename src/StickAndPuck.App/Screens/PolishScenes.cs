@@ -91,6 +91,9 @@ namespace StickAndPuck.App.Screens
                     app.Screens.Push(new BracketScreen(app));
                     app.Screens.Push(TrophyScreen.Season(app));
                     break;
+                case "playout" or "relegation":
+                    OpenPlayout(app, screen, clubs);
+                    break;
                 case "arcadetrophy":
                     app.Screens.Push(TrophyScreen.Arcade(app, ArcadeRuns(app, clubs)));
                     break;
@@ -216,6 +219,82 @@ namespace StickAndPuck.App.Screens
             if (!ChallengeDesk.Force(season, kind).HasValue)
             {
                 Console.WriteLine($"SAP: screens: no {name} challenge fits the next three games");
+            }
+        }
+
+        /// <summary>The playout (W76) screens: the bracket mid-playout, or the relegation screen after it.</summary>
+        private static void OpenPlayout(AppState app, string screen, IReadOnlyList<ClubData> clubs)
+        {
+            bool relegation = string.Equals(screen, "relegation", StringComparison.Ordinal);
+            Playout(app, clubs, relegation ? int.MaxValue : PlayoutGames());
+            if (relegation)
+            {
+                Relegate(app);
+            }
+
+            app.Screens.Push(new BracketScreen(app));
+            if (relegation)
+            {
+                app.Screens.Push(SeasonEnd.Screen(app));
+            }
+        }
+
+        /// <summary>Gets the playout games the playout fixture settles: SAP_PLAYOUT_GAMES, else 3.</summary>
+        private static int PlayoutGames()
+        {
+            return int.TryParse(
+                Env.Get("SAP_PLAYOUT_GAMES"),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int games
+            )
+                ? games
+                : 3;
+        }
+
+        /// <summary>A fresh SHL test season settled on paper to the end of the regular season, the human's club
+        /// then swapped to the 13th placed club, and that many of its playout games (W76) simmed.</summary>
+        public static void Playout(AppState app, IReadOnlyList<ClubData> clubs, int games)
+        {
+            Season(app, clubs, "playout-test.json", 0);
+            if (!app.Season.Current.TryGet(out SeasonState season))
+            {
+                return;
+            }
+
+            while (!season.IsOver && app.Season.SimCurrentGame().HasValue)
+            {
+                // the regular season, one game at a time as "sim this game" does
+            }
+
+            season.UserClub = season.Table[PlayoffState.PlayoutHigh - 1].ClubId;
+            int settled = 0;
+            while (settled < games && app.Season.SimCurrentGame().HasValue)
+            {
+                settled++;
+            }
+
+            Console.WriteLine(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"SAP: screens: playout test, {season.UserClub} in the playout, {settled} games simmed, relegated {season.Relegated.Or("not yet")}"
+                )
+            );
+        }
+
+        /// <summary>Puts the human on the club that lost the playout, so the season ends on the relegation screen.</summary>
+        private static void Relegate(AppState app)
+        {
+            if (
+                app.Season.Current.TryGet(out SeasonState season)
+                && season.Relegated.TryGet(out string down)
+            )
+            {
+                season.UserClub = down;
+                if (season.Playoffs.TryGet(out PlayoffState playoffs))
+                {
+                    playoffs.UserClub = down;
+                }
             }
         }
 

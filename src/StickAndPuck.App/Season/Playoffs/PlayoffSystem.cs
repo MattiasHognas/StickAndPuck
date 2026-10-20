@@ -66,7 +66,9 @@ namespace StickAndPuck.App.Season.Playoffs
                 return;
             }
 
-            string round = playoffs.Current.Name;
+            string round = playoffs.Playout.Is(p => p == series)
+                ? "PLAYOUT"
+                : playoffs.Current.Name;
             int game = series.Games.Count + 1;
             if (!world.App.Playoffs.Finish(result))
             {
@@ -112,7 +114,12 @@ namespace StickAndPuck.App.Season.Playoffs
         /// <summary>Prints where the playoffs stand: the champion, or the human's next game.</summary>
         public static void Log(PlayoffState playoffs)
         {
-            if (playoffs.IsOver)
+            if (playoffs.Relegated.TryGet(out string down))
+            {
+                Console.WriteLine($"SAP: {down} lost the playout and are relegated");
+            }
+
+            if (playoffs.IsOver && !playoffs.UserSeries.HasValue)
             {
                 Console.WriteLine(
                     $"SAP: {playoffs.Champion.Or("")} are {(playoffs.League == League.Nhl ? "NHL" : "SHL")} champions"
@@ -123,7 +130,7 @@ namespace StickAndPuck.App.Season.Playoffs
                 Console.WriteLine(
                     string.Create(
                         CultureInfo.InvariantCulture,
-                        $"SAP: next playoff game: {playoffs.Current.Name} game {s.Games.Count + 1}, {s.NextHome} vs {s.NextAway} (series {s.High} {s.HighWins}-{s.LowWins} {s.Low})"
+                        $"SAP: next playoff game: {(playoffs.UserInPlayout ? "PLAYOUT" : playoffs.Current.Name)} game {s.Games.Count + 1}, {s.NextHome} vs {s.NextAway} (series {s.High} {s.HighWins}-{s.LowWins} {s.Low})"
                     )
                 );
             }

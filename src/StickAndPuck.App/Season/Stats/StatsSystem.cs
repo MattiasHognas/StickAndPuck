@@ -91,8 +91,7 @@ namespace StickAndPuck.App.Season.Stats
                 && Matches(world, series.NextHome, series.NextAway)
             )
             {
-                int round = playoffs.Rounds.Count - 1;
-                int index = playoffs.Current.Series.IndexOf(series);
+                (int round, int index) = playoffs.Locate(series);
                 if (index >= 0)
                 {
                     string key = SeasonStats.PlayoffKey(round, index, series.Games.Count);

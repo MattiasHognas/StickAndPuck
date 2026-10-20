@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Challenges;
 using StickAndPuck.App.Season.Injuries;
@@ -54,6 +55,11 @@ namespace StickAndPuck.App.Season.Schedule
 
         /// <summary>Gets or sets the playoffs, None until the regular season is over and they start.</summary>
         public Maybe<PlayoffState> Playoffs { get; set; }
+
+        /// <summary>Gets the club relegated in the SHL playout (W76), or None while it is open or without one (NHL, rule off).</summary>
+        [JsonIgnore]
+        public Maybe<string> Relegated =>
+            Playoffs.TryGet(out PlayoffState p) ? p.Relegated : Maybe.None<string>();
 
         /// <summary>Gets or sets the rules every game of this season plays, stored when its first game starts so a later settings change never alters a running season; None in an older save until then.</summary>
         public Maybe<RuleSet> Rules { get; set; }

@@ -16,6 +16,7 @@ namespace StickAndPuck.App.Core
         GenerationMode = JsonSourceGenerationMode.Metadata,
         Converters = [
             typeof(MaybeJsonConverter<PlayoffState>),
+            typeof(MaybeJsonConverter<PlayoffSeries>),
             typeof(MaybeJsonConverter<RuleSet>),
             typeof(MaybeJsonConverter<Fixture>),
             typeof(MaybeJsonConverter<FixtureResult>),

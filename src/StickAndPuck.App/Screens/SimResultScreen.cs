@@ -21,8 +21,8 @@ namespace StickAndPuck.App.Screens
             {
                 items.Add(
                     new MenuItem(
-                        Text.Get(K.Champions),
-                        () => Flow.Replace(TrophyScreen.Season(App))
+                        SeasonEnd.Label(App, K.Champions),
+                        () => Flow.Replace(SeasonEnd.Screen(App))
                     )
                 );
             }

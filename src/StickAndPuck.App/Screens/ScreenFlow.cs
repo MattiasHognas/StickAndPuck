@@ -273,9 +273,9 @@ namespace StickAndPuck.App.Screens
                 _ = app.Season.Continue(Clubs);
             }
 
-            bool crowned = app.Playoffs.Current.Is(p => p.Champion.HasValue);
+            bool crowned = app.Playoffs.Current.Is(p => p.IsDone);
             Maybe<SimmedGame> simmed = app.Season.SimCurrentGame();
-            crowned = !crowned && app.Playoffs.Current.Is(p => p.Champion.HasValue);
+            crowned = !crowned && app.Playoffs.Current.Is(p => p.IsDone);
             if (simmed.TryGet(out SimmedGame game))
             {
                 Console.WriteLine(

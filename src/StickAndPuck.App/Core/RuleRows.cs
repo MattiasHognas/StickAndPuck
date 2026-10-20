@@ -330,6 +330,14 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { PlayoffHomeIce = v }
             ),
             Flag(
+                nameof(RuleSet.Playout),
+                K.RulePlayout,
+                K.RuleGroupLeague,
+                plays: true,
+                r => r.Playout,
+                (r, v) => r with { Playout = v }
+            ),
+            Flag(
                 nameof(RuleSet.Morale),
                 K.RuleMorale,
                 K.RuleGroupSeason,

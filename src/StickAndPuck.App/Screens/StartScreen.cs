@@ -96,7 +96,7 @@ namespace StickAndPuck.App.Screens
                     (!season.IsOver)
                         ? Text.Format(K.StartGameOf, club, played + 1, total)
                         : (
-                            season.Playoffs.Is(p => p.Champion.HasValue || !p.UserSeries.HasValue)
+                            season.Playoffs.Is(p => !p.UserSeries.HasValue)
                                 ? Text.Format(K.StartSeasonOver, club)
                                 : Text.Format(K.StartPlayoffs, club)
                         );

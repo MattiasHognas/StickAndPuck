@@ -96,7 +96,7 @@ namespace StickAndPuck.App.Season.Playoffs.Dev
         {
             return string.Create(
                 CultureInfo.InvariantCulture,
-                $"SAP: playoff {playoffs.Current.Name} game {series.Games.Count + 1}: {setup.Home.Name} vs {setup.Away.Name}, series {series.High} {series.HighWins}-{series.LowWins} {series.Low}"
+                $"SAP: playoff {(playoffs.UserInPlayout ? "PLAYOUT" : playoffs.Current.Name)} game {series.Games.Count + 1}: {setup.Home.Name} vs {setup.Away.Name}, series {series.High} {series.HighWins}-{series.LowWins} {series.Low}"
             );
         }
 

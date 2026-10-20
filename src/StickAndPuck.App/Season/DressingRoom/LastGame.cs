@@ -42,7 +42,24 @@ namespace StickAndPuck.App.Season.DressingRoom
         public static Maybe<LastGame> Of(SeasonState season)
         {
             string user = season.UserClub;
-            if (season.Playoffs.TryGet(out PlayoffState playoffs))
+            if (
+                season.Playoffs.TryGet(out PlayoffState playoffs)
+                && playoffs.Playout.TryGet(out PlayoffSeries playout)
+                && playout.Involves(user)
+                && playout.Games.Count > 0
+            )
+            {
+                // the human's club plays the playout, never the playoffs as well
+                int i = playout.Games.Count - 1;
+                PlayoffGame g = playout.Games[^1];
+                return new LastGame(g.Home, g.Away, g.Result, Playoff: true, user)
+                {
+                    Key = SeasonStats.PlayoffKey(PlayoffState.PlayoutRound, 0, i),
+                    Seed = playoffs.GameSeed(PlayoffState.PlayoutRound, 0, i),
+                };
+            }
+
+            if (season.Playoffs.TryGet(out playoffs))
             {
                 for (int r = playoffs.Rounds.Count - 1; r >= 0; r--)
                 {

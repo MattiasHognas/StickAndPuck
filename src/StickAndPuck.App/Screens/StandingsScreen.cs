@@ -207,6 +207,7 @@ namespace StickAndPuck.App.Screens
         )
         {
             string userClub = season.UserClub;
+            Maybe<string> relegated = season.Relegated;
             top += Line;
             for (int i = 0; i < table.Count; i++)
             {
@@ -214,6 +215,11 @@ namespace StickAndPuck.App.Screens
                 Color ink = string.Equals(r.ClubId, userClub, StringComparison.Ordinal)
                     ? art.Gold
                     : art.Text;
+                if (relegated.Is(d => string.Equals(d, r.ClubId, StringComparison.Ordinal)))
+                {
+                    ink = ScreenArt.Muted; // went down in the playout (W76)
+                }
+
                 string name = Name(clubs, r.ClubId);
                 art.Right(N(i + 1), x + 22, top, ink);
                 art.Left(name, x + 30, top, ink);
@@ -253,8 +259,11 @@ namespace StickAndPuck.App.Screens
             string nextText = season.IsOver
                 ? Text.Get(K.RegularSeasonOver)
                 : Text.Get(K.WaitingForRound);
-            string next = season.NextGame.TryGet(out Fixture g)
-                ? Text.Format(K.NextMatch, Name(clubs, g.Home), Name(clubs, g.Away))
+            string next =
+                season.NextGame.TryGet(out Fixture g)
+                    ? Text.Format(K.NextMatch, Name(clubs, g.Home), Name(clubs, g.Away))
+                : season.Relegated.TryGet(out string down)
+                    ? Text.Format(K.Relegated, Name(clubs, down))
                 : nextText;
             art.Centred(next, Game.Width / 2, top, art.Gold);
         }

@@ -259,7 +259,7 @@ namespace StickAndPuck.App.Screens
         private static string Stage(SeasonState season)
         {
             return season.Playoffs.TryGet(out PlayoffState playoffs)
-                ? playoffs.CurrentTitle
+                ? playoffs.UserTitle
                 : Text.Format(
                     LeagueText.Of(season.League).Round,
                     StandingsScreen.Round(season),

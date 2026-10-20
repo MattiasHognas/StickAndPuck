@@ -181,42 +181,57 @@ namespace StickAndPuck.App.Season.Stats
             {
                 for (int s = 0; s < playoffs.Rounds[r].Series.Count; s++)
                 {
-                    PlayoffSeries series = playoffs.Rounds[r].Series[s];
-                    int i = 0;
-                    foreach (PlayoffGame pg in series.Games)
-                    {
-                        string key = PlayoffKey(r, s, i);
-                        if (Credited.Contains(key))
-                        {
-                            i++;
-                            continue;
-                        }
-                        if (
-                            !byId.TryGetValue(pg.Home, out ClubData home)
-                            || !byId.TryGetValue(pg.Away, out ClubData away)
-                        )
-                        {
-                            i++;
-                            continue;
-                        }
-                        if (
-                            CreditPaper(
-                                key,
-                                home,
-                                away,
-                                pg.Result,
-                                playoffs.GameSeed(r, s, i),
-                                injuries
-                            )
-                        )
-                        {
-                            count++;
-                        }
-
-                        i++;
-                    }
+                    count += CatchUpSeries(
+                        playoffs,
+                        playoffs.Rounds[r].Series[s],
+                        r,
+                        s,
+                        byId,
+                        injuries
+                    );
                 }
             }
+
+            if (playoffs.Playout.TryGet(out PlayoffSeries playout))
+            {
+                count += CatchUpSeries(
+                    playoffs,
+                    playout,
+                    PlayoffState.PlayoutRound,
+                    0,
+                    byId,
+                    injuries
+                );
+            }
+
+            return count;
+        }
+
+        private int CatchUpSeries(
+            PlayoffState playoffs,
+            PlayoffSeries series,
+            int r,
+            int s,
+            Dictionary<string, ClubData> byId,
+            float injuries
+        )
+        {
+            int count = 0;
+            for (int i = 0; i < series.Games.Count; i++)
+            {
+                PlayoffGame pg = series.Games[i];
+                string key = PlayoffKey(r, s, i);
+                if (
+                    !Credited.Contains(key)
+                    && byId.TryGetValue(pg.Home, out ClubData home)
+                    && byId.TryGetValue(pg.Away, out ClubData away)
+                    && CreditPaper(key, home, away, pg.Result, playoffs.GameSeed(r, s, i), injuries)
+                )
+                {
+                    count++;
+                }
+            }
+
             return count;
         }
     }

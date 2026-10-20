@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development and no trade deadline.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development, no trade deadline and no playout.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -57,11 +57,12 @@ namespace StickAndPuck.App.Core
             Development = false,
             PenaltyShot = false,
             TradeDeadline = false,
+            Playout = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
         /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice, stronger team morale,
-        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games and milder player development over its longer season and two trade offers at the deadline.</summary>
+        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games, milder player development over its longer season, two trade offers at the deadline and no relegation playout.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -80,6 +81,7 @@ namespace StickAndPuck.App.Core
             RivalryStrength = RivalryStrength.Strong,
             DevelopmentStrength = DevelopmentStrength.Mild,
             TradeOffers = TradeFrequency.Often,
+            Playout = false,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -175,6 +177,10 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets which games of a best of seven playoff series the higher seed hosts.</summary>
         public PlayoffHomeIce PlayoffHomeIce { get; init; } = PlayoffHomeIce.Alternating;
+
+        /// <summary>Gets a value indicating whether an SHL season's 13th and 14th play a best of seven playout
+        /// beside the playoffs, its loser relegated (W76); an NHL season never has one.</summary>
+        public bool Playout { get; init; } = true;
 
         /// <summary>Gets a value indicating whether a season keeps a team morale per club that moves with results and events.</summary>
         public bool Morale { get; init; } = true;
