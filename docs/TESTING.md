@@ -125,7 +125,7 @@ One season is the whole game, so how it ends is the game's ending. `SAP_ENDING` 
 | `relegated` | Outside the arena at night in the rain (`art/scene/exterior.glb`, `art/scripts/build_exterior.py`): the name board's bulbs dead but for a couple of letters, a player in the club's street clothes (`art/scripts/make_street.py`) walking away past the street lamp with his hockey bag. |
 | `fired` | The dressing room (A20's backdrop on the wall behind): the coach in his suit carries his box across the room and out through a lit doorway as the lights go down. |
 
-`SAP_ENDING=champions SAP_CLUB=frolunda SAP_RECORD=10` records one; any `SAP_RECORD`, `SAP_SCREENSHOT` or `SAP_LANGUAGE` works as in the other scenes.
+A real season plays its ending the same way before the recap (`Screens/SeasonEnd.PlayEnding`, the SEASON RECAP item): ten and a half seconds, or until enter, space, escape, a click or a pad's A or start skips it, with the champion as the other club after a lost final; `SAP_SCREEN=recap` shows it too. `SAP_ENDING=champions SAP_CLUB=frolunda SAP_RECORD=10` records one; any `SAP_RECORD`, `SAP_SCREENSHOT` or `SAP_LANGUAGE` works as in the other scenes.
 
 ### Penalty fixture variables
 

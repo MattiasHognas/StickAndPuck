@@ -30,9 +30,19 @@ namespace StickAndPuck.App.Season.Endings
                     Env.Get("SAP_CLUB") is { Length: > 0 } c ? c : Env.Get("SAP_HOME")
                 )
                 .Or(clubs[0]);
-            IReadOnlyList<ClubData> league =
-                home.League == League.Nhl ? Clubs.LoadNhl() : Clubs.Load(League.Shl);
-            ClubData away = Club(clubs, Env.Get("SAP_AWAY")).Or(Opponent(home, league));
+            ClubData away = Club(clubs, Env.Get("SAP_AWAY")).Or(Opponent(home));
+            return Build(home, away, new EndingStage(kind), settings);
+        }
+
+        /// <summary>A world that plays an ending for a club, with the other club in it: the scene and the season's
+        /// end (<see cref="Screens.SeasonEnd.PlayEnding"/>) both start one so.</summary>
+        internal static World Build(
+            ClubData home,
+            ClubData away,
+            EndingStage stage,
+            Settings settings
+        )
+        {
             World world = new(
                 new MatchSetup
                 {
@@ -42,11 +52,20 @@ namespace StickAndPuck.App.Season.Endings
                 },
                 settings
             );
-            world.Dev.Ending.Set(new EndingStage(kind));
+            world.Dev.Ending.Set(stage);
             Console.WriteLine(
-                $"SAP: ending {kind.ToString().ToLowerInvariant()}: {home.Name} (v {away.Name})"
+                $"SAP: ending {stage.Kind.ToString().ToLowerInvariant()}: {home.Name} (v {away.Name})"
             );
             return world;
+        }
+
+        /// <summary>A club of either league by id; none for an empty or unknown id.</summary>
+        internal static Maybe<ClubData> ClubById(string id)
+        {
+            return Clubs
+                .Load(League.Shl)
+                .Concat(Clubs.LoadNhl())
+                .FirstOrNone(c => string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>A club by id from the run's clubs, else from either league's files; none for an empty id.</summary>
@@ -69,8 +88,10 @@ namespace StickAndPuck.App.Season.Endings
         }
 
         /// <summary>The club's rival in its league, else the next club after it in the league's list.</summary>
-        private static ClubData Opponent(ClubData home, IReadOnlyList<ClubData> league)
+        internal static ClubData Opponent(ClubData home)
         {
+            IReadOnlyList<ClubData> league =
+                home.League == League.Nhl ? Clubs.LoadNhl() : Clubs.Load(League.Shl);
             foreach ((string a, string b) in Rivals.Pairs)
             {
                 string other =

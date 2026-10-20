@@ -42,15 +42,46 @@ namespace StickAndPuck.App.Screens
             PlayEnding(app, ending, () => app.Screens.Replace(new SeasonRecapScreen(app)));
         }
 
-        /// <summary>THE ENDING SCENE HOOK: a cinematic ending for how the season ended (champions, runners-up,
-        /// semi-final, season over, relegated, fired) plays here, before the recap, and calls <paramref name="then"/>
-        /// when it is over or skipped. There is no ending scene yet, so the recap shows at once.</summary>
+        /// <summary>THE ENDING SCENE HOOK: the ending scene for how the season ended (champions, runners-up,
+        /// semi-final, season over, relegated, fired; Season/Endings, as SAP_ENDING plays them) runs here, before the
+        /// recap, and <paramref name="then"/> runs when it is over or skipped. Outside the menus (a test, a scene
+        /// that is not the screens) the recap shows at once.</summary>
         public static void PlayEnding(AppState app, SeasonEnding ending, Action then)
         {
-            Console.WriteLine(
-                $"SAP: screens: season ending {ending} for {app.Season.Current.Select(s => s.UserClub).Or("")}"
-            );
-            then();
+            string club = app.Season.Current.Select(s => s.UserClub).Or("");
+            Console.WriteLine($"SAP: screens: season ending {ending} for {club}");
+            if (
+                !app.Screens.Active
+                || !Season
+                    .Endings.EndingStage.Parse(ending.ToString())
+                    .TryGet(out Season.Endings.EndingKind kind)
+                || !Season.Endings.EndingScene.ClubById(club).TryGet(out ClubData home)
+            )
+            {
+                then();
+                return;
+            }
+
+            // the club that beat us in the final is the champion; otherwise the scene's own pick
+            Maybe<ClubData> winner = app
+                .Playoffs.Current.Select(p => p.Champion.Or(""))
+                .Select(Season.Endings.EndingScene.ClubById)
+                .Or(Maybe.None<ClubData>());
+            ClubData away =
+                kind == Season.Endings.EndingKind.RunnersUp && winner.TryGet(out ClubData w)
+                    ? w
+                    : Season.Endings.EndingScene.Opponent(home);
+            Season.Endings.EndingStage stage = new(kind)
+            {
+                Then = new Action(() =>
+                {
+                    then();
+                    app.Screens.ResumeMenus();
+                }),
+            };
+            World world = Season.Endings.EndingScene.Build(home, away, stage, app.Screens.Settings);
+            world.App = app;
+            app.Screens.Play(world);
         }
     }
 }

@@ -316,11 +316,7 @@ namespace StickAndPuck.App.Arena
                 ice: false,
                 sheet: false
             );
-            crowd.Draw(world, render, shaderDefault, world.Look.Crowd, CrowdShare);
-            if (CrowdShare > 0f)
-            {
-                supporters.Draw(world, render, shaderDefault, world.Look.Crowd); // nobody to wave them in an empty arena
-            }
+            DrawCrowd(world, render, shaderDefault);
             // glass last and without depth, so players behind it still draw; flat colour over the crowd
             Rlgl.DisableDepthMask();
             foreach ((int mesh, Kind kind, _, _, _, _, _) in meshes)
@@ -361,6 +357,16 @@ namespace StickAndPuck.App.Arena
                 world.League,
                 ArenaLayers.TrapezoidShown(world.Setup.Rules, trapezoid)
             );
+        }
+
+        /// <summary>The crowd, and the supporters' flags and scarves over it unless the seats are empty.</summary>
+        private void DrawCrowd(World world, RenderContext render, Shader unlit)
+        {
+            crowd.Draw(world, render, unlit, world.Look.Crowd, CrowdShare);
+            if (CrowdShare > 0f)
+            {
+                supporters.Draw(world, render, unlit, world.Look.Crowd); // nobody to wave them in an empty arena
+            }
         }
 
         /// <summary>Draws one group of meshes with the current depth and colour state.</summary>

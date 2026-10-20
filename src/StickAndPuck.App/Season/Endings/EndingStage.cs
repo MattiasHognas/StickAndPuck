@@ -10,6 +10,10 @@ namespace StickAndPuck.App.Season.Endings
         /// <summary>Gets which ending plays.</summary>
         public EndingKind Kind { get; } = kind;
 
+        /// <summary>Gets what runs when the scene is over or skipped, at a season's real end (the recap); none when
+        /// SAP_ENDING plays it, which then simply carries on.</summary>
+        public Maybe<Action> Then { get; init; }
+
         /// <summary>Gets the title line's string key.</summary>
         public string TitleKey =>
             Kind switch

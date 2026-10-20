@@ -52,6 +52,19 @@ namespace StickAndPuck.Tests.Season
         }
 
         [Test]
+        public void OutsideTheMenusTheRecapFollowsAtOnce()
+        {
+            AppState app = new();
+            bool recap = false;
+            App.Screens.SeasonEnd.PlayEnding(
+                app,
+                App.Season.Recap.SeasonEnding.Champions,
+                () => recap = true
+            );
+            Check(recap, "with no menus running, the season's end goes straight to the recap");
+        }
+
+        [Test]
         [NotInParallel("SAP_ENDING")]
         public void SceneFollowsTheClubsLeagueAndRunsOnlyTheEnding()
         {

@@ -21,6 +21,10 @@ namespace StickAndPuck.App.Season.Endings
         private bool arenaStarted;
         private int divisor = 1;
         private float time;
+        private bool done;
+
+        /// <summary>How long an ending runs at a season's end before the recap, in seconds.</summary>
+        public const float Length = 10.5f;
 
         public bool RunsWhilePaused => true;
 
@@ -65,6 +69,11 @@ namespace StickAndPuck.App.Season.Endings
             }
 
             time = world.Time;
+            if (Finished(world))
+            {
+                return;
+            }
+
             s.Update(world, time);
             Camera3D camera = s.Camera(time);
             if (s.Divisor > 0)
@@ -78,6 +87,49 @@ namespace StickAndPuck.App.Season.Endings
             }
 
             world.App.Scale.Request(divisor);
+        }
+
+        /// <summary>At a season's real end, hands on to the recap once the scene has run (or a key, click or pad
+        /// button skips it), once; true when it has.</summary>
+        private bool Finished(World world)
+        {
+            if (
+                done
+                || !world.Dev.Ending.TryGet(out EndingStage stage)
+                || !stage.Then.TryGet(out Action then)
+            )
+            {
+                return done;
+            }
+
+            bool skipped =
+                time > 0.5f
+                && (
+                    IsKeyPressed(KeyboardKey.Enter)
+                    || IsKeyPressed(KeyboardKey.Space)
+                    || IsKeyPressed(KeyboardKey.Escape)
+                    || IsMouseButtonPressed(MouseButton.Left)
+                    || Enumerable
+                        .Range(0, 4)
+                        .Any(p =>
+                            IsGamepadButtonPressed(p, GamepadButton.RightFaceDown)
+                            || IsGamepadButtonPressed(p, GamepadButton.MiddleRight)
+                        )
+                );
+            if (time < Length && !skipped)
+            {
+                return false;
+            }
+
+            done = true;
+            Console.WriteLine(
+                string.Create(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    $"SAP: ending over at {time:0.0} s{(skipped ? ", skipped" : "")}"
+                )
+            );
+            then();
+            return true;
         }
 
         /// <summary>Sets the toon shader's tones and light direction.</summary>

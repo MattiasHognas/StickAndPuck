@@ -116,6 +116,19 @@ namespace StickAndPuck.App.Screens
             return w;
         }
 
+        /// <summary>Hands the game to a world that is not a match and not the menus (a season's ending scene); the
+        /// screens stay as they are underneath until <see cref="ResumeMenus"/>.</summary>
+        public void Play(World world)
+        {
+            next = world;
+        }
+
+        /// <summary>Comes back to the menus' world with the screens as they were left.</summary>
+        public void ResumeMenus()
+        {
+            next = MenuWorld();
+        }
+
         /// <summary>Ends the game after this frame.</summary>
         public void Quit()
         {
