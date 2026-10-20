@@ -150,12 +150,15 @@ The crowd is drawn by the game from sprite frames, not baked into `arena.glb`: `
 
 ## Building a release
 
-- `tools/publish.sh` builds self-contained single executables in `publish/linux-x64/StickAndPuck` and `publish/win-x64/StickAndPuck.exe`, with .NET, raylib and all assets packed inside.
+- `tools/publish.sh` builds self-contained single executables in `publish/linux-x64/StickAndPuck`, `publish/win-x64/StickAndPuck.exe` and `publish/osx-arm64/StickAndPuck`, with .NET, raylib and all assets packed inside.
+- The Windows exe is published as a GUI app (`OutputType` `WinExe` for `win-*` RIDs), so no console window opens; `dotnet run` keeps its console. Started from a terminal, the game attaches to that console (`Core/GameLog.cs`), so `SAP_*` runs still print there.
+- For macOS, `tools/macos_app.py` wraps the executable in `publish/osx-arm64/StickAndPuck.app` (`Contents/MacOS/StickAndPuck`, `Info.plist` with the bundle id, version and minimum macOS 14) and checks it; the release workflow zips that bundle as `StickAndPuck-vX.Y.Z-osx-arm64.zip`. The bundle has only the .NET SDK's ad-hoc signature (no Apple notarization) and no icon yet.
+- Logging: every console line also goes to a log file per launch, `logs/yyyy-MM-dd_HH-mm-ss.txt` (local start time) next to `settings.json`; it is written off the game thread through a bounded queue (`Core/LogFile.cs`: a flood drops lines and notes how many rather than waiting on the disk; the rest is flushed when the queue runs empty and on exit or a crash), logs older than 30 days are deleted in the background at startup, and the browser build writes none. Release builds show raylib's warnings and errors only, Debug builds all its lines; `SAP_RAYLIB_LOG=info` (or `trace`, `debug`, `warning`, `error`, `none`) overrides that. Raylib's info lines stay out of the log file.
 - `tools/publish.sh linux-x64` builds just one platform. `VERSION=0.1.2 tools/publish.sh` stamps a version.
 - Every merge to main builds, tags and publishes a GitHub Release automatically; `[milestone]` in the squash title (or a `milestone` PR label) bumps the minor version instead of the patch. Pull requests run both the build/publish check and the Release test suite.
 - Releases also attach `StickAndPuck-vX.Y.Z-browser-wasm.zip`, containing the verified browser site with `index.html` at the ZIP root. Browser and desktop builds share the selected release version; extract the ZIP and serve its contents over HTTP. The browser site and verification reports remain available as Actions artifacts.
 
-The .NET runtime, raylib and all assets are packed inside and unpacked on first start, so the executable runs from any folder. The two output paths are `publish/linux-x64/StickAndPuck` and `publish/win-x64/StickAndPuck.exe`.
+The .NET runtime, raylib and all assets are packed inside and unpacked on first start, so the executable runs from any folder. The output paths are `publish/linux-x64/StickAndPuck`, `publish/win-x64/StickAndPuck.exe` and `publish/osx-arm64/StickAndPuck.app`.
 
 ### Browser build and storage
 

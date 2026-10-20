@@ -6,12 +6,12 @@ A silly attempt at rendering 3D as pixel art in the form of a hockey game. Pick 
 
 ## Drop the puck
 
-**[Download the latest release](https://github.com/MattiasHognas/StickAndPuck/releases/latest)** for Linux or Windows. The game includes .NET and its assets—no SDK needed.
+**[Download the latest release](https://github.com/MattiasHognas/StickAndPuck/releases/latest)** for Windows, Linux, Mac or the browser. The game includes .NET and its assets—no SDK needed.
 
 - **Windows:** run `StickAndPuck-vX.Y.Z-win-x64.exe`.
 - **Linux:** make the downloaded file executable with `chmod +x StickAndPuck-vX.Y.Z-linux-x64`, then run it.
-- **Mac** run `StickAndPuck-vX.Y.Z-osx-arm64.exe`.
-- **Browser** unpack and serve `StickAndPuck-vX.Y.Z-wasm-browser.zip`.
+- **Mac (Apple silicon):** unzip `StickAndPuck-vX.Y.Z-osx-arm64.zip` and open `StickAndPuck.app`. The app is not signed by Apple, so the first time right-click it and pick Open, or allow it under System Settings → Privacy & Security → Open Anyway.
+- **Browser:** unzip `StickAndPuck-vX.Y.Z-browser-wasm.zip` and serve the folder over HTTP.
 
 (Replace `vX.Y.Z` with the version you downloaded.)
 

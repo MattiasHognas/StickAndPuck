@@ -20,6 +20,8 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);obj/**</DefaultItemExcludes>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <OutputType>Exe</OutputType>
+    <!-- Published for Windows it is a GUI app with no console window; from a terminal it attaches to that console (GameLog). -->
+    <OutputType Condition="$(RuntimeIdentifier.StartsWith('win-'))">WinExe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>StickAndPuck</AssemblyName>
     <RootNamespace>StickAndPuck.App</RootNamespace>

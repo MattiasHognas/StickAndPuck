@@ -1,5 +1,5 @@
 # Builds and tests every pull request (the test job runs tests/StickAndPuck.Tests). On each merge to main it publishes one self-contained executable per
-# platform (tools/publish.sh), tags the commit and creates a GitHub Release with the executables and browser site ZIP.
+# platform (tools/publish.sh; macOS as a zipped StickAndPuck.app), tags the commit and creates a GitHub Release with the executables and browser site ZIP.
 # Versioning: a merge bumps the patch (v0.0.1 -> v0.0.2). A milestone bumps the minor (v0.0.5 -> v0.1.0):
 # put [milestone] in the squash-commit message or give the PR the label "milestone". Every commit since
 # the last release tag is checked, so a milestone still counts when its own run was dropped from the queue.
@@ -187,11 +187,24 @@ jobs:
       - name: Package release assets
         env:
           TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.number }}
         run: |
           mkdir -p release
           cp publish/linux-x64/StickAndPuck "release/StickAndPuck-$TAG-linux-x64"
           cp publish/win-x64/StickAndPuck.exe "release/StickAndPuck-$TAG-win-x64.exe"
-          cp publish/osx-arm64/StickAndPuck "release/StickAndPuck-$TAG-osx-arm64"
+          # Windows: a GUI exe, so no console window opens (PE optional header subsystem 2).
+          python3 -I - "release/StickAndPuck-$TAG-win-x64.exe" <<'PYTHON'
+          import struct
+          import sys
+
+          data = open(sys.argv[1], "rb").read(4096)
+          pe = struct.unpack_from("<I", data, 0x3C)[0]
+          assert data[pe : pe + 4] == b"PE\0\0", "not a PE file"
+          subsystem = struct.unpack_from("<H", data, pe + 24 + 68)[0]
+          assert subsystem == 2, f"the Windows exe is not a GUI app (subsystem {subsystem})"
+          PYTHON
+          # macOS: StickAndPuck.app in a ZIP, so Finder starts it without a Terminal.
+          python3 -I tools/macos_app.py publish/osx-arm64 "$VERSION" --zip "release/StickAndPuck-$TAG-osx-arm64.zip"
           python3 - <<'PYTHON'
           import os
           import shutil
@@ -204,6 +217,13 @@ jobs:
           archive = root / "release" / f"StickAndPuck-{os.environ['TAG']}-browser-wasm"
           shutil.make_archive(str(archive), "zip", root_dir=site)
           PYTHON
+          # Every platform's asset is there, and nothing else.
+          tag="$TAG"
+          expected=$(printf '%s\n' "StickAndPuck-$tag-browser-wasm.zip" "StickAndPuck-$tag-linux-x64" "StickAndPuck-$tag-osx-arm64.zip" "StickAndPuck-$tag-win-x64.exe" | sort)
+          actual=$(ls release | sort)
+          if [ "$expected" != "$actual" ]; then
+            echo "Release assets differ from the expected set:"; diff <(echo "$expected") <(echo "$actual"); exit 1
+          fi
 
       - name: Create release
         if: github.event_name != 'pull_request'
