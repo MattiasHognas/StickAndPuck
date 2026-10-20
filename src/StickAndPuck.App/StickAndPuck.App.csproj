@@ -67,7 +67,7 @@
       Include="$(RepoRoot)art/player/*.glb;$(RepoRoot)art/player/*_64.png"
       LinkBase="art/player"
     />
-    <EmbeddedResource Include="$(RepoRoot)art/ads/*.png" LinkBase="art/ads" />
+    <EmbeddedResource Include="$(RepoRoot)art/ads/**/*.png" LinkBase="art/ads" />
     <EmbeddedResource Include="$(RepoRoot)art/kits/**/*.png" LinkBase="art/kits" />
     <EmbeddedResource
       Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json;$(RepoRoot)art/scene/crowd_seats.json"

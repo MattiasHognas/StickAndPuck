@@ -67,6 +67,34 @@ namespace StickAndPuck.Tests.Core
         }
 
         [Test]
+        public void EveryLeagueHasItsOwnAdStripsInTheSameSize()
+        {
+            HashSet<string> contents = [with(StringComparer.Ordinal)];
+            foreach (League league in Leagues.All)
+            {
+                string path = Assets.AdStrip(league);
+                Check(ResourceLoader.Exists(path), $"{league} has its ad strips ({path})");
+                using Stream stream = ResourceLoader.Open(path);
+                using MemoryStream bytes = new();
+                stream.CopyTo(bytes);
+                byte[] png = bytes.ToArray();
+                int width = (png[16] << 24) | (png[17] << 16) | (png[18] << 8) | png[19];
+                int height = (png[20] << 24) | (png[21] << 16) | (png[22] << 8) | png[23];
+                Check(
+                    width == 53 && height == 80,
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"{league}'s strips fit the boards' UVs: 53x80, got {width}x{height}"
+                    )
+                );
+                Check(
+                    contents.Add(Convert.ToBase64String(png)),
+                    $"{league} has sponsors of its own"
+                );
+            }
+        }
+
+        [Test]
         public void MissingKitFallsBackWithoutUsingAnotherLeague()
         {
             ClubData shl = Clubs.Load(League.Shl)[0];

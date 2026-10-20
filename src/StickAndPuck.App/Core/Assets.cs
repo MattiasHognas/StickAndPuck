@@ -51,8 +51,14 @@ namespace StickAndPuck.App.Core
         /// art/scripts/make_supporters.py); the sheets are art/crowd/supporters/{league}/{id}.png.</summary>
         public const string SupporterLayout = "art.crowd.supporters.json";
 
-        /// <summary>The ad board text strip.</summary>
-        public const string AdStrip = "art.ads.ads_53x80.png";
+        /// <summary>Gets a league's ad board strips (A21, art/scripts/ads_pixel.py): the Swedish sponsors for the
+        /// SHL, the North American ones for the NHL, the same slots in the same size so either fits every board.</summary>
+        /// <param name="league">The league.</param>
+        /// <returns>The resource path.</returns>
+        public static string AdStrip(League league)
+        {
+            return $"art.ads.{Leagues.Id(league)}.ads_53x80.png";
+        }
 
         /// <summary>The skate scratch mask over the ice (A4, art/scripts/ice_scratches.py).</summary>
         public const string IceScratches = "art.scene.ice_scratches.png";
