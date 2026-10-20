@@ -84,7 +84,7 @@ namespace StickAndPuck.App.Screens
                     }
 
                     break;
-                case "trade" or "fired":
+                case "trade" or "fired" or "recap":
                     OpenStory(app, screen, clubs);
                     break;
                 case "trophy":
@@ -287,7 +287,11 @@ namespace StickAndPuck.App.Screens
         /// <summary>The trade deadline (W135) or the fired screen (W133).</summary>
         private static void OpenStory(AppState app, string screen, IReadOnlyList<ClubData> clubs)
         {
-            if (string.Equals(screen, "fired", StringComparison.Ordinal))
+            if (string.Equals(screen, "recap", StringComparison.Ordinal))
+            {
+                RecapScene.Open(app, clubs); // the season recap (W136)
+            }
+            else if (string.Equals(screen, "fired", StringComparison.Ordinal))
             {
                 Fired(app, clubs);
             }
