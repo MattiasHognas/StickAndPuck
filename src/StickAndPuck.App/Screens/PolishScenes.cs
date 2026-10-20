@@ -1,6 +1,7 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Arcade;
+using StickAndPuck.App.Season.Challenges;
 using StickAndPuck.App.Season.DressingRoom.Dev;
 using StickAndPuck.App.Season.Injuries;
 using StickAndPuck.App.Season.News;
@@ -50,6 +51,7 @@ namespace StickAndPuck.App.Screens
                         Suspend(app, clubs);
                     }
 
+                    Challenge(app);
                     app.Screens.SimSeasonGame(); // a season result: the dressing room under its score
                     if (app.Screens.Top.Is(t => t is SimResultScreen))
                     {
@@ -187,6 +189,34 @@ namespace StickAndPuck.App.Screens
             }
 
             app.Screens.Push(app.Screens.AfterSeasonGame());
+        }
+
+        /// <summary>Sets a coach's challenge (SAP_CHALLENGE=wintwo, shutout, goals or rival) before the game settled
+        /// next, so the dressing room shows its first game's progress (W134).</summary>
+        private static void Challenge(AppState app)
+        {
+            if (
+                Env.Get("SAP_CHALLENGE") is not { Length: > 0 } name
+                || !app.Season.Current.TryGet(out SeasonState season)
+            )
+            {
+                return;
+            }
+
+            ChallengeKind kind = name.ToLowerInvariant() switch
+            {
+                "wintwo" => ChallengeKind.WinTwo,
+                "shutout" => ChallengeKind.Shutout,
+                "goals" => ChallengeKind.Goals,
+                "rival" => ChallengeKind.BeatRival,
+                _ => throw new InvalidOperationException(
+                    $"SAP_CHALLENGE={name}: use wintwo, shutout, goals or rival"
+                ),
+            };
+            if (!ChallengeDesk.Force(season, kind).HasValue)
+            {
+                Console.WriteLine($"SAP: screens: no {name} challenge fits the next three games");
+            }
         }
 
         /// <summary>A fresh test season settled on paper to the end of the playoffs, so there is a champion.</summary>

@@ -483,6 +483,23 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { ScoutingTips = v }
             ),
             Flag(
+                nameof(RuleSet.Challenges),
+                K.RuleChallenges,
+                K.RuleGroupSeason,
+                plays: true,
+                r => r.Challenges,
+                (r, v) => r with { Challenges = v }
+            ),
+            Choice(
+                nameof(RuleSet.ChallengeFrequency),
+                K.RuleChallengeFrequency,
+                K.RuleGroupSeason,
+                plays: true,
+                Enum.GetValues<ChallengeFrequency>(),
+                r => r.ChallengeFrequency,
+                (r, v) => r with { ChallengeFrequency = v }
+            ),
+            Flag(
                 nameof(RuleSet.Rivalries),
                 K.RuleRivalries,
                 K.RuleGroupSeason,

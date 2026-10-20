@@ -1,5 +1,6 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Challenges;
 using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
@@ -160,6 +161,7 @@ namespace StickAndPuck.App.Season.Schedule
             );
             NewsDesk.AfterGame(season, Clubs); // the news for the next game
             TradeDesk.AfterGame(season, Clubs); // the trade deadline's offers, at its game
+            ChallengeDesk.AfterGame(season); // the coach's challenge: settled, or a new one set
             Playing = Maybe.None<Fixture>();
             Unsaved = true;
             return true;

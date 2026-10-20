@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, strong form swings, no dressing room, no pre-game talk, no injuries, no suspensions, no player development and no trade deadline.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development and no trade deadline.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -46,6 +46,7 @@ namespace StickAndPuck.App.Core
             CoachReaction = false,
             PreGameTalk = false,
             ScoutingTips = false,
+            Challenges = false,
             PuckOverGlass = false,
             OverGlassMinor = false,
             IntermissionTalk = false,
@@ -315,6 +316,28 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets a value indicating whether the coach's pre-game talk includes a scouting tip about tonight's
         /// opponent (its forecheck, entries, style, power play, top scorer or a strength gap), read from the club's real data.</summary>
         public bool ScoutingTips { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether the coach sets short three-game challenges in a season (win two of
+        /// three, a shutout, ten goals, beat the rival), lifting team morale when met.</summary>
+        public bool Challenges { get; init; } = true;
+
+        /// <summary>Gets how often a coach's challenge comes up.</summary>
+        public ChallengeFrequency ChallengeFrequency { get; init; } = ChallengeFrequency.Normal;
+
+        /// <summary>Gets the human's games between one challenge ending and the next being set: 0 with <see cref="Challenges"/> off.</summary>
+        [JsonIgnore]
+        public int ChallengeGap =>
+            !Challenges
+                ? 0
+                : ChallengeFrequency switch
+                {
+                    ChallengeFrequency.Rare => 12,
+                    ChallengeFrequency.Often => 5,
+                    ChallengeFrequency.Normal => 8,
+                    _ => throw new NotSupportedException(
+                        "no challenge gap for " + ChallengeFrequency
+                    ),
+                };
 
         /// <summary>Gets a value indicating whether a puck flying over the glass leaves the rink and stops play, with the faceoff where it was last played; otherwise netting keeps it in play.</summary>
         public bool PuckOverGlass { get; init; } = true;
