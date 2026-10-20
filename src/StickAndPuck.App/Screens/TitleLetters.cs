@@ -124,6 +124,32 @@ namespace StickAndPuck.App.Screens
             );
         }
 
+        /// <summary>Darkens the arena behind the logo with a dithered shade, softer toward its edges, so the letters
+        /// read over a busy stand (the home tifo comes down the frame past them, W142).</summary>
+        /// <param name="strength">0 nothing, 1 the full shade.</param>
+        /// <param name="x">The logo's left edge.</param>
+        /// <param name="y">The logo's top row.</param>
+        public void DrawBacking(float strength, int x, int y)
+        {
+            const int Rings = 4,
+                Ring = 4;
+            const float Darkest = 0.75f; // the share of black pixels behind the letters at full strength
+            int h = (int)shine.Height;
+            for (int ring = Rings - 1; ring >= 0; ring--)
+            {
+                float dark = Math.Clamp(strength, 0, 1) * Darkest * (Rings - ring) / Rings;
+                int level = 16 - (int)MathF.Round(dark * 16, MidpointRounding.ToEven);
+                if (level >= 16)
+                {
+                    continue;
+                }
+
+                int pad = (ring + 1) * Ring;
+                Rectangle area = new(x - pad, y - pad, Width + (2 * pad), h + (2 * pad));
+                DrawTextureRec(fades[level - 1], area, new Vector2(area.X, area.Y), Color.White);
+            }
+        }
+
         /// <summary>Draws the letters that have started to drop, with the logo's top left at (x, y).</summary>
         public void DrawLetters(TitleIntro intro, int x, int y)
         {

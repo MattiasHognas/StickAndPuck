@@ -45,6 +45,15 @@ namespace StickAndPuck.App.Screens
         /// <summary>When the camera reaches the broadcast view, in seconds.</summary>
         public const float MoveTo = 4f;
 
+        /// <summary>When the home tifo starts up the far stand, in seconds (W142): a beat before the camera moves,
+        /// so the cloth is still unrolling as the arena fades in and is all the way up by the time the picture is
+        /// clear, filling the camera's first shot; it stays up as the camera pulls back to the broadcast view
+        /// and comes down as the start menu takes over.</summary>
+        public const float TifoAt = MoveFrom - 1f;
+
+        /// <summary>When the shade behind the logo starts to fade, in seconds: it is gone as the menu shows.</summary>
+        public const float BackingFrom = MoveTo - 0.4f;
+
         /// <summary>How much faster than the camera move the picture fades in from black.</summary>
         public const float FadeSpeed = 2.5f;
 
@@ -74,6 +83,9 @@ namespace StickAndPuck.App.Screens
 
         /// <summary>Gets a value indicating whether the camera has started its move into the arena.</summary>
         public bool Moving => Elapsed >= MoveFrom;
+
+        /// <summary>Gets a value indicating whether it is time for the home tifo to go up (<see cref="TifoAt"/>).</summary>
+        public bool TifoTime => Elapsed >= TifoAt;
 
         /// <summary>Advances the intro by one step; any press ends it at once.</summary>
         /// <param name="dt">The step length in seconds.</param>
@@ -145,6 +157,10 @@ namespace StickAndPuck.App.Screens
         /// <summary>Gets how much of the arena shows through the black, 0 (all black) to 1 (no black).</summary>
         public float Reveal =>
             Math.Clamp((Elapsed - MoveFrom) / (MoveTo - MoveFrom) * FadeSpeed, 0, 1);
+
+        /// <summary>Gets how strongly the arena is shaded behind the logo, 0 to 1: full while the camera comes down
+        /// past the tifo, easing out as the logo settles in its place, so the start menu shows as always.</summary>
+        public float Backing => 1 - EaseInOut((Elapsed - BackingFrom) / (Seconds - BackingFrom));
 
         /// <summary>Gets the logo's top row now: centred while the letters drop, rising to the start screen's title row.</summary>
         public int LogoY
