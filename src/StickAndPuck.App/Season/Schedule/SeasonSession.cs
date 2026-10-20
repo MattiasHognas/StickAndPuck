@@ -1,5 +1,6 @@
 using System.Globalization;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Board;
 using StickAndPuck.App.Season.Challenges;
 using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.News;
@@ -124,7 +125,7 @@ namespace StickAndPuck.App.Season.Schedule
         /// recorded when the match ends. Over when the human's club has no games left.</summary>
         public NextMatch NextSetup(InputDevice device = InputDevice.KeyboardMouse)
         {
-            if (!Current.TryGet(out SeasonState season))
+            if (!Current.TryGet(out SeasonState season) || season.Fired)
             {
                 Playing = Maybe.None<Fixture>();
                 return NextMatch.Over;
@@ -162,6 +163,7 @@ namespace StickAndPuck.App.Season.Schedule
             NewsDesk.AfterGame(season, Clubs); // the news for the next game
             TradeDesk.AfterGame(season, Clubs); // the trade deadline's offers, at its game
             ChallengeDesk.AfterGame(season); // the coach's challenge: settled, or a new one set
+            _ = BoardExpectation.CheckHotSeat(season); // missing the board's goal badly ends the season here
             Playing = Maybe.None<Fixture>();
             Unsaved = true;
             return true;
@@ -174,7 +176,8 @@ namespace StickAndPuck.App.Season.Schedule
         /// to play; once the regular season is over it starts the playoffs and sims the next playoff game.</summary>
         public Maybe<SimmedGame> SimCurrentGame()
         {
-            return !Current.TryGet(out SeasonState season) ? Maybe.None<SimmedGame>()
+            return !Current.TryGet(out SeasonState season) || season.Fired
+                    ? Maybe.None<SimmedGame>()
                 : season.IsOver ? SimCurrentPlayoffGame()
                 : SimCurrentRegularGame(season);
         }

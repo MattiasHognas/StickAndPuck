@@ -52,6 +52,7 @@ namespace StickAndPuck.App.Screens
                         {
                             TradeOfferScreen => K.TradeOffer,
                             DressingRoomScreen => K.DressingRoom,
+                            FiredScreen => K.SeeTheBoard,
                             _ => K.Standings,
                         }
                     ),

@@ -183,6 +183,7 @@ namespace StickAndPuck.App.Season.Playoffs.Dev
                 _ = app.Season.Finish(
                     QuickSim.Play(setup.Home, setup.Away, season.GameSeed(game.Number))
                 );
+                season.Fired = false; // a season settled on paper for the playoffs: the board fires nobody
                 count++;
             }
             app.Season.Unsaved = false;

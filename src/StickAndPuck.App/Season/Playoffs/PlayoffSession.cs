@@ -22,11 +22,11 @@ namespace StickAndPuck.App.Season.Playoffs
         public PlayoffRules Rules { get; set; } = PlayoffRules.Shl;
 
         /// <summary>Starts the playoffs once the regular season is over and settles every game up to the human's
-        /// next one; continues saved playoffs as they are. None while the season is still running.</summary>
+        /// next one; continues saved playoffs as they are. None while the season is still running, or when the board fired the human.</summary>
         public Maybe<PlayoffState> Open()
         {
             Playing = Maybe.None<PlayoffSeries>();
-            if (!session.Current.TryGet(out SeasonState season) || !season.IsOver)
+            if (!session.Current.TryGet(out SeasonState season) || !season.IsOver || season.Fired)
             {
                 return Maybe.None<PlayoffState>();
             }

@@ -115,7 +115,7 @@ namespace StickAndPuck.App.Screens
                 + PortraitH
                 + 6
                 + (full ? Line + (ListLines * Line) + 6 : 0)
-                + (board ? Line + Line + 6 : 0)
+                + (board ? Line + 4 : 0)
                 + Line
                 + 6
                 + (items.Count * ScreenArt.Row)
@@ -156,15 +156,17 @@ namespace StickAndPuck.App.Screens
 
             if (board)
             {
-                art.Left(Text.Get(K.RoomBoard), x + 10, top, art.Gold);
+                string heading = Text.Get(K.RoomBoard);
+                art.Left(heading, x + 10, top, art.Gold);
+                int nx = x + 10 + art.Hud.Measure(ScreenArt.Fit(heading)) + 8; // the note beside its heading: one row
                 DressingRoomEntry note = report.Board[0];
                 art.Left(
-                    art.Clip(note.Text, PanelW - 20),
-                    x + 10,
-                    top + Line,
+                    art.Clip(note.Text, PanelW - (nx - x) - 10),
+                    nx,
+                    top,
                     note.Highlight ? art.Gold : art.Text
                 );
-                top += Line + Line + 6;
+                top += Line + 4;
             }
 
             art.Centred(Next(season, context), cx, top, art.Gold);

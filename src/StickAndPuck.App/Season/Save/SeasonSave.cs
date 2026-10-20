@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Board;
 using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.Schedule;
 
@@ -92,6 +93,11 @@ namespace StickAndPuck.App.Season.Save
                 if (season.Morale.Count == 0 && season.Games.Any(g => g.Played))
                 {
                     TeamMorale.Rebuild(season); // a save from before team morale: work it out from the results
+                }
+
+                if (!season.Goal.HasValue)
+                {
+                    BoardExpectation.EnsureGoal(season, Clubs.Load(season.League)); // a save from before the board: its goal as it would be set now
                 }
 
                 return season;

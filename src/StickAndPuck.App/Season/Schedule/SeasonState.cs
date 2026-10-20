@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Season.Board;
 using StickAndPuck.App.Season.Challenges;
 using StickAndPuck.App.Season.Injuries;
 using StickAndPuck.App.Season.Morale;
@@ -80,6 +81,14 @@ namespace StickAndPuck.App.Season.Schedule
         /// <summary>Gets or sets the coach's challenges, the open one and those settled (see <see cref="ChallengeDesk"/>); empty in an older save.</summary>
         public IList<SeasonChallenge> Challenges { get; set; } = [];
 
+        /// <summary>Gets or sets the board's goal for the human's club (W133, <see cref="BoardExpectation"/>), set when the season
+        /// starts; an older save gets it when it is read.</summary>
+        public Maybe<BoardGoal> Goal { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether the board fired the human (<see cref="BoardExpectation.CheckHotSeat"/>):
+        /// the season is over for them, with no more games and no playoffs.</summary>
+        public bool Fired { get; set; }
+
         /// <summary>Gets the number of rounds.</summary>
         public int Rounds => Games.Count == 0 ? 0 : Games.Max(g => g.Round) + 1;
 
@@ -126,6 +135,7 @@ namespace StickAndPuck.App.Season.Schedule
                 Clubs = ids,
                 Games = [.. nhl ? NhlSchedule.Build(clubs, seed) : SeasonSchedule.Build(ids, seed)],
                 Rules = nhl ? RuleSet.Nhl : Maybe.None<RuleSet>(),
+                Goal = BoardExpectation.Pick(clubs, userClub),
                 Started = DateTime.UtcNow,
             };
         }

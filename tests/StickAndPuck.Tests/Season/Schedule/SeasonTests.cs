@@ -347,6 +347,7 @@ namespace StickAndPuck.Tests.Season.Schedule
             // "Sim this game" settles the human's game on paper, records it like a played game and saves
             app.Season.End();
             SeasonState season = app.Season.StartNew(clubs, clubs[3].Id, seed: 11, path: path);
+            season.Rules = RuleSet.Shl with { HotSeat = HotSeat.Off }; // sims the whole season: the board must not fire anyone on the way
             string before = File.ReadAllText(path);
             Fixture game = Must(season.NextGame);
             Maybe<SimmedGame> simmed = app.Season.SimCurrentGame();
