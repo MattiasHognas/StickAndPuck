@@ -37,7 +37,7 @@ namespace StickAndPuck.Tests.Replay
 
         // Stable blade trigonometry and explicit fused rounding replace platform matrix transforms.
         // tools/browser/verify.mjs also checks every step against Chromium and Firefox.
-        private const string MatchSum = "d334de34e52d5ad3";
+        private const string MatchSum = "5ed640d9d5c49b2d";
 
         private readonly bool print = Env.Is("SAP_REPLAYTEST_PRINT", "1");
 

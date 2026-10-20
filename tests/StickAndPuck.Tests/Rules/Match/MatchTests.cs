@@ -87,6 +87,12 @@ namespace StickAndPuck.Tests.Rules.Match
             return MathF.Abs(a - b) < 1e-4f;
         }
 
+        /// <summary>Equal within the float error of a second or so of clock steps.</summary>
+        private static bool Near(float a, float b)
+        {
+            return MathF.Abs(a - b) < 1e-3f;
+        }
+
         /// <summary>Plays three periods with a scripted list of goals and checks score, clock, ends, faceoffs and the final.</summary>
         [Test]
         [ExecutionPriority(Priority.Critical)]
@@ -221,6 +227,96 @@ namespace StickAndPuck.Tests.Rules.Match
             );
         }
 
+        /// <summary>The clock starts on the drop and runs through the draw window; it shows the time left rounded up,
+        /// so 0:30 through the first second of a 30-second period and 0:29 after it; a whistle and the wait before
+        /// the next drop leave it standing.</summary>
+        [Test]
+        public void ClockStartsOnTheDrop()
+        {
+            World w = Make();
+            List<MatchEvent> events = Run(w, x => x.Match.Phase == MatchPhase.Faceoff, 10);
+            events.AddRange(Run(w, x => MatchFlow.State(x).Draw.Dropped, 5));
+            Check(
+                events.OfType<PuckDropped>().Take(2).Count() == 1 && Same(w.Match.Clock, Period),
+                "nothing runs off the clock in the intro or the wait before the drop"
+            );
+            float dropped = w.Time;
+            _ = Run(w, x => x.Match.Phase == MatchPhase.Play, 5);
+            float window = w.Time - dropped;
+            Check(
+                window > 0 && Near(w.Match.Clock, Period - window),
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"the clock runs from the drop, through the {window:0.00} s draw window, not from the won draw"
+                )
+            );
+            _ = Run(w, x => x.Match.Clock <= Period - 0.5f, 5);
+            Check(
+                string.Equals(MatchFlow.ClockText(w.Match.Clock), "0:30", StringComparison.Ordinal),
+                "half a second after the drop the clock still shows the full period, rounded up"
+            );
+            _ = Run(w, x => x.Match.Clock <= Period - 1f + (Game.Step / 2), 5);
+            Check(
+                string.Equals(MatchFlow.ClockText(w.Match.Clock), "0:29", StringComparison.Ordinal),
+                "a second after the drop it shows 0:29"
+            );
+            Check(MatchFlow.Whistle(w, RinkSpec.CentreDot), "a whistle stops play");
+            float stopped = w.Match.Clock;
+            _ = Run(w, x => MatchFlow.State(x).Draw.Dropped, 5);
+            Check(
+                Same(w.Match.Clock, stopped),
+                "the clock stands from the whistle to the next drop"
+            );
+            _ = RunFor(w, 1);
+            Check(
+                w.Match.Phase == MatchPhase.Play && Near(w.Match.Clock, stopped - 1),
+                "and runs again from that drop"
+            );
+        }
+
+        /// <summary>Time running out in the draw window after a late drop ends the period there.</summary>
+        [Test]
+        public void ClockRunsOutInTheDrawWindow()
+        {
+            World w = Make();
+            _ = Run(w, x => x.Match.Phase == MatchPhase.Play);
+            _ = MatchFlow.Whistle(w, RinkSpec.CentreDot);
+            _ = Run(w, x => MatchFlow.State(x).Draw.Dropped, 5);
+            w.Match.Clock = 0.05f;
+            List<MatchEvent> events = Run(w, x => x.Match.Phase != MatchPhase.Faceoff, 5);
+            Check(
+                w.Match.Phase == MatchPhase.Intermission
+                    && w.Match.Clock == 0
+                    && events.OfType<PeriodEnded>().Take(2).Count() == 1,
+                "the period ends at 0:00 before the draw is won"
+            );
+        }
+
+        /// <summary>The clock text rounds up, as an arena clock does.</summary>
+        [Test]
+        public void ClockTextRoundsUp()
+        {
+            (float Seconds, string Shown)[] cases =
+            [
+                (20 * 60, "20:00"),
+                ((20 * 60) - 0.6f, "20:00"),
+                ((20 * 60) - 1, "19:59"),
+                (59.01f, "1:00"),
+                (0.4f, "0:01"),
+                (0, "0:00"),
+            ];
+            foreach ((float seconds, string shown) in cases)
+            {
+                Check(
+                    string.Equals(MatchFlow.ClockText(seconds), shown, StringComparison.Ordinal),
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"{seconds:0.00} s left shows {shown} (got {MatchFlow.ClockText(seconds)})"
+                    )
+                );
+            }
+        }
+
         /// <summary>A puck that crosses after the clock runs out does not count.</summary>
         [Test]
         public void GoalAfterTheHorn()
@@ -285,10 +381,11 @@ namespace StickAndPuck.Tests.Rules.Match
             World w = Make();
             _ = Run(w, x => x.Match.Phase == MatchPhase.Overtime);
             MatchFlow.StartPeriod(w, 4, MatchTuning.OvertimeSeconds);
+            _ = Run(w, x => MatchFlow.State(x).Draw.Dropped, 5);
+            float clock = w.Match.Clock;
             _ = Run(w, x => x.Match.Phase == MatchPhase.Play, 5);
             Check(
-                Same(w.Match.Clock, MatchTuning.OvertimeSeconds)
-                    && w.Puck.Position == RinkSpec.CentreDot,
+                Same(clock, MatchTuning.OvertimeSeconds) && w.Puck.Position == RinkSpec.CentreDot,
                 "overtime starts at centre with a 5:00 clock"
             );
             Shoot(w, Side.Away);
