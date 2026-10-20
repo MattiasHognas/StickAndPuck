@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 71,
+      "firstName": "William",
+      "lastName": "Ignberg Nilsson",
+      "position": "RW",
+      "shoots": "Right",
+      "age": 25,
+      "traits": {
+        "acceleration": 50,
+        "topSpeed": 48,
+        "shotAccuracy": 39,
+        "shotPower": 42,
+        "checking": 48,
+        "puckControl": 39,
+        "hockeyIq": 39,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 65,
+      "firstName": "Karl",
+      "lastName": "Annborn",
+      "position": "D",
+      "shoots": "Right",
+      "age": 19,
+      "traits": {
+        "acceleration": 53,
+        "topSpeed": 59,
+        "shotAccuracy": 48,
+        "shotPower": 55,
+        "checking": 62,
+        "puckControl": 49,
+        "hockeyIq": 51,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

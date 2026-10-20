@@ -400,5 +400,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 91,
+      "firstName": "John",
+      "lastName": "Tavares",
+      "position": "C",
+      "shoots": "Left",
+      "age": 36,
+      "traits": {
+        "acceleration": 40,
+        "topSpeed": 39,
+        "shotAccuracy": 54,
+        "shotPower": 52,
+        "checking": 57,
+        "puckControl": 59,
+        "hockeyIq": 69,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 8,
+      "firstName": "Chris",
+      "lastName": "Tanev",
+      "position": "D",
+      "shoots": "Right",
+      "age": 36,
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 49,
+        "shotAccuracy": 47,
+        "shotPower": 56,
+        "checking": 58,
+        "puckControl": 59,
+        "hockeyIq": 66,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 68,
+      "firstName": "Zachary",
+      "lastName": "L'Heureux",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 23,
+      "traits": {
+        "acceleration": 58,
+        "topSpeed": 55,
+        "shotAccuracy": 49,
+        "shotPower": 46,
+        "checking": 60,
+        "puckControl": 49,
+        "hockeyIq": 47,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 47,
+      "firstName": "Noah",
+      "lastName": "Juulsen",
+      "position": "D",
+      "shoots": "Right",
+      "age": 29,
+      "traits": {
+        "acceleration": 51,
+        "topSpeed": 58,
+        "shotAccuracy": 49,
+        "shotPower": 59,
+        "checking": 74,
+        "puckControl": 54,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

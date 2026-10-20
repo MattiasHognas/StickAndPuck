@@ -400,5 +400,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 25,
+      "firstName": "Jeffrey",
+      "lastName": "Viel",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 29,
+      "traits": {
+        "acceleration": 53,
+        "topSpeed": 53,
+        "shotAccuracy": 45,
+        "shotPower": 46,
+        "checking": 68,
+        "puckControl": 52,
+        "hockeyIq": 53,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 24,
+      "firstName": "Max",
+      "lastName": "Crozier",
+      "position": "D",
+      "shoots": "Right",
+      "age": 26,
+      "traits": {
+        "acceleration": 54,
+        "topSpeed": 56,
+        "shotAccuracy": 53,
+        "shotPower": 60,
+        "checking": 68,
+        "puckControl": 57,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

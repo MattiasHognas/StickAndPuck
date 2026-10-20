@@ -13,7 +13,7 @@ using StickAndPuck.App.Season.Schedule;
 namespace StickAndPuck.App.Screens
 {
     /// <summary>The saves behind the headless captures of the polished screens (SAP_SCREEN=stats, table, sim,
-    /// dressingroom, suspension, trade, fired, trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
+    /// dressingroom, suspension, spare, trade, fired, trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
     /// player's season and arcade saves are left alone.</summary>
     internal static class PolishScenes
     {
@@ -38,51 +38,8 @@ namespace StickAndPuck.App.Screens
                     Season(app, clubs, "sim-test.json", 5);
                     app.Screens.SimSeasonGame();
                     break;
-                case "dressingroom" or "coachtalk" or "suspension":
-                    Season(
-                        app,
-                        clubs,
-                        string.Equals(screen, "suspension", StringComparison.Ordinal)
-                            ? "suspension-test.json"
-                            : "dressingroom-test.json",
-                        6
-                    );
-                    if (string.Equals(screen, "suspension", StringComparison.Ordinal))
-                    {
-                        Suspend(app, clubs);
-                    }
-
-                    Challenge(app);
-                    app.Screens.SimSeasonGame(); // a season result: the dressing room under its score
-                    if (app.Screens.Top.Is(t => t is SimResultScreen))
-                    {
-                        app.Screens.Pop(); // continue past the score into the dressing room
-                    }
-
-                    if (
-                        Env.Get("SAP_NEWS") is { Length: > 0 } news
-                        && app.Season.Current.TryGet(out SeasonState room)
-                    )
-                    {
-                        _ = NewsDesk.Force(room, clubs, NewsDeck.Default, news.ToLowerInvariant()); // a news card in play, whatever the dice said
-                    }
-
-                    if (
-                        Env.Get("SAP_REACTION") is { Length: > 0 } reaction
-                        && app.Season.Current.TryGet(out SeasonState staged)
-                        && !StagedReaction.Stage(staged, clubs, reaction.ToLowerInvariant())
-                    )
-                    {
-                        throw new InvalidOperationException(
-                            $"SAP_REACTION={reaction}: use {StagedReaction.Kinds}"
-                        );
-                    }
-
-                    if (string.Equals(screen, "coachtalk", StringComparison.Ordinal))
-                    {
-                        app.Screens.Push(new CoachTalkScreen(app)); // PLAY NEXT GAME: the pre-game talk
-                    }
-
+                case "dressingroom" or "coachtalk" or "suspension" or "spare":
+                    OpenRoom(app, screen, clubs);
                     break;
                 case "trade" or "fired" or "recap":
                     OpenStory(app, screen, clubs);
@@ -104,6 +61,61 @@ namespace StickAndPuck.App.Screens
                     break;
                 default:
                     break;
+            }
+        }
+
+        /// <summary>The dressing room on its test save (SAP_SCREEN=dressingroom, coachtalk, suspension or spare), after a season result.</summary>
+        private static void OpenRoom(AppState app, string screen, IReadOnlyList<ClubData> clubs)
+        {
+            Season(
+                app,
+                clubs,
+                screen switch
+                {
+                    "suspension" => "suspension-test.json",
+                    "spare" => "spare-test.json",
+                    _ => "dressingroom-test.json",
+                },
+                6
+            );
+            if (string.Equals(screen, "suspension", StringComparison.Ordinal))
+            {
+                Suspend(app, clubs);
+            }
+            else if (string.Equals(screen, "spare", StringComparison.Ordinal))
+            {
+                Hurt(app, clubs);
+            }
+
+            Challenge(app);
+            app.Screens.SimSeasonGame(); // a season result: the dressing room under its score
+            if (app.Screens.Top.Is(t => t is SimResultScreen))
+            {
+                app.Screens.Pop(); // continue past the score into the dressing room
+            }
+
+            if (
+                Env.Get("SAP_NEWS") is { Length: > 0 } news
+                && app.Season.Current.TryGet(out SeasonState room)
+            )
+            {
+                _ = NewsDesk.Force(room, clubs, NewsDeck.Default, news.ToLowerInvariant()); // a news card in play, whatever the dice said
+            }
+
+            if (
+                Env.Get("SAP_REACTION") is { Length: > 0 } reaction
+                && app.Season.Current.TryGet(out SeasonState staged)
+                && !StagedReaction.Stage(staged, clubs, reaction.ToLowerInvariant())
+            )
+            {
+                throw new InvalidOperationException(
+                    $"SAP_REACTION={reaction}: use {StagedReaction.Kinds}"
+                );
+            }
+
+            if (string.Equals(screen, "coachtalk", StringComparison.Ordinal))
+            {
+                app.Screens.Push(new CoachTalkScreen(app)); // PLAY NEXT GAME: the pre-game talk
             }
         }
 
@@ -179,6 +191,44 @@ namespace StickAndPuck.App.Screens
                     }
                 );
             }
+        }
+
+        /// <summary>Injures the human club's first left wing for three games and suspends its first defenceman for
+        /// two (SAP_SCREEN=spare), so the game settled next is played with both spares (W86) in their slots
+        /// and the dressing room lists them under the players out.</summary>
+        private static void Hurt(AppState app, IReadOnlyList<ClubData> clubs)
+        {
+            if (!app.Season.Current.TryGet(out SeasonState season))
+            {
+                return;
+            }
+
+            ClubData user = clubs.First(c =>
+                string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)
+            );
+            PlayerData wing = user.Roster.First(x => x.Position == PlayingPosition.LW);
+            PlayerData back = user.Roster.First(x => x.Position == PlayingPosition.D);
+            season.Stats.Absences.Add(
+                new Absence
+                {
+                    Club = user.Id,
+                    Number = wing.Number,
+                    Reason = AbsenceReason.Injury,
+                    Cause = InjuryCause.BlockedShot,
+                    Games = 3,
+                    GamesLeft = 3,
+                }
+            );
+            season.Stats.Absences.Add(
+                new Absence
+                {
+                    Club = user.Id,
+                    Number = back.Number,
+                    Reason = AbsenceReason.Suspension,
+                    Games = 2,
+                    GamesLeft = 2,
+                }
+            );
         }
 
         /// <summary>A fresh test season settled on paper with "sim this game" up to the trade deadline (W135), then

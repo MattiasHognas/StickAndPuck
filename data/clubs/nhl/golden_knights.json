@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 95,
+      "firstName": "Victor",
+      "lastName": "Olofsson",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 31,
+      "traits": {
+        "acceleration": 54,
+        "topSpeed": 55,
+        "shotAccuracy": 54,
+        "shotPower": 43,
+        "checking": 45,
+        "puckControl": 52,
+        "hockeyIq": 51,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 29,
+      "firstName": "Parker",
+      "lastName": "Wotherspoon",
+      "position": "D",
+      "shoots": "Left",
+      "age": 29,
+      "traits": {
+        "acceleration": 53,
+        "topSpeed": 59,
+        "shotAccuracy": 54,
+        "shotPower": 58,
+        "checking": 73,
+        "puckControl": 59,
+        "hockeyIq": 64,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

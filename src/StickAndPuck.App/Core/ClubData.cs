@@ -44,6 +44,18 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets the match squad: 4 forward lines, 3 defence pairs and 2 goalies in a full club.</summary>
         public IReadOnlyList<PlayerData> Roster { get; init; } = [];
 
+        /// <summary>Gets the spare skaters (W86), typically an extra forward and a seventh defenceman: they dress
+        /// only when a player of the <see cref="Roster"/> is out (<see cref="Season.Injuries.AbsenceTable.Dressed"/>),
+        /// stepping into his slot. Empty for a club file without them, and then left out of the written JSON
+        /// (<see cref="Clubs.ToJson"/>), so the replay club fingerprint of the 20 stays as it was.</summary>
+        public IReadOnlyList<PlayerData> Spares { get; init; } = [];
+
+        /// <summary>Gets every player of the club: the roster, then the spares.</summary>
+        public IEnumerable<PlayerData> Everyone()
+        {
+            return Roster.Concat(Spares);
+        }
+
         /// <summary>Gets how the club plays: forecheck, zone entry and power play (src/AI/Tactics).</summary>
         public ClubTactics Tactics { get; init; } = new();
     }

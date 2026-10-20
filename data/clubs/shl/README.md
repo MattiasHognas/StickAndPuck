@@ -8,7 +8,9 @@ Each club's tactics are a judgement from how the club is known to play, not offi
 
 ## Sources
 
-Rosters, numbers, handedness and lines come from SHL's official team pages (shl.se) as of 2026-10-09, using each club's latest SHL lineup. Players outside the 20-man squad (injured or extra) are left out.
+Rosters, numbers, handedness and lines come from SHL's official team pages (shl.se) as of 2026-10-09, using each club's latest SHL lineup. Players outside the 20-man squad (injured or extra) are left out of `roster`.
+
+The two `spares` (W86, 2026-10-20) are the forward and the defenceman of the club's 2026-27 squad on shl.se who are not in `roster`, with the most SHL games this season (then points, then career games): `python3 -I tools/clubs/spares.py shl <cache dir>`. Their birth date, weight, handedness and goals and assists come from the player's shl.se profile. shl.se lists forwards only as F, so a spare forward is written on the wing of his stick hand; in a game he takes whichever forward slot is free. A name with a letter the HUD font cannot draw loses its accent (Stefan Milošević is written Miloševic). Their traits are seeded like the rest, on the fourth line's or third pair's average two points lower, with per-game goals and assists from five games or more.
 
 The other twelve (D1b) follow the same rules: squads are each club's SHL lineup from 2026-10-08, with gaps (a missing backup goalie or an empty line slot) filled from the club's earlier 2026-27 lineups. Handedness missing on shl.se comes from the NHL's player records or, failing that, Wikipedia, hockeydb and Hockey Canada profiles; Andro Kaderli (Skellefteå) is set Left but sources disagree.
 

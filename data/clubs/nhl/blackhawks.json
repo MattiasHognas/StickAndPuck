@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 25,
+      "firstName": "Dominic",
+      "lastName": "Toninato",
+      "position": "C",
+      "shoots": "Left",
+      "age": 32,
+      "traits": {
+        "acceleration": 42,
+        "topSpeed": 46,
+        "shotAccuracy": 49,
+        "shotPower": 41,
+        "checking": 56,
+        "puckControl": 52,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 24,
+      "firstName": "Bowen",
+      "lastName": "Byram",
+      "position": "D",
+      "shoots": "Left",
+      "age": 25,
+      "traits": {
+        "acceleration": 53,
+        "topSpeed": 56,
+        "shotAccuracy": 58,
+        "shotPower": 62,
+        "checking": 63,
+        "puckControl": 58,
+        "hockeyIq": 64,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

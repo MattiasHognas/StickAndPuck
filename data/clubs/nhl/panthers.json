@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 63,
+      "firstName": "Brad",
+      "lastName": "Marchand",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 38,
+      "traits": {
+        "acceleration": 49,
+        "topSpeed": 51,
+        "shotAccuracy": 61,
+        "shotPower": 47,
+        "checking": 48,
+        "puckControl": 60,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 6,
+      "firstName": "Radko",
+      "lastName": "Gudas",
+      "position": "D",
+      "shoots": "Right",
+      "age": 36,
+      "traits": {
+        "acceleration": 48,
+        "topSpeed": 50,
+        "shotAccuracy": 52,
+        "shotPower": 62,
+        "checking": 79,
+        "puckControl": 53,
+        "hockeyIq": 67,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

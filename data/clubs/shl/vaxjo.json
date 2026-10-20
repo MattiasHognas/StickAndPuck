@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 41,
+      "firstName": "Ludvig",
+      "lastName": "Nilsson",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 32,
+      "traits": {
+        "acceleration": 46,
+        "topSpeed": 46,
+        "shotAccuracy": 41,
+        "shotPower": 43,
+        "checking": 47,
+        "puckControl": 43,
+        "hockeyIq": 39,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 63,
+      "firstName": "Sebastian",
+      "lastName": "Aho",
+      "position": "D",
+      "shoots": "Left",
+      "age": 30,
+      "traits": {
+        "acceleration": 46,
+        "topSpeed": 47,
+        "shotAccuracy": 40,
+        "shotPower": 55,
+        "checking": 56,
+        "puckControl": 50,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

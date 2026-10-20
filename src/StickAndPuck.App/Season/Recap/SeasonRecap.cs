@@ -453,8 +453,8 @@ namespace StickAndPuck.App.Season.Recap
         {
             if (
                 !clubs.FirstOrNone(c => Same(c.Id, season.UserClub)).TryGet(out ClubData club)
-                || !club
-                    .Roster.Where(p => p.Age is > 0 and <= DevelopmentTable.YoungAge)
+                || !club.Everyone()
+                    .Where(p => p.Age is > 0 and <= DevelopmentTable.YoungAge)
                     .Select(p => (Player: p, Points: season.DevelopmentPoints(club.Id, p.Number)))
                     .Where(x => x.Points >= BreakthroughPoints)
                     .OrderByDescending(x => x.Points)

@@ -400,5 +400,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 17,
+      "firstName": "Marcus",
+      "lastName": "Foligno",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 35,
+      "traits": {
+        "acceleration": 43,
+        "topSpeed": 47,
+        "shotAccuracy": 47,
+        "shotPower": 47,
+        "checking": 69,
+        "puckControl": 52,
+        "hockeyIq": 52,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 46,
+      "firstName": "Jared",
+      "lastName": "Spurgeon",
+      "position": "D",
+      "shoots": "Right",
+      "age": 36,
+      "traits": {
+        "acceleration": 48,
+        "topSpeed": 53,
+        "shotAccuracy": 52,
+        "shotPower": 60,
+        "checking": 59,
+        "puckControl": 55,
+        "hockeyIq": 62,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

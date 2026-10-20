@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 22,
+      "firstName": "Janne",
+      "lastName": "Kuokkanen",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 28,
+      "traits": {
+        "acceleration": 48,
+        "topSpeed": 46,
+        "shotAccuracy": 42,
+        "shotPower": 42,
+        "checking": 46,
+        "puckControl": 48,
+        "hockeyIq": 46,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 74,
+      "firstName": "Felix",
+      "lastName": "Carell",
+      "position": "D",
+      "shoots": "Left",
+      "age": 20,
+      "traits": {
+        "acceleration": 58,
+        "topSpeed": 59,
+        "shotAccuracy": 41,
+        "shotPower": 51,
+        "checking": 55,
+        "puckControl": 47,
+        "hockeyIq": 45,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

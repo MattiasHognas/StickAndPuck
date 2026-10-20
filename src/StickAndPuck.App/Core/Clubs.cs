@@ -1,13 +1,18 @@
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace StickAndPuck.App.Core
 {
     /// <summary>Loads the club files in data/clubs/{league}/, one JSON file per club.</summary>
     public static class Clubs
     {
-        private static readonly ClubJsonContext PrettyJson = new(
-            new JsonSerializerOptions(ClubJsonContext.Default.Options) { WriteIndented = true }
-        );
+        private static readonly JsonTypeInfo<ClubData> PrettyJson = new JsonSerializerOptions(
+            ClubJsonContext.Default.Options
+        )
+        {
+            WriteIndented = true,
+            TypeInfoResolver = ClubJsonContext.Default.WithAddedModifier(OmitNoSpares),
+        }.GetTypeInfo<ClubData>();
 
         /// <summary>Reads one club file.</summary>
         public static ClubData Load(string path)
@@ -67,7 +72,26 @@ namespace StickAndPuck.App.Core
         /// <summary>Writes a club back to JSON, in the same shape <see cref="Load(string)"/> reads.</summary>
         public static string ToJson(ClubData club)
         {
-            return JsonSerializer.Serialize(club, PrettyJson.ClubData);
+            return JsonSerializer.Serialize(club, PrettyJson);
+        }
+
+        /// <summary>Leaves a club's spares (W86) out of the written JSON when it has none.</summary>
+        private static void OmitNoSpares(JsonTypeInfo info)
+        {
+            if (info.Type != typeof(ClubData))
+            {
+                return;
+            }
+
+            foreach (
+                JsonPropertyInfo property in info.Properties.Where(p =>
+                    string.Equals(p.Name, "spares", StringComparison.Ordinal)
+                )
+            )
+            {
+                property.ShouldSerialize = static (_, value) =>
+                    value is IReadOnlyList<PlayerData> { Count: > 0 };
+            }
         }
     }
 }

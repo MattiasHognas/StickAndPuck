@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 53,
+      "firstName": "Michael",
+      "lastName": "Carcone",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 30,
+      "traits": {
+        "acceleration": 54,
+        "topSpeed": 53,
+        "shotAccuracy": 55,
+        "shotPower": 47,
+        "checking": 56,
+        "puckControl": 56,
+        "hockeyIq": 48,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 57,
+      "firstName": "Nick",
+      "lastName": "DeSimone",
+      "position": "D",
+      "shoots": "Right",
+      "age": 31,
+      "traits": {
+        "acceleration": 53,
+        "topSpeed": 52,
+        "shotAccuracy": 55,
+        "shotPower": 58,
+        "checking": 58,
+        "puckControl": 58,
+        "hockeyIq": 59,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

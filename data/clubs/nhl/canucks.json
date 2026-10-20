@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 23,
+      "firstName": "Marco",
+      "lastName": "Rossi",
+      "position": "C",
+      "shoots": "Left",
+      "age": 25,
+      "traits": {
+        "acceleration": 53,
+        "topSpeed": 50,
+        "shotAccuracy": 52,
+        "shotPower": 44,
+        "checking": 54,
+        "puckControl": 56,
+        "hockeyIq": 57,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 2,
+      "firstName": "Luke",
+      "lastName": "Schenn",
+      "position": "D",
+      "shoots": "Right",
+      "age": 36,
+      "traits": {
+        "acceleration": 49,
+        "topSpeed": 50,
+        "shotAccuracy": 50,
+        "shotPower": 65,
+        "checking": 82,
+        "puckControl": 52,
+        "hockeyIq": 63,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

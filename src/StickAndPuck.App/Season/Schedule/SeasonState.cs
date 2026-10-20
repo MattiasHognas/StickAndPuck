@@ -258,7 +258,7 @@ namespace StickAndPuck.App.Season.Schedule
 
         /// <summary>The match setup for a game, so the season starts a match the same way exhibition, arcade and
         /// versus do: SHL rules, keyboard and mouse on the human's club, both clubs' morale, their form and
-        /// their rosters as traded (<see cref="Rosters"/>) without the injured and suspended players (<see cref="AbsenceTable"/>).</summary>
+        /// their rosters as traded (<see cref="Rosters"/>) without the injured and suspended players, the spares in their slots (<see cref="AbsenceTable.Dressed"/>).</summary>
         public MatchSetup SetupFor(
             Fixture game,
             IReadOnlyList<ClubData> clubs,
@@ -284,8 +284,8 @@ namespace StickAndPuck.App.Season.Schedule
             RuleSet rules = Rules.Or(RuleSet.Shl);
             List<string> absent = [.. Stats.Absences.Out(Find(game.Home))];
             absent.AddRange(Stats.Absences.Out(Find(game.Away)));
-            ClubData home = AbsenceTable.Without(Find(game.Home), absent),
-                away = AbsenceTable.Without(Find(game.Away), absent);
+            ClubData home = AbsenceTable.Dressed(Find(game.Home), absent),
+                away = AbsenceTable.Dressed(Find(game.Away), absent);
             Dictionary<string, int> form = Nudges(home, rules);
             foreach ((string key, int nudge) in Nudges(away, rules))
             {

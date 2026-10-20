@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 9,
+      "firstName": "Calle",
+      "lastName": "Järnkrok",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 35,
+      "traits": {
+        "acceleration": 42,
+        "topSpeed": 46,
+        "shotAccuracy": 39,
+        "shotPower": 43,
+        "checking": 42,
+        "puckControl": 42,
+        "hockeyIq": 42,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 3,
+      "firstName": "Christian",
+      "lastName": "Djoos",
+      "position": "D",
+      "shoots": "Left",
+      "age": 32,
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 46,
+        "shotAccuracy": 39,
+        "shotPower": 53,
+        "checking": 56,
+        "puckControl": 49,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

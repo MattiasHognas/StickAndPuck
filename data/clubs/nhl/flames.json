@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 29,
+      "firstName": "Samuel",
+      "lastName": "Honzek",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 21,
+      "traits": {
+        "acceleration": 61,
+        "topSpeed": 64,
+        "shotAccuracy": 50,
+        "shotPower": 41,
+        "checking": 59,
+        "puckControl": 50,
+        "hockeyIq": 48,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 44,
+      "firstName": "Joel",
+      "lastName": "Hanley",
+      "position": "D",
+      "shoots": "Left",
+      "age": 35,
+      "traits": {
+        "acceleration": 52,
+        "topSpeed": 51,
+        "shotAccuracy": 46,
+        "shotPower": 60,
+        "checking": 62,
+        "puckControl": 58,
+        "hockeyIq": 62,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

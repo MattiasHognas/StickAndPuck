@@ -42,7 +42,9 @@ namespace StickAndPuck.App.Season.DressingRoom
                     before = DevelopmentTable.Scaled(d.Before, context.Rules);
                 if (
                     now == before
-                    || !club.Roster.FirstOrNone(p => p.Number == d.Number).TryGet(out PlayerData p)
+                    || !club.Everyone()
+                        .FirstOrNone(p => p.Number == d.Number)
+                        .TryGet(out PlayerData p)
                 )
                 {
                     continue;

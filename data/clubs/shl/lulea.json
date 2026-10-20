@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 71,
+      "firstName": "Jakob",
+      "lastName": "Ihs-Wozniak",
+      "position": "RW",
+      "shoots": "Right",
+      "age": 19,
+      "traits": {
+        "acceleration": 49,
+        "topSpeed": 57,
+        "shotAccuracy": 48,
+        "shotPower": 43,
+        "checking": 47,
+        "puckControl": 44,
+        "hockeyIq": 41,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 29,
+      "firstName": "Erik",
+      "lastName": "Gustafsson",
+      "position": "D",
+      "shoots": "Left",
+      "age": 37,
+      "traits": {
+        "acceleration": 39,
+        "topSpeed": 43,
+        "shotAccuracy": 44,
+        "shotPower": 56,
+        "checking": 62,
+        "puckControl": 51,
+        "hockeyIq": 59,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

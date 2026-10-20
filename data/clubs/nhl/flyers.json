@@ -400,5 +400,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 74,
+      "firstName": "Owen",
+      "lastName": "Tippett",
+      "position": "RW",
+      "shoots": "Right",
+      "age": 27,
+      "traits": {
+        "acceleration": 48,
+        "topSpeed": 51,
+        "shotAccuracy": 57,
+        "shotPower": 52,
+        "checking": 64,
+        "puckControl": 54,
+        "hockeyIq": 52,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 8,
+      "firstName": "Cam",
+      "lastName": "York",
+      "position": "D",
+      "shoots": "Left",
+      "age": 25,
+      "traits": {
+        "acceleration": 59,
+        "topSpeed": 57,
+        "shotAccuracy": 53,
+        "shotPower": 64,
+        "checking": 62,
+        "puckControl": 56,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

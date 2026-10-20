@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 86,
+      "firstName": "Erik",
+      "lastName": "Thorell",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 34,
+      "traits": {
+        "acceleration": 40,
+        "topSpeed": 46,
+        "shotAccuracy": 44,
+        "shotPower": 39,
+        "checking": 43,
+        "puckControl": 48,
+        "hockeyIq": 47,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 3,
+      "firstName": "Stefan",
+      "lastName": "Miloševic",
+      "position": "D",
+      "shoots": "Left",
+      "age": 22,
+      "traits": {
+        "acceleration": 52,
+        "topSpeed": 51,
+        "shotAccuracy": 41,
+        "shotPower": 54,
+        "checking": 62,
+        "puckControl": 46,
+        "hockeyIq": 46,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

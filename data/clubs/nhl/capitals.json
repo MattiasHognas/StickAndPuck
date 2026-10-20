@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 34,
+      "firstName": "Justin",
+      "lastName": "Sourdif",
+      "position": "C",
+      "shoots": "Right",
+      "age": 24,
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 53,
+        "shotAccuracy": 54,
+        "shotPower": 49,
+        "checking": 52,
+        "puckControl": 57,
+        "hockeyIq": 56,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 52,
+      "firstName": "Dylan",
+      "lastName": "McIlrath",
+      "position": "D",
+      "shoots": "Right",
+      "age": 34,
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 49,
+        "shotAccuracy": 51,
+        "shotPower": 64,
+        "checking": 79,
+        "puckControl": 54,
+        "hockeyIq": 56,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

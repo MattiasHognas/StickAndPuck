@@ -49,7 +49,8 @@ namespace StickAndPuck.App.Season.DressingRoom
                 ", ",
                 e.Players.Select(n =>
                         club.Select(c =>
-                                c.Roster.FirstOrNone(p => p.Number == n)
+                                c.Everyone()
+                                    .FirstOrNone(p => p.Number == n)
                                     .Select(p => p.LastName)
                                     .Or("")
                             )

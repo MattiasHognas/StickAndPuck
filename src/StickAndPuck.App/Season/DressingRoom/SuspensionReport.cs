@@ -21,7 +21,7 @@ namespace StickAndPuck.App.Season.DressingRoom
                 .Clubs.FirstOrNone(c =>
                     string.Equals(c.Id, context.UserClub, StringComparison.Ordinal)
                 )
-                .Select(c => c.Roster)
+                .Select(c => (IReadOnlyList<PlayerData>)[.. c.Everyone()])
                 .Or([]);
             foreach (
                 Absence a in context

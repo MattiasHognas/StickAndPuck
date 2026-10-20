@@ -333,7 +333,11 @@ namespace StickAndPuck.Tests.Season.Injuries
         [Test]
         public void LinesWithoutTheInjuredPlayer()
         {
-            ClubData club = WorldBuilder.DefaultSetup.Home;
+            // a club without spares (W86, SpareTests): the players behind move up
+            ClubData club = WorldBuilder.DefaultSetup.Home with
+            {
+                Spares = [],
+            };
             PlayerData firstLeft = club.Roster.First(p => p.Position == PlayingPosition.LW);
             PlayerData secondLeft = club
                 .Roster.Where(p => p.Position == PlayingPosition.LW)
@@ -378,7 +382,7 @@ namespace StickAndPuck.Tests.Season.Injuries
 
             // a club never dresses fewer than twelve skaters or no goalie
             AbsenceTable many = new();
-            foreach (PlayerData p in club.Roster)
+            foreach (PlayerData p in club.Everyone())
             {
                 many.Add(Injury(club.Id, p.Number, 2));
             }
@@ -475,12 +479,14 @@ namespace StickAndPuck.Tests.Season.Injuries
             );
             Check(
                 !played.Roster.Any(p => p.Number == hurt.Number)
-                    && played.Roster.Count == user.Roster.Count - 1
+                    && played.Roster.Count == user.Roster.Count
+                    && played.Roster.Any(p => user.Spares.Any(s => s.Number == p.Number))
+                    && setup.DressSpares
                     && setup.Absent.Contains(
                         FormTable.Key(user.Id, hurt.Number),
                         StringComparer.Ordinal
                     ),
-                "the season match is set up without him, and says so"
+                "the season match is set up without him, a spare in his slot, and says so"
             );
             Check(
                 !season.InForm(user).Roster.Any(p => p.Number == hurt.Number),
@@ -598,13 +604,22 @@ namespace StickAndPuck.Tests.Season.Injuries
                 hurt.LastName
             );
             Check(
-                report.Injuries.Count == 1
+                report.Injuries.Count == 2
                     && string.Equals(report.Injuries[0].Text, expected, StringComparison.Ordinal)
                     && report.Injuries[0].Highlight
                     && report
                         .Injuries[0]
                         .Text.Contains(hurt.LastName.ToUpperInvariant(), StringComparison.Ordinal),
                 $"the dressing room lists the club's own injury ({(report.Injuries.Count > 0 ? report.Injuries[0].Text : "none")})"
+            );
+            PlayerData seventh = user.Spares.First(p => p.Position == PlayingPosition.D);
+            Check(
+                string.Equals(
+                    report.Injuries[^1].Text,
+                    SpareReport.Line([new SpareIn(seventh, hurt)]),
+                    StringComparison.Ordinal
+                ),
+                $"under it the seventh defenceman who dresses in his slot ({report.Injuries[^1].Text})"
             );
             Check(
                 DressingRoomSources
@@ -613,6 +628,42 @@ namespace StickAndPuck.Tests.Season.Injuries
                     )
                     .Injuries.Count == 0,
                 "with injuries off the list stays empty"
+            );
+        }
+
+        [Test]
+        public void DressingRoomListsBothSpares()
+        {
+            IReadOnlyList<ClubData> clubs = WorldBuilder.Clubs;
+            SeasonState season = app.Season.StartNew(
+                clubs,
+                clubs[0].Id,
+                seed: 5,
+                path: Path.Combine(folder, "spares.json")
+            );
+            ClubData user = clubs.First(c =>
+                string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)
+            );
+            PlayerData back = user.Roster.First(p => p.Position == PlayingPosition.D);
+            PlayerData centre = user.Roster.First(p => p.Position == PlayingPosition.C);
+            season.Stats.Absences.Add(Injury(user.Id, back.Number, 3));
+            season.Stats.Absences.Add(Injury(user.Id, centre.Number, 2));
+
+            DressingRoomReport report = DressingRoomSources.Build(
+                DressingRoomContext.Of(season, clubs, RuleSet.Shl)
+            );
+            string line = report.Injuries.Count == 3 ? report.Injuries[2].Text : "";
+            Check(
+                user.Spares.All(s =>
+                    line.Contains(
+                        string.Create(
+                            CultureInfo.InvariantCulture,
+                            $"#{s.Number} {s.LastName.ToUpperInvariant()}"
+                        ),
+                        StringComparison.Ordinal
+                    )
+                ),
+                $"two players out, both spares on one line under them ({line})"
             );
         }
 

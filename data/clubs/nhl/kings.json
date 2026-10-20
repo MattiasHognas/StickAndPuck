@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 15,
+      "firstName": "Alex",
+      "lastName": "Turcotte",
+      "position": "C",
+      "shoots": "Left",
+      "age": 25,
+      "traits": {
+        "acceleration": 51,
+        "topSpeed": 52,
+        "shotAccuracy": 48,
+        "shotPower": 48,
+        "checking": 55,
+        "puckControl": 52,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 6,
+      "firstName": "Joel",
+      "lastName": "Edmundson",
+      "position": "D",
+      "shoots": "Left",
+      "age": 33,
+      "traits": {
+        "acceleration": 48,
+        "topSpeed": 49,
+        "shotAccuracy": 52,
+        "shotPower": 65,
+        "checking": 71,
+        "puckControl": 59,
+        "hockeyIq": 61,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }
