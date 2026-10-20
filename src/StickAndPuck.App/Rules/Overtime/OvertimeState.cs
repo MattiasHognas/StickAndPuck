@@ -32,18 +32,7 @@ namespace StickAndPuck.App.Rules.Overtime
         /// <summary>Gets each club's next place in its order.</summary>
         public int[] Next { get; } = new int[2];
 
-        public float AttemptTime { get; set; }
-
-        /// <summary>Gets or sets how long the puck has been off the shooter's stick.</summary>
-        public float LooseTime { get; set; }
-
-        /// <summary>Gets or sets the AI shooter's lane (z).</summary>
-        public float Lane { get; set; }
-
-        /// <summary>Gets or sets the AI shooter's distance to the goal line when shooting.</summary>
-        public float ShootFrom { get; set; }
-
-        /// <summary>Gets or sets the side an AI shooter's deke cuts to (-1 or +1), or 0 for a straight shot.</summary>
-        public int Deke { get; set; }
+        /// <summary>Gets the attempt under way: the shooter's lane, his distance and his deke.</summary>
+        public ShootoutAttempt Attempt { get; } = new();
     }
 }

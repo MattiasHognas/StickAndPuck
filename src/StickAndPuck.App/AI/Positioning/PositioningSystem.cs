@@ -40,8 +40,11 @@ namespace StickAndPuck.App.AI.Positioning
 
         public void Update(World world, float dt)
         {
-            // the shootout (src/Rules/Overtime) skates its own shooter
-            if (world.Match.Phase == MatchPhase.Shootout)
+            // the shootout (src/Rules/Overtime) and a penalty shot skate their own shooter
+            if (
+                world.Match.Phase == MatchPhase.Shootout
+                || Rules.Penalties.PenaltyShot.Running(world)
+            )
             {
                 return;
             }

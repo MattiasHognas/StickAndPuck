@@ -64,6 +64,12 @@ namespace StickAndPuck.App.Rules.Penalties
 
         public float FirstDrop { get; set; } = float.NaN;
 
+        /// <summary>Gets or sets the penalty shot under way, or None.</summary>
+        public Maybe<PenaltyShotState> Shot { get; set; }
+
+        /// <summary>Gets or sets the dice of the penalty shots' AI shooters: their own stream, so the calls keep theirs.</summary>
+        public required Random ShotRng { get; set; }
+
         public static void Log(World world, string what)
         {
             if (!MatchFlow.State(world).Log)

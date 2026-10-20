@@ -38,7 +38,10 @@ namespace StickAndPuck.App.Rules.Match
             bool stoppage =
                 (phase == MatchPhase.Stopped && !s.Celebration.HasValue)
                 || (phase == MatchPhase.Faceoff && !s.Draw.Dropped);
-            return stoppage && !s.TimeOut.Used[(int)side] && !s.TimeOut.Running.HasValue;
+            return stoppage
+                && !s.TimeOut.Used[(int)side]
+                && !s.TimeOut.Running.HasValue
+                && !Penalties.PenaltyShot.Running(world);
         }
 
         /// <summary>Calls a club's time-out, if it may: play stays stopped for the time-out, then the faceoff is set up at the same dot.</summary>

@@ -57,6 +57,10 @@ namespace StickAndPuck.App.Arena
                 PenaltyCalled p => p.Side == fans
                     ? new CrowdReaction(CrowdPose.Boo, CrowdPose.Boo, 25f, 4f, 3)
                     : new CrowdReaction(CrowdPose.Cheer, CrowdPose.Stand, 20f, 2.5f, 2),
+                // a penalty shot gets the whole arena up: ours cheer it, theirs stand and wait
+                PenaltyShotAwarded s => s.Side == fans
+                    ? new CrowdReaction(CrowdPose.Cheer, CrowdPose.Stand, Everywhere, 6f, 3)
+                    : new CrowdReaction(CrowdPose.Stand, CrowdPose.Stand, Everywhere, 6f, 3),
                 OffsideCalled o when o.Attacker == fans => new CrowdReaction(
                     CrowdPose.Boo,
                     Maybe.None<CrowdPose>(),
@@ -87,6 +91,7 @@ namespace StickAndPuck.App.Arena
                 CheckLanded c => c.Position,
                 ShotSaved s => s.Position,
                 PenaltyCalled p => p.Position,
+                PenaltyShotAwarded s => s.Position,
                 OffsideCalled o => o.Position,
                 IcingCalled i => i.Position,
                 _ => Vector3.Zero, // the whole arena: the final horn

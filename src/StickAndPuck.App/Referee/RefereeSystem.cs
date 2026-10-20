@@ -68,12 +68,13 @@ namespace StickAndPuck.App.Referee
                     : Target(world);
             bool atDot =
                 m.Phase
-                is not (
-                    MatchPhase.Play
-                    or MatchPhase.Final
-                    or MatchPhase.Overtime
-                    or MatchPhase.Shootout
-                );
+                    is not (
+                        MatchPhase.Play
+                        or MatchPhase.Final
+                        or MatchPhase.Overtime
+                        or MatchPhase.Shootout
+                    )
+                && !Rules.Penalties.PenaltyShot.Running(world);
             // at its own dot the referee stands next to the centres; everywhere else it keeps its distance
             Vector3 push =
                 !atDot || Flat(target - r.Position).Length() > 2f ? Avoid(world, r) : Vector3.Zero;
@@ -139,7 +140,11 @@ namespace StickAndPuck.App.Referee
         /// <summary>Where the referee wants to be: the coming faceoff's drop spot during a stoppage, otherwise trailing the play.</summary>
         private static Vector3 Target(World world)
         {
-            switch (world.Match.Phase)
+            // a penalty shot: the referee follows the shooter along the far boards, as in the shootout
+            MatchPhase phase = Rules.Penalties.PenaltyShot.Running(world)
+                ? MatchPhase.Shootout
+                : world.Match.Phase;
+            switch (phase)
             {
                 case MatchPhase.Faceoff:
                 case MatchPhase.Stopped:
