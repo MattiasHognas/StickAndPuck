@@ -4,6 +4,7 @@ using System.Numerics;
 using Raylib_cs;
 using StickAndPuck.App.Arena;
 using StickAndPuck.App.Core;
+using StickAndPuck.App.Screens;
 using static Raylib_cs.Raylib;
 
 namespace StickAndPuck.App.Audio
@@ -12,7 +13,7 @@ namespace StickAndPuck.App.Audio
     /// (<see cref="MusicPlayer"/>) under the overall volume. Runs after every
     /// publisher, reads this step's <see cref="MatchEvents"/> and maps them through
     /// <see cref="SoundCues"/>; it also watches the puck, so a pickup or a deflection nobody published
-    /// still clicks. Over it the fans chant (<see cref="CrowdChants"/>). With no audio device it stays silent and the game runs on.
+    /// still clicks. Over it the fans chant (<see cref="CrowdChants"/>), and through the title intro the crowd swells (<see cref="IntroChants"/>). With no audio device it stays silent and the game runs on.
     /// SAP_SFX=demo plays every event's sounds in turn, for listening to the set in the game.</summary>
     internal sealed class AudioSystem : ISystem, IDisposable
     {
@@ -30,6 +31,8 @@ namespace StickAndPuck.App.Audio
         private readonly List<(float At, Cue Cue, float Pan)> delayed = [];
         private readonly MusicPlayer music = new();
         private readonly CrowdChants chants = new();
+        private readonly IntroChants intro = new();
+        private readonly List<(Sound Sound, float Level)> introVoices = [];
         private float clock;
         private int played;
         private bool ready;
@@ -96,7 +99,8 @@ namespace StickAndPuck.App.Audio
             }
 
             SetMasterVolume(Math.Clamp(world.Settings.OverallVolume, 0, 1));
-            music.Update(world);
+            Intro(world, dt);
+            music.Update(world, IntroChants.MusicGain(intro.Level));
 
             bool puckEvent = false;
             foreach (MatchEvent e in world.Events.Current)
@@ -163,6 +167,47 @@ namespace StickAndPuck.App.Audio
             Console.WriteLine(
                 string.Create(CultureInfo.InvariantCulture, $"SAP: audio: {played} sounds played")
             );
+        }
+
+        // W144: the crowd through the title intro; the started chants follow its swell step by step and
+        // stop once it has settled or been cut
+        private void Intro(World world, float dt)
+        {
+            foreach (Cue cue in intro.Update(TitleIntroScreen.Playing(world), dt))
+            {
+                if (sounds.TryGetValue(cue.Sound, out Sound[] copies))
+                {
+                    int i = next.GetValueOrDefault(cue.Sound);
+                    next[cue.Sound] = (i + 1) % copies.Length;
+                    Sound sound = copies[i];
+                    SetSoundPitch(sound, cue.Pitch);
+                    SetSoundPan(sound, 0);
+                    SetSoundVolume(sound, 0);
+                    PlaySound(sound);
+                    played++;
+                    introVoices.Add((sound, SfxTable.Info(cue.Sound).Volume * cue.Volume));
+                }
+            }
+
+            foreach ((Sound sound, float level) in introVoices)
+            {
+                if (!intro.Sounding)
+                {
+                    StopSound(sound);
+                }
+                else
+                {
+                    SetSoundVolume(
+                        sound,
+                        Math.Clamp(world.Settings.EffectsVolume * level * intro.Level, 0, 1)
+                    );
+                }
+            }
+
+            if (!intro.Sounding)
+            {
+                introVoices.Clear();
+            }
         }
 
         private void Queue(World world, MatchEvent e)

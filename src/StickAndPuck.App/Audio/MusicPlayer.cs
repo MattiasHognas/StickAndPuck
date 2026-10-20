@@ -36,7 +36,9 @@ namespace StickAndPuck.App.Audio
         }
 
         /// <summary>Starts, stops and feeds the stream for the world on show.</summary>
-        public void Update(World world)
+        /// <param name="world">The world on show.</param>
+        /// <param name="gain">How far under the music volume to play it, 1 for all of it: the title intro's crowd ducks it.</param>
+        public void Update(World world, float gain = 1f)
         {
             MusicTrack track = MusicTracks.For(world);
             if (track != playing)
@@ -59,7 +61,7 @@ namespace StickAndPuck.App.Audio
                 return;
             }
 
-            SetMusicVolume(music, Math.Clamp(world.Settings.MusicVolume, 0, 1));
+            SetMusicVolume(music, Math.Clamp(world.Settings.MusicVolume * gain, 0, 1));
             UpdateMusicStream(music);
         }
 
