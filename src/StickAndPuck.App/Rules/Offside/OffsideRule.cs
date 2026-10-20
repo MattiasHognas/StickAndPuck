@@ -14,7 +14,9 @@ namespace StickAndPuck.App.Rules.Offside
     /// and whistles a faceoff at the neutral-zone dot outside that zone, on the puck's side. Under
     /// <see cref="RuleSet.IntentionalOffside"/> an intentional offside (the puck passed or dumped in, not
     /// carried, while an attacker hangs <see cref="IntentionalDepth"/> or more past the line) moves the faceoff
-    /// to the offending club's own end-zone dot on the puck's side instead.</summary>
+    /// to the offending club's own end-zone dot on the puck's side instead. Under <see cref="RuleSet.GoalChallenge"/> the
+    /// linesman misses an offside entry by no more than <see cref="MissedBy"/>: play goes on and the entry stays on
+    /// record (<see cref="MissedOffside"/>) for a coach's challenge while the puck stays in the zone.</summary>
     internal sealed class OffsideRule : ISystem
     {
         /// <summary>Half the painted width of a blue line (30 cm).</summary>
@@ -28,6 +30,20 @@ namespace StickAndPuck.App.Rules.Offside
 
         /// <summary>The x of the neutral-zone dots.</summary>
         public const float NeutralDotX = 6.1f;
+
+        /// <summary>How far past the onside limit an attacker may be for the linesman to miss it under
+        /// <see cref="RuleSet.GoalChallenge"/>: a skate's length, which only the video of a coach's challenge sees.</summary>
+        public const float MissedBy = 0.45f;
+
+        /// <summary>Gets a value indicating whether <paramref name="attacker"/> took the puck into the zone it is in now
+        /// offside and the linesman missed it (<see cref="MissedBy"/>), with the puck in that zone ever since.</summary>
+        public static bool MissedOffside(World world, Side attacker)
+        {
+            OffsideState s = world.Offside.Get(() => new OffsideState());
+            return s.MissedEnd != 0
+                && s.Zone == s.MissedEnd
+                && Attacker(world.Match, s.MissedEnd) == attacker;
+        }
 
         /// <summary>Gets the club with an offside pending (the linesman's arm is up), if any.</summary>
         public static SideOrNone Pending(World world)
@@ -70,6 +86,7 @@ namespace StickAndPuck.App.Rules.Offside
             {
                 // dead puck (or offside switched off): forget any pending call, and read the zone afresh when the puck drops
                 s.PendingEnd = 0;
+                s.MissedEnd = 0;
                 s.Zone = PuckZone(pk.Position, 0);
                 return;
             }
@@ -79,6 +96,11 @@ namespace StickAndPuck.App.Rules.Offside
             if (s.PendingEnd != 0 && s.Zone != s.PendingEnd)
             {
                 s.PendingEnd = 0; // puck left the zone
+            }
+
+            if (s.MissedEnd != 0 && s.Zone != s.MissedEnd)
+            {
+                s.MissedEnd = 0; // puck left the zone: the missed entry is history
             }
 
             if (s.Zone != 0 && was != s.Zone)
@@ -97,6 +119,7 @@ namespace StickAndPuck.App.Rules.Offside
         {
             Puck pk = world.Puck;
             Side attacker = Attacker(world.Match, end);
+            s.MissedEnd = 0;
             // a puck the defending club sends into its own zone (or a loose one nobody played) is never offside
             if (!SideOf(world, pk.Carrier >= 0 ? pk.Carrier : pk.LastTouch).Is(attacker))
             {
@@ -105,6 +128,12 @@ namespace StickAndPuck.App.Rules.Offside
 
             if (!Offside(world, attacker, end, pk.Carrier))
             {
+                return;
+            }
+
+            if (world.Setup.Rules.GoalChallenge && Close(world, attacker, end, pk.Carrier))
+            {
+                s.MissedEnd = end; // too close for the linesman's eye: play on, the video has it
                 return;
             }
 
@@ -172,6 +201,18 @@ namespace StickAndPuck.App.Rules.Offside
             return world
                 .OnIce(attacker)
                 .Any(p => !p.IsGoalie && p.Id != carrier && PlayerInZone(p.Position, end));
+        }
+
+        /// <summary>Gets a value indicating whether every attacker offside at the entry is within <see cref="MissedBy"/> of the onside limit.</summary>
+        private static bool Close(World world, Side attacker, int end, int carrier)
+        {
+            return world
+                .OnIce(attacker)
+                .Where(p => !p.IsGoalie && p.Id != carrier && PlayerInZone(p.Position, end))
+                .All(p =>
+                    (end * p.Position.X)
+                    <= RinkSpec.BlueLineX + LineHalfWidth + SkateReach + MissedBy
+                );
         }
 
         /// <summary>Gets a value indicating whether a loose puck is headed into the net mouth at <paramref name="end"/>.</summary>

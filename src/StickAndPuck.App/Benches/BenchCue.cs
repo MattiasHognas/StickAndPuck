@@ -63,6 +63,9 @@ namespace StickAndPuck.App.Benches
                 ],
                 WhistleBlown => [new(BenchReaction.Chat, 4, 3f), new(BenchReaction.Trainer, 1, 3f)],
                 PeriodEnded => [new(BenchReaction.HelmetOff, 1, HelmetSeconds)],
+                GoalDisallowed d when d.Side == bench => [new(BenchReaction.Argue, 3, 3f)],
+                GoalDisallowed => [new(BenchReaction.FistPump, All, 2f)],
+                CoachChallenged c when c.Side == bench => [new(BenchReaction.Point, 1, 2f)],
                 _ => [],
             };
         }

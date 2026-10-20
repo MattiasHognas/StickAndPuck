@@ -132,7 +132,7 @@ namespace StickAndPuck.App.Replay
                 .TrimEnd();
         }
 
-        /// <summary>The fields of the events that reach the season (an injury, a suspension) and of a goalie's trapezoid call.</summary>
+        /// <summary>The fields of the events that reach the season (an injury, a suspension) and of a goalie's trapezoid call; the review's after that.</summary>
         private static string SeasonFields(MatchEvent e)
         {
             return e switch
@@ -149,6 +149,24 @@ namespace StickAndPuck.App.Replay
                     CultureInfo.InvariantCulture,
                     $"{t.Side} {t.GoalieId} {V(t.Position)}"
                 ),
+                _ => ReviewFields(e),
+            };
+        }
+
+        /// <summary>The fields of the goal review's events (W79): the held goal, a disallowed goal and a coach's challenge.</summary>
+        private static string ReviewFields(MatchEvent e)
+        {
+            return e switch
+            {
+                GoalUnderReview r => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{r.Goal.Side} {r.Goal.ScorerId} {V(r.Goal.Position)} {r.Goal.Speed:R}"
+                ),
+                GoalDisallowed d => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{d.Side} {d.ScorerId} {V(d.Position)} {d.Call} {d.Challenged}"
+                ),
+                CoachChallenged c => $"{c.Side} {c.Call}",
                 _ => throw new UnreachableException($"no replay text for {e.GetType().Name}"),
             };
         }

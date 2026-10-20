@@ -24,6 +24,9 @@ namespace StickAndPuck.App.Hud
         /// <summary>How long a penalty shot banner stays up: through the whistle until the shooter is set at centre.</summary>
         public const float ShotSeconds = 3.5f;
 
+        /// <summary>The longest a review or challenge banner stays up; the verdict replaces it sooner.</summary>
+        public const float ReviewSeconds = 30f;
+
         /// <summary>Goals in a match that make a hat trick.</summary>
         public const int HatTrick = 3;
 
@@ -97,8 +100,45 @@ namespace StickAndPuck.App.Hud
                 FaceoffViolated violation => ViolationBanner(world, violation),
                 PuckOverGlass over => OverGlassBanner(world, over),
                 PenaltyShotAwarded shot => PenaltyShotBanner(world, shot),
+                _ => ReviewBanner(world, e),
+            };
+        }
+
+        /// <summary>The goal review's banners (W79): GOAL UNDER REVIEW while a goal is held, NO GOAL with the reason
+        /// when it is taken off, and COACH'S CHALLENGE with what is challenged. The confirmed goal is the GOAL! banner.</summary>
+        private static Maybe<HudMessage> ReviewBanner(World world, MatchEvent e)
+        {
+            return e switch
+            {
+                GoalUnderReview held => new HudMessage(
+                    "panel",
+                    Text.Get(K.GoalUnderReview),
+                    ScorerText(world, held.Goal),
+                    world.Setup.Club(held.Goal.Side).Id,
+                    held.Time + ReviewSeconds
+                ),
+                GoalDisallowed off => new HudMessage(
+                    "panel_red",
+                    Text.Get(K.NoGoal),
+                    CallText(off.Call),
+                    world.Setup.Club(off.Side).Id,
+                    off.Time + GoalSeconds,
+                    "whistle"
+                ),
+                CoachChallenged c => new HudMessage(
+                    "panel",
+                    Text.Get(K.CoachChallenge),
+                    CallText(c.Call),
+                    world.Setup.Club(c.Side).Id,
+                    c.Time + ReviewSeconds
+                ),
                 _ => Maybe.None<HudMessage>(),
             };
+        }
+
+        private static string CallText(ReviewCall call)
+        {
+            return Text.Get(call == ReviewCall.Offside ? K.Offside : K.GoalieInterference);
         }
 
         private static HudMessage PeriodEndedBanner(World world, PeriodEnded end, string score)
@@ -287,6 +327,11 @@ namespace StickAndPuck.App.Hud
             string detail = ScorerText(world, e);
             List<string> notes =
                 clubBefore == 0 && seasonBefore == 0 ? [Text.Get(K.FirstGoalOfSeason)] : [];
+            if (GoalReview.ChallengeFailed(world))
+            {
+                notes.Add(Text.Get(K.GoalStands)); // the coach's challenge against it failed
+            }
+
             string title = Text.Get(GoalsBy(player) == HatTrick ? K.HatTrick : K.Goal);
             return new("panel_gold", title, detail, club, e.Time + GoalSeconds) { Notes = notes };
         }

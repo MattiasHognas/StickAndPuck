@@ -19,8 +19,8 @@ namespace StickAndPuck.App.Camera
     /// </remarks>
     public sealed class Replay
     {
-        /// <summary>Seconds kept in the buffer.</summary>
-        private const float BufferSeconds = 7f;
+        /// <summary>Seconds kept in the buffer: the lead-in, the celebration and a goal review with a coach's challenge (W79).</summary>
+        private const float BufferSeconds = 16f;
 
         /// <summary>Seconds of celebration on the gameplay camera before the replay cuts in.</summary>
         private const float CelebrateSeconds = 1.5f;
@@ -51,6 +51,7 @@ namespace StickAndPuck.App.Camera
         private readonly ReplayBuffer.Frame live = new();
         private readonly float testGoalAt = TestGoalTime();
         private float goalTime = float.NaN,
+            celebrateFrom = float.NaN,
             playSince,
             playhead,
             shown;
@@ -66,7 +67,7 @@ namespace StickAndPuck.App.Camera
         public Camera3D Camera => BroadcastCamera.IceLevel(ChasePosition(camTarget), camTarget);
 
         /// <summary>Gets the seconds since a goal while the celebration runs before the replay cuts in, or NaN (the push-in runs then).</summary>
-        public float Waiting => waiting ? lastTime - goalTime : float.NaN;
+        public float Waiting => waiting ? lastTime - celebrateFrom : float.NaN;
 
         /// <summary>Records or plays back one step. Runs after every gameplay system.</summary>
         /// <returns>True when the replay just ended and the gameplay camera should cut back.</returns>
@@ -79,18 +80,23 @@ namespace StickAndPuck.App.Camera
             }
 
             buffer.Record(world);
-            if (!waiting && GoalThisStep(world, out float x))
+            if (!waiting && GoalThisStep(world, out float x, out float held))
             {
                 waiting = true;
-                goalTime = world.Time;
+                goalTime = world.Time - held; // a goal confirmed by a review went in that long ago
+                celebrateFrom = world.Time;
                 end = x < 0 ? -1 : 1;
             }
-            if (!waiting && world.Match.Phase != MatchPhase.Play)
+            if (
+                !waiting
+                && world.Match.Phase != MatchPhase.Play
+                && !Rules.Match.GoalReview.UnderReview(world)
+            )
             {
                 playSince = world.Time; // a replay never reaches back past the last puck drop
             }
 
-            if (waiting && world.Time - goalTime >= CelebrateSeconds)
+            if (waiting && world.Time - celebrateFrom >= CelebrateSeconds)
             {
                 Begin(world);
             }
@@ -99,11 +105,13 @@ namespace StickAndPuck.App.Camera
         }
 
         /// <summary>Whether a goal was scored this step, and at which end. SAP_REPLAY_AT fakes one at that world time, for checks before the rules exist.</summary>
-        private bool GoalThisStep(World world, out float x)
+        private bool GoalThisStep(World world, out float x, out float held)
         {
             x = world.Puck.Position.X;
+            held = 0;
             if (world.Events.Of<GoalScored>().FirstOrDefault() is { } goal)
             {
+                held = goal.ReviewSeconds;
                 if (goal.Position.X != 0)
                 {
                     x = goal.Position.X;

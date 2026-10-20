@@ -16,7 +16,7 @@ namespace StickAndPuck.App.Core
         public static readonly RuleSet Shl = new();
 
         /// <summary>Arcade: no offside, no icing, no time-outs, a lenient referee, the game's original penalty and fight rules, no team morale, no rivalries,
-        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, no trapezoid, no hot seat, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development, no trade deadline and no playout.</summary>
+        /// plain faceoffs (no violations, nearest dot), netting that keeps the puck in play, no too many men call, no penalty shots, no trapezoid, no goal review, no hot seat, strong form swings, no dressing room, no pre-game talk, no coach's challenges, no injuries, no suspensions, no player development, no trade deadline and no playout.</summary>
         public static readonly RuleSet Arcade = new()
         {
             Preset = RulePreset.Arcade,
@@ -60,11 +60,12 @@ namespace StickAndPuck.App.Core
             Playout = false,
             HotSeat = HotSeat.Off,
             Trapezoid = false,
+            GoalReview = false,
         };
 
         /// <summary>The NHL: SHL rules with home choosing the shootout order, nobody shooting twice until every skater has, a fight major without ejection,
         /// 4 on 4 coincidental minors, 2 points for any win, regulation wins first on equal points, 2-2-1-1-1 playoff home ice, stronger team morale,
-        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games, milder player development over its longer season, two trade offers at the deadline no relegation playout and a board that judges from halfway through the season.</summary>
+        /// a delay-of-game minor for a second faceoff violation, hotter rivalry games, milder player development over its longer season, two trade offers at the deadline, no relegation playout, a board that judges from halfway through the season and the coach's challenge on goals.</summary>
         public static readonly RuleSet Nhl = new()
         {
             Preset = RulePreset.Nhl,
@@ -85,6 +86,7 @@ namespace StickAndPuck.App.Core
             TradeOffers = TradeFrequency.Often,
             Playout = false,
             HotSeat = HotSeat.Strict,
+            GoalChallenge = true,
         };
 
         /// <summary>Gets the preset this set started from.</summary>
@@ -439,6 +441,16 @@ namespace StickAndPuck.App.Core
         /// the puck behind his goal line outside it, in a corner, takes a delay-of-game minor, served by a skater (W72).
         /// The AI goalie keeps its puck play behind the net inside the trapezoid. The SHL plays it too (IIHF rules since 2021).</summary>
         public bool Trapezoid { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether every goal is held under review for a moment before it counts (W79):
+        /// a goal with an attacker running into the goalie in or around his crease as it went in is disallowed for
+        /// goalie interference. Off in Arcade, where a goal counts the moment it goes in.</summary>
+        public bool GoalReview { get; init; } = true;
+
+        /// <summary>Gets a value indicating whether a club may challenge a goal against it once a game, for goalie
+        /// interference or for offside on the zone entry (W80). Linesmen then miss offsides by a skate's length, which
+        /// only the challenge catches. A failed challenge costs a delay-of-game minor. NHL only.</summary>
+        public bool GoalChallenge { get; init; }
 
         /// <summary>Gets the factor on the call chance for <see cref="Strictness"/>.</summary>
         [JsonIgnore]

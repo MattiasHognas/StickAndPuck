@@ -455,7 +455,7 @@ namespace StickAndPuck.Tests.Rules.Offside
             ad.Position = new Vector3(22, 0, 10);
             Vector3 from = new(-10, 0, 0.2f);
             Send(w, d, from, Vector3.Normalize(RinkSpec.NetMouth(1) - from) * 30);
-            List<MatchEvent> ev = RunFor(w, 2);
+            List<MatchEvent> ev = RunFor(w, 2 + GoalReview.LongSeconds); // through the goal's review
             Check(
                 Count<GoalScored>(ev) == 1 && Count<IcingCalled>(ev) == 0 && w.Match.Score[0] == 1,
                 "a long shot into the net is a goal, not icing"

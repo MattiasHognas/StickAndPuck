@@ -17,5 +17,10 @@ namespace StickAndPuck.App.Core
         int ScorerId,
         Vector3 Position,
         float Speed
-    ) : MatchEvent(Time);
+    ) : MatchEvent(Time)
+    {
+        /// <summary>Gets the seconds the goal was held under review before it was confirmed (0 without a review):
+        /// the puck crossed the line at <c language="C#">Time - ReviewSeconds</c>.</summary>
+        public float ReviewSeconds { get; init; }
+    }
 }

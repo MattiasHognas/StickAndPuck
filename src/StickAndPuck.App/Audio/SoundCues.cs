@@ -42,6 +42,9 @@ namespace StickAndPuck.App.Audio
                 PlayerSuspended => [],
                 PenaltyShotAwarded => [new(Sfx.Whistle), new(Sfx.Crowd, 0.8f, Delay: 0.4f)],
                 TrapezoidViolated => [], // the penalty call that follows is its own event
+                GoalUnderReview => [new(Sfx.Whistle)], // the horn waits for the review
+                GoalDisallowed => [new(Sfx.Whistle), new(Sfx.Crowd, 0.6f, Delay: 0.3f)],
+                CoachChallenged => [new(Sfx.Whistle)],
                 _ => throw new UnreachableException($"no sound cues for {e.GetType().Name}"),
             };
         }
@@ -74,6 +77,9 @@ namespace StickAndPuck.App.Audio
                 PlayerSuspended s => s.Position,
                 PenaltyShotAwarded s => s.Position,
                 TrapezoidViolated t => t.Position,
+                GoalUnderReview g => g.Goal.Position,
+                GoalDisallowed d => d.Position,
+                CoachChallenged => Vector3.Zero,
                 _ => throw new UnreachableException($"no position for {e.GetType().Name}"),
             };
         }
@@ -108,6 +114,16 @@ namespace StickAndPuck.App.Audio
                 new PlayerSuspended(time, Side.Home, 0, at, 1, SuspensionCause.MatchPenalty),
                 new PenaltyShotAwarded(time, Side.Home, 0, 1, at),
                 new TrapezoidViolated(time, Side.Home, 0, at),
+                new GoalUnderReview(time, new GoalScored(time, Side.Home, 0, at, 0)),
+                new GoalDisallowed(
+                    time,
+                    Side.Home,
+                    0,
+                    at,
+                    ReviewCall.GoalieInterference,
+                    Challenged: false
+                ),
+                new CoachChallenged(time, Side.Away, ReviewCall.Offside),
             ];
         }
 

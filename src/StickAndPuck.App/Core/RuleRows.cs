@@ -294,6 +294,22 @@ namespace StickAndPuck.App.Core
                 (r, v) => r with { Trapezoid = v }
             ),
             Flag(
+                nameof(RuleSet.GoalReview),
+                K.RuleGoalReview,
+                K.RuleGroupGame,
+                plays: true,
+                r => r.GoalReview,
+                (r, v) => r with { GoalReview = v }
+            ),
+            Flag(
+                nameof(RuleSet.GoalChallenge),
+                K.RuleGoalChallenge,
+                K.RuleGroupGame,
+                plays: true,
+                r => r.GoalChallenge,
+                (r, v) => r with { GoalChallenge = v }
+            ),
+            Flag(
                 nameof(RuleSet.Fights),
                 K.RuleFights,
                 K.RuleGroupFights,

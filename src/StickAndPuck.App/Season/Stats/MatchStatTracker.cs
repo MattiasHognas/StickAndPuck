@@ -138,7 +138,10 @@ namespace StickAndPuck.App.Season.Stats
                     or PuckOverGlass
                     or ShotBlocked
                     or PenaltyShotAwarded
-                    or TrapezoidViolated:
+                    or TrapezoidViolated
+                    or GoalUnderReview // a held goal counts only once its review confirms it (GoalScored)
+                    or GoalDisallowed
+                    or CoachChallenged:
                         break;
                     default:
                         throw new NotSupportedException(
@@ -178,7 +181,8 @@ namespace StickAndPuck.App.Season.Stats
             }
 
             if (
-                Goal(w, goal.Side, goal.ScorerId, goal.Time).TryGet(out MatchStatLine scorer)
+                Goal(w, goal.Side, goal.ScorerId, goal.Time - goal.ReviewSeconds) // when it went in
+                    .TryGet(out MatchStatLine scorer)
                 && w.Match.Period > w.Setup.Periods
             )
             {
