@@ -27,8 +27,6 @@ namespace StickAndPuck.App.Season.Endings.Shots
 
         public override bool InArena => false;
 
-        public override int Divisor => 2;
-
         public override void Load(ArenaSystem arena)
         {
             if (Kit.Art.TryGet(out Screens.ScreenArt art))

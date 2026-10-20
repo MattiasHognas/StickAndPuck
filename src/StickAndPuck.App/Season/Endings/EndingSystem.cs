@@ -1,6 +1,5 @@
 using Raylib_cs;
 using StickAndPuck.App.Arena;
-using StickAndPuck.App.Camera;
 using StickAndPuck.App.Core;
 using StickAndPuck.App.Season.Endings.Shots;
 using static Raylib_cs.Raylib;
@@ -19,7 +18,6 @@ namespace StickAndPuck.App.Season.Endings
         private Maybe<EndingShot> shot;
         private Material plain;
         private bool arenaStarted;
-        private int divisor = 1;
         private float time;
         private bool done;
 
@@ -75,18 +73,10 @@ namespace StickAndPuck.App.Season.Endings
             }
 
             s.Update(world, time);
-            Camera3D camera = s.Camera(time);
-            if (s.Divisor > 0)
-            {
-                divisor = s.Divisor;
-                world.Camera = PixelGrid.Snap(camera, divisor);
-            }
-            else
-            {
-                (world.Camera, divisor) = PixelGrid.SnapScaled(camera, divisor);
-            }
-
-            world.App.Scale.Request(divisor);
+            // as the pre-game flyover moves: the camera as the shot places it, never snapped to a grid, at the full
+            // 480x270, so slow orbits and push-ins glide instead of stepping
+            world.Camera = s.Camera(time);
+            world.App.Scale.Request(1);
         }
 
         /// <summary>At a season's real end, hands on to the recap once the scene has run (or a key, click or pad

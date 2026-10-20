@@ -59,8 +59,6 @@ namespace StickAndPuck.App.Season.Endings.Shots
         /// the camera's height (the seat is hidden behind them).</summary>
         private const float SitUp = 0.6f;
 
-        public override int Divisor => 2;
-
         private static float SeatX => BenchLayout.DoorX(Side.Home) - 1.6f;
 
         public override void Load(ArenaSystem arena)

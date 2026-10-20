@@ -14,9 +14,6 @@ namespace StickAndPuck.App.Season.Endings
         /// <summary>Gets a value indicating whether the shot plays in the arena (else it draws its own set).</summary>
         public virtual bool InArena => true;
 
-        /// <summary>Gets the render scale the shot wants, or 0 to pick it from the camera's distance as the close-ups do.</summary>
-        public virtual int Divisor => 0;
-
         /// <summary>Loads what only this shot needs; the arena is already started when <see cref="InArena"/>.</summary>
         public virtual void Load(ArenaSystem arena) { }
 
