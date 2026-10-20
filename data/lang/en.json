@@ -801,5 +801,11 @@
   "HeadBreakthrough": "{2}-YEAR-OLD {0} BREAKS THROUGH",
   "HeadTrade": "DEADLINE DEAL: {0} IN, {1} OUT",
   "HeadChallenges": "COACH'S CHALLENGES: {0} MET {2} OF {3}",
-  "HeadLosingStreak": "{0} IN FREE FALL: {2} STRAIGHT DEFEATS"
+  "HeadLosingStreak": "{0} IN FREE FALL: {2} STRAIGHT DEFEATS",
+  "EndingChampions": "CHAMPIONS",
+  "EndingRunnersUp": "RUNNERS-UP",
+  "EndingSemiFinal": "SEMI-FINAL",
+  "EndingSeasonOver": "SEASON OVER",
+  "EndingRelegated": "RELEGATED",
+  "EndingFired": "FIRED"
 }

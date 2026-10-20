@@ -39,5 +39,8 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets the goal review scene's script.</summary>
         internal Slot<Rules.Match.Dev.GoalReviewDemo> GoalReview { get; } = new();
+
+        /// <summary>Gets the end-of-season scene SAP_ENDING plays; a world with one runs only its presentation (<see cref="Systems.For"/>).</summary>
+        internal Slot<Season.Endings.EndingStage> Ending { get; } = new();
     }
 }

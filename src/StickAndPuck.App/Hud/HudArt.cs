@@ -185,11 +185,20 @@ namespace StickAndPuck.App.Hud
             DrawTextureNPatch(tex, info, new Rectangle(x, y, w, h), new(0, 0), 0, Color.White);
         }
 
-        /// <summary>Measures text as <see cref="DrawText"/> draws it, without the trailing one-pixel gap.</summary>
+        /// <summary>Measures text as <see cref="DrawText(string, int, int, Color)"/> draws it, without the trailing one-pixel gap.</summary>
         public int Measure(string text)
         {
             text = Printable(text);
             return text.Length == 0 ? 0 : (int)MeasureTextEx(font, text, font.BaseSize, 0).X - 1;
+        }
+
+        /// <summary>Measures text as the scaled <see cref="DrawText(string, int, int, Color, int)"/> draws it, without the trailing gap.</summary>
+        public int Measure(string text, int scale)
+        {
+            text = Printable(text);
+            return text.Length == 0
+                ? 0
+                : (int)MeasureTextEx(font, text, font.BaseSize * scale, 0).X - scale;
         }
 
         /// <summary>Draws text with its top-left corner on a whole pixel. The font has no lowercase, so text is
@@ -197,6 +206,12 @@ namespace StickAndPuck.App.Hud
         public void DrawText(string text, int x, int y, Color colour)
         {
             DrawTextEx(font, Printable(text), new(x, y), font.BaseSize, 0, colour);
+        }
+
+        /// <summary>Draws text at a whole-number scale (2 doubles every font pixel), its top-left corner on a whole pixel.</summary>
+        public void DrawText(string text, int x, int y, Color colour, int scale)
+        {
+            DrawTextEx(font, Printable(text), new(x, y), font.BaseSize * scale, 0, colour);
         }
 
         /// <summary>Gets text as the font can draw it: upper-cased, each letter the font lacks swapped for its

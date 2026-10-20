@@ -73,6 +73,20 @@ namespace StickAndPuck.App.Arena
         private Model model;
         private Material maskMaterial;
 
+        /// <summary>Gets or sets the share of the seats with someone in them, 0 to 1 (the season-over ending empties the arena).</summary>
+        internal float CrowdShare { get; set; } = 1f;
+
+        /// <summary>Gets the arena parts left out of the picture (the endings leave out the strings of lanterns over the stands).</summary>
+        internal HashSet<string> Hidden { get; } = [with(StringComparer.Ordinal)];
+
+        /// <summary>Raises a club's tifo over a section for the rest of the run, as SAP_TIFO does (the champions ending).</summary>
+        internal void RaiseTifo(ClubData club, CrowdSection section)
+        {
+            tifo.Unload();
+            tifo.Load(club);
+            tifoPreview = section;
+        }
+
         public void Start(World world)
         {
             model = ResourceLoader.Model(Assets.Arena);
@@ -302,8 +316,11 @@ namespace StickAndPuck.App.Arena
                 ice: false,
                 sheet: false
             );
-            crowd.Draw(world, render, shaderDefault, world.Look.Crowd);
-            supporters.Draw(world, render, shaderDefault, world.Look.Crowd);
+            crowd.Draw(world, render, shaderDefault, world.Look.Crowd, CrowdShare);
+            if (CrowdShare > 0f)
+            {
+                supporters.Draw(world, render, shaderDefault, world.Look.Crowd); // nobody to wave them in an empty arena
+            }
             // glass last and without depth, so players behind it still draw; flat colour over the crowd
             Rlgl.DisableDepthMask();
             foreach ((int mesh, Kind kind, _, _, _, _, _) in meshes)
@@ -373,6 +390,7 @@ namespace StickAndPuck.App.Arena
                     || isIce != ice
                     || (ice && isSheet != sheet)
                     || !layers.Shows(part)
+                    || Hidden.Contains(part)
                 )
                 {
                     continue;

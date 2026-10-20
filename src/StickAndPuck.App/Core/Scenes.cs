@@ -23,7 +23,10 @@ namespace StickAndPuck.App.Core
             AppState app
         )
         {
-            string name = Env.Get("SAP_SCENE") is { Length: > 0 } s ? s : Default;
+            string name =
+                Env.Get("SAP_SCENE") is { Length: > 0 } s ? s
+                : Env.Get("SAP_ENDING").Length > 0 ? Season.Endings.EndingScene.SceneName // SAP_ENDING alone jumps straight to that scene
+                : Default;
             IReadOnlyDictionary<string, IScene> all = All();
             if (!all.TryGetValue(name, out IScene scene))
             {

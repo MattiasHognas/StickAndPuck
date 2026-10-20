@@ -548,6 +548,99 @@ def staff_walk(i):                          # in place, the game moves it: heel 
         turn('upperarm.' + s, x=0.38 * c); turn('forearm.' + s, x=-0.25 - 0.15 * max(0.0, -c))
     turn('chest', z=0.08 * math.cos(ph)); turn('head', z=-0.06 * math.cos(ph))
 
+# ---------------- season ending clips ----------------
+# The end-of-season scenes (Season/Endings) pose a few figures up close: the captain lifting the
+# trophy, a beaten player down on one knee, the handshake line, and two staff walks carrying
+# something (the coach's box, the relegated player's hockey bag). The game puts the trophy, the box
+# and the bag between the hands, so the hand points here are mirrored in Season/Endings/EndingPoses.cs.
+TROPHY_HANDS = (0.24, -0.10, (1.88, 2.02))        # x either side, y forward, z low and high per pose
+
+def skater_trophy(i):                       # the trophy held high overhead in both gloves, lifted and lowered, head back, the stick dropped
+    hide_stick(); z = TROPHY_HANDS[2][i]
+    shift(z=[-0.02, 0.01][i]); turn('pelvis', x=-0.04); plant(spread=0.05, pole=(0, -1, 0))
+    turn('spine', x=-0.10); turn('chest', x=-0.06); turn('neck', x=0.12); turn('head', x=0.22)
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        reach(s, V((sx * TROPHY_HANDS[0], TROPHY_HANDS[1], z)), pole=(sx * 1.0, 0.4, -0.2), hand=(-sx * 0.3, 0.0, 1.0))
+
+def skater_kneel(i):                        # down on the right knee at the end of a lost final, both gloves on the stick's knob, head hung
+    shift(z=-0.36 - 0.01 * i, y=0.04); turn('pelvis', x=0.10)
+    leg('L', V((0.17, -0.42, 0.09)), pole=(0.2, -1.0, 0.6), toe=0.1)
+    leg('R', V((-0.15, 0.36, 0.06)), pole=(-0.1, -1.0, -0.6))
+    turn('spine', x=0.32 + 0.03 * i); turn('chest', x=0.12)
+    for s in 'LR': turn('clavicle.' + s, y=(1 if s == 'L' else -1) * 0.18)
+    turn('neck', x=0.55); turn('head', x=0.30)
+    reach('R', V((-0.02, -0.46, 0.80 - 0.01 * i)), pole=(-1, 0.3, -0.5))
+    stick_dir((0.02, -0.18, -1.0), floor=0.0)
+    m = PB[SB].matrix @ B[SB].matrix_local.inverted()
+    reach('L', m @ GRIP + V((0.03, -0.02, 0.07)), pole=(1, 0.3, -0.5), hand=(-0.2, -0.3, -0.9))
+    ground()
+
+def skater_handshake(i):                    # the handshake line: gloves off and the stick gone, upright on the glide, the right hand out to the man passing on that side
+    hide_stick()
+    shift(z=-0.04); turn('pelvis', x=0.06); plant(spread=0.04, pole=(0, -1, 0))
+    turn('spine', x=0.10); turn('neck', x=0.18); turn('head', x=0.10, z=-0.25)
+    pump = [0.0, 1.0][i]
+    arm('R', (0.30, -0.80, -0.40 + 0.10 * pump), (0.25, -0.95, 0.02 + 0.10 * pump))
+    arm('L', (0.10, 0.05, -1.0), (0.12, -0.25, -0.95))
+
+def skater_pump(i):                         # one fist pumping high, the stick held low in the other glove, a little hop on the up
+    up = [0.2, 1.0, 0.45, 0.95][i]
+    shift(z=0.02 * up - 0.02); turn('pelvis', x=-0.02)
+    plant(spread=0.05, pole=(0, -1, 0))
+    turn('spine', x=-0.06 * up, z=0.10); turn('neck', x=0.06); turn('head', x=0.12 * up, z=0.15)
+    arm('L', (0.45, -0.2, -0.3 + 1.2 * up), (0.25, -0.25, 0.2 + 0.8 * up))
+    lift(['clavicle.R'], 0.0)
+
+def skater_stick_up(i):                     # the stick raised high in one glove like a salute, the other arm out wide
+    shift(z=[0.0, 0.015][i]); plant(spread=0.06, pole=(0, -1, 0))
+    turn('spine', x=-0.08); turn('neck', x=0.08); turn('head', x=0.2, z=-0.1)
+    reach('R', V((-0.22, -0.06, 2.02 - 0.04 * i)), pole=(-1, 0.3, -0.2))
+    stick_dir((-0.05, 0.12, 1.0))
+    arm('L', (0.85, -0.25, 0.25 + 0.1 * i), (0.8, -0.35, 0.45 + 0.1 * i))
+
+def skater_hug(i):                          # arms round a teammate in front, leaning in, the stick dropped
+    hide_stick()
+    shift(y=-0.04, z=-0.03); turn('pelvis', x=0.08); plant(spread=0.06, pole=(0, -1, 0))
+    turn('spine', x=0.22 + 0.03 * i, z=[0.06, -0.06][i]); turn('chest', x=0.05); turn('head', z=0.35, x=0.1)
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        reach(s, V((sx * -0.10, -0.52, 1.30 - 0.03 * i)), pole=(sx * 1.0, 0.0, -0.4), hand=(-sx, 0.2, 0.0))
+
+def skater_jump(i):                         # a jump for joy: crouch, up in the air with the knees tucked and both arms up, land
+    h = [0.0, 0.32, 0.26, 0.0][i]; crouch = [0.16, 0.0, 0.0, 0.10][i]
+    shift(z=h - crouch); turn('pelvis', x=0.1 * (crouch > 0))
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        tuck = 0.18 if h > 0 else 0.0
+        leg(s, ANKLE[s] + V((sx * 0.03, -0.05 if h else 0.0, h - crouch + tuck)), pole=(0, -1, 0))
+    up = 1.0 if h > 0 else 0.6
+    for s in 'LR': arm(s, (0.45, -0.1, up), (0.3, -0.15, 1.0))
+    turn('head', x=0.15 * up)
+    grip_mid((0.5, -0.1, 0.85))
+
+def carry_walk(i):                          # the staff walk's legs and bob, the head down, for the carrying walks
+    ph = 2 * math.pi * i / 8
+    shift(z=-0.045 + 0.02 * abs(math.sin(ph)))
+    for s, o in (('L', 0.0), ('R', math.pi)):
+        c = math.cos(ph + o); sw = math.sin(ph + o) < -1e-6
+        leg(s, ANKLE[s] + V((0, -0.15 * c, 0.06 * abs(math.sin(ph + o)) if sw else 0.0)), pole=(0, -1, 0))
+    turn('chest', z=0.05 * math.cos(ph))
+    return ph
+
+CARRY_BOX = (0.19, -0.30, 1.02)             # each hand at a side of the box, x mirrored
+def staff_carry_box(i):                     # walking out with a cardboard box held in both hands at the waist
+    carry_walk(i); turn('spine', x=-0.04); turn('neck', x=0.22); turn('head', x=0.12)
+    for s in 'LR':
+        sx = 1 if s == 'L' else -1
+        reach(s, V((sx * CARRY_BOX[0], CARRY_BOX[1], CARRY_BOX[2])), pole=(sx * 1.0, 0.6, -0.8), hand=(-sx * 1.0, -0.4, 0.0))
+
+def staff_carry_bag(i):                     # walking away with a hockey bag on the right shoulder, the right hand on the strap, the left arm swinging, head down
+    ph = carry_walk(i); turn('spine', x=0.08); turn('neck', x=0.38); turn('head', x=0.18)
+    turn('clavicle.R', y=0.10)
+    reach('R', V((-0.17, -0.16, 1.30)), pole=(-0.3, 0.2, -1.0), hand=(0.2, -0.2, 1.0))
+    turn('upperarm.L', x=0.30 * math.cos(ph)); turn('forearm.L', x=-0.25 - 0.12 * max(0.0, -math.cos(ph)))
+
 # name: (poses, frames each pose is held at 24 fps, loops?)
 CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4, 6, True), 'shoot': (skater_shoot, 6, 3, False), 'windup': (skater_windup, 3, 2, False),
                     'pass': (skater_pass, 5, 2, False), 'check': (skater_check, 4, 3, False), 'celebrate': (skater_celebrate, 4, 5, True),
@@ -557,7 +650,10 @@ CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4
                     'stand_boards': (skater_stand_boards, 2, 20, True), 'slump': (skater_slump, 2, 24, True),
                     'argue': (skater_argue, 4, 8, True), 'bang': (skater_bang, 4, 4, True),
                     'chat': (skater_chat, 4, 8, True), 'helmet_off': (skater_helmet_off, 4, 6, False),
-                    'faceoff_crouch': (skater_faceoff_crouch, 2, 18, True), 'faceoff_centre': (skater_faceoff_centre, 2, 18, True)},
+                    'faceoff_crouch': (skater_faceoff_crouch, 2, 18, True), 'faceoff_centre': (skater_faceoff_centre, 2, 18, True),
+                    'trophy': (skater_trophy, 2, 10, True), 'kneel': (skater_kneel, 2, 30, True), 'handshake': (skater_handshake, 2, 5, True),
+                    'pump': (skater_pump, 4, 4, True), 'stick_up': (skater_stick_up, 2, 9, True), 'hug': (skater_hug, 2, 12, True),
+                    'jump': (skater_jump, 4, 4, True)},
          'goalie': {'ready': (goalie_ready, 4, 5, True), 'butterfly': (goalie_butterfly, 5, 3, False),
                     'glove': (goalie_glove, 4, 3, False), 'blocker': (goalie_blocker, 3, 3, False), 'shuffle': (goalie_shuffle, 4, 3, True)},
          'referee': {'skate': (ref_skate, 8, 3, True), 'idle': (ref_idle, 4, 8, True),
@@ -565,7 +661,8 @@ CLIPS = {'skater': {'skate': (skater_skate, 8, 2, True), 'idle': (skater_idle, 4
                      'hooking': (ref_hooking, 2, 6, True), 'slashing': (ref_slashing, 2, 6, True), 'goal': (ref_goal, 2, 6, False),
                      'drop': (ref_drop, 4, 4, False), 'set': (ref_set, 2, 18, True)},
          'staff': {'idle': (staff_idle, 4, 12, True), 'clap': (staff_clap, 4, 4, True), 'arms_up': (staff_arms_up, 4, 5, True),
-                   'point': (staff_point, 4, 6, False), 'lean_talk': (staff_lean_talk, 4, 8, True), 'walk': (staff_walk, 8, 3, True)}}[NAME]
+                   'point': (staff_point, 4, 6, False), 'lean_talk': (staff_lean_talk, 4, 8, True), 'walk': (staff_walk, 8, 3, True),
+                   'carry_box': (staff_carry_box, 8, 3, True), 'carry_bag': (staff_carry_bag, 8, 3, True)}}[NAME]
 
 # ---------------- 2. key the clips, stepped ----------------
 def fcurves(act):
