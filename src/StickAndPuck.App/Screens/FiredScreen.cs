@@ -47,7 +47,10 @@ namespace StickAndPuck.App.Screens
             Maybe<ClubData> club = Flow.Clubs.FirstOrNone(c =>
                 string.Equals(c.Id, season.UserClub, StringComparison.Ordinal)
             );
-            _ = art.DrawDressingRoom(club.Select(c => c.Home).Or(new KitColours()));
+            _ = art.DrawDressingRoom(
+                club.Select(c => c.Home).Or(new KitColours()),
+                season.UserClub
+            );
             IReadOnlyList<MenuItem> items = Items();
             int h =
                 5
