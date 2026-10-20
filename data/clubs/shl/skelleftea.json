@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 71,
+      "firstName": "Jonathan",
+      "lastName": "Davidsson",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 29,
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 50,
+        "shotAccuracy": 46,
+        "shotPower": 38,
+        "checking": 49,
+        "puckControl": 45,
+        "hockeyIq": 44,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 7,
+      "firstName": "Frans",
+      "lastName": "Haara",
+      "position": "D",
+      "shoots": "Left",
+      "age": 22,
+      "traits": {
+        "acceleration": 57,
+        "topSpeed": 56,
+        "shotAccuracy": 43,
+        "shotPower": 50,
+        "checking": 54,
+        "puckControl": 44,
+        "hockeyIq": 50,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

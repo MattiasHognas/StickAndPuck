@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 90,
+      "firstName": "Joseph",
+      "lastName": "Veleno",
+      "position": "C",
+      "shoots": "Left",
+      "age": 26,
+      "traits": {
+        "acceleration": 50,
+        "topSpeed": 47,
+        "shotAccuracy": 45,
+        "shotPower": 45,
+        "checking": 61,
+        "puckControl": 49,
+        "hockeyIq": 51,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 60,
+      "firstName": "Scott",
+      "lastName": "Morrow",
+      "position": "D",
+      "shoots": "Right",
+      "age": 23,
+      "traits": {
+        "acceleration": 56,
+        "topSpeed": 59,
+        "shotAccuracy": 47,
+        "shotPower": 59,
+        "checking": 62,
+        "puckControl": 54,
+        "hockeyIq": 57,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

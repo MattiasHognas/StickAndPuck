@@ -69,6 +69,11 @@ namespace StickAndPuck.App.Core
         /// these to build the same clubs again.</summary>
         public IReadOnlyList<string> Absent { get; init; } = [];
 
+        /// <summary>Gets a value indicating whether the clubs' spares (W86) stepped in for the <see cref="Absent"/>
+        /// players; false only for a replay recorded before clubs had spares, which plays its clubs as they
+        /// were then: the absent players' slots left for the players behind to fill.</summary>
+        public bool DressSpares { get; init; } = true;
+
         /// <summary>Gets the season's trades (W135), in the order they were made; empty outside the season or before
         /// a trade. <see cref="Home"/> and <see cref="Away"/> already play them; a replay stores them to
         /// build the same rosters again from the club data files (<see cref="TradeDeals.Apply"/>).</summary>

@@ -84,7 +84,8 @@ namespace StickAndPuck.Tests.Season.Stats
                 List<string> missing =
                 [
                     .. clubs.SelectMany(c =>
-                        c.Roster.Where(p => p.Age is < 16 or > 45)
+                        c.Everyone()
+                            .Where(p => p.Age is < 16 or > 45)
                             .Select(p =>
                                 string.Create(
                                     CultureInfo.InvariantCulture,
@@ -118,6 +119,7 @@ namespace StickAndPuck.Tests.Season.Stats
             ClubData noAges = written with
             {
                 Roster = [.. written.Roster.Select(p => p with { Age = 0 })],
+                Spares = [],
             };
             Check(
                 !Clubs.ToJson(noAges).Contains("\"age\":", StringComparison.Ordinal),
@@ -343,7 +345,7 @@ namespace StickAndPuck.Tests.Season.Stats
                 setup.Home.Roster.All(p =>
                     p.Traits.HockeyIq
                     == Math.Clamp(
-                        file.Roster.First(f => f.Number == p.Number).Traits.HockeyIq
+                        file.Everyone().First(f => f.Number == p.Number).Traits.HockeyIq
                             + season.FormNudge(file.Id, p.Number)
                             + season.DevelopmentPoints(file.Id, p.Number),
                         0,
@@ -368,7 +370,7 @@ namespace StickAndPuck.Tests.Season.Stats
                     .Roster.All(p =>
                         p.Traits.TopSpeed
                         == Math.Clamp(
-                            user.Roster.First(f => f.Number == p.Number).Traits.TopSpeed
+                            user.Everyone().First(f => f.Number == p.Number).Traits.TopSpeed
                                 + season.FormNudge(user.Id, p.Number)
                                 + season.DevelopmentPoints(user.Id, p.Number),
                             0,
@@ -385,7 +387,8 @@ namespace StickAndPuck.Tests.Season.Stats
         {
             return clubs
                 .First(c => string.Equals(c.Id, d.Club, StringComparison.Ordinal))
-                .Roster.First(p => p.Number == d.Number)
+                .Everyone()
+                .First(p => p.Number == d.Number)
                 .Age;
         }
 

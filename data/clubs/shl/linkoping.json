@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 53,
+      "firstName": "Adam",
+      "lastName": "Hofbauer",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 23,
+      "traits": {
+        "acceleration": 54,
+        "topSpeed": 49,
+        "shotAccuracy": 42,
+        "shotPower": 43,
+        "checking": 45,
+        "puckControl": 45,
+        "hockeyIq": 43,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 40,
+      "firstName": "David",
+      "lastName": "Bernhardt",
+      "position": "D",
+      "shoots": "Left",
+      "age": 28,
+      "traits": {
+        "acceleration": 49,
+        "topSpeed": 51,
+        "shotAccuracy": 39,
+        "shotPower": 55,
+        "checking": 60,
+        "puckControl": 46,
+        "hockeyIq": 54,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

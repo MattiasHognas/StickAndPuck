@@ -88,6 +88,18 @@ namespace StickAndPuck.App.Core
             /// <summary>SUSPENDED</summary>
             public const string Suspended = nameof(Suspended);
 
+            /// <summary>SPARE #{0} {1} IN FOR {2} (W86: a spare in an absent player's slot)</summary>
+            public const string SpareLine = nameof(SpareLine);
+
+            /// <summary>SPARES IN: {0} (W86: the spares in for the players out, as a list of <see cref="SpareName"/>)</summary>
+            public const string SparesLine = nameof(SparesLine);
+
+            /// <summary>#{0} {1} (W86: one spare on <see cref="SparesLine"/>)</summary>
+            public const string SpareName = nameof(SpareName);
+
+            /// <summary>SPARE (W86: a spare's position on the stats page's club view)</summary>
+            public const string Spare = nameof(Spare);
+
             /// <summary>OUT 1 GAME</summary>
             public const string InjuryOutOne = nameof(InjuryOutOne);
 

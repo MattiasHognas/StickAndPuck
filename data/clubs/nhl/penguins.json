@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 59,
+      "firstName": "Egor",
+      "lastName": "Chinakhov",
+      "position": "RW",
+      "shoots": "Left",
+      "age": 25,
+      "traits": {
+        "acceleration": 49,
+        "topSpeed": 52,
+        "shotAccuracy": 55,
+        "shotPower": 52,
+        "checking": 54,
+        "puckControl": 54,
+        "hockeyIq": 53,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 57,
+      "firstName": "Trevor",
+      "lastName": "van Riemsdyk",
+      "position": "D",
+      "shoots": "Right",
+      "age": 35,
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 51,
+        "shotAccuracy": 49,
+        "shotPower": 59,
+        "checking": 61,
+        "puckControl": 55,
+        "hockeyIq": 64,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

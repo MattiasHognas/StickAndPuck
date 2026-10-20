@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 32,
+      "firstName": "Kyle",
+      "lastName": "MacLean",
+      "position": "C",
+      "shoots": "Left",
+      "age": 27,
+      "traits": {
+        "acceleration": 50,
+        "topSpeed": 47,
+        "shotAccuracy": 48,
+        "shotPower": 41,
+        "checking": 61,
+        "puckControl": 55,
+        "hockeyIq": 52,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 28,
+      "firstName": "Alexander",
+      "lastName": "Romanov",
+      "position": "D",
+      "shoots": "Left",
+      "age": 26,
+      "traits": {
+        "acceleration": 55,
+        "topSpeed": 55,
+        "shotAccuracy": 52,
+        "shotPower": 59,
+        "checking": 69,
+        "puckControl": 53,
+        "hockeyIq": 60,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

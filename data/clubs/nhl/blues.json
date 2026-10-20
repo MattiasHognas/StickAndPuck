@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 65,
+      "firstName": "Dillon",
+      "lastName": "Dube",
+      "position": "C",
+      "shoots": "Left",
+      "age": 28,
+      "traits": {
+        "acceleration": 48,
+        "topSpeed": 50,
+        "shotAccuracy": 54,
+        "shotPower": 49,
+        "checking": 56,
+        "puckControl": 57,
+        "hockeyIq": 61,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 4,
+      "firstName": "Theo",
+      "lastName": "Lindstein",
+      "position": "D",
+      "shoots": "Left",
+      "age": 21,
+      "traits": {
+        "acceleration": 59,
+        "topSpeed": 60,
+        "shotAccuracy": 56,
+        "shotPower": 56,
+        "checking": 57,
+        "puckControl": 58,
+        "hockeyIq": 59,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

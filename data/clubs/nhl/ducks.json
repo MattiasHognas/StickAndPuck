@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 64,
+      "firstName": "Mikael",
+      "lastName": "Granlund",
+      "position": "C",
+      "shoots": "Left",
+      "age": 34,
+      "traits": {
+        "acceleration": 44,
+        "topSpeed": 47,
+        "shotAccuracy": 57,
+        "shotPower": 48,
+        "checking": 50,
+        "puckControl": 59,
+        "hockeyIq": 64,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 34,
+      "firstName": "Travis",
+      "lastName": "Mitchell",
+      "position": "D",
+      "shoots": "Left",
+      "age": 26,
+      "traits": {
+        "acceleration": 53,
+        "topSpeed": 58,
+        "shotAccuracy": 55,
+        "shotPower": 60,
+        "checking": 70,
+        "puckControl": 55,
+        "hockeyIq": 54,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

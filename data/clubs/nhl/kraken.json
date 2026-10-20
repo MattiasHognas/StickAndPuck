@@ -400,5 +400,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 42,
+      "firstName": "Curtis",
+      "lastName": "Douglas",
+      "position": "C",
+      "shoots": "Left",
+      "age": 26,
+      "traits": {
+        "acceleration": 41,
+        "topSpeed": 45,
+        "shotAccuracy": 46,
+        "shotPower": 52,
+        "checking": 65,
+        "puckControl": 50,
+        "hockeyIq": 56,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 62,
+      "firstName": "Brandon",
+      "lastName": "Montour",
+      "position": "D",
+      "shoots": "Right",
+      "age": 32,
+      "traits": {
+        "acceleration": 52,
+        "topSpeed": 50,
+        "shotAccuracy": 56,
+        "shotPower": 66,
+        "checking": 69,
+        "puckControl": 59,
+        "hockeyIq": 68,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

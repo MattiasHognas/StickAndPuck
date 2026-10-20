@@ -400,5 +400,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 46,
+      "firstName": "Max",
+      "lastName": "Jones",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 28,
+      "traits": {
+        "acceleration": 49,
+        "topSpeed": 51,
+        "shotAccuracy": 50,
+        "shotPower": 46,
+        "checking": 67,
+        "puckControl": 52,
+        "hockeyIq": 49,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 85,
+      "firstName": "Shakir",
+      "lastName": "Mukhamadullin",
+      "position": "D",
+      "shoots": "Left",
+      "age": 24,
+      "traits": {
+        "acceleration": 58,
+        "topSpeed": 60,
+        "shotAccuracy": 53,
+        "shotPower": 58,
+        "checking": 66,
+        "puckControl": 59,
+        "hockeyIq": 56,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

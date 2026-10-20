@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 34,
+      "firstName": "Carter",
+      "lastName": "Mazur",
+      "position": "LW",
+      "shoots": "Right",
+      "age": 24,
+      "traits": {
+        "acceleration": 55,
+        "topSpeed": 59,
+        "shotAccuracy": 49,
+        "shotPower": 44,
+        "checking": 51,
+        "puckControl": 50,
+        "hockeyIq": 47,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 44,
+      "firstName": "Axel",
+      "lastName": "Sandin-Pellikka",
+      "position": "D",
+      "shoots": "Right",
+      "age": 21,
+      "traits": {
+        "acceleration": 62,
+        "topSpeed": 60,
+        "shotAccuracy": 57,
+        "shotPower": 58,
+        "checking": 58,
+        "puckControl": 54,
+        "hockeyIq": 58,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

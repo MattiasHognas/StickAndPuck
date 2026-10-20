@@ -31,6 +31,10 @@ namespace StickAndPuck.App.Replay
         /// <summary>Gets the players the season left out of the match, as <see cref="MatchSetup.Absent"/>; empty in an older replay.</summary>
         public IReadOnlyList<string> Absent { get; init; } = [];
 
+        /// <summary>Gets a value indicating whether the spares stepped in for the absent players, as
+        /// <see cref="MatchSetup.DressSpares"/>; false in an older replay, which the clubs then play without them.</summary>
+        public bool DressSpares { get; init; }
+
         /// <summary>Gets a value indicating whether the match is a rivalry game, as <see cref="MatchSetup.Rivalry"/>; false in an older replay.</summary>
         public bool Rivalry { get; init; }
 
@@ -56,6 +60,7 @@ namespace StickAndPuck.App.Replay
                 StartEnergy = s.StartEnergy,
                 Talk = s.Talk,
                 Absent = s.Absent,
+                DressSpares = s.DressSpares,
                 Rivalry = s.Rivalry,
                 Trades = s.Trades,
             };
@@ -83,12 +88,20 @@ namespace StickAndPuck.App.Replay
                     );
             }
 
+            ClubData Dress(ClubData club)
+            {
+                return DressSpares
+                    ? AbsenceTable.Dressed(club, Absent)
+                    : AbsenceTable.Without(club, Absent);
+            }
+
             return new MatchSetup
             {
-                Home = FormTable.Apply(AbsenceTable.Without(Club(Home), Absent), Form),
-                Away = FormTable.Apply(AbsenceTable.Without(Club(Away), Absent), Form),
+                Home = FormTable.Apply(Dress(Club(Home)), Form),
+                Away = FormTable.Apply(Dress(Club(Away)), Form),
                 Form = Form,
                 Absent = Absent,
+                DressSpares = DressSpares,
                 Inputs = Inputs,
                 PeriodSeconds = PeriodSeconds,
                 Periods = Periods,

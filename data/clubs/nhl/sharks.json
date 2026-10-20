@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 10,
+      "firstName": "Ty",
+      "lastName": "Dellandrea",
+      "position": "C",
+      "shoots": "Right",
+      "age": 26,
+      "traits": {
+        "acceleration": 46,
+        "topSpeed": 49,
+        "shotAccuracy": 50,
+        "shotPower": 46,
+        "checking": 60,
+        "puckControl": 56,
+        "hockeyIq": 56,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 42,
+      "firstName": "Luca",
+      "lastName": "Cagnoni",
+      "position": "D",
+      "shoots": "Left",
+      "age": 21,
+      "traits": {
+        "acceleration": 60,
+        "topSpeed": 64,
+        "shotAccuracy": 55,
+        "shotPower": 58,
+        "checking": 57,
+        "puckControl": 57,
+        "hockeyIq": 54,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

@@ -411,13 +411,19 @@ namespace StickAndPuck.Tests.Season.Suspensions
                 banned.LastName
             );
             Check(
-                report.Injuries.Count == 1
+                report.Injuries.Count == 2
                     && string.Equals(report.Injuries[0].Text, expected, StringComparison.Ordinal)
                     && report.Injuries[0].Highlight
                     && report
                         .Injuries[0]
                         .Text.Contains(Text.Get(Text.Keys.Suspended), StringComparison.Ordinal),
                 $"the dressing room lists the club's own suspension ({(report.Injuries.Count > 0 ? report.Injuries[0].Text : "none")})"
+            );
+            string spare = SpareReport.Line([new SpareIn(user.Spares[0], banned)]);
+            Check(
+                string.Equals(report.Injuries[^1].Text, spare, StringComparison.Ordinal)
+                    && !report.Injuries[^1].Highlight,
+                $"under it the spare forward who dresses in his slot ({report.Injuries[^1].Text})"
             );
             Check(
                 DressingRoomSources

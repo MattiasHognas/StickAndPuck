@@ -396,5 +396,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 91,
+      "firstName": "Magnus",
+      "lastName": "Pääjärvi",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 35,
+      "traits": {
+        "acceleration": 43,
+        "topSpeed": 44,
+        "shotAccuracy": 36,
+        "shotPower": 41,
+        "checking": 49,
+        "puckControl": 39,
+        "hockeyIq": 45,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 2,
+      "firstName": "Per",
+      "lastName": "Svensson",
+      "position": "D",
+      "shoots": "Left",
+      "age": 38,
+      "traits": {
+        "acceleration": 39,
+        "topSpeed": 42,
+        "shotAccuracy": 39,
+        "shotPower": 55,
+        "checking": 61,
+        "puckControl": 53,
+        "hockeyIq": 61,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

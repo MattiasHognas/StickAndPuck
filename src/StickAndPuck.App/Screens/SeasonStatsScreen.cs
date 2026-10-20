@@ -262,7 +262,7 @@ namespace StickAndPuck.App.Screens
                 );
             }
             art.Left(
-                view == 6 ? p.Position.ToString() : Short(Flow.Clubs, p.Club),
+                view == 6 ? Position(Flow.Clubs, p) : Short(Flow.Clubs, p.Club),
                 x + 170,
                 top,
                 ink
@@ -351,6 +351,16 @@ namespace StickAndPuck.App.Screens
                 or (5, K.ColStars) => true,
                 _ => false,
             };
+        }
+
+        /// <summary>Gets a player's position on the club view, SPARE for one of the club's spares (W86).</summary>
+        private static string Position(IReadOnlyList<ClubData> clubs, PlayerStats p)
+        {
+            return clubs
+                .FirstOrNone(c => string.Equals(c.Id, p.Club, StringComparison.Ordinal))
+                .Is(c => c.Spares.Any(s => s.Number == p.Number))
+                ? Text.Get(K.Spare)
+                : p.Position.ToString();
         }
 
         private static string Name(IReadOnlyList<ClubData> clubs, string id)

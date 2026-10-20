@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 28,
+      "firstName": "Emil",
+      "lastName": "Alba",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 29,
+      "traits": {
+        "acceleration": 45,
+        "topSpeed": 43,
+        "shotAccuracy": 40,
+        "shotPower": 45,
+        "checking": 52,
+        "puckControl": 47,
+        "hockeyIq": 40,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 57,
+      "firstName": "Alfred",
+      "lastName": "Barklund",
+      "position": "D",
+      "shoots": "Left",
+      "age": 26,
+      "traits": {
+        "acceleration": 51,
+        "topSpeed": 50,
+        "shotAccuracy": 40,
+        "shotPower": 53,
+        "checking": 59,
+        "puckControl": 46,
+        "hockeyIq": 47,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

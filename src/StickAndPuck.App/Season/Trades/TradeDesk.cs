@@ -275,7 +275,7 @@ namespace StickAndPuck.App.Season.Trades
         /// nearest free number to it, above before below, from 1 to 99.</summary>
         public static int FreeNumber(SeasonTrades trades, ClubData club, int wanted)
         {
-            HashSet<int> taken = [.. club.Roster.Select(p => p.Number)];
+            HashSet<int> taken = [.. club.Everyone().Select(p => p.Number)];
             foreach (Trade t in trades.Deals)
             {
                 if (string.Equals(t.Club, club.Id, StringComparison.Ordinal))

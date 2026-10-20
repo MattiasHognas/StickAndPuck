@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 22,
+      "firstName": "Mavrik",
+      "lastName": "Bourque",
+      "position": "C",
+      "shoots": "Right",
+      "age": 24,
+      "traits": {
+        "acceleration": 52,
+        "topSpeed": 51,
+        "shotAccuracy": 51,
+        "shotPower": 44,
+        "checking": 54,
+        "puckControl": 54,
+        "hockeyIq": 53,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 47,
+      "firstName": "Jack",
+      "lastName": "Ahcan",
+      "position": "D",
+      "shoots": "Left",
+      "age": 29,
+      "traits": {
+        "acceleration": 56,
+        "topSpeed": 58,
+        "shotAccuracy": 48,
+        "shotPower": 54,
+        "checking": 60,
+        "puckControl": 58,
+        "hockeyIq": 59,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

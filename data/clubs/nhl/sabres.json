@@ -400,5 +400,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 10,
+      "firstName": "Sam",
+      "lastName": "Carrick",
+      "position": "C",
+      "shoots": "Right",
+      "age": 34,
+      "traits": {
+        "acceleration": 38,
+        "topSpeed": 45,
+        "shotAccuracy": 48,
+        "shotPower": 49,
+        "checking": 57,
+        "puckControl": 55,
+        "hockeyIq": 55,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 26,
+      "firstName": "Rasmus",
+      "lastName": "Dahlin",
+      "position": "D",
+      "shoots": "Left",
+      "age": 26,
+      "traits": {
+        "acceleration": 53,
+        "topSpeed": 58,
+        "shotAccuracy": 63,
+        "shotPower": 70,
+        "checking": 64,
+        "puckControl": 63,
+        "hockeyIq": 70,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

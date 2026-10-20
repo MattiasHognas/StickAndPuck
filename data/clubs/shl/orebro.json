@@ -397,5 +397,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 17,
+      "firstName": "William",
+      "lastName": "Wikman",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 29,
+      "traits": {
+        "acceleration": 48,
+        "topSpeed": 47,
+        "shotAccuracy": 41,
+        "shotPower": 41,
+        "checking": 48,
+        "puckControl": 44,
+        "hockeyIq": 47,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 8,
+      "firstName": "Axel",
+      "lastName": "Elofsson",
+      "position": "D",
+      "shoots": "Right",
+      "age": 18,
+      "traits": {
+        "acceleration": 56,
+        "topSpeed": 56,
+        "shotAccuracy": 44,
+        "shotPower": 56,
+        "checking": 54,
+        "puckControl": 60,
+        "hockeyIq": 69,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

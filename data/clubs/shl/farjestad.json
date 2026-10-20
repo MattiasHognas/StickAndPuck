@@ -396,5 +396,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 90,
+      "firstName": "Marcus",
+      "lastName": "Johansson",
+      "position": "LW",
+      "shoots": "Left",
+      "age": 36,
+      "traits": {
+        "acceleration": 40,
+        "topSpeed": 44,
+        "shotAccuracy": 46,
+        "shotPower": 42,
+        "checking": 48,
+        "puckControl": 45,
+        "hockeyIq": 52,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 92,
+      "firstName": "Måns",
+      "lastName": "Gudmundsson",
+      "position": "D",
+      "shoots": "Right",
+      "age": 18,
+      "traits": {
+        "acceleration": 55,
+        "topSpeed": 59,
+        "shotAccuracy": 44,
+        "shotPower": 49,
+        "checking": 53,
+        "puckControl": 51,
+        "hockeyIq": 51,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }

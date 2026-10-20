@@ -399,5 +399,43 @@
         "goalieReflexes": 10
       }
     }
+  ],
+  "spares": [
+    {
+      "number": 10,
+      "firstName": "Oskar",
+      "lastName": "Bäck",
+      "position": "C",
+      "shoots": "Left",
+      "age": 26,
+      "traits": {
+        "acceleration": 47,
+        "topSpeed": 50,
+        "shotAccuracy": 48,
+        "shotPower": 47,
+        "checking": 52,
+        "puckControl": 56,
+        "hockeyIq": 53,
+        "goalieReflexes": 10
+      }
+    },
+    {
+      "number": 20,
+      "firstName": "Kyle",
+      "lastName": "Capobianco",
+      "position": "D",
+      "shoots": "Left",
+      "age": 29,
+      "traits": {
+        "acceleration": 51,
+        "topSpeed": 59,
+        "shotAccuracy": 51,
+        "shotPower": 56,
+        "checking": 60,
+        "puckControl": 52,
+        "hockeyIq": 61,
+        "goalieReflexes": 10
+      }
+    }
   ]
 }
