@@ -64,6 +64,7 @@ namespace StickAndPuck.App.Screens
                 Name(clubs, champion),
                 statLines,
                 [
+                    SeasonEnd.RecapItem(app),
                     new MenuItem(Text.Get(K.Continue), app.Screens.Pop),
                     new MenuItem(
                         Text.Get(K.SeasonStats),

@@ -17,6 +17,7 @@ namespace StickAndPuck.App.Screens
         {
             return
             [
+                SeasonEnd.RecapItem(App),
                 new MenuItem(Text.Get(K.Continue), Flow.Pop),
                 new MenuItem(
                     Text.Get(K.SeasonStats),

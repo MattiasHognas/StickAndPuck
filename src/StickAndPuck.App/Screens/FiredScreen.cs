@@ -21,6 +21,7 @@ namespace StickAndPuck.App.Screens
         {
             return
             [
+                SeasonEnd.RecapItem(App),
                 new MenuItem(
                     Text.Get(K.NewSeason),
                     () => StartScreen.PickNewSeason(App, ask: false)

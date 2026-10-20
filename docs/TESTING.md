@@ -156,6 +156,7 @@ Use these with `SAP_SCENE=start` (the default scene). `SAP_LEAGUE=nhl` loads the
 | `trophy` | The season champion after a test season and playoffs. |
 | `playout` | The SHL playout (W76) in the bracket: a test season settled on paper, the human's club swapped to the 13th placed club and three playout games simmed (`SAP_PLAYOUT_GAMES=n` sims n) beside the playoffs. |
 | `relegation` | The relegation screen: the same test season with the playout and playoffs played out and the human put on the club that went down; the bracket underneath shows the playout decided. |
+| `recap` | The season recap (W136), the season's last screen: a test season settled on paper and ended the way `SAP_RECAP` picks, `champion` (default: the human put on the champion, over the trophy), `relegated` (on the club that lost the playout, over the relegation screen) or `fired` (as `fired`), then the recap as its SEASON RECAP item opens it: the season month by month, the best game, the top scorer, the injuries, the board's verdict and the headlines. `SeasonRecapTests` covers the recap's data. |
 | `arcadetrophy` | The trophy for a completed three-lives arcade run. |
 | `bestruns` | The arcade best-run board with sample finished runs. |
 

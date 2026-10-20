@@ -29,6 +29,10 @@ namespace StickAndPuck.App.Season.Stats
         /// <summary>Gets or sets the players injured or suspended for some of their club's next games, counted down by each game credited.</summary>
         public AbsenceTable Absences { get; set; } = new();
 
+        /// <summary>Gets or sets every injury of the season, oldest first, kept after the player is back (W136, the
+        /// season recap); empty in an older save.</summary>
+        public IList<InjuryRecord> Injuries { get; set; } = [];
+
         /// <summary>Gets or sets every player's development with age (W132), moved by each game credited after its form.</summary>
         public DevelopmentTable Development { get; set; } = new();
 
@@ -74,6 +78,7 @@ namespace StickAndPuck.App.Season.Stats
             (key.StartsWith('p', StringComparison.Ordinal) ? Playoffs : Regular).Add(sheet);
             Form.Add(sheet);
             Absences.Play(sheet);
+            LogInjuries(key, sheet);
             Development.Add(key, sheet, Form);
             if (sheet.Award(key).TryGet(out PlayerOfGameAward award))
             {
@@ -81,6 +86,22 @@ namespace StickAndPuck.App.Season.Stats
             }
 
             return true;
+        }
+
+        /// <summary>Keeps the injuries a credited game handed out in <see cref="Injuries"/>.</summary>
+        private void LogInjuries(string key, MatchStatSheet sheet)
+        {
+            foreach (Absence a in sheet.Absences.Where(a => a.Reason == AbsenceReason.Injury))
+            {
+                string name = sheet
+                    .Lines.FirstOrNone(l =>
+                        l.Number == a.Number
+                        && string.Equals(l.Club, a.Club, StringComparison.Ordinal)
+                    )
+                    .Select(l => l.Name)
+                    .Or("");
+                Injuries.Add(new InjuryRecord(key, a.Club, a.Number, name, a.Cause, a.Games));
+            }
         }
 
         /// <summary>Credits every played game that has no lines yet from its score, the way the games the

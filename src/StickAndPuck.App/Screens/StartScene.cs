@@ -89,13 +89,14 @@ namespace StickAndPuck.App.Screens
                 or "trophy"
                 or "playout"
                 or "relegation"
+                or "recap"
                 or "arcadetrophy"
                 or "bestruns":
                     PolishScenes.Open(app, screen, clubs);
                     break;
                 default:
                     throw new InvalidOperationException(
-                        $"SAP_SCREEN={screen}: use start, settings, modes, teams, pause, results, standings, table, stats, sim, dressingroom, coachtalk, suspension, trade, fired, trophy, playout, relegation, arcadetrophy, bestruns or bracket"
+                        $"SAP_SCREEN={screen}: use start, settings, modes, teams, pause, results, standings, table, stats, sim, dressingroom, coachtalk, suspension, trade, fired, trophy, playout, relegation, recap, arcadetrophy, bestruns or bracket"
                     );
             }
             Console.WriteLine($"SAP: screens: {screen}");
