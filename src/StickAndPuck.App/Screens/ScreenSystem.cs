@@ -104,7 +104,11 @@ namespace StickAndPuck.App.Screens
                 return;
             }
 
-            if (press.Contains(MenuButton.Pause) && !world.App.Network.Owns(world)) // a network match never pauses: one side's menu would split the two
+            if (
+                press.Contains(MenuButton.Pause)
+                && !world.App.Network.Owns(world) // a network match never pauses: one side's menu would split the two
+                && !GoalReview.UnderReview(world) // start skips a goal review instead
+            )
             {
                 Console.WriteLine("SAP: screens: paused");
                 world.App.Screens.Push(new PauseScreen(world.App));

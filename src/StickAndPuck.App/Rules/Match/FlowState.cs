@@ -37,5 +37,8 @@ namespace StickAndPuck.App.Rules.Match
 
         /// <summary>Gets the clubs' time-outs.</summary>
         public TimeOutState TimeOut { get; } = new();
+
+        /// <summary>Gets the goal review: the goal held under review and the coach's challenges.</summary>
+        public required ReviewState Review { get; init; }
     }
 }

@@ -85,6 +85,28 @@ namespace StickAndPuck.App.Hud
             {
                 DrawFaceoffPrompt(hud);
             }
+
+            if (GoalReview.Asking(world).HasValue)
+            {
+                DrawChallengePrompt(hud);
+            }
+        }
+
+        /// <summary>The coach's challenge prompt (W80), low and centred: challenge the goal, and which button challenges what.</summary>
+        private static void DrawChallengePrompt(HudArt art)
+        {
+            const int pad = 5,
+                line = 11;
+            string title = Text.Get(K.ChallengePrompt),
+                keys = Text.Get(K.ChallengeKeys);
+            int w = pad + Math.Max(art.Measure(title), art.Measure(keys)) + pad,
+                h = pad + line + line - 2 + pad;
+            int x = (Game.Width - w) / 2,
+                y = PromptTop - line;
+            art.DrawPanel("panel_gold", x, y, w, h);
+            int top = y + pad - 2; // text y is 2 px above the capitals
+            art.DrawText(title, x + ((w - art.Measure(title)) / 2), top, art.Text);
+            art.DrawText(keys, x + ((w - art.Measure(keys)) / 2), top + line, art.Text);
         }
 
         /// <summary>The time-out banner for as long as it runs: TIME-OUT, the calling club with its crest, and the clock until play resumes.</summary>

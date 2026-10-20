@@ -148,6 +148,7 @@ namespace StickAndPuck.App.Rules.Match
                 {
                     Dice = Seeds.Dice(world.Seed, "matchflow", 43),
                     ViolationDice = Seeds.Dice(world.Seed, "faceoffviolations", 47),
+                    Review = new ReviewState { Dice = Seeds.Dice(world.Seed, "goalreview", 53) },
                 }
             );
         }

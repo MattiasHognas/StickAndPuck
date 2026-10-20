@@ -143,9 +143,14 @@ namespace StickAndPuck.App.Rules.Penalties
                 LateHits(world, book);
             }
 
-            if (m.Phase != MatchPhase.Play && book.Delayed.Count > 0)
+            if (
+                m.Phase != MatchPhase.Play
+                && book.Delayed.Count > 0
+                && !GoalReview.UnderReview(world)
+            )
             {
-                // play stopped by itself (offside, icing, a frozen puck, the period's end): the call is made now
+                // play stopped by itself (offside, icing, a frozen puck, the period's end): the call is made now;
+                // a goal under review waits, as a goal that counts waves the call off
                 if (m.Phase == MatchPhase.Stopped)
                 {
                     MatchFlow.State(world).Dot = PenaltyCalls.FaceoffDot(

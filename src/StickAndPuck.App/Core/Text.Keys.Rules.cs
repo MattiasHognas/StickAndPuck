@@ -189,6 +189,12 @@ namespace StickAndPuck.App.Core
             /// <summary>TRAPEZOID</summary>
             public const string RuleTrapezoid = nameof(RuleTrapezoid);
 
+            /// <summary>GOAL REVIEW</summary>
+            public const string RuleGoalReview = nameof(RuleGoalReview);
+
+            /// <summary>GOAL CHALLENGE</summary>
+            public const string RuleGoalChallenge = nameof(RuleGoalChallenge);
+
             /// <summary>FIGHTS</summary>
             public const string RuleFights = nameof(RuleFights);
 

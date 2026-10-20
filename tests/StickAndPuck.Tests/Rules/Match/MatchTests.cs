@@ -292,7 +292,8 @@ namespace StickAndPuck.Tests.Rules.Match
                 "overtime starts at centre with a 5:00 clock"
             );
             Shoot(w, Side.Away);
-            List<MatchEvent> ev = RunFor(w, 1);
+            // the goal counts once its review confirms it
+            List<MatchEvent> ev = Run(w, x => x.Match.Score[1] > 0, 1 + GoalReview.LongSeconds);
             List<MatchEnded> end = [.. ev.OfType<MatchEnded>()];
             Check(
                 end.Count == 1 && end[0] is MatchWon { Winner: Side.Away } && w.Match.Score[1] == 1,

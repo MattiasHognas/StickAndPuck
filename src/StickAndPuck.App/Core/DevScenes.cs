@@ -36,5 +36,8 @@ namespace StickAndPuck.App.Core
 
         /// <summary>Gets the trapezoid scene's script.</summary>
         internal Slot<Rules.Penalties.Dev.TrapezoidDemo> Trapezoid { get; } = new();
+
+        /// <summary>Gets the goal review scene's script.</summary>
+        internal Slot<Rules.Match.Dev.GoalReviewDemo> GoalReview { get; } = new();
     }
 }

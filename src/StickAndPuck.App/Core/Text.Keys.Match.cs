@@ -100,6 +100,27 @@ namespace StickAndPuck.App.Core
             /// <summary>TRAPEZOID: #{0} {1}</summary>
             public const string TrapezoidNote = nameof(TrapezoidNote);
 
+            /// <summary>GOAL UNDER REVIEW, the banner while a goal is held</summary>
+            public const string GoalUnderReview = nameof(GoalUnderReview);
+
+            /// <summary>NO GOAL, the banner when a review or a challenge takes a goal off the board</summary>
+            public const string NoGoal = nameof(NoGoal);
+
+            /// <summary>GOALIE INTERFERENCE</summary>
+            public const string GoalieInterference = nameof(GoalieInterference);
+
+            /// <summary>COACH'S CHALLENGE</summary>
+            public const string CoachChallenge = nameof(CoachChallenge);
+
+            /// <summary>CHALLENGE THE GOAL?, the prompt to the human coach</summary>
+            public const string ChallengePrompt = nameof(ChallengePrompt);
+
+            /// <summary>PASS: INTERFERENCE  SHOOT: OFFSIDE</summary>
+            public const string ChallengeKeys = nameof(ChallengeKeys);
+
+            /// <summary>THE GOAL STANDS, the note on the goal banner after a failed challenge</summary>
+            public const string GoalStands = nameof(GoalStands);
+
             /// <summary>PENALTY</summary>
             public const string InfPenalty = nameof(InfPenalty);
 

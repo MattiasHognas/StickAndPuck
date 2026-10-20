@@ -88,5 +88,22 @@ namespace StickAndPuck.App.Core
         {
             return MathF.Abs(at.X) > GoalLineX && MathF.Abs(at.Z) > TrapezoidHalf(at.X) - margin;
         }
+
+        /// <summary>Gets a value indicating whether a spot is in the goal crease of the net at <paramref name="end"/>
+        /// (-1 left, +1 right): the half circle of <see cref="CreaseRadius"/> in front of the goal line, grown by
+        /// <paramref name="margin"/> (a body's reach, or "around the crease").</summary>
+        public static bool InCrease(Vector3 at, int end, float margin = 0f)
+        {
+            int e = Math.Sign(end);
+            float front = (e * GoalLineX) - at.X; // how far in front of the goal line, toward centre, times the end
+            if (e * front < -margin)
+            {
+                return false;
+            }
+
+            float dx = at.X - (e * GoalLineX);
+            float r = CreaseRadius + margin;
+            return (dx * dx) + (at.Z * at.Z) <= r * r;
+        }
     }
 }

@@ -14,7 +14,8 @@ namespace StickAndPuck.App.Physics
     /// <see cref="PuckHitPost"/> (posts and crossbar) with the impact speed,
     /// and <see cref="GoalScored"/> once when the whole puck is over the goal line of a net
     /// while the puck is live: Side is the scoring club, the scorer the last touch, or the nearest
-    /// on-ice skater of the scoring club when nobody has touched the puck. A club with no players at all
+    /// on-ice skater of the scoring club when nobody has touched the puck (under <see cref="RuleSet.GoalReview"/>, in
+    /// play, it is wrapped in <see cref="GoalUnderReview"/> and counts only once the review confirms it). A club with no players at all
     /// gets no event (the puck is still held as scored), so every event names a real player. Rules keep the
     /// score and restart play; they move the puck out of the net for the faceoff.
     /// A goal needs the puck to have come in through the mouth: the cage is solid from behind, from the
@@ -286,8 +287,10 @@ namespace StickAndPuck.App.Physics
             Side scorer = Other(defender);
             if (Scorer(world, scorer).TryGet(out int id))
             {
+                GoalScored goal = new(world.Time, scorer, id, pk.Position, pk.Velocity.Length());
+                // under the goal review rule the goal waits for the review (Rules.Match.GoalReview) before it counts
                 world.Events.Publish(
-                    new GoalScored(world.Time, scorer, id, pk.Position, pk.Velocity.Length())
+                    GoalReview.Holds(world) ? new GoalUnderReview(world.Time, goal) : goal
                 );
             }
             else

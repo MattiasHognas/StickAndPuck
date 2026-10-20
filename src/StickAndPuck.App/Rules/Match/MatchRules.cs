@@ -19,10 +19,17 @@ namespace StickAndPuck.App.Rules.Match
             }
 
             MatchDemo.Update(world);
+            GoalReviewDemo.Update(world);
             FlowState s = MatchFlow.State(world);
             MatchState m = world.Match;
             // From the horn the celebration poses every player, then hands over to the final
             if (Celebration.Update(world, s, dt))
+            {
+                return;
+            }
+
+            // a goal held under review holds the match until it is confirmed or disallowed
+            if (GoalReview.Update(world, s, dt))
             {
                 return;
             }
@@ -148,25 +155,16 @@ namespace StickAndPuck.App.Rules.Match
                 m.Shots[(int)Other(save.Side)]++;
             }
 
+            GoalReview.Watch(world);
+            if (world.Events.Of<GoalUnderReview>().FirstOrDefault() is { } held)
+            {
+                GoalReview.Begin(world, s, held);
+                return;
+            }
+
             if (world.Events.Of<GoalScored>().FirstOrDefault() is { } goal)
             {
-                Side scorer = goal.Side;
-                m.Score[(int)scorer]++;
-                m.Shots[(int)scorer]++;
-                m.Phase = MatchPhase.Goal;
-                world.Puck.Live = false;
-                s.Timer = MatchTuning.GoalSeconds;
-                Log(
-                    world,
-                    s,
-                    $"goal {world.Setup.Club(scorer).ShortName} by #{Number(world, goal.ScorerId)}"
-                );
-                // sudden death after regulation
-                if (m.Period > world.Setup.Periods)
-                {
-                    EndMatch(world, s);
-                }
-
+                CountGoal(world, s, goal);
                 return;
             }
 
@@ -189,6 +187,29 @@ namespace StickAndPuck.App.Rules.Match
 
             m.Clock = 0;
             EndPeriod(world, s);
+        }
+
+        /// <summary>Counts a goal (at once, or once its review confirms it): the score and shots, then the goal's pause
+        /// and the centre faceoff; in a period after regulation it ends the match.</summary>
+        internal static void CountGoal(World world, FlowState s, GoalScored goal)
+        {
+            MatchState m = world.Match;
+            Side scorer = goal.Side;
+            m.Score[(int)scorer]++;
+            m.Shots[(int)scorer]++;
+            m.Phase = MatchPhase.Goal;
+            world.Puck.Live = false;
+            s.Timer = MatchTuning.GoalSeconds;
+            Log(
+                world,
+                s,
+                $"goal {world.Setup.Club(scorer).ShortName} by #{Number(world, goal.ScorerId)}"
+            );
+            // sudden death after regulation
+            if (m.Period > world.Setup.Periods)
+            {
+                EndMatch(world, s);
+            }
         }
 
         /// <summary>A goalie holding the puck long enough freezes it: whistle, faceoff at the dot <see cref="FaceoffSpots.After"/> picks.</summary>

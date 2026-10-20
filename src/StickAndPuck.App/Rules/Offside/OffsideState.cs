@@ -14,5 +14,9 @@ namespace StickAndPuck.App.Rules.Offside
 
         /// <summary>Gets or sets a value indicating whether the pending offside is intentional: the puck passed or dumped in to an attacker hanging deep in the zone.</summary>
         public bool Intentional { get; set; }
+
+        /// <summary>Gets or sets the zone the attacking club last entered offside with the linesman missing it (under
+        /// <see cref="Core.RuleSet.GoalChallenge"/>), or 0: the entry a coach's challenge looks at while the puck stays in.</summary>
+        public int MissedEnd { get; set; }
     }
 }
