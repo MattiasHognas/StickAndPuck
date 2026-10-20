@@ -3,7 +3,7 @@ art/scene/arena.glb plus art/scene/arena_meshes.json, the list of meshes in the 
 loads them, since a Raylib Model keeps no mesh or material names.
 1. points the scene camera at the game's straight gameplay camera (BroadcastCamera.Straight)
    at 480x270 and reruns ads_pixel.py with FIT and EMIT, so the ad strip is sized to the far
-   boards' pixel footprint for the camera the game actually uses (rewrites art/ads/),
+   boards' pixel footprint for the camera the game actually uses (rewrites art/ads/{league}/, A21),
 2. drops players, puck, lights and cameras, flattens the ice to its base colour (the game draws
    the light bands, W2 / W18), turns any text objects into meshes (the SHL centre mark is already a mesh, see centre_logo.py),
 3. joins the scenery into one object per part, each part one named mesh: Ice, Floor, Markings,
@@ -68,7 +68,7 @@ b.inputs['Base Color'].default_value = lin('#c9c6cf')     # the ice's base shade
 # becomes KHR_materials_unlit with the strip as the base colour texture, which is what Raylib loads
 ad = bpy.data.materials['ad_pixel'].node_tree
 em = next(n for n in ad.nodes if n.type == 'EMISSION'); tex = next(n for n in ad.nodes if n.type == 'TEX_IMAGE')
-tex.image = bpy.data.images.load(ART + '/ads/ads_%dx%d.png' % tuple(ads['atlas']))   # the strip ads_pixel.py just wrote,
+tex.image = bpy.data.images.load(ART + '/ads/%s/ads_%dx%d.png' % (g['BASE'], *ads['atlas']))   # the SHL strip ads_pixel.py just wrote,
 tex.interpolation = 'Closest'                                                           # never a stale packed copy
 bg = ad.nodes.new('ShaderNodeBackground')
 ad.links.new(tex.outputs['Color'], bg.inputs['Color']); ad.links.new(bg.outputs[0], next(n for n in ad.nodes if n.type == 'OUTPUT_MATERIAL').inputs['Surface'])

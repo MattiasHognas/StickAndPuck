@@ -57,6 +57,9 @@ namespace StickAndPuck.App.Arena
         private readonly Dictionary<int, Color> baseColours = []; // line and banner meshes' own colours
         private readonly CentreIce centreIce = new();
         private Maybe<bool> trapezoid = Maybe.None<bool>();
+        private readonly Dictionary<League, Texture2D> adStrips = []; // each league's sponsors (A21), swapped onto the ad boards per match
+        private Maybe<int> adBoards;
+        private Texture2D glbAdStrip; // the strip arena.glb embeds, put back before the model unloads its own textures
         private readonly IceBands bands = new();
         private readonly IceScratches scratches = new();
         private readonly CrowdRenderer crowd = new();
@@ -141,6 +144,7 @@ namespace StickAndPuck.App.Arena
                     baseColours[mesh] = MaterialAccess.Albedo(MaterialOf(mesh)).Color; // the dusk colour an SHL arena keeps
                 }
             }
+            LoadAdStrips();
             maskMaterial = LoadMaterialDefault();
             centreIce.Load();
             trapezoid = ArenaLayers.TrapezoidFromEnvironment();
@@ -180,6 +184,27 @@ namespace StickAndPuck.App.Arena
                 Projection = CameraProjection.Perspective,
             };
 
+        /// <summary>Every league's ad strips (A21): the boards' UVs pick the same slot in any of them, so a match
+        /// swaps the whole texture for its league's sponsors.</summary>
+        private void LoadAdStrips()
+        {
+            foreach ((int mesh, _, _, _, _, string part, _) in meshes)
+            {
+                if (string.Equals(part, "AdBoards", StringComparison.Ordinal))
+                {
+                    adBoards = mesh;
+                    glbAdStrip = MaterialAccess.Albedo(MaterialOf(mesh)).Texture;
+                }
+            }
+
+            foreach (League league in Leagues.All)
+            {
+                Texture2D strip = ResourceLoader.Texture(Assets.AdStrip(league));
+                SetTextureFilter(strip, TextureFilter.Point);
+                adStrips[league] = strip;
+            }
+        }
+
         private static Color ToSrgb(Color c)
         {
             static byte F(byte v)
@@ -211,10 +236,20 @@ namespace StickAndPuck.App.Arena
             return model.MaterialsAsSpan()[model.MeshMaterialAsSpan()[mesh]];
         }
 
+        /// <summary>Puts the league's sponsors on the ad boards; set on every draw, the next match may be the other league.</summary>
+        private void ShowAds(League league)
+        {
+            if (adBoards.TryGet(out int ads))
+            {
+                MaterialAccess.Albedo(MaterialOf(ads)).Texture = adStrips[league];
+            }
+        }
+
         public void DrawScene(World world, RenderContext render)
         {
             Shader shaderDefault = OperatingSystem.IsBrowser() ? render.Unlit : maskMaterial.Shader; // Raylib's default shader: texture times colour, no light
             ArenaLayers layers = Layers(world);
+            ShowAds(world.League);
             // The goalie, referee and puck are drawn before the arena, so the ice sheet and the bands and
             // skate scratches on it all keep the depth test to stay behind them. The sheet writes no depth
             // while the overlays go down, since millimetres apart they z-fight at rink distance; a depth-only
@@ -419,6 +454,16 @@ namespace StickAndPuck.App.Arena
             tifo.Unload();
             supporters.Unload();
             UnloadMaterial(maskMaterial);
+            if (adBoards.TryGet(out int ads))
+            {
+                MaterialAccess.Albedo(MaterialOf(ads)).Texture = glbAdStrip; // the model unloads its own strip, never ours
+            }
+
+            foreach (Texture2D strip in adStrips.Values)
+            {
+                UnloadTexture(strip);
+            }
+
             UnloadModel(model);
         }
     }

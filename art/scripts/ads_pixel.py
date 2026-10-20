@@ -1,8 +1,11 @@
 """Pixel-font ad boards. Replaces the vector ad text on the dasher boards with one small
 texture strip per sponsor, lettered in a 3x5 pixel font and sampled with nearest filtering.
 Run in Blender on art/scene/arena_dusk.blend after restyle_dusk.py; saves it in place and
-writes art/ads/ads_<w>x<h>.png (all ten strips stacked) for the game to reuse.
-Sponsors are made up; keep them generic, never real league or brand marks.
+writes one atlas per league, art/ads/{league}/ads_<w>x<h>.png (all ten strips stacked), for the
+game to reuse (A21): a Swedish set for the SHL and a North American set for the NHL. Both sets have
+the same number of strips in the same size, so every board shows the same slot in either atlas and
+the game swaps the texture per match. The blend's boards (and so arena.glb) carry the SHL set.
+Sponsors are made up in each region's style; keep them generic, never real league or brand marks.
 Options, passed as globals:
   FIT    size each strip to the far boards' on-screen pixel size for the scene camera, so one
          texel is one screen pixel and no letter row or column doubles (default True; needs a
@@ -25,11 +28,23 @@ def _art_dir():
     if not a or not os.path.isdir(a): raise SystemExit('set ART (global) or SAP_ART (env) to the art/ folder')
     return os.path.abspath(a)
 ART = _art_dir()
-# (name, board colour, letter colour), dusk palette only
-ADS = [('ICE COLA', '#c8574a', '#efe0c2'), ('FROSTBANK', '#efe0c2', '#2f5f8f'), ('GLACIER', '#3e5875', '#efe0c2'),
-       ('TOP SHELF', '#211b28', '#f2c14e'), ('RINK RADIO', '#e3d8c6', '#a34e4d'), ('VOLT', '#f2c14e', '#211b28'),
-       ('COLD BREW', '#613b3a', '#f9da93'), ('BLUE LINE TV', '#efe0c2', '#31556e'), ('SNAPSHOT', '#e96f5d', '#efe0c2'),
-       ('NORDIC AIR', '#e3d8c6', '#3e5875')]
+# (name, board colour, letter colour) per league, dusk palette only; at most 13 letters in a 53 texel strip.
+# Made-up sponsors. SHL: a bank, coffee roaster, grocer, power company, family lottery, car dealer, local
+# radio, hot dog stand, broadband and builders' merchant. NHL: a pickup maker, donut shop, root beer, bank,
+# pizza chain, airline, sports drink, burger joint, sports radio and gas station
+SETS = {
+    'shl': [('FJÄLLBANKEN', '#efe0c2', '#2f5f8f'), ('MÖRKROST', '#613b3a', '#f9da93'), ('MATHÖRNAN', '#c8574a', '#efe0c2'),
+            ('ÄLVKRAFT', '#f2c14e', '#211b28'), ('KLÖVERLOTT', '#2c6e4a', '#efe0c2'), ('BRUKS BIL', '#3e5875', '#efe0c2'),
+            ('RADIO GLÖD', '#e3d8c6', '#a34e4d'), ('KORVKIOSKEN', '#211b28', '#f2c14e'), ('NORRNÄT', '#e96f5d', '#efe0c2'),
+            ('SNICKARN', '#e3d8c6', '#3e5875')],
+    'nhl': [('STEELRIDGE', '#211b28', '#efe0c2'), ('MAPLE DONUTS', '#efe0c2', '#a34e4d'), ('ELK ROOT BEER', '#613b3a', '#f9da93'),
+            ('PRAIRIE BANK', '#2f5f8f', '#efe0c2'), ('BIG SLICE', '#c8574a', '#f9da93'), ('LOON AIR', '#e3d8c6', '#31556e'),
+            ('BLITZ ADE', '#f2c14e', '#211b28'), ('BURGER BARN', '#e07a3a', '#211b28'), ('HOCKEY TALK', '#efe0c2', '#2f5f8f'),
+            ('GAS N GO', '#3e5875', '#f2c14e')],
+}
+BASE = 'shl'                                     # the set the blend's boards, and so arena.glb, carry
+ADS = SETS[BASE]
+if len({len(v) for v in SETS.values()}) != 1: raise SystemExit('every league needs the same number of ad strips')
 FONT = {   # 3x5 glyphs, rows top to bottom
     'A': ['.#.', '#.#', '###', '#.#', '#.#'], 'B': ['##.', '#.#', '##.', '#.#', '##.'], 'C': ['.##', '#..', '#..', '#..', '.##'],
     'D': ['##.', '#.#', '#.#', '#.#', '##.'], 'E': ['###', '#..', '##.', '#..', '###'], 'F': ['###', '#..', '##.', '#..', '#..'],
@@ -41,6 +56,9 @@ FONT = {   # 3x5 glyphs, rows top to bottom
     'V': ['#.#', '#.#', '#.#', '#.#', '.#.'], 'W': ['#.#', '#.#', '###', '###', '#.#'], 'X': ['#.#', '#.#', '.#.', '#.#', '#.#'],
     'Y': ['#.#', '#.#', '.#.', '.#.', '.#.'], 'Z': ['###', '..#', '.#.', '#..', '###'], '&': ['.#.', '#.#', '.#.', '#.#', '.##'],
 }
+# Swedish letters: the dots go in the free texel row above the capitals, over the plain letter. No Å: a
+# ring one texel tall over the A's peak only reads as a taller A, so the names avoid it
+MARKS = {'Ä': ('#.#', 'A'), 'Ö': ('#.#', 'O')}
 S = int(globals().get('SCALE', 1)); FILTER = globals().get('FILTER', 'Closest')
 EMIT = globals().get('EMIT', True); FIT = globals().get('FIT', True)
 scene = bpy.context.scene
@@ -73,29 +91,39 @@ def strip(text, bg, fg):
     px = [[bg] * TW for _ in range(TH)]
     w = (sum(2 if c == ' ' else 4 for c in text) - 1) * S
     x = (TW - w) // 2; y0 = max(S, (TH - 6 * S) // 2)
-    for c in text:
-        if c == ' ': x += 2 * S; continue
-        for r, row in enumerate(FONT[c]):
+    def put(glyph, top):
+        for r, row in enumerate(glyph):
             for k, bit in enumerate(row):
                 if bit == '#':
                     for dy in range(S):
-                        for dx in range(S): px[y0 + r * S + dy][x + k * S + dx] = fg
+                        for dx in range(S): px[top + r * S + dy][x + k * S + dx] = fg
+    for c in text:
+        if c == ' ': x += 2 * S; continue
+        if c in MARKS:
+            mark, c = MARKS[c]; put([mark], y0 - S)
+        put(FONT[c], y0)
         x += 4 * S
     for dy in range(S): px[TH - 1 - dy] = [fg] * TW
     return px
 
-# ---------------- the strip atlas ----------------
-rows = []
-for name, bg, fg in ADS: rows += strip(name, bg, fg)
-H = len(rows)
+# ---------------- the strip atlases, one per league ----------------
+H = len(ADS) * TH
+def write_atlas(img, league, ads):
+    rows = []
+    for name, bg, fg in ads: rows += strip(name, bg, fg)
+    flat = []
+    for y in range(H - 1, -1, -1):          # Blender images start at the bottom row
+        for c in rows[y]: flat += [*hexrgb(c), 1.0]
+    img.pixels = flat
+    os.makedirs(ART + '/ads/' + league, exist_ok=True)
+    img.filepath_raw = ART + '/ads/%s/ads_%dx%d.png' % (league, TW, H); img.file_format = 'PNG'; img.save()
+for league, ads in SETS.items():
+    if league != BASE:
+        other = bpy.data.images.new('ads_' + league, TW, H, alpha=False)
+        write_atlas(other, league, ads); bpy.data.images.remove(other)
 img = bpy.data.images.get('ads') or bpy.data.images.new('ads', TW, H, alpha=False)
 img.scale(TW, H)
-flat = []
-for y in range(H - 1, -1, -1):              # Blender images start at the bottom row
-    for c in rows[y]: flat += [*hexrgb(c), 1.0]
-img.pixels = flat
-os.makedirs(ART + '/ads', exist_ok=True)
-img.filepath_raw = ART + '/ads/ads_%dx%d.png' % (TW, H); img.file_format = 'PNG'; img.save()
+write_atlas(img, BASE, ADS)
 img.pack(); img.use_fake_user = True
 
 # ---------------- one material for every board ----------------
