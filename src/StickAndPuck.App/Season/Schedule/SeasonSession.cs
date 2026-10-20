@@ -4,6 +4,7 @@ using StickAndPuck.App.Season.Morale;
 using StickAndPuck.App.Season.News;
 using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Save;
+using StickAndPuck.App.Season.Trades;
 using K = StickAndPuck.App.Core.Text.Keys;
 
 namespace StickAndPuck.App.Season.Schedule
@@ -14,6 +15,10 @@ namespace StickAndPuck.App.Season.Schedule
     /// when that match ends; <see cref="AutosaveSystem"/> then writes the save.</summary>
     public sealed class SeasonSession
     {
+        private IReadOnlyList<ClubData> dataClubs = [];
+        private IReadOnlyList<ClubData> tradedClubs = [];
+        private int tradedDeals = -1;
+
         /// <summary>Initializes a new instance of the <see cref="SeasonSession"/> class, outside season mode.</summary>
         public SeasonSession()
         {
@@ -29,8 +34,26 @@ namespace StickAndPuck.App.Season.Schedule
         /// <summary>Gets the game the current match is, or None when the match is not a season game.</summary>
         public Maybe<Fixture> Playing { get; private set; }
 
-        /// <summary>Gets the clubs the season was loaded with.</summary>
-        public IReadOnlyList<ClubData> Clubs { get; private set; } = [];
+        /// <summary>Gets the clubs the season was loaded with, with the season's trades made
+        /// (<see cref="SeasonState.Rosters"/>): every match setup, simulated game and stat sheet of the season reads these.</summary>
+        public IReadOnlyList<ClubData> Clubs
+        {
+            get
+            {
+                if (!Current.TryGet(out SeasonState season))
+                {
+                    return dataClubs;
+                }
+
+                if (tradedDeals != season.Trades.Deals.Count)
+                {
+                    tradedClubs = season.Rosters(dataClubs);
+                    tradedDeals = season.Trades.Deals.Count;
+                }
+
+                return tradedClubs;
+            }
+        }
 
         /// <summary>Gets the save file this session writes.</summary>
         public string SavePath { get; private set; } = "";
@@ -136,6 +159,7 @@ namespace StickAndPuck.App.Season.Schedule
                 Clubs
             );
             NewsDesk.AfterGame(season, Clubs); // the news for the next game
+            TradeDesk.AfterGame(season, Clubs); // the trade deadline's offers, at its game
             Playing = Maybe.None<Fixture>();
             Unsaved = true;
             return true;
@@ -245,6 +269,38 @@ namespace StickAndPuck.App.Season.Schedule
             );
         }
 
+        /// <summary>Answers a trade offer of the deadline (<see cref="TradeDesk"/>) and saves the season: accepted, the
+        /// players change clubs for the rest of the season. Returns the trade made, or None.</summary>
+        public Maybe<Trade> AnswerTrade(TradeOffer offer, bool accept)
+        {
+            if (!Current.TryGet(out SeasonState season) || !offer.IsOpen)
+            {
+                return Maybe.None<Trade>();
+            }
+
+            Maybe<Trade> trade = Maybe.None<Trade>();
+            if (accept)
+            {
+                trade = TradeDesk.Accept(season, dataClubs, offer);
+            }
+            else
+            {
+                TradeDesk.Decline(offer);
+            }
+
+            Console.WriteLine(
+                trade.TryGet(out Trade made)
+                    ? string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"SAP: trade: {made.Club} #{made.Number} {offer.GiveName} to {made.OtherClub} as #{made.NewNumber}, {made.OtherClub} #{made.OtherNumber} {offer.GetName} to {made.Club} as #{made.OtherNewNumber}"
+                    )
+                    : $"SAP: trade: {season.UserClub} declined {offer.Club}'s offer ({offer.GiveName} for {offer.GetName})"
+            );
+            Unsaved = true;
+            Save();
+            return trade;
+        }
+
         /// <summary>Writes the save when the season changed, as <see cref="AutosaveSystem"/> does after a played match.</summary>
         private void Save()
         {
@@ -260,7 +316,8 @@ namespace StickAndPuck.App.Season.Schedule
         private void Use(SeasonState season, IReadOnlyList<ClubData> clubs, string path)
         {
             Current = season;
-            Clubs = clubs;
+            dataClubs = clubs;
+            tradedDeals = -1;
             SavePath = path;
             Playing = Maybe.None<Fixture>();
         }

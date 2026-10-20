@@ -47,7 +47,14 @@ namespace StickAndPuck.App.Screens
             Screen after = Flow.AfterSeasonGame();
             items.Add(
                 new MenuItem(
-                    Text.Get(after is DressingRoomScreen ? K.DressingRoom : K.Standings),
+                    Text.Get(
+                        after switch
+                        {
+                            TradeOfferScreen => K.TradeOffer,
+                            DressingRoomScreen => K.DressingRoom,
+                            _ => K.Standings,
+                        }
+                    ),
                     () => Flow.Replace(after)
                 )
             );

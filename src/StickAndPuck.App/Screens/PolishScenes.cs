@@ -11,7 +11,7 @@ using StickAndPuck.App.Season.Schedule;
 namespace StickAndPuck.App.Screens
 {
     /// <summary>The saves behind the headless captures of the polished screens (SAP_SCREEN=stats, table, sim,
-    /// dressingroom, suspension, trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
+    /// dressingroom, suspension, trade, trophy, arcadetrophy and bestruns). Each writes its own test save next to season.json, so the
     /// player's season and arcade saves are left alone.</summary>
     internal static class PolishScenes
     {
@@ -80,6 +80,9 @@ namespace StickAndPuck.App.Screens
                         app.Screens.Push(new CoachTalkScreen(app)); // PLAY NEXT GAME: the pre-game talk
                     }
 
+                    break;
+                case "trade":
+                    TradeDeadline(app, clubs);
                     break;
                 case "trophy":
                     Champions(app, clubs);
@@ -169,6 +172,21 @@ namespace StickAndPuck.App.Screens
                     }
                 );
             }
+        }
+
+        /// <summary>A fresh test season settled on paper with "sim this game" up to the trade deadline (W135), then
+        /// the screen after that result: the first offer.</summary>
+        private static void TradeDeadline(AppState app, IReadOnlyList<ClubData> clubs)
+        {
+            Season(app, clubs, "trade-test.json", 0);
+            while (
+                app.Season.Current.Is(s => !s.Trades.Held) && app.Season.SimCurrentGame().HasValue
+            )
+            {
+                // one game at a time, up to the deadline game where the offers come
+            }
+
+            app.Screens.Push(app.Screens.AfterSeasonGame());
         }
 
         /// <summary>A fresh test season settled on paper to the end of the playoffs, so there is a champion.</summary>

@@ -69,6 +69,11 @@ namespace StickAndPuck.App.Core
         /// these to build the same clubs again.</summary>
         public IReadOnlyList<string> Absent { get; init; } = [];
 
+        /// <summary>Gets the season's trades (W135), in the order they were made; empty outside the season or before
+        /// a trade. <see cref="Home"/> and <see cref="Away"/> already play them; a replay stores them to
+        /// build the same rosters again from the club data files (<see cref="TradeDeals.Apply"/>).</summary>
+        public IReadOnlyList<Trade> Trades { get; init; } = [];
+
         /// <summary>This setup played by a rule set: the set goes on <see cref="Rules"/>, and its overtime
         /// switch picks the format. A setup whose mode pinned its own <see cref="OvertimeFormat"/> is a
         /// playoff game and takes <see cref="RuleSet.PlayoffOvertime"/>, keeping the mode's own
