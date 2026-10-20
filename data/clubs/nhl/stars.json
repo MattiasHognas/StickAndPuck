@@ -17,6 +17,13 @@
     "accent": "#8f8f8c",
     "helmet": "#006847"
   },
+  "supporters": {
+    "tifo": [
+      "VICTORY GREEN"
+    ],
+    "scarf": "STARS",
+    "banner": "LET'S GO STARS"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

@@ -14,6 +14,14 @@
     "accent": "#ffd000",
     "helmet": "#0b5640"
   },
+  "supporters": {
+    "tifo": [
+      "GRÖNGULT",
+      "HJÄRTA"
+    ],
+    "scarf": "LÖVEN",
+    "banner": "GREEN DEVILS"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "dumpAndChase",

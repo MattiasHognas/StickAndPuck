@@ -17,6 +17,14 @@
     "accent": "#ffb81c",
     "helmet": "#1a1a1a"
   },
+  "supporters": {
+    "tifo": [
+      "BIG BAD",
+      "BRUINS"
+    ],
+    "scarf": "BRUINS",
+    "banner": "LET'S GO BRUINS"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "dumpAndChase",

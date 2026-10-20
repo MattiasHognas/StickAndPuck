@@ -194,7 +194,8 @@ namespace StickAndPuck.App.Replay
 
         /// <summary>Gets a short hash of two clubs' data. Player ages (W132) are left out: they never play a match
         /// themselves (development reaches it through <see cref="MatchSetup.Form"/>), so replays recorded before
-        /// the club files had them keep their fingerprint.</summary>
+        /// the club files had them keep their fingerprint. Supporter slogans (A19) only paint the stands, so they
+        /// are left out too.</summary>
         internal static string ClubsHash(ClubData home, ClubData away)
         {
             static string Json(ClubData club)
@@ -203,6 +204,7 @@ namespace StickAndPuck.App.Replay
                     club with
                     {
                         Roster = [.. club.Roster.Select(p => p with { Age = 0 })],
+                        Supporters = Maybe.None<ClubSupporters>(),
                     }
                 );
             }

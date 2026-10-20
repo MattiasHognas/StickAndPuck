@@ -17,6 +17,14 @@
     "accent": "#1a1a1a",
     "helmet": "#ce1126"
   },
+  "supporters": {
+    "tifo": [
+      "STORM SURGE",
+      "BUNCH OF JERKS"
+    ],
+    "scarf": "CANIACS",
+    "banner": "BUNCH OF JERKS"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "dumpAndChase",

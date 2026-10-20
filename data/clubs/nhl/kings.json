@@ -17,6 +17,13 @@
     "accent": "#a2aaad",
     "helmet": "#1a1a1a"
   },
+  "supporters": {
+    "tifo": [
+      "GO KINGS GO"
+    ],
+    "scarf": "LA KINGS",
+    "banner": "LET'S GO KINGS"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "dumpAndChase",

@@ -61,6 +61,8 @@ namespace StickAndPuck.App.Arena
         private readonly IceScratches scratches = new();
         private readonly CrowdRenderer crowd = new();
         private readonly CrowdReactions reactions = new();
+        private readonly TifoRenderer tifo = new();
+        private Maybe<CrowdSection> tifoPreview; // SAP_TIFO: the home tifo held up over this section all match
         private bool posed;
         private Model model;
         private Material maskMaterial;
@@ -141,8 +143,21 @@ namespace StickAndPuck.App.Arena
             trapezoid = ArenaLayers.TrapezoidFromEnvironment();
             bands.Build();
             scratches.Load();
+            LoadCrowd(world);
+        }
+
+        /// <summary>The crowd, its fans' sides, and the dev previews: SAP_CROWD_POSE, and SAP_TIFO (A19) holding
+        /// the home club's tifo up over a section all match.</summary>
+        private void LoadCrowd(World world)
+        {
             crowd.Load(world);
             CrowdFans.Seat(reactions); // the visitors' corner reacts for the away club
+            tifoPreview = TifoRenderer.FromEnvironment();
+            if (tifoPreview.HasValue)
+            {
+                tifo.Load(world.Setup.Home);
+            }
+
             if (Enum.TryParse(Env.Get("SAP_CROWD_POSE"), ignoreCase: true, out CrowdPose pose))
             {
                 world.Crowd.SetAll(pose, world.Time); // a fixed pose for previews of the crowd frames
@@ -232,7 +247,6 @@ namespace StickAndPuck.App.Arena
                 sheet: false
             );
             crowd.Draw(world, render, shaderDefault, world.Look.Crowd);
-
             // glass last and without depth, so players behind it still draw; flat colour over the crowd
             Rlgl.DisableDepthMask();
             foreach ((int mesh, Kind kind, _, _, _, _, _) in meshes)
@@ -248,6 +262,11 @@ namespace StickAndPuck.App.Arena
                 DrawArenaMesh(mesh, mat);
             }
             Rlgl.EnableDepthMask();
+            // the tifo goes over the glass's tint that keeps the crowd back: it is the stands' big moment
+            if (tifoPreview.TryGet(out CrowdSection tifoSection))
+            {
+                tifo.Draw(tifoSection, world.Time, shaderDefault, world.Look.Crowd);
+            }
         }
 
         /// <summary>Draws one group of meshes with the current depth and colour state.</summary>
@@ -355,6 +374,7 @@ namespace StickAndPuck.App.Arena
             scratches.Unload();
             centreIce.Unload();
             crowd.Unload();
+            tifo.Unload();
             UnloadMaterial(maskMaterial);
             UnloadModel(model);
         }

@@ -17,6 +17,13 @@
     "accent": "#333f48",
     "helmet": "#b4975a"
   },
+  "supporters": {
+    "tifo": [
+      "VEGAS BORN"
+    ],
+    "scarf": "KNIGHT UP",
+    "banner": "GO KNIGHTS GO"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "dumpAndChase",

@@ -14,6 +14,14 @@
     "accent": "#1a1a1a",
     "helmet": "#1a1a1a"
   },
+  "supporters": {
+    "tifo": [
+      "REDHAWKS",
+      "REDHAWKS SUPPORT"
+    ],
+    "scarf": "MALMÖ",
+    "banner": "REDHAWKS"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "carry",

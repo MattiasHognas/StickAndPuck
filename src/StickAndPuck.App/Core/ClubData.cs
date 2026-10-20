@@ -36,6 +36,11 @@ namespace StickAndPuck.App.Core
         /// <summary>Gets the away kit colours.</summary>
         public KitColours Away { get; init; } = new();
 
+        /// <summary>Gets the supporters' slogans for the tifo, scarves and banners (A19); none for a club file
+        /// without them, and then left out of the written JSON.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Maybe<ClubSupporters> Supporters { get; init; }
+
         /// <summary>Gets the match squad: 4 forward lines, 3 defence pairs and 2 goalies in a full club.</summary>
         public IReadOnlyList<PlayerData> Roster { get; init; } = [];
 

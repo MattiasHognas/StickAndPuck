@@ -17,6 +17,13 @@
     "accent": "#ffffff",
     "helmet": "#ce1126"
   },
+  "supporters": {
+    "tifo": [
+      "HOCKEYTOWN"
+    ],
+    "scarf": "RED WINGS",
+    "banner": "GO WINGS GO"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "carry",

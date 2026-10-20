@@ -14,6 +14,14 @@
     "accent": "#f6be00",
     "helmet": "#007a33"
   },
+  "supporters": {
+    "tifo": [
+      "ANGEL ISLAND",
+      "ARMY"
+    ],
+    "scarf": "RÖGLE BK",
+    "banner": "GRÖNVIT FEST"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

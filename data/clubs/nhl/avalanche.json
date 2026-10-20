@@ -17,6 +17,13 @@
     "accent": "#236192",
     "helmet": "#6f263d"
   },
+  "supporters": {
+    "tifo": [
+      "GO AVS GO"
+    ],
+    "scarf": "AVALANCHE",
+    "banner": "LET'S GO AVS"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",

@@ -17,6 +17,13 @@
     "accent": "#fcb514",
     "helmet": "#002f87"
   },
+  "supporters": {
+    "tifo": [
+      "PLAY GLORIA"
+    ],
+    "scarf": "ST. LOUIS",
+    "banner": "LET'S GO BLUES"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "dumpAndChase",

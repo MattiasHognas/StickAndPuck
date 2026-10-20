@@ -17,6 +17,13 @@
     "accent": "#f47d30",
     "helmet": "#00539b"
   },
+  "supporters": {
+    "tifo": [
+      "YES YES YES"
+    ],
+    "scarf": "ISLANDERS",
+    "banner": "LET'S GO ISLES"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "dumpAndChase",

@@ -17,6 +17,13 @@
     "accent": "#041e42",
     "helmet": "#ffb81c"
   },
+  "supporters": {
+    "tifo": [
+      "SMASHVILLE"
+    ],
+    "scarf": "PREDATORS",
+    "banner": "LET'S GO PREDS"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "dumpAndChase",

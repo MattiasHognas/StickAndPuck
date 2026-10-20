@@ -17,6 +17,13 @@
     "accent": "#f1be48",
     "helmet": "#c8102e"
   },
+  "supporters": {
+    "tifo": [
+      "C OF RED"
+    ],
+    "scarf": "FLAMES",
+    "banner": "GO FLAMES GO"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "dumpAndChase",

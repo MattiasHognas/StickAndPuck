@@ -17,6 +17,14 @@
     "accent": "#99d9d9",
     "helmet": "#001628"
   },
+  "supporters": {
+    "tifo": [
+      "RELEASE",
+      "THE KRAKEN"
+    ],
+    "scarf": "KRAKEN",
+    "banner": "LET'S GET KRAKEN"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "dumpAndChase",

@@ -17,6 +17,13 @@
     "accent": "#041e42",
     "helmet": "#c8102e"
   },
+  "supporters": {
+    "tifo": [
+      "TIME TO HUNT"
+    ],
+    "scarf": "PANTHERS",
+    "banner": "LET'S GO CATS"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "dumpAndChase",

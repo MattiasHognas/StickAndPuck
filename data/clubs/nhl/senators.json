@@ -17,6 +17,14 @@
     "accent": "#c52032",
     "helmet": "#1a1a1a"
   },
+  "supporters": {
+    "tifo": [
+      "GO SENS GO",
+      "SENS ARMY"
+    ],
+    "scarf": "SENS ARMY",
+    "banner": "GO SENS GO"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",

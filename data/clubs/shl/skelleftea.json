@@ -14,6 +14,14 @@
     "accent": "#c8102e",
     "helmet": "#1a1a1a"
   },
+  "supporters": {
+    "tifo": [
+      "VISA HJÄRTA",
+      "PLATSEN ÄR HÄR"
+    ],
+    "scarf": "NORTH POWER",
+    "banner": "HEJ HÄR ÄR VI"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",

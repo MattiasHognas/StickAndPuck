@@ -1,0 +1,117 @@
+{
+  "note": "A19 supporter art, from art/scripts/make_supporters.py. One 256x256 sheet per club at file (with {league} and {id} filled in), every sheet in this layout. Rects are [x, y, w, h] texels, in frame order; metres is a suggested [width, height] in the stands.",
+  "file": "art/crowd/supporters/{league}/{id}.png",
+  "size": 256,
+  "pieces": {
+    "tifo": {
+      "frames": [
+        "flat",
+        "ripple"
+      ],
+      "rects": [
+        [
+          0,
+          0,
+          160,
+          120
+        ],
+        [
+          0,
+          120,
+          160,
+          120
+        ]
+      ],
+      "metres": [
+        14.0,
+        10.5
+      ]
+    },
+    "scarf": {
+      "frames": [
+        "held",
+        "wave0",
+        "wave1"
+      ],
+      "rects": [
+        [
+          160,
+          0,
+          96,
+          16
+        ],
+        [
+          160,
+          16,
+          96,
+          16
+        ],
+        [
+          160,
+          32,
+          96,
+          16
+        ]
+      ],
+      "metres": [
+        2.4,
+        0.4
+      ]
+    },
+    "flag": {
+      "frames": [
+        "wave0",
+        "wave1",
+        "wave2"
+      ],
+      "rects": [
+        [
+          160,
+          48,
+          28,
+          24
+        ],
+        [
+          188,
+          48,
+          28,
+          24
+        ],
+        [
+          216,
+          48,
+          28,
+          24
+        ]
+      ],
+      "metres": [
+        0.9,
+        0.75
+      ]
+    },
+    "banner": {
+      "frames": [
+        "taut",
+        "sag"
+      ],
+      "rects": [
+        [
+          160,
+          72,
+          96,
+          20
+        ],
+        [
+          160,
+          92,
+          96,
+          20
+        ]
+      ],
+      "metres": [
+        2.4,
+        0.5
+      ]
+    }
+  }
+}

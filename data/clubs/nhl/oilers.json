@@ -17,6 +17,14 @@
     "accent": "#ff4c00",
     "helmet": "#041e42"
   },
+  "supporters": {
+    "tifo": [
+      "OIL COUNTRY",
+      "THIS IS OIL COUNTRY"
+    ],
+    "scarf": "OILERS",
+    "banner": "LET'S GO OILERS"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",

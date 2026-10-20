@@ -14,6 +14,14 @@
     "accent": "#c8102e",
     "helmet": "#002e5f"
   },
+  "supporters": {
+    "tifo": [
+      "CLUBEN",
+      "IFRÅN STORA STOLTA"
+    ],
+    "scarf": "WHITE LIONS",
+    "banner": "HEJ HÅ LHC"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "dumpAndChase",

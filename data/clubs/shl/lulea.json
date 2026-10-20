@@ -14,6 +14,14 @@
     "accent": "#d20a11",
     "helmet": "#d20a11"
   },
+  "supporters": {
+    "tifo": [
+      "VI ÄR LULEÅ",
+      "INGET HALVVÄGS"
+    ],
+    "scarf": "KÄMPA LULEÅ",
+    "banner": "GULDET SKA HEM"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "dumpAndChase",

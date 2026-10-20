@@ -17,6 +17,14 @@
     "accent": "#1a1a1a",
     "helmet": "#f74902"
   },
+  "supporters": {
+    "tifo": [
+      "BROAD STREET",
+      "BULLIES"
+    ],
+    "scarf": "FLYERS",
+    "banner": "LET'S GO FLYERS"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "dumpAndChase",

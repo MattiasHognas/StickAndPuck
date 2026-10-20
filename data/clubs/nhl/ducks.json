@@ -17,6 +17,13 @@
     "accent": "#1a1a1a",
     "helmet": "#fc4c02"
   },
+  "supporters": {
+    "tifo": [
+      "QUACK ATTACK"
+    ],
+    "scarf": "ANAHEIM",
+    "banner": "LET'S GO DUCKS"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

@@ -17,6 +17,13 @@
     "accent": "#ce1126",
     "helmet": "#0038a8"
   },
+  "supporters": {
+    "tifo": [
+      "BLUESHIRTS"
+    ],
+    "scarf": "RANGERS",
+    "banner": "LET'S GO RANGERS"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",
