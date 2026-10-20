@@ -1,5 +1,14 @@
 <Project>
-  <!-- Keep browser restore metadata separate from the desktop project evaluation. -->
+  <!--
+    StickAndPuck.App: the game. One project builds the desktop game (Microsoft.NET.Sdk) and the browser
+    build (Microsoft.NET.Sdk.WebAssembly, RuntimeIdentifier browser-wasm), so the SDK is imported by hand
+    and picked by RID. Shared settings (target framework, C# version, warnings as errors, RepoRoot) live in
+    Directory.Build.props; package versions in Directory.Packages.props.
+  -->
+
+  <!-- ===== SDK selection (before Sdk.props) ===== -->
+
+  <!-- The browser build keeps its restore and build output apart from the desktop build's. -->
   <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
     <BaseIntermediateOutputPath>obj/browser/</BaseIntermediateOutputPath>
     <BaseOutputPath>bin/browser/</BaseOutputPath>
@@ -16,41 +25,66 @@
     Condition="'$(RuntimeIdentifier)' == 'browser-wasm'"
   />
 
+  <!-- ===== General project settings ===== -->
+
   <PropertyGroup>
-    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**</DefaultItemExcludes>
-    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <AssemblyName>StickAndPuck</AssemblyName>
+    <RootNamespace>StickAndPuck.App</RootNamespace>
     <OutputType>Exe</OutputType>
     <!-- Published for Windows it is a GUI app with no console window; from a terminal it attaches to that console (GameLog). -->
     <OutputType Condition="$(RuntimeIdentifier.StartsWith('win-'))">WinExe</OutputType>
+    <!-- Raylib interop passes pointers. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <AssemblyName>StickAndPuck</AssemblyName>
-    <RootNamespace>StickAndPuck.App</RootNamespace>
+    <!-- JSON goes through source-generated contexts only (trimming-safe). -->
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <!-- obj/browser/ sits inside the project folder. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**</DefaultItemExcludes>
+    <!-- Preview SDK notice. -->
     <NoWarn>$(NoWarn);NETSDK1057</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'browser-wasm'">
+  <!-- ===== Platform settings ===== -->
+
+  <!-- Every RID-specific build carries its own runtime. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
     <SelfContained>true</SelfContained>
-    <PublishSingleFile>true</PublishSingleFile>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <DebugType>embedded</DebugType>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
+  <!-- Desktop publish (linux-x64, win-x64, osx-arm64; see tools/publish.sh): one compressed executable with
+       .NET, raylib and every asset inside. Windows also turns GUI above; macOS is wrapped in
+       StickAndPuck.app afterwards by tools/macos_app.py. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'browser-wasm'">
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <!-- Browser (browser-wasm): Mono on WebAssembly with raylib linked in natively, WebGL 1, trimmed. -->
   <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
     <UseMonoRuntime>true</UseMonoRuntime>
     <WasmBuildNative>true</WasmBuildNative>
     <EmccExtraLDFlags>-sMIN_WEBGL_VERSION=1 -sMAX_WEBGL_VERSION=1</EmccExtraLDFlags>
     <EmccVerbose>false</EmccVerbose>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishSingleFile>false</PublishSingleFile>
+    <UseAppHost>false</UseAppHost>
     <!-- This project selects its SDK by RID; nested static asset builds must retain it. -->
     <StaticWebAssetsAdditionalBuildPropertiesToRemove>$(StaticWebAssetsAdditionalBuildPropertiesToRemove.Replace('RuntimeIdentifier', ''))</StaticWebAssetsAdditionalBuildPropertiesToRemove>
     <StaticWebAssetsAdditionalPublishPropertiesToRemove>$(StaticWebAssetsAdditionalPublishPropertiesToRemove.Replace('RuntimeIdentifier', ''))</StaticWebAssetsAdditionalPublishPropertiesToRemove>
-    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
-    <PublishTrimmed>true</PublishTrimmed>
-    <SelfContained>true</SelfContained>
-    <PublishSingleFile>false</PublishSingleFile>
-    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
+  <!-- ===== Packages and native libraries ===== -->
+
+  <!-- Raylib-cs brings the native raylib library for each desktop RID. -->
+  <ItemGroup>
+    <PackageReference Include="Raylib-cs" Version="8.1.0" />
+  </ItemGroup>
+
+  <!-- ===== Analyzers and source generators ===== -->
+
+  <!-- The project's own analyzers and the DiscoveryGenerator (scene and game mode registry). -->
   <ItemGroup>
     <ProjectReference
       Include="$(RepoRoot)analyzers/StickAndPuck.Analyzers/StickAndPuck.Analyzers.csproj"
@@ -59,22 +93,28 @@
     />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Raylib-cs" Version="8.1.0" />
-  </ItemGroup>
+  <!-- ===== Embedded assets ===== -->
 
+  <!-- Every asset is packed into the assembly under its repository path (Core/Assets reads them). -->
   <ItemGroup>
+    <!-- Shaders and game data (clubs, rules, language tables). -->
     <EmbeddedResource Include="$(RepoRoot)shaders/**" LinkBase="shaders" />
+    <EmbeddedResource Include="$(RepoRoot)data/**/*.json" LinkBase="data" />
+
+    <!-- Players, kits and the Zamboni. -->
     <EmbeddedResource
       Include="$(RepoRoot)art/player/*.glb;$(RepoRoot)art/player/*_64.png"
       LinkBase="art/player"
     />
-    <EmbeddedResource Include="$(RepoRoot)art/ads/**/*.png" LinkBase="art/ads" />
     <EmbeddedResource Include="$(RepoRoot)art/kits/**/*.png" LinkBase="art/kits" />
+    <EmbeddedResource Include="$(RepoRoot)art/zamboni/*.glb" LinkBase="art/zamboni" />
+
+    <!-- Arena, ad boards and crowd. -->
     <EmbeddedResource
       Include="$(RepoRoot)art/scene/ice_scratches.png;$(RepoRoot)art/scene/*.glb;$(RepoRoot)art/scene/arena_meshes.json;$(RepoRoot)art/scene/exterior_meshes.json;$(RepoRoot)art/scene/crowd_seats.json"
       LinkBase="art/scene"
     />
+    <EmbeddedResource Include="$(RepoRoot)art/ads/**/*.png" LinkBase="art/ads" />
     <EmbeddedResource
       Include="$(RepoRoot)art/crowd/*.png;$(RepoRoot)art/crowd/supporters.json"
       LinkBase="art/crowd"
@@ -83,16 +123,20 @@
       Include="$(RepoRoot)art/crowd/supporters/**/*.png"
       LinkBase="art/crowd/supporters"
     />
-    <EmbeddedResource Include="$(RepoRoot)art/zamboni/*.glb" LinkBase="art/zamboni" />
+
+    <!-- Palette and UI. -->
     <EmbeddedResource Include="$(RepoRoot)art/palette/*.gpl" LinkBase="art/palette" />
     <EmbeddedResource
       Include="$(RepoRoot)art/ui/*.png;$(RepoRoot)art/ui/font.fnt;$(RepoRoot)art/ui/ui.json;$(RepoRoot)art/ui/intro_card.json"
       LinkBase="art/ui"
     />
+
+    <!-- Sound effects and music. -->
     <EmbeddedResource Include="$(RepoRoot)art/audio/effects/*.wav" LinkBase="art/audio/effects" />
     <EmbeddedResource Include="$(RepoRoot)art/audio/music/*.wav" LinkBase="art/audio/music" />
-    <EmbeddedResource Include="$(RepoRoot)data/**/*.json" LinkBase="data" />
   </ItemGroup>
+
+  <!-- ===== SDK targets (picked like Sdk.props) ===== -->
 
   <Import
     Project="Sdk.targets"
