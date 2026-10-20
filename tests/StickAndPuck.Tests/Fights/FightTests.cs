@@ -560,7 +560,8 @@ namespace StickAndPuck.Tests.Fights
             Player me = Skater(w, Side.Home, PlayingPosition.C);
             Player them = Skater(w, Side.Away, PlayingPosition.C);
             _ = HomeWins(w);
-            Run(w, x => x.Match.Phase == MatchPhase.Play, 15);
+            // to the drop: the penalty clock starts with the game clock there
+            Run(w, x => x.Match.Phase == MatchPhase.Play || MatchFlow.State(x).Draw.Dropped, 15);
             Maybe<PenaltyState> call = w.Match.Penalties.FirstOrNone(p => p.PlayerId == them.Id);
             Check(
                 call.Is(c => Math.Abs(c.SecondsLeft - PenaltyCalls.MinorSeconds(w)) < 0.01f)

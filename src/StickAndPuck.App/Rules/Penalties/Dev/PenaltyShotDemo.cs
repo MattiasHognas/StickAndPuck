@@ -22,6 +22,7 @@ namespace StickAndPuck.App.Rules.Penalties.Dev
         private int stage;
         private int carrierId = -1;
         private int chaserId = -1;
+        private long lastTick = long.MinValue;
 
         /// <summary>Runs the script while play runs, after the referee has judged this step's fouls.</summary>
         public static void Update(World world)
@@ -34,11 +35,18 @@ namespace StickAndPuck.App.Rules.Penalties.Dev
 
         private void Run(World world)
         {
+            // runs only in play, so a gap in the ticks is a new spell of play: count its moment from its first step
+            bool newSpell = world.Tick != lastTick + 1;
+            lastTick = world.Tick;
             if (world.Match.Phase != MatchPhase.Play)
+            {
+                return;
+            }
+
+            if (newSpell)
             {
                 stage = 0;
                 stageAt = world.Time;
-                return;
             }
 
             float since = world.Time - stageAt;
@@ -86,11 +94,7 @@ namespace StickAndPuck.App.Rules.Penalties.Dev
             }
 
             chaserId = home.Count > 0 ? home[0].Id : -1;
-            Puck pk = world.Puck;
-            pk.Carrier = carrier.Id;
-            pk.LastTouch = carrier.Id;
             Skate(world);
-            pk.Position = PuckHandling.Blade(carrier);
             return chaserId >= 0;
         }
 
@@ -104,6 +108,11 @@ namespace StickAndPuck.App.Rules.Penalties.Dev
             carrier.Velocity = run;
             carrier.Heading = heading;
             carrier.Command = default;
+            // he keeps the puck: the AI on his club would pass or dump it off the breakaway
+            Puck pk = world.Puck;
+            pk.Carrier = carrier.Id;
+            pk.LastTouch = carrier.Id;
+            pk.Position = PuckHandling.Blade(carrier);
             if (chaserId >= 0)
             {
                 Player chaser = world.Players[chaserId];

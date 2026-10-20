@@ -459,6 +459,7 @@ namespace StickAndPuck.Tests.AI.Decisions
                 offsides = 0,
                 fewest = int.MaxValue,
                 most = 0,
+                quietest = int.MaxValue,
                 clears = 0,
                 holds = 0;
 
@@ -484,6 +485,7 @@ namespace StickAndPuck.Tests.AI.Decisions
                 holds += h.HoldUps + a.HoldUps;
                 fewest = Math.Min(fewest, Math.Min(i, o));
                 most = Math.Max(most, Math.Max(i, o));
+                quietest = Math.Min(quietest, i + o);
             }
             float iceRate = (float)icings / LineSeeds,
                 offRate = (float)offsides / LineSeeds;
@@ -508,10 +510,10 @@ namespace StickAndPuck.Tests.AI.Decisions
                 )
             );
             Check(
-                fewest >= 1 && most <= 18,
+                quietest >= 3 && most <= 18,
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"every match has some of each and none is full of them ({fewest} to {most})"
+                    $"every match has some line calls and none is full of them ({quietest} or more a match, {fewest} to {most} of each)"
                 )
             );
             Check(

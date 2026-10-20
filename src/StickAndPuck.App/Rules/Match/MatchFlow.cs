@@ -10,8 +10,10 @@ namespace StickAndPuck.App.Rules.Match
     /// (practice and test scenes) has no match flow: no clock, no faceoffs.</summary>
     /// <remarks>
     /// What the flow promises the readers of <see cref="World.Match"/>:
-    /// the clock runs only in <see cref="MatchPhase.Play"/>; during <see cref="MatchPhase.Faceoff"/>
-    /// the puck lies dead on <see cref="FaceoffDot"/> and the players hold their spots, also through the draw window after the drop;
+    /// the clock starts when the puck drops: it runs through the draw window after the drop and in <see cref="MatchPhase.Play"/>,
+    /// and never while play is stopped (intro, the wait before the drop, whistles, goals, intermissions);
+    /// during <see cref="MatchPhase.Faceoff"/> the puck lies dead on <see cref="FaceoffDot"/> and the players hold their spots,
+    /// also through the draw window after the drop;
     /// a goal (published by physics) is counted once and followed by a centre faceoff;
     /// each period end publishes PeriodEnd; after regulation a tie hands over to the overtime rules by setting
     /// <see cref="MatchPhase.Overtime"/> or <see cref="MatchPhase.Shootout"/>; otherwise MatchEnd is
@@ -134,7 +136,8 @@ namespace StickAndPuck.App.Rules.Match
             );
         }
 
-        /// <summary>Formats game seconds as m:ss, rounding up so the clock shows 0:00 only when time is out.</summary>
+        /// <summary>Formats game seconds as m:ss, rounding up like an arena clock: it shows 0:00 only when time is out,
+        /// so a fresh period shows 20:00 through its first second of play and 19:59 once a full second has run.</summary>
         public static string ClockText(float seconds)
         {
             int s = (int)MathF.Ceiling(Math.Max(0, seconds) - 0.0001f);

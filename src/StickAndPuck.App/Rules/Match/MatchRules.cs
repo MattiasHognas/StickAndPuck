@@ -56,7 +56,14 @@ namespace StickAndPuck.App.Rules.Match
 
                     // players hold their spots until the puck drops
                     FaceoffFormation.Place(world, s.Dot, s.Draw.Kicked);
+                    // the clock starts on the drop, not when the draw is won: it runs through the draw window
+                    bool dropped = s.Draw.Dropped;
                     FaceoffDraw.Step(world, s, dt);
+                    if (dropped && RunClock(world, s, dt))
+                    {
+                        break;
+                    }
+
                     if (!s.Draw.Dropped && !s.RefereeDrops && Wait(s, dt))
                     {
                         _ = MatchFlow.Drop(world);
@@ -179,14 +186,22 @@ namespace StickAndPuck.App.Rules.Match
                 return;
             }
 
+            _ = RunClock(world, s, dt);
+        }
+
+        /// <summary>Runs the game clock one step; at 0:00 the period ends. Returns true when it did.</summary>
+        private static bool RunClock(World world, FlowState s, float dt)
+        {
+            MatchState m = world.Match;
             m.Clock -= dt;
             if (m.Clock > 0)
             {
-                return;
+                return false;
             }
 
             m.Clock = 0;
             EndPeriod(world, s);
+            return true;
         }
 
         /// <summary>Counts a goal (at once, or once its review confirms it): the score and shots, then the goal's pause

@@ -151,6 +151,17 @@ namespace StickAndPuck.Tests.Rules.Penalties
             _ = Run(w, x => x.Match.Phase == MatchPhase.Play, 15);
         }
 
+        /// <summary>Runs to the drop of the coming faceoff: the game clock and the penalty clocks start there.</summary>
+        private static void ToDrop(World w)
+        {
+            _ = Run(w, x => x.Match.Phase == MatchPhase.Play || Dropped(x), 15);
+        }
+
+        private static bool Dropped(World w)
+        {
+            return MatchFlow.State(w).Draw.Dropped;
+        }
+
         private static void PublishGoal(World w, Side scorer)
         {
             bool sent = false;
@@ -255,7 +266,7 @@ namespace StickAndPuck.Tests.Rules.Penalties
             World w = Make();
             Player d = Skater(w, Side.Home, PlayingPosition.D);
             _ = Penalise(w, d, Infraction.Hooking);
-            ToPlay(w);
+            ToDrop(w);
             float start = w.Match.Clock;
             bool boxedOn = false,
                 extra = false;
@@ -391,6 +402,9 @@ namespace StickAndPuck.Tests.Rules.Penalties
                 "SHL: a third penalty goes to the box and waits, home stays three on five"
             );
             float clock = w.Match.Clock;
+            float firstLeft = w
+                .Match.Penalties.First(p => p.PlayerId == first.PlayerId)
+                .SecondsLeft;
             bool steady = true;
             _ = Run(
                 w,
@@ -405,7 +419,7 @@ namespace StickAndPuck.Tests.Rules.Penalties
                 steady
                     && third.Is(t => Math.Abs(t.SecondsLeft - PenaltyCalls.MinorSeconds(w)) < 0.05f)
                     && PenaltyCalls.Waiting(w).Count == 0
-                    && Math.Abs(clock - w.Match.Clock - (PenaltyCalls.MinorSeconds(w) - 5)) < 0.05f,
+                    && Math.Abs(clock - w.Match.Clock - firstLeft) < 0.05f,
                 "the third penalty starts in full when the first expires"
             );
             Check(
@@ -537,7 +551,7 @@ namespace StickAndPuck.Tests.Rules.Penalties
             w.Match.Clock = 10;
             Player c = Skater(w, Side.Home, PlayingPosition.C);
             _ = Penalise(w, c);
-            _ = Run(w, x => x.Match.Period == 2 && x.Match.Phase == MatchPhase.Play, 60);
+            _ = Run(w, x => x.Match.Period == 2 && Dropped(x), 60);
             Maybe<PenaltyState> p = Maybe.From(w.Match.Penalties.SingleOrDefault());
             Check(
                 p.Is(x => Math.Abs(x.SecondsLeft - (PenaltyCalls.MinorSeconds(w) - 10)) < 0.05f)
@@ -580,7 +594,7 @@ namespace StickAndPuck.Tests.Rules.Penalties
                     ),
                 "SHL: a penalty running at 60:00 carries into overtime with its time left"
             );
-            _ = Run(w, x => x.Match.Period == 4 && x.Match.Phase == MatchPhase.Play, 30);
+            _ = Run(w, x => x.Match.Period == 4 && Dropped(x), 30);
             Check(
                 PenaltyCalls.InBox(w, lw.Id)
                     && Skaters(w, Side.Home) == 3
