@@ -9,9 +9,9 @@ namespace StickAndPuck.App.Arena
 {
     /// <summary>A19: the home club's tifo (its frames in the club's supporter sheet, <see cref="SupporterArt"/>)
     /// as a cloth raised over a stand section: lying on the hands of the fans, a little above their heads, from
-    /// the front row up the slope, as wide as the section with the art's 4:3 shape. For now only
-    /// SAP_TIFO raises it, to preview the art in the stands; W120 raises it at the start of a match and
-    /// after home goals. Render only.</summary>
+    /// the front row up the slope, as wide as the section with the art's 4:3 shape. W120 raises it at the start of a match and after
+    /// home goals (<see cref="TifoMoments"/>), passing it up the stand from the front row; SAP_TIFO holds it up
+    /// all match to preview the art in the stands. Render only.</summary>
     internal sealed class TifoRenderer
     {
         /// <summary>How far above the seat the cloth lies, in metres: over the heads of the standing crowd.</summary>
@@ -168,6 +168,29 @@ namespace StickAndPuck.App.Arena
             return sum / n;
         }
 
+        /// <summary>The part of a cloth that is up: from the front row to <paramref name="lift"/> of the way to
+        /// the back, showing the top of the art first.</summary>
+        /// <param name="full">The whole cloth.</param>
+        /// <param name="lift">How far up it reaches, 0 to 1.</param>
+        /// <returns>The cloth that is up.</returns>
+        internal static Cloth Unrolled(Cloth full, float lift)
+        {
+            float k = Math.Clamp(lift, 0f, 1f);
+            return full with
+            {
+                TopLeft = Vector3.Lerp(full.BottomLeft, full.TopLeft, k),
+                TopRight = Vector3.Lerp(full.BottomRight, full.TopRight, k),
+            };
+        }
+
+        /// <summary>Gets the middle of the cloth over a section, where the camera looks when it goes up.</summary>
+        /// <param name="cloth">The cloth.</param>
+        /// <returns>The point in the middle of its four corners.</returns>
+        internal static Vector3 Middle(Cloth cloth)
+        {
+            return (cloth.TopLeft + cloth.TopRight + cloth.BottomRight + cloth.BottomLeft) / 4f;
+        }
+
         /// <summary>Gets the frame the cloth shows: flat and rippled in turn.</summary>
         /// <param name="time">Seconds since it went up.</param>
         /// <returns>0 or 1.</returns>
@@ -184,16 +207,29 @@ namespace StickAndPuck.App.Arena
         /// <param name="tone">The crowd's light (<see cref="ArenaLook.Crowd"/>).</param>
         public void Draw(CrowdSection section, float time, Shader unlit, Color tone)
         {
-            if (sheet.Id == 0 || !cloths.TryGetValue(section, out Cloth c))
+            Draw(section, time, 1f, unlit, tone);
+        }
+
+        /// <summary>Draws the tifo part of the way up the stand: its top edge passed up from the front row,
+        /// the cloth unrolling behind it.</summary>
+        /// <param name="section">The section under it.</param>
+        /// <param name="time">Seconds since it went up.</param>
+        /// <param name="lift">How far up it reaches, 0 to 1 (<see cref="TifoState.Lift"/>).</param>
+        /// <param name="unlit">The shader for flat textured draws.</param>
+        /// <param name="tone">The crowd's light.</param>
+        public void Draw(CrowdSection section, float time, float lift, Shader unlit, Color tone)
+        {
+            if (sheet.Id == 0 || lift <= 0f || !cloths.TryGetValue(section, out Cloth full))
             {
                 return;
             }
 
+            Cloth c = Unrolled(full, lift);
             Rectangle f = frames[Frame(time) % frames.Length];
             float u0 = f.X / sheet.Width,
                 u1 = (f.X + f.Width) / sheet.Width,
                 v0 = f.Y / sheet.Height,
-                v1 = (f.Y + f.Height) / sheet.Height;
+                v1 = (f.Y + (f.Height * Math.Min(1f, lift))) / sheet.Height;
             Rlgl.DrawRenderBatchActive();
             BeginShaderMode(unlit);
             int diffuse = GetShaderLocation(unlit, "colDiffuse");

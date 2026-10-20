@@ -107,6 +107,7 @@ in sync when upgrading.
 - `SAP_CONTROL_MARKER`, `SAP_SIM_GAME`, `SAP_AUTO_DEKE`, `SAP_ONE_TIMERS`: `0` or `1`, override the matching settings screen switches (defaults on, on, off, on).
 - `SAP_SWAP_KITS=1`: the clubs wear each other's kits. Default: the settings screen's swap kits (off). Tab toggles it while playing.
 - `SAP_BENCHES=0`: empty benches; `1` shows both clubs' players off the ice on their benches, watching the puck and standing up for changes. Default: the settings screen's benches (on).
+- `SAP_SUPPORTERS=0`: no scarves, flags or banners in the stands and no tifo (W120); `1` shows them. Default: the settings screen's flags and tifo (on).
 - `SAP_FPS=1`: fps and key help line top left. Default: the settings screen's fps line (off).
 - `SAP_CAMERA_ZOOM`: `1` camera zooms with speed, `0` fixed zoom. Default: the settings screen's value (off). F6 toggles it while playing.
 - `SAP_MATCH_DEBUG=1`: plain score and clock line at the top. Default: the settings screen's match debug line (off; on in the demo scenes).
