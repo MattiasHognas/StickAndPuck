@@ -84,6 +84,13 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-format-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json', '**/*.csproj', 'dotnet-tools.json') }}
+          restore-keys: nuget-format-${{ runner.os }}-
+
       - name: Restore tools and solution
         run: |
           dotnet tool restore
@@ -113,6 +120,13 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-test-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json', '**/*.csproj', 'dotnet-tools.json') }}
+          restore-keys: nuget-test-${{ runner.os }}-
+
       - name: Test
         run: dotnet test --project tests/StickAndPuck.Tests -c Release
 
@@ -141,6 +155,12 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-browser-site-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json', '**/*.csproj', 'dotnet-tools.json') }}
+          restore-keys: nuget-browser-site-${{ runner.os }}-
       - name: Install wasm-tools
         id: workload
         run: |
@@ -172,6 +192,12 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-desktop-build-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json', '**/*.csproj', 'dotnet-tools.json') }}
+          restore-keys: nuget-desktop-build-${{ runner.os }}-
       # The browser jobs record and check their desktop replay fixtures with this Release build.
       - name: Build desktop Release
         run: dotnet build src/StickAndPuck.App -c Release
@@ -254,29 +280,69 @@ jobs:
           echo "Browser site, desktop build, browser verification: $RESULTS"
           [ "$RESULTS" = "success success success" ]
 
+  # The desktop executables are published while the checks run; "Build" packages them (and the verified
+  # browser site) once every check has passed, and on main creates the release.
+  publish:
+    name: Publish
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-publish-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json', '**/*.csproj', 'dotnet-tools.json') }}
+          restore-keys: nuget-publish-${{ runner.os }}-
+
+      - name: Publish
+        env:
+          VERSION: ${{ needs.version.outputs.number }}
+        run: tools/publish.sh linux-x64 win-x64 osx-arm64
+
+      # A tar keeps the executable bits that an artifact upload would drop.
+      - name: Pack desktop executables
+        run: tar -cf desktop-publish.tar publish/linux-x64 publish/win-x64 publish/osx-arm64
+
+      - name: Upload desktop executables
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-publish
+          path: desktop-publish.tar
+          if-no-files-found: error
+          retention-days: 1
+
   build:
     name: Build
-    needs: [format, test, browser, version]
+    needs: [format, test, browser, version, publish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v6
+      - name: Download desktop executables
+        uses: actions/download-artifact@v8
         with:
-          global-json-file: global.json
+          name: desktop-publish
+
+      - name: Unpack desktop executables
+        run: |
+          tar -xf desktop-publish.tar
+          rm desktop-publish.tar
+          test -x publish/linux-x64/StickAndPuck
+          test -x publish/osx-arm64/StickAndPuck
 
       - name: Download verified browser site
         uses: actions/download-artifact@v8
         with:
           name: browser-site
           path: publish/browser-wasm/wwwroot
-
-      - name: Publish
-        env:
-          VERSION: ${{ needs.version.outputs.number }}
-        run: tools/publish.sh linux-x64 win-x64 osx-arm64
 
       - name: Package release assets
         env:
