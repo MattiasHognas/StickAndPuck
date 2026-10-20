@@ -108,8 +108,24 @@ An unknown name stops the game and prints the list of scenes. Names are not case
 - `netlobby`: the start screen flow opened on the online versus lobby.
 - `nethost`: the lobby's host flow with `SAP_HOME` and `SAP_AWAY` picked, listening on `SAP_NET_PORT` until a player joins, then the network match.
 - `netjoin`: the lobby's join flow, connecting to `SAP_NET_ADDRESS` on `SAP_NET_PORT`, then the network match.
+- `ending`: an end-of-season scene, picked by `SAP_ENDING` (see [End-of-season scenes](#end-of-season-scenes-sap_ending)).
 
 `lineup` is a static starter layout rather than the timed faceoff flow; use `referee` or `faceoff` to inspect the crouch and drop. Scene implementations are discovered automatically through `IScene`; most live in their system's `Dev/` folder. General match and rendering overrides, including `SAP_TACTICS_LINE` and `SAP_ST_SPOTS`, are in [Development](DEVELOPMENT.md#visuals-sound-and-input).
+
+### End-of-season scenes (`SAP_ENDING`)
+
+One season is the whole game, so how it ends is the game's ending. `SAP_ENDING` jumps straight into that scene (no need for `SAP_SCENE`; it is the `ending` scene): `champions`, `runnersup`, `semifinal`, `seasonover`, `relegated` or `fired`. `SAP_CLUB` (or `SAP_HOME`) picks the user's club, SHL or NHL, and the league follows it (the trophy is the SHL bowl or the NHL cup); `SAP_AWAY` is the other club (the winners of the final, the semi-final opponent), by default the club's rival or the next club of its league. Each scene runs about ten seconds (record 10.5) and then simply carries on; it is presentation only (`Season/Endings/`): the world runs no match systems, so nothing is simulated, saved or recorded. The title line is the game font at twice its size, in English or Swedish.
+
+| Value | Scene |
+| --- | --- |
+| `champions` | Centre ice in the home kit: the captain lifts the trophy, the rest with arms and sticks up, the home tifo up over the far centre stand, the crowd cheering, confetti in the club colours and camera flashes; the camera circles in. |
+| `runnersup` | One of ours down on a knee near the camera, head hung, while the other club celebrates round its captain and the trophy behind him; the home stands quiet, the visitors' corner up. |
+| `semifinal` | The handshake line at centre ice, the two clubs gliding past each other with hands out, the stands applauding. |
+| `seasonover` | The empty arena: the stands go dark section by section and the rink lights step down, the Zamboni lays a last sheet, one player sits alone on the home bench. |
+| `relegated` | Outside the arena at night in the rain (`art/scene/exterior.glb`, `art/scripts/build_exterior.py`): the name board's bulbs dead but for a couple of letters, a player in the club's street clothes (`art/scripts/make_street.py`) walking away past the street lamp with his hockey bag. |
+| `fired` | The dressing room (A20's backdrop on the wall behind): the coach in his suit carries his box across the room and out through a lit doorway as the lights go down. |
+
+A real season plays its ending the same way before the recap (`Screens/SeasonEnd.PlayEnding`, the SEASON RECAP item): ten and a half seconds, or until enter, space, escape, a click or a pad's A or start skips it, with the champion as the other club after a lost final; `SAP_SCREEN=recap` shows it too. `SAP_ENDING=champions SAP_CLUB=frolunda SAP_RECORD=10` records one; any `SAP_RECORD`, `SAP_SCREENSHOT` or `SAP_LANGUAGE` works as in the other scenes.
 
 ### Penalty fixture variables
 

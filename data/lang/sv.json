@@ -801,5 +801,11 @@
   "HeadBreakthrough": "{2}-ÅRIGE {0} SLOG IGENOM",
   "HeadTrade": "KLART PÅ DEADLINE: {0} IN, {1} UT",
   "HeadChallenges": "TRÄNARENS UTMANINGAR: {0} KLARADE {2} AV {3}",
-  "HeadLosingStreak": "{0} I FRITT FALL: {2} RAKA FÖRLUSTER"
+  "HeadLosingStreak": "{0} I FRITT FALL: {2} RAKA FÖRLUSTER",
+  "EndingChampions": "MÄSTARE",
+  "EndingRunnersUp": "SILVER",
+  "EndingSemiFinal": "SEMIFINAL",
+  "EndingSeasonOver": "SÄSONGEN ÄR SLUT",
+  "EndingRelegated": "NEDFLYTTADE",
+  "EndingFired": "SPARKAD"
 }

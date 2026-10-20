@@ -136,7 +136,14 @@ namespace StickAndPuck.App.Arena
         /// <param name="render">The scene's shaders and display poses.</param>
         /// <param name="unlit">The shader for flat textured draws.</param>
         /// <param name="tone">The crowd's light (<see cref="ArenaLook.Crowd"/>).</param>
-        public void Draw(World world, RenderContext render, Shader unlit, Color tone)
+        /// <param name="share">The share of the seats taken, 0 to 1: a seat whose phase is past it stays empty.</param>
+        public void Draw(
+            World world,
+            RenderContext render,
+            Shader unlit,
+            Color tone,
+            float share = 1f
+        )
         {
             if (atlas.Id == 0 || seats.Length == 0)
             {
@@ -172,6 +179,11 @@ namespace StickAndPuck.App.Arena
             Rlgl.SetTexture(atlas.Id);
             foreach (Seat s in seats)
             {
+                if (s.Phase >= share)
+                {
+                    continue;
+                }
+
                 CrowdPose pose = state.Pose(s.Section);
                 int col = CrowdFrames.Column(pose, world.Time - state.Since(s.Section), s.Phase);
                 float u = col * du;

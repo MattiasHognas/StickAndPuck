@@ -1,0 +1,180 @@
+{
+ "source": "art/scripts/build_exterior.py",
+ "glb": "art/scene/exterior.glb",
+ "note": "meshes in Raylib load order (Model.Meshes[index]); Y-up metres, the facade at z = -10 facing +z",
+ "sign": {
+  "x0": -15.0,
+  "x1": 3.0,
+  "y0": 4.6,
+  "y1": 7.4,
+  "z": -9.64
+ },
+ "lamp": {
+  "x": 6.0,
+  "z": 1.7500000000000002,
+  "y": 5.86
+ },
+ "meshes": [
+  {
+   "index": 0,
+   "part": "Bin",
+   "material": "metal",
+   "vertices": 48,
+   "unlit": false
+  },
+  {
+   "index": 1,
+   "part": "Bollards",
+   "material": "kerb",
+   "vertices": 288,
+   "unlit": false
+  },
+  {
+   "index": 2,
+   "part": "Canopy",
+   "material": "canopy",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 3,
+   "part": "Canopy",
+   "material": "metal",
+   "vertices": 96,
+   "unlit": false
+  },
+  {
+   "index": 4,
+   "part": "Entrance",
+   "material": "glass",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 5,
+   "part": "Entrance",
+   "material": "mullion",
+   "vertices": 216,
+   "unlit": false
+  },
+  {
+   "index": 6,
+   "part": "Exit",
+   "material": "exit",
+   "vertices": 24,
+   "unlit": true
+  },
+  {
+   "index": 7,
+   "part": "Facade",
+   "material": "wall",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 8,
+   "part": "Facade",
+   "material": "plinth",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 9,
+   "part": "Facade",
+   "material": "cornice",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 10,
+   "part": "Facade",
+   "material": "pilaster",
+   "vertices": 216,
+   "unlit": false
+  },
+  {
+   "index": 11,
+   "part": "Facade",
+   "material": "mullion",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 12,
+   "part": "Joints",
+   "material": "joint",
+   "vertices": 1536,
+   "unlit": false
+  },
+  {
+   "index": 13,
+   "part": "Kerb",
+   "material": "kerb",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 14,
+   "part": "Lamp",
+   "material": "metal",
+   "vertices": 144,
+   "unlit": false
+  },
+  {
+   "index": 15,
+   "part": "LampLight",
+   "material": "lamp",
+   "vertices": 24,
+   "unlit": true
+  },
+  {
+   "index": 16,
+   "part": "Lobby",
+   "material": "lobby",
+   "vertices": 24,
+   "unlit": true
+  },
+  {
+   "index": 17,
+   "part": "Pavement",
+   "material": "pavement",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 18,
+   "part": "Puddles",
+   "material": "puddle",
+   "vertices": 70,
+   "unlit": false
+  },
+  {
+   "index": 19,
+   "part": "Road",
+   "material": "asphalt",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 20,
+   "part": "Sign",
+   "material": "sign",
+   "vertices": 24,
+   "unlit": false
+  },
+  {
+   "index": 21,
+   "part": "Windows",
+   "material": "glass",
+   "vertices": 192,
+   "unlit": false
+  },
+  {
+   "index": 22,
+   "part": "WindowsLit",
+   "material": "window_lit",
+   "vertices": 48,
+   "unlit": true
+  }
+ ]
+}

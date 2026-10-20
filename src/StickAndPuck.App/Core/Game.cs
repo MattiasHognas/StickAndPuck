@@ -220,7 +220,7 @@ namespace StickAndPuck.App.Core
                     s.Dispose();
                 }
 
-                IReadOnlyList<ISystem> freshSystems = Systems.Create(world.Seed);
+                IReadOnlyList<ISystem> freshSystems = Systems.For(world);
                 foreach (ISystem s in freshSystems)
                 {
                     s.Start(world);

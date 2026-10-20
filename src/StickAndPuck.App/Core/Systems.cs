@@ -39,6 +39,15 @@ namespace StickAndPuck.App.Core
     /// a task fills in its own class and never edits this list or Game.cs.</summary>
     public static class Systems
     {
+        /// <summary>Creates the systems a world runs: every system in order, or for an end-of-season scene
+        /// (SAP_ENDING, <see cref="Season.Endings.EndingSystem"/>) only its own presentation, with no match to simulate.</summary>
+        public static IReadOnlyList<ISystem> For(World world)
+        {
+            return world.Dev.Ending.HasValue
+                ? [new Season.Endings.EndingSystem()]
+                : Create(world.Seed);
+        }
+
         /// <summary>Creates every system in order. Called after the window opens.</summary>
         /// <param name="seed">The match seed: each system with dice gets its own stream of it; 0 gives the fixed test streams.</param>
         public static IReadOnlyList<ISystem> Create(int seed)
