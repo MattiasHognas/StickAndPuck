@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using Raylib_cs;
@@ -7,19 +8,21 @@ namespace StickAndPuck.App.Core
 {
     /// <summary>Where the log goes. A published Windows game has no console of its own, so one started from a
     /// terminal attaches to that terminal's console. Every console line (the game's "SAP: ..." lines and raylib's
-    /// warnings and errors) is also written to log.txt next to settings.json (~/.config/StickAndPuck/ on Linux,
-    /// %APPDATA%\StickAndPuck\ on Windows); each launch starts it afresh and keeps the previous launch's as
-    /// log.prev.txt. Release builds show raylib's warnings and errors only, Debug builds everything;
-    /// SAP_RAYLIB_LOG=info (or trace, debug, warning, error, none) overrides it. The browser build logs to the
-    /// browser console only.</summary>
+    /// warnings and errors) also goes to a log file of its own per launch, named by its local start time, in
+    /// logs/ next to settings.json (~/.config/StickAndPuck/logs/ on Linux, %APPDATA%\StickAndPuck\logs\ on
+    /// Windows), written off the game thread (<see cref="LogFile"/>); logs older than <see cref="KeptDays"/>
+    /// days are deleted in the background at startup. Release builds show raylib's warnings and errors only,
+    /// Debug builds everything; SAP_RAYLIB_LOG=info (or trace, debug, warning, error, none) overrides it. The
+    /// browser build logs to the browser console only.</summary>
     public static partial class GameLog
     {
-        /// <summary>The log file's name.</summary>
-        public const string FileName = "log.txt";
+        /// <summary>The folder next to settings.json that holds the logs.</summary>
+        public const string FolderName = "logs";
 
-        /// <summary>The previous launch's log file's name.</summary>
-        public const string PreviousFileName = "log.prev.txt";
+        /// <summary>How many days of logs are kept.</summary>
+        public const int KeptDays = 30;
 
+        private const string Stamp = "yyyy-MM-dd_HH-mm-ss";
         private const int AttachParentProcess = -1;
 
         private static TextWriter console = TextWriter.Null;
@@ -49,12 +52,18 @@ namespace StickAndPuck.App.Core
             }
 
             string folder = Path.GetDirectoryName(ScreenPrefsFile.DefaultPath);
-            // A game GpuLaunch started on another card adds to the log of the game that started it.
-            Maybe<TextWriter> file = Open(folder, append: Env.Get("SAP_GPU_LAUNCHED").Length > 0);
+            DateTime now = DateTime.Now;
             console = Console.Out;
-            if (file.TryGet(out TextWriter log))
+            if (Open(folder, now).TryGet(out LogFile log))
             {
                 Console.SetOut(TextWriter.Synchronized(new Tee(console, log)));
+                AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+                {
+                    log.WriteLine($"SAP: crash: {e.ExceptionObject}");
+                    log.Dispose();
+                };
+                AppDomain.CurrentDomain.ProcessExit += (_, _) => log.Dispose();
+                _ = Task.Run(() => Prune(Path.Combine(folder, FolderName), now));
             }
 #if !BROWSER
 #pragma warning disable S6640 // Raylib interop requires a function pointer here.
@@ -72,43 +81,83 @@ namespace StickAndPuck.App.Core
             return
                 Enum.TryParse(value, ignoreCase: true, out TraceLogLevel level)
                 && Enum.IsDefined(level)
-                && !int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out _)
+                && !int.TryParse(value, CultureInfo.InvariantCulture, out _)
                 ? level
                 : fallback;
         }
 
-        /// <summary>Opens log.txt in a folder: a fresh file whose predecessor becomes log.prev.txt, or, to append,
-        /// the existing one. None when the folder cannot be written; the game then logs to the console only.</summary>
-        public static Maybe<TextWriter> Open(string folder, bool append)
+        /// <summary>Opens a new log file for a launch that started at this local time:
+        /// logs/2026-10-20_22-55-03.txt in the folder (with _2, _3, ... when that name is taken). None when the
+        /// folder cannot be written; the game then logs to the console only.</summary>
+        public static Maybe<LogFile> Open(string folder, DateTime started)
         {
+            string logs = Path.Combine(folder, FolderName);
             try
             {
-                _ = Directory.CreateDirectory(folder);
-                string path = Path.Combine(folder, FileName);
-                if (!append && File.Exists(path))
+                _ = Directory.CreateDirectory(logs);
+                string name = started.ToString(Stamp, CultureInfo.InvariantCulture);
+                string path = Path.Combine(logs, name + ".txt");
+                int n = 2;
+                while (File.Exists(path))
                 {
-                    File.Move(path, Path.Combine(folder, PreviousFileName), overwrite: true);
+                    path = Path.Combine(
+                        logs,
+                        string.Create(CultureInfo.InvariantCulture, $"{name}_{n}.txt")
+                    );
+                    n++;
                 }
 
                 FileStream stream = new(
                     path,
-                    append ? FileMode.Append : FileMode.Create,
+                    FileMode.CreateNew,
                     FileAccess.Write,
                     FileShare.ReadWrite | FileShare.Delete
                 );
-                return new StreamWriter(
-                    stream,
-                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)
-                )
-                {
-                    AutoFlush = true,
-                };
+                return new LogFile(
+                    new StreamWriter(
+                        stream,
+                        new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)
+                    )
+                );
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                Console.WriteLine($"SAP: log: cannot write {folder} ({e.Message})");
-                return Maybe.None<TextWriter>();
+                Console.WriteLine($"SAP: log: cannot write {logs} ({e.Message})");
+                return Maybe.None<LogFile>();
             }
+        }
+
+        /// <summary>Deletes the logs in the folder that started more than <see cref="KeptDays"/> days before now
+        /// (by the time in the name, else the file's last write). Other files stay.</summary>
+        /// <returns>How many logs were deleted.</returns>
+        public static int Prune(string logs, DateTime now)
+        {
+            int deleted = 0;
+            try
+            {
+                foreach (string file in Directory.GetFiles(logs, "????-??-??_??-??-??*.txt"))
+                {
+                    DateTime started = DateTime.TryParseExact(
+                        Path.GetFileName(file)[..Stamp.Length],
+                        Stamp,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out DateTime named
+                    )
+                        ? named
+                        : File.GetLastWriteTime(file);
+                    if (now - started > TimeSpan.FromDays(KeptDays))
+                    {
+                        File.Delete(file);
+                        deleted++;
+                    }
+                }
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Console.WriteLine($"SAP: log: cleaning {logs} stopped ({e.Message})");
+            }
+            return deleted;
         }
 
         /// <summary>Gets the line raylib's log shows for a message at a level.</summary>
@@ -185,8 +234,8 @@ namespace StickAndPuck.App.Core
 #pragma warning restore S6640
 #endif
 
-        /// <summary>Writes everything to the console and to the log file.</summary>
-        internal sealed class Tee(TextWriter console, TextWriter log) : TextWriter
+        /// <summary>Writes to the console as before and queues the same text for the log file.</summary>
+        internal sealed class Tee(TextWriter console, LogFile log) : TextWriter
         {
             /// <inheritdoc/>
             public override Encoding Encoding => console.Encoding;
@@ -194,38 +243,35 @@ namespace StickAndPuck.App.Core
             /// <inheritdoc/>
             public override void Write(char value)
             {
-                Both(w => w.Write(value));
+                console.Write(value);
+                log.Write(value.ToString());
             }
 
             /// <inheritdoc/>
             public override void Write(string value)
             {
-                Both(w => w.Write(value));
+                console.Write(value);
+                log.Write(value);
             }
 
             /// <inheritdoc/>
             public override void WriteLine(string value)
             {
-                Both(w => w.WriteLine(value));
+                console.WriteLine(value);
+                log.WriteLine(value);
+            }
+
+            /// <inheritdoc/>
+            public override void WriteLine()
+            {
+                console.WriteLine();
+                log.WriteLine("");
             }
 
             /// <inheritdoc/>
             public override void Flush()
             {
-                Both(w => w.Flush());
-            }
-
-            private void Both(Action<TextWriter> write)
-            {
-                write(console);
-                try
-                {
-                    write(log);
-                }
-                catch (Exception e) when (e is IOException or ObjectDisposedException)
-                {
-                    // The console still gets the line when the log file stops taking them.
-                }
+                console.Flush();
             }
         }
     }
