@@ -26,6 +26,12 @@
     <NoWarn>$(NoWarn);NETSDK1057</NoWarn>
   </PropertyGroup>
 
+  <!-- A published Windows game is a GUI app: no console window opens. Started from a terminal it attaches to
+       that terminal's console (GameLog). dotnet run without a RID keeps its console. -->
+  <PropertyGroup Condition="$(RuntimeIdentifier.StartsWith('win-'))">
+    <OutputType>WinExe</OutputType>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'browser-wasm'">
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>

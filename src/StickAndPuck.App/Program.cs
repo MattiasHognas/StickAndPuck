@@ -2,6 +2,8 @@
 // that is scaled up by whole pixels, so the window size never changes the look.
 // OpenGL picks its graphics card when the window is made, so a game that should run on another
 // card than it started on starts itself again on that card first (see GpuLaunch).
+// Logging starts first: the console a published Windows game attaches to, and the log file.
+StickAndPuck.App.Core.GameLog.Start();
 StickAndPuck.App.Core.AssetRoot.Enter();
 if (!OperatingSystem.IsBrowser() && !StickAndPuck.App.GpuLaunch.OntoWanted())
 {
