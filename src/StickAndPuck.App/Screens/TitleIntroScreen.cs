@@ -12,6 +12,7 @@ namespace StickAndPuck.App.Screens
     {
         private Maybe<TitleLetters> letters;
         private bool roused;
+        private bool tifo;
 
         /// <summary>Gets the intro's timeline.</summary>
         public TitleIntro Timeline { get; } = new();
@@ -31,6 +32,12 @@ namespace StickAndPuck.App.Screens
         public override void Update(World world, IReadOnlySet<MenuButton> press)
         {
             Timeline.Update(Game.Step, TitleIntro.AnyPress(DeviceInput.Current, press));
+            if (Timeline.TifoTime && !tifo)
+            {
+                tifo = true;
+                IntroCrowd.RaiseTifo(world); // up the stand before the picture comes in, so the first shot is full of it
+            }
+
             if (Timeline.Moving && !roused)
             {
                 roused = true;
@@ -65,6 +72,7 @@ namespace StickAndPuck.App.Screens
             loaded.DrawBlack(Timeline.Reveal);
             int x = (Game.Width - loaded.Width) / 2,
                 y = Timeline.LogoY + Timeline.Shake;
+            loaded.DrawBacking(Timeline.Backing, x, y);
             loaded.DrawLetters(Timeline, x, y);
             loaded.DrawShine(Timeline.ShineBand, x, y);
         }

@@ -212,5 +212,90 @@ namespace StickAndPuck.Tests.Screens
                 "SAP_HOME picks the clubs instead"
             );
         }
+
+        /// <summary>Plays the intro over the start menu to its end, a step at a time, the world's clock running
+        /// with it, and reports each step.</summary>
+        private static void PlayOut(World world, Action<TitleIntro> each)
+        {
+            AppState app = world.App;
+            world.Match.Paused = true;
+            app.Screens.Push(new StartScreen(app));
+            TitleIntroScreen intro = new(app);
+            app.Screens.Push(intro);
+            HashSet<MenuButton> none = [];
+            for (int step = 0; step < 1000 && !intro.Timeline.Done; step++)
+            {
+                world.Time += Game.Step;
+                intro.Update(world, none);
+                each(intro.Timeline);
+            }
+        }
+
+        [Test]
+        public void TheHomeTifoIsUpAsTheCameraComesDown()
+        {
+            World world = new WorldBuilder().App(new AppState()).Build();
+            TifoState tifo = world.Crowd.Tifo;
+            bool early = false,
+                fullWhenClear = true,
+                upThroughMove = true,
+                seenClear = false;
+            PlayOut(
+                world,
+                t =>
+                {
+                    float lift = tifo.Lift(world.Time);
+                    early |= t.Elapsed < TitleIntro.TifoAt - Game.Step && tifo.Up;
+                    if (t.Reveal >= 1 && !t.Done)
+                    {
+                        seenClear = true;
+                        fullWhenClear &= tifo.Up && lift >= 1f;
+                    }
+
+                    if (t.Elapsed is >= TitleIntro.MoveFrom and < TitleIntro.Seconds)
+                    {
+                        upThroughMove &= tifo.Up && tifo.Section == TifoMoments.StartSection;
+                    }
+                }
+            );
+            Check(!early, "the tifo waits for its beat in the black");
+            Check(
+                seenClear && fullWhenClear,
+                "all the way up the stand by the time the arena is fully in"
+            );
+            Check(
+                upThroughMove,
+                "up over the far centre stand the whole way down to the broadcast view"
+            );
+            Check(!tifo.Up, "on its way down as the start menu shows");
+        }
+
+        [Test]
+        public void NoTifoWhenFlagsAndTifoIsOff()
+        {
+            World world = new WorldBuilder().App(new AppState()).Build();
+            world.Settings = world.Settings with { Supporters = false };
+            bool raised = false;
+            PlayOut(world, _ => raised |= world.Crowd.Tifo.Up || world.Crowd.Tifo.Raises > 0);
+            Check(!raised, "the setting off keeps the tifo in the seats");
+        }
+
+        [Test]
+        public void TheLogoIsShadedOverTheStandsUntilTheMenu()
+        {
+            TitleIntro intro = new();
+            bool shadedInMove = true;
+            while (!intro.Done)
+            {
+                intro.Update(Game.Step, pressed: false);
+                if (intro.Elapsed is > TitleIntro.MoveFrom and <= TitleIntro.BackingFrom)
+                {
+                    shadedInMove &= intro.Backing >= 1f;
+                }
+            }
+
+            Check(shadedInMove, "full shade behind the logo while the tifo passes it");
+            Check(intro.Backing <= 0.001f, "no shade left when the start menu shows");
+        }
     }
 }
