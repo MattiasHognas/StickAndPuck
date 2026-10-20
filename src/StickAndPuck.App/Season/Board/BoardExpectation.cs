@@ -214,8 +214,8 @@ namespace StickAndPuck.App.Season.Board
         }
 
         /// <summary>Gets where the club stands against its goal as the table stands now. A club far below its goal
-        /// is <see cref="BoardStanding.HotSeat"/> only when the season's rules have the hot seat on; otherwise it is
-        /// under pressure. On track with no goal.</summary>
+        /// is <see cref="BoardStanding.HotSeat"/> only when the board can fire it (<see cref="CanFire"/>); otherwise it
+        /// is under pressure. On track with no goal.</summary>
         public static BoardStanding Standing(SeasonState season)
         {
             if (!season.Goal.TryGet(out BoardGoal goal))
@@ -234,11 +234,20 @@ namespace StickAndPuck.App.Season.Board
             }
 
             int deficit = Math.Max(1, place - Line(goal, season.League, clubs));
-            return
-                deficit >= Margin(goal, season.League, clubs)
-                && season.Rules.Or(RuleSet.Shl).HotSeat != HotSeat.Off
+            return deficit >= Margin(goal, season.League, clubs) && CanFire(season, goal)
                 ? BoardStanding.HotSeat
                 : BoardStanding.UnderPressure;
+        }
+
+        /// <summary>Gets a value indicating whether the board can fire the human over this goal: the season's rules
+        /// have the hot seat on, and the goal is not staying out of the bottom of an SHL season with the relegation
+        /// playout (W76) on. Those bottom places are the playout's, and losing it (relegation, which ends the season
+        /// on its own screen) is the price of missing that goal, so the board leaves it to the playout.</summary>
+        public static bool CanFire(SeasonState season, BoardGoal goal)
+        {
+            RuleSet rules = season.Rules.Or(RuleSet.Shl);
+            bool playout = season.League == League.Shl && rules.Playout;
+            return rules.HotSeat != HotSeat.Off && !(goal == BoardGoal.AvoidBottom && playout);
         }
 
         /// <summary>Gets the share of its regular season games the human's club has played, 0 to 1.</summary>
@@ -262,7 +271,8 @@ namespace StickAndPuck.App.Season.Board
 
         /// <summary>Gets a value indicating whether the board fires the human now: the season's rules have the hot
         /// seat on, the regular season is far enough along (<see cref="JudgedFrom"/>; its end included) and the
-        /// club sits at least <see cref="Margin"/> places below its goal. Never in the playoffs.</summary>
+        /// club sits at least <see cref="Margin"/> places below its goal. Never in the playoffs or the playout, and
+        /// never where the playout decides the goal (<see cref="CanFire"/>).</summary>
         public static bool ShouldFire(SeasonState season)
         {
             return !season.Fired
@@ -271,7 +281,8 @@ namespace StickAndPuck.App.Season.Board
                 && JudgedFrom(season.Rules.Or(RuleSet.Shl).HotSeat)
                     .Is(from => Progress(season) >= from)
                 && season.Goal.Is(goal =>
-                    Deficit(season) >= Margin(goal, season.League, season.Clubs.Count)
+                    CanFire(season, goal)
+                    && Deficit(season) >= Margin(goal, season.League, season.Clubs.Count)
                 );
         }
 
@@ -294,11 +305,16 @@ namespace StickAndPuck.App.Season.Board
             return true;
         }
 
-        /// <summary>Gets the board's verdict on the regular season: Missed when fired, else, once every regular season
+        /// <summary>Gets the board's verdict on the regular season: Missed when fired or relegated in the playout, else, once every regular season
         /// game is played, Exceeded (placed where a harder goal asks), Met or Missed; None while it runs or with no goal.</summary>
         public static Maybe<BoardVerdict> Verdict(SeasonState season)
         {
-            if (season.Fired)
+            if (
+                season.Fired
+                || season.Relegated.Is(r =>
+                    string.Equals(r, season.UserClub, StringComparison.Ordinal)
+                )
+            )
             {
                 return BoardVerdict.Missed;
             }

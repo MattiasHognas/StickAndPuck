@@ -3,6 +3,7 @@ using StickAndPuck.App.Core;
 using StickAndPuck.App.Screens;
 using StickAndPuck.App.Season.Board;
 using StickAndPuck.App.Season.DressingRoom;
+using StickAndPuck.App.Season.Playoffs;
 using StickAndPuck.App.Season.Save;
 using StickAndPuck.App.Season.Schedule;
 using StickAndPuck.Tests.Support;
@@ -204,7 +205,7 @@ namespace StickAndPuck.Tests.Season.Board
             HashSet<string> field =
             [
                 with(StringComparer.Ordinal),
-                .. App.Season.Playoffs.NhlSeeding.Field(season, table).Tags.Keys,
+                .. NhlSeeding.Field(season, table).Tags.Keys,
             ];
             List<string> wrong = [];
             foreach (string id in clubs.Select(c => c.Id))
@@ -424,6 +425,61 @@ namespace StickAndPuck.Tests.Season.Board
             Check(
                 !BoardExpectation.Verdict(Start(Ranked(Shl, 3), RuleSet.Shl)).HasValue,
                 "no verdict while the season runs"
+            );
+        }
+
+        [Test]
+        public void PlayoutDecidesTheBottomGoal()
+        {
+            // the weakest club's goal is the SHL's bottom places, which the relegation playout decides: the board
+            // never fires it, so losing every game leads to the playout, and going down there misses the goal
+            SeasonState season = Start(Ranked(Shl, 14), RuleSet.Shl);
+            Check(
+                season.Goal.Is(g => g == BoardGoal.AvoidBottom) && RuleSet.Shl.Playout,
+                "the weakest SHL club must stay out of the bottom, with the playout on"
+            );
+            _ = PlayOut(season, win: false, untilFired: true);
+            Check(
+                !season.Fired && season.IsOver,
+                "losing every game, the club is not fired: the regular season runs to its end"
+            );
+            Check(
+                BoardExpectation.Place(season) == 14
+                    && BoardExpectation.Standing(season) == BoardStanding.UnderPressure,
+                "last place is under pressure, not the hot seat"
+            );
+
+            NextMatch next = app.Playoffs.NextSetup(InputDevice.None);
+            Check(
+                next is NextMatch.Play && app.Playoffs.Current.Is(p => p.UserInPlayout),
+                "the club plays the playout"
+            );
+            string user = season.UserClub;
+            for (int i = 0; i < 4 && app.Playoffs.Playing.TryGet(out PlayoffSeries s); i++)
+            {
+                bool home = Same(s.NextHome, user);
+                _ = app.Playoffs.Finish(
+                    home
+                        ? new FixtureResult(0, 3, ResultKind.Regulation)
+                        : new FixtureResult(3, 0, ResultKind.Regulation)
+                );
+                _ = app.Playoffs.NextSetup(InputDevice.None);
+            }
+
+            Check(
+                season.Relegated.Is(r => Same(r, user)) && !season.Fired,
+                "swept, the club is relegated, never fired as well"
+            );
+            Check(
+                BoardExpectation.Verdict(season).Is(v => v == BoardVerdict.Missed),
+                "relegation misses the board's goal"
+            );
+
+            SeasonState noPlayout = Start(Ranked(Shl, 14), RuleSet.Shl with { Playout = false });
+            _ = PlayOut(noPlayout, win: false, untilFired: true);
+            Check(
+                noPlayout.Fired,
+                "without the playout the board fires a club far down its bottom goal itself"
             );
         }
 

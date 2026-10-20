@@ -84,11 +84,8 @@ namespace StickAndPuck.App.Screens
                     }
 
                     break;
-                case "trade":
-                    TradeDeadline(app, clubs);
-                    break;
-                case "fired":
-                    Fired(app, clubs);
+                case "trade" or "fired":
+                    OpenStory(app, screen, clubs);
                     break;
                 case "trophy":
                     Champions(app, clubs);
@@ -134,7 +131,7 @@ namespace StickAndPuck.App.Screens
             string path = TestPath(SeasonSave.DefaultPath, name);
             SeasonState season = app.Season.StartNew(clubs, Club(clubs), Seed(), path);
             RuleSet rules = RulePicks.Choice(app).Resolve(); // as the first played game would store them
-            season.Rules = games == int.MaxValue ? rules with { HotSeat = HotSeat.Off } : rules; // a whole season on paper runs to its end, whatever the board thinks
+            season.Rules = rules with { HotSeat = HotSeat.Off }; // a season on paper for the screens runs on, whatever the board thinks (SAP_SCREEN=fired shows the sack)
             int settled = 0;
             while (settled < games && app.Season.SimCurrentGame().HasValue)
             {
@@ -285,6 +282,19 @@ namespace StickAndPuck.App.Screens
                     $"SAP: screens: playout test, {season.UserClub} in the playout, {settled} games simmed, relegated {season.Relegated.Or("not yet")}"
                 )
             );
+        }
+
+        /// <summary>The trade deadline (W135) or the fired screen (W133).</summary>
+        private static void OpenStory(AppState app, string screen, IReadOnlyList<ClubData> clubs)
+        {
+            if (string.Equals(screen, "fired", StringComparison.Ordinal))
+            {
+                Fired(app, clubs);
+            }
+            else
+            {
+                TradeDeadline(app, clubs);
+            }
         }
 
         /// <summary>A fresh test season for the club the board expects most of (SAP_CLUB picks another), under the
