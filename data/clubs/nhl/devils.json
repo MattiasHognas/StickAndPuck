@@ -17,6 +17,13 @@
     "accent": "#1a1a1a",
     "helmet": "#ce1126"
   },
+  "supporters": {
+    "tifo": [
+      "JERSEY PRIDE"
+    ],
+    "scarf": "DEVILS",
+    "banner": "LET'S GO DEVILS"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",

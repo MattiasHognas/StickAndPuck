@@ -17,6 +17,13 @@
     "accent": "#69b3e7",
     "helmet": "#1a1a1a"
   },
+  "supporters": {
+    "tifo": [
+      "TUSKS UP"
+    ],
+    "scarf": "MAMMOTH",
+    "banner": "TUSKS UP UTAH"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

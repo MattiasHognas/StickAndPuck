@@ -17,6 +17,13 @@
     "accent": "#fcb514",
     "helmet": "#1a1a1a"
   },
+  "supporters": {
+    "tifo": [
+      "LET'S GO PENS"
+    ],
+    "scarf": "PENGUINS",
+    "banner": "LET'S GO PENS"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

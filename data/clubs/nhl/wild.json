@@ -17,6 +17,14 @@
     "accent": "#a6192e",
     "helmet": "#154734"
   },
+  "supporters": {
+    "tifo": [
+      "LET'S PLAY",
+      "HOCKEY"
+    ],
+    "scarf": "MINNESOTA",
+    "banner": "STATE OF HOCKEY"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "dumpAndChase",

@@ -17,6 +17,14 @@
     "accent": "#192168",
     "helmet": "#af1e2d"
   },
+  "supporters": {
+    "tifo": [
+      "GO HABS GO",
+      "NOS BRAS MEURTRIS"
+    ],
+    "scarf": "LES GLORIEUX",
+    "banner": "GO HABS GO"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

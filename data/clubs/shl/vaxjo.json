@@ -14,6 +14,14 @@
     "accent": "#ec732b",
     "helmet": "#002f60"
   },
+  "supporters": {
+    "tifo": [
+      "SJÖARNAS",
+      "STAD"
+    ],
+    "scarf": "LAKERS",
+    "banner": "LAKERS LAKEJER"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "carry",

@@ -14,6 +14,14 @@
     "accent": "#a6192e",
     "helmet": "#2b3a6e"
   },
+  "supporters": {
+    "tifo": [
+      "SJUNG FÖR GAMLA",
+      "DJURGÅR'N"
+    ],
+    "scarf": "JÄRNKAMINERNA",
+    "banner": "MESTA MÄSTARNA"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",

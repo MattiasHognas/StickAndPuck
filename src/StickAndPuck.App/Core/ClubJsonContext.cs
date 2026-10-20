@@ -10,8 +10,12 @@ namespace StickAndPuck.App.Core
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
         GenerationMode = JsonSourceGenerationMode.Metadata,
-        Converters = [typeof(MaybeJsonConverter<string>)]
+        Converters = [
+            typeof(MaybeJsonConverter<string>),
+            typeof(MaybeJsonConverter<ClubSupporters>),
+        ]
     )]
     [JsonSerializable(typeof(ClubData))]
+    [JsonSerializable(typeof(ClubSupporters))]
     internal sealed partial class ClubJsonContext : JsonSerializerContext;
 }

@@ -17,6 +17,14 @@
     "accent": "#ffffff",
     "helmet": "#00205b"
   },
+  "supporters": {
+    "tifo": [
+      "GO LEAFS GO",
+      "LEAFS FOREVER"
+    ],
+    "scarf": "LEAFS NATION",
+    "banner": "GO LEAFS GO"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

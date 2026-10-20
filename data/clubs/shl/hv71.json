@@ -14,6 +14,14 @@
     "accent": "#ffffff",
     "helmet": "#002d59"
   },
+  "supporters": {
+    "tifo": [
+      "HÅVE",
+      "JÖNKÖPING VÅRAN STAD"
+    ],
+    "scarf": "HV-BLÅ",
+    "banner": "VITA GULA BLÅ"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "dumpAndChase",

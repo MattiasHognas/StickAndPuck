@@ -17,6 +17,13 @@
     "accent": "#1a1a1a",
     "helmet": "#cf0a2c"
   },
+  "supporters": {
+    "tifo": [
+      "ONE GOAL"
+    ],
+    "scarf": "BLACKHAWKS",
+    "banner": "LET'S GO HAWKS"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

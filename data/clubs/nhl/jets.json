@@ -17,6 +17,14 @@
     "accent": "#004c97",
     "helmet": "#041e42"
   },
+  "supporters": {
+    "tifo": [
+      "WHITEOUT",
+      "TRUE NORTH"
+    ],
+    "scarf": "WINNIPEG",
+    "banner": "GO JETS GO"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

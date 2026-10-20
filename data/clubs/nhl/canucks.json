@@ -17,6 +17,13 @@
     "accent": "#00843d",
     "helmet": "#00205b"
   },
+  "supporters": {
+    "tifo": [
+      "TOWEL POWER"
+    ],
+    "scarf": "CANUCKS",
+    "banner": "GO CANUCKS GO"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

@@ -17,6 +17,14 @@
     "accent": "#ce1126",
     "helmet": "#002654"
   },
+  "supporters": {
+    "tifo": [
+      "C-B-J",
+      "FIRE THE CANNON"
+    ],
+    "scarf": "COLUMBUS",
+    "banner": "FIRE THE CANNON"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",

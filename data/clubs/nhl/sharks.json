@@ -17,6 +17,13 @@
     "accent": "#1a1a1a",
     "helmet": "#006d75"
   },
+  "supporters": {
+    "tifo": [
+      "SHARK TANK"
+    ],
+    "scarf": "SHARKS",
+    "banner": "LET'S GO SHARKS"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

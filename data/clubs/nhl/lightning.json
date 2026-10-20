@@ -17,6 +17,14 @@
     "accent": "#ffffff",
     "helmet": "#002868"
   },
+  "supporters": {
+    "tifo": [
+      "BE THE",
+      "THUNDER"
+    ],
+    "scarf": "BOLTS",
+    "banner": "GO BOLTS GO"
+  },
   "tactics": {
     "forecheck": "trap",
     "entry": "carry",

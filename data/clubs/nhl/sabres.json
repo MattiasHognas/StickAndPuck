@@ -17,6 +17,14 @@
     "accent": "#ffb81c",
     "helmet": "#003087"
   },
+  "supporters": {
+    "tifo": [
+      "LET'S GO",
+      "BUFFALO"
+    ],
+    "scarf": "SABRES",
+    "banner": "ONE BUFFALO"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

@@ -17,6 +17,13 @@
     "accent": "#041e42",
     "helmet": "#c8102e"
   },
+  "supporters": {
+    "tifo": [
+      "ROCK THE RED"
+    ],
+    "scarf": "CAPITALS",
+    "banner": "LET'S GO CAPS"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "carry",

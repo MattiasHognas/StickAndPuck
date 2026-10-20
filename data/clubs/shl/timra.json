@@ -14,6 +14,13 @@
     "accent": "#124a97",
     "helmet": "#c8102e"
   },
+  "supporters": {
+    "tifo": [
+      "TIMRÅ HEJ"
+    ],
+    "scarf": "TIMRÅ IK",
+    "banner": "RÄTTA VIRKET"
+  },
   "tactics": {
     "forecheck": "balanced",
     "entry": "dumpAndChase",

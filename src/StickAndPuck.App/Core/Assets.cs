@@ -47,6 +47,10 @@ namespace StickAndPuck.App.Core
         /// <summary>The crowd's pose frames and shirt masks (A18, art/scripts/build_crowd.py and crowd_atlas.py).</summary>
         public const string CrowdAtlas = "art.crowd.crowd_256.png";
 
+        /// <summary>The layout of every club's supporter sheet: tifo, scarf, flag and banner frames (A19,
+        /// art/scripts/make_supporters.py); the sheets are art/crowd/supporters/{league}/{id}.png.</summary>
+        public const string SupporterLayout = "art.crowd.supporters.json";
+
         /// <summary>The ad board text strip.</summary>
         public const string AdStrip = "art.ads.ads_53x80.png";
 

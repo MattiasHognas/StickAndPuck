@@ -14,6 +14,14 @@
     "accent": "#c8102e",
     "helmet": "#c8102e"
   },
+  "supporters": {
+    "tifo": [
+      "GOA GUBBAR",
+      "KOM IGEN NU FRÖLUNDA"
+    ],
+    "scarf": "FRÖLUNDA",
+    "banner": "RÖTT GRÖNT VITT"
+  },
   "tactics": {
     "forecheck": "aggressive",
     "entry": "carry",
